@@ -129,6 +129,8 @@ structure Ctx (s : State) : Prop where
   (Calldata is shorter than `2^64` bytes, so the program's high-water mark
   `MSGIN + |M| + 288` respects this bound.) -/
   small : s.activeWords.toNat ≤ 2 ^ 64
+  /-- Realizable calldata (`CalldataFits`). -/
+  calldataFits : s.executionEnv.calldata.size < 2 ^ 64
 
 /-- A caller-supplied return address and stack tail that a call can use. -/
 structure RetOK (ret : Nat) (tail : List UInt256) : Prop where

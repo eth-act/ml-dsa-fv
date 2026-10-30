@@ -29,7 +29,7 @@ end Gas
 theorem shake_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK ret tail) {m : ByteArray} {rate ptr len out blocks : Nat}
     (hrate : rate = 136 ∨ rate = 168) (hblocks : 1 ≤ blocks ∧ blocks ≤ 6)
-    (hlen : len < 2 ^ 32) (hrc : RCTable m)
+    (hrc : RCTable m)
     (hin : ZETA ≤ ptr) (hinPad : ptr + len ≤ PADB ∨ PADB + 192 ≤ ptr)
     (hout : ZETA ≤ out) (houtPad : out + blocks * rate + 32 ≤ PADB ∨ PADB + 192 ≤ out)
     (hdisj : ptr + len ≤ out ∨ out + blocks * rate + 32 ≤ ptr)
