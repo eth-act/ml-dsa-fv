@@ -16,8 +16,7 @@ namespace MlDsa44.Proofs
 open EvmSemantics
 open EvmSemantics.EVM
 
--- Gas budget: upper bound proved by the contracts below; set it to the exact
--- worst case once proved.
+-- Gas budgets: exact worst cases, proved by the contracts below.
 namespace Gas
 
 def bswap64 : Nat := 122

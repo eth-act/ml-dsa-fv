@@ -22,8 +22,7 @@ namespace MlDsa44.Proofs
 open EvmSemantics
 open EvmSemantics.EVM
 
--- Gas budget: upper bound proved by the contracts below; set it to the exact
--- worst case once proved.
+-- Gas budgets: exact worst cases, proved by the contracts below.
 namespace Gas
 
 /-- Worst case: one outer iteration runs all 80 indices with every order check
