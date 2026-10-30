@@ -139,7 +139,7 @@ structure RetOK (budget ret : Nat) (tail : List UInt256) : Prop where
   small : ret < 2 ^ 16
   depth : tail.length + budget ≤ 1024
 
-/-- Stack budgets (slots below the caller's tail) per subroutine: 64 for a
+/-! Stack budgets (slots below the caller's tail) per subroutine: 64 for a
 leaf, plus 64 per level of calls beneath it. Real usage is about 20 slots
 per frame. -/
 namespace Stack
