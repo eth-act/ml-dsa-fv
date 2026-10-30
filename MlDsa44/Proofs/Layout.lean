@@ -10,9 +10,10 @@ Shared vocabulary for every proof about the frozen reference bytecode.
 * The memory map mirrors `scripts/gen_reference.py` (`REGIONS`).
 * `Entry.*` are the entry `JUMPDEST`s of the compiled Yul functions
   (`lake exe mldsa44tool layout MlDsa44/Reference/reference.yul`).
-* `Call` is the contract form for one subroutine call: the classic backend
-  passes arguments with the first argument on top and the return address
-  below them, and returns with the results on top of the caller's stack.
+* `Call` is the contract form for one subroutine call. The classic backend's
+  caller pushes the return address, then one zero slot per return value,
+  then the arguments (first argument on top), and jumps to the entry; the
+  callee returns with the results on top of the caller's stack.
 -/
 
 namespace MlDsa44.Proofs
@@ -138,12 +139,16 @@ def flag (b : Bool) : UInt256 := UInt256.ofNat (if b then 1 else 0)
 abbrev wd (n : Nat) : UInt256 := UInt256.ofNat n
 
 /-- Calling the subroutine at `entry` with `args` returns to `ret` with
-`results` above `tail`, turning memory `pre` into `post`, for at most `gas`. -/
+`results` above `tail`, turning memory `pre` into `post`, for at most `gas`.
+On entry the stack holds the arguments, one zero slot per result, the return
+address, then `tail`. -/
 def Call (s : State) (entry : Nat) (args : List UInt256) (ret : Nat)
     (tail : List UInt256) (pre : ByteArray) (results : List UInt256)
     (post : ByteArray) (gas : Nat) : Prop :=
   ∃ g : EvmProof.GasSteps
-      (callState s entry (args ++ UInt256.ofNat ret :: tail) pre)
+      (callState s entry
+        (args ++ List.replicate results.length (UInt256.ofNat 0) ++ UInt256.ofNat ret :: tail)
+        pre)
       (callState s ret (results ++ tail) post),
     g.cost ≤ gas
 
