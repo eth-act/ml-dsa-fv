@@ -65,13 +65,12 @@ theorem ball_skip {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     Infra.Reach (ballSt s ret tail p i M) (ballSt s ret tail (p + 1) i M) 77 := by
   evm_reach [2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2393, 2394, 2395, 2396, 2397, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465]
 
-set_option maxRecDepth 100000 in
 theorem ball_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hret : Decode.isValidJumpDest referenceBytecode ret = true)
-    (hret' : ret < 2 ^ 16) (M : ByteArray) (i : Nat) (hi : i ≤ 256) :
+    (htail : tail.length ≤ 960) {B : Nat} (hr : RetOK B ret tail) (M : ByteArray) (i : Nat) (hi : i ≤ 256) :
     Infra.Reach (ballSt s ret tail 272 i M)
       (callState s ret (wd (if i < 256 then 0 else 1) :: tail) M) 59 := by
-  evm_reach [2385, 2386, 2387, 2388, 2389, 2390, 2391, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476] with [hret]
+  have := hr.small
+  evm_reach [2385, 2386, 2387, 2388, 2389, 2390, 2391, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476] with [hr.jumpdest]
   by_cases h : i < 256 <;>
     simp only [h, ↓reduceIte, Nat.reduceMod, Nat.one_ne_zero]
 

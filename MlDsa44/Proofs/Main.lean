@@ -1,5 +1,6 @@
 import MlDsa44.Proofs.Bridge
 import MlDsa44.Proofs.Gas
+import MlDsa44.Proofs.Main.Valid
 /-!
 # End-to-end correctness and gas schedule of the frozen reference bytecode
 
@@ -15,16 +16,16 @@ namespace MlDsa44.Proofs
 open EvmSemantics
 open EvmSemantics.EVM
 
-theorem main_short (cd : ByteArray) (hfit : CalldataFits cd) (hlen : cd.size < 3732) :
+theorem main_short (cd : ByteArray) (_hfit : CalldataFits cd) (hlen : cd.size < 3732) :
     ∃ final : State, ∃ g : EvmProof.GasSteps (initialState referenceBytecode cd 0) final,
-      g.cost ≤ Gas.short ∧ final.isDone = true ∧ final.toResult = .returned (spec cd) := by
-  sorry
+      g.cost ≤ Gas.short ∧ final.isDone = true ∧ final.toResult = .returned (spec cd) :=
+  Main.short_trace (Main.initial_ctx0 cd) (Main.initial_activeWords cd) rfl (Main.initial_eq cd) hlen
 
 theorem main_valid (cd : ByteArray) (hfit : CalldataFits cd) (hlen : 3732 ≤ cd.size) :
     ∃ final : State, ∃ g : EvmProof.GasSteps (initialState referenceBytecode cd 0) final,
       g.cost ≤ Gas.schedule cd.size ∧ final.isDone = true ∧
-        final.toResult = .returned (spec cd) := by
-  sorry
+        final.toResult = .returned (spec cd) :=
+  Main.valid_trace (Main.initial_ctx0 cd) (Main.initial_activeWords cd) rfl (Main.initial_eq cd) hfit hlen
 
 private theorem eval_of_trace {cd : ByteArray} {final : State}
     (g : EvmProof.GasSteps (initialState referenceBytecode cd 0) final) (gas : Nat)

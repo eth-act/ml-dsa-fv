@@ -54,14 +54,13 @@ theorem rej_skip {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     Infra.Reach (rejSt s ret tail dst t jj M) (rejSt s ret tail dst (t + 1) jj M) 77 := by
   evm_reach [2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361]
 
-set_option maxRecDepth 100000 in
 theorem rej_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hret : Decode.isValidJumpDest referenceBytecode ret = true)
-    (hret' : ret < 2 ^ 16)
+    (htail : tail.length ≤ 960) {B : Nat} (hr : RetOK B ret tail)
     {dst : Nat} (M : ByteArray) (jj : Nat) (hjj' : jj ≤ 256) :
     Infra.Reach (rejSt s ret tail dst 336 jj M)
       (callState s ret (wd (if jj < 256 then 0 else 1) :: tail) M) 61 := by
-  evm_reach [2297, 2298, 2299, 2300, 2301, 2302, 2303, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373] with [hret]
+  have := hr.small
+  evm_reach [2297, 2298, 2299, 2300, 2301, 2302, 2303, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373] with [hr.jumpdest]
   by_cases h : jj < 256 <;>
     simp only [h, ↓reduceIte, Nat.reduceMod, Nat.one_ne_zero]
 

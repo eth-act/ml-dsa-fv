@@ -117,7 +117,7 @@ theorem rejSample_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     · simp only [h1, false_and, ↓reduceIte]
       exact rej_skip hs htail _ t _ ht (by omega) hle
   have hJ := (rejFold_inv bs 336).2.1
-  have hexit := rej_exit hs htail hr.jumpdest hr.small (dst := dst) (M 336) (J 336) hJ
+  have hexit := rej_exit hs htail hr (dst := dst) (M 336) (J 336) hJ
   have hcost := rejCost_sum bs 336
   have hloop := Infra.Reach.loopSum (I := I) 336 hbody
   have hall := ((rej_entry hs htail dst m).trans hloop).trans hexit

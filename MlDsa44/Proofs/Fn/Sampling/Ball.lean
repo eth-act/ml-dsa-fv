@@ -175,7 +175,7 @@ theorem sampleInBall_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt
     · simp only [h1, false_and, ↓reduceIte]
       exact ball_skip hs htail (M k) (8 + k) _ (by omega) (by omega) hi2
   obtain ⟨hsz, -, hi, -⟩ := ballFold_inv bs 264
-  have hexit := ball_exit hs htail hr.jumpdest hr.small (M 264) _ hi
+  have hexit := ball_exit hs htail hr (M 264) _ hi
   have hcost := ballCost_sum bs 264
   have hloop := Infra.Reach.loopSum (I := I) 264 hbody
   have hall := (((ball_entry hs htail m).trans hz).trans

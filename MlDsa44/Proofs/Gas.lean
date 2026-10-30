@@ -15,13 +15,17 @@ namespace MlDsa44.Proofs.Gas
 /-- EVM memory cost of `words` active words (Yellow Paper `C_mem`). -/
 def memCost (words : Nat) : Nat := 3 * words + words * words / 512
 
-/-- Everything on the valid-length path except the message-dependent parts. -/
+/-- Everything on the valid-length path except the message-dependent parts:
+1408 gas of top-level glue (trampolines, size check, RC table, call set-up,
+fixed-size copies, row-loop control, final compare and return) plus the
+fixed calls. -/
 def mainFixed : Nat :=
-  5000 + initZetas + shake 136 1312 1 + decodeZ + decodeHint + shake 136 32 2 +
+  1408 + initZetas + shake 136 1312 1 + decodeZ + decodeHint + shake 136 32 2 +
     sampleInBall + ntt + 4 * (computeRow + encodeRow) + shake 136 832 1
 
-/-- Calldata shorter than `pk ‖ σ`: return the zero word. -/
-def short : Nat := 300
+/-- Calldata shorter than `pk ‖ σ`: return the zero word (264 gas of
+instructions plus one word of memory). -/
+def short : Nat := 267
 
 /-- **The public gas schedule**, a function of the calldata length only:
 fixed verification work, the `μ` absorption of `tr ‖ 0 ‖ 0 ‖ M`, the
