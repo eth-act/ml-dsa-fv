@@ -1,0 +1,45 @@
+name = "mldsa44"
+version = "0.1.0"
+defaultTargets = ["EvmProof", "MlDsa44"]
+
+# Pins follow powdr-labs/eip8200-challenges@c165c97 so the vendored
+# `EvmProof` infrastructure builds unchanged against the same semantics.
+
+# Verified Yul→EVM compiler: produces the frozen reference bytecode.
+[[require]]
+name = "yul-evm-compiler"
+git = "https://github.com/powdr-labs/yul-compiler"
+rev = "c2e44cd2d487fd59b14897732189acc0c1724873"
+
+[[require]]
+name = "yul-semantics"
+git = "https://github.com/powdr-labs/yul-semantics"
+rev = "c9914c13df47efe026376723acd632bc33bc16e3"
+
+# The EVM semantics the correctness theorem is stated against. Part of the
+# trust boundary, so pinned explicitly.
+[[require]]
+name = "evm_semantics"
+git = "https://github.com/powdr-labs/evm-semantics"
+rev = "2f8714d6ba960a3de67720019b54513f5bc1a2e3"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.33.0"
+
+# Generic direct-bytecode proof infrastructure, vendored from
+# powdr-labs/eip8200-challenges (Apache-2.0) with the namespace
+# `Challenge.EvmProof` renamed to `EvmProof`.
+[[lean_lib]]
+name = "EvmProof"
+
+[[lean_lib]]
+name = "MlDsa44"
+
+# Developer tool: compiles the reference Yul, emits proof-facing artifacts,
+# checks the spec against test vectors and runs the bytecode in the pinned
+# semantics to measure gas.
+[[lean_exe]]
+name = "mldsa44tool"
+root = "Tool"
