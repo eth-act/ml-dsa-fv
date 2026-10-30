@@ -125,6 +125,10 @@ structure Ctx (s : State) : Prop where
     s.executionEnv.fork s.executionEnv.codeAddr = false
   running : s.halt = .Running
   sized : fixedWords ≤ s.activeWords.toNat
+  /-- Memory stays far below `2^256` bytes, so no address computation wraps.
+  (Calldata is shorter than `2^64` bytes, so the program's high-water mark
+  `MSGIN + |M| + 288` respects this bound.) -/
+  small : s.activeWords.toNat ≤ 2 ^ 64
 
 /-- A caller-supplied return address and stack tail that a call can use. -/
 structure RetOK (ret : Nat) (tail : List UInt256) : Prop where
