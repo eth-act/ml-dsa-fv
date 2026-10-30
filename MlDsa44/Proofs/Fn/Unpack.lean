@@ -22,7 +22,7 @@ end Gas
 /-- Coefficient `i` of the `c`-bit packing of the calldata field
 `[off, off + n)`. -/
 theorem unpack_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) (m : ByteArray) {off n i c : Nat}
+    (hr : RetOK Stack.unpack ret tail) (m : ByteArray) {off n i c : Nat}
     (hc : 1 ≤ c ∧ c ≤ 18) (hfield : off + n ≤ s.executionEnv.calldata.size)
     (hi : (i + 1) * c ≤ 8 * n) :
     Call s Entry.unpack [wd off, wd i, wd c] ret tail m

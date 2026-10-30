@@ -29,7 +29,7 @@ def sampleInBall : Nat := zeroPoly + 264 * 250 + 100
 end Gas
 
 theorem rejSample_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {dst : Nat} {bs : ByteArray}
+    (hr : RetOK Stack.rejSample ret tail) {m : ByteArray} {dst : Nat} {bs : ByteArray}
     (hbs : BytesAt m XOF bs) (hsize : bs.size = Fips204.rejNTTPolyLimit)
     (hdst : ZETA + POLY ≤ dst ∧ (dst + POLY ≤ XOF ∨ XOF + 0x420 ≤ dst))
     (hmem : dst + POLY + 32 ≤ 32 * s.activeWords.toNat) :
@@ -40,7 +40,7 @@ theorem rejSample_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
   sorry
 
 theorem sampleInBall_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {bs : ByteArray}
+    (hr : RetOK Stack.sampleInBall ret tail) {m : ByteArray} {bs : ByteArray}
     (hbs : BytesAt m XOF bs) (hsize : bs.size = Fips204.sampleInBallLimit) :
     ∃ m', (∀ c, Fips204.sampleInBallOf bs = some c →
         PolyAt m' CH (c.map (· % (Fips204.q : Int))) ∧ Reduced (c.map (· % (Fips204.q : Int)))) ∧

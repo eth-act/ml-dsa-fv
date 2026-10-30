@@ -21,7 +21,7 @@ def keccakF : Nat := 54328
 end Gas
 
 theorem keccakF_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {A : Array UInt64}
+    (hr : RetOK Stack.keccakF ret tail) {m : ByteArray} {A : Array UInt64}
     (hA : LanesAt m ST A) (hrc : RCTable m) :
     ∃ m', LanesAt m' ST (Crypto.Keccak.permute A) ∧ FrameExcept m m' [(ST, RC)] ∧
       Call s Entry.keccakF [] ret tail m [] m' Gas.keccakF := by

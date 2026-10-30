@@ -43,7 +43,7 @@ def rowApprox (aRow zHat : Array Fips204.Poly) (cHat t1H : Fips204.Poly) : Fips2
     (az[j]! - (Fips204.multiplyNTT cHat t1H)[j]!) % Fips204.q)
 
 theorem computeRow_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {i : Nat} (hi : i < 4)
+    (hr : RetOK Stack.computeRow ret tail) {m : ByteArray} {i : Nat} (hi : i < 4)
     (hcd : 3732 ≤ s.executionEnv.calldata.size)
     (hrc : RCTable m) (hz : ZetaTable m)
     {zHat : Array Fips204.Poly} (hzHat : zHat.size = 4)

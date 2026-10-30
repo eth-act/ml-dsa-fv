@@ -43,7 +43,7 @@ def zOf (cd : ByteArray) : Array Fips204.Poly := (Fips204.sigDecode (sigOf cd)).
 def hintBytesOf (cd : ByteArray) : ByteArray := cd.extract 3648 3732
 
 theorem decodeHint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) (m : ByteArray) (hcd : 3732 ≤ s.executionEnv.calldata.size) :
+    (hr : RetOK Stack.decodeHint ret tail) (m : ByteArray) (hcd : 3732 ≤ s.executionEnv.calldata.size) :
     ∃ m', (∀ h, Fips204.hintBitUnpack (hintBytesOf s.executionEnv.calldata) = some h →
         HintAt m' h) ∧
       FrameExcept m m' [(HB, HB + 0x400)] ∧
@@ -53,7 +53,7 @@ theorem decodeHint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt25
   sorry
 
 theorem decodeZ_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} (hz : ZetaTable m)
+    (hr : RetOK Stack.decodeZ ret tail) {m : ByteArray} (hz : ZetaTable m)
     (hcd : 3732 ≤ s.executionEnv.calldata.size) :
     ∃ m', (∀ i, i < 4 →
         PolyAt m' (ZH + POLY * i)

@@ -27,7 +27,7 @@ def shake (rate len blocks : Nat) : Nat :=
 end Gas
 
 theorem shake_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {rate ptr len out blocks : Nat}
+    (hr : RetOK Stack.shake ret tail) {m : ByteArray} {rate ptr len out blocks : Nat}
     (hrate : rate = 136 ∨ rate = 168) (hblocks : 1 ≤ blocks ∧ blocks ≤ 6)
     (hrc : RCTable m)
     (hin : ZETA ≤ ptr) (hinPad : ptr + len ≤ PADB ∨ PADB + 192 ≤ ptr)

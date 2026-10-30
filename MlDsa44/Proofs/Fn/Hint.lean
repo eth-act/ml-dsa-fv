@@ -26,7 +26,7 @@ def encodeRow : Nat := 64 * (4 * (useHint + 150) + 300) + 100
 end Gas
 
 theorem useHint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) (m : ByteArray) {hb r : Nat} (hhb : hb ≤ 1)
+    (hr : RetOK Stack.useHint ret tail) (m : ByteArray) {hb r : Nat} (hhb : hb ≤ 1)
     (hrq : r < Fips204.q) :
     Call s Entry.useHint [wd hb, wd r] ret tail m
       [wd (Fips204.useHint hb r).toNat] m Gas.useHint := by
@@ -37,7 +37,7 @@ def w1Row (m : ByteArray) (i : Nat) (f : Fips204.Poly) : Fips204.Poly :=
   (Array.range 256).map fun j => Fips204.useHint (byteAt m (HB + 256 * i + j)) f[j]!
 
 theorem encodeRow_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK ret tail) {m : ByteArray} {i : Nat} (hi : i < 4) {f : Fips204.Poly}
+    (hr : RetOK Stack.encodeRow ret tail) {m : ByteArray} {i : Nat} (hi : i < 4) {f : Fips204.Poly}
     (hf : PolyAt m ACC f) (hred : Reduced f)
     (hbits : ∀ j, j < 256 → byteAt m (HB + 256 * i + j) ≤ 1) :
     ∃ m', BytesAt m' (W1 + 64 + 192 * i)

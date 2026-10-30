@@ -132,11 +132,38 @@ structure Ctx (s : State) : Prop where
   /-- Realizable calldata (`CalldataFits`). -/
   calldataFits : s.executionEnv.calldata.size < 2 ^ 64
 
-/-- A caller-supplied return address and stack tail that a call can use. -/
-structure RetOK (ret : Nat) (tail : List UInt256) : Prop where
+/-- A caller-supplied return address and stack tail that a call can use:
+`budget` stack slots remain for the callee and everything it calls. -/
+structure RetOK (budget ret : Nat) (tail : List UInt256) : Prop where
   jumpdest : Decode.isValidJumpDest referenceBytecode ret = true
   small : ret < 2 ^ 16
-  depth : tail.length ≤ 960
+  depth : tail.length + budget ≤ 1024
+
+/-- Stack budgets (slots below the caller's tail) per subroutine: 64 for a
+leaf, plus 64 per level of calls beneath it. Real usage is about 20 slots
+per frame. -/
+namespace Stack
+def leaf : Nat := 64
+def keccakF : Nat := leaf
+def bswap64 : Nat := leaf
+def brv8 : Nat := leaf
+def zeroPoly : Nat := leaf
+def ntt : Nat := leaf
+def nttInv : Nat := leaf
+def unpack : Nat := leaf
+def useHint : Nat := leaf
+def rejSample : Nat := leaf
+def decodeHint : Nat := leaf
+def loadLE64 : Nat := bswap64 + 64
+def storeLE64 : Nat := bswap64 + 64
+def xorBlock : Nat := loadLE64 + 64
+def shake : Nat := max keccakF (max xorBlock storeLE64) + 64
+def initZetas : Nat := brv8 + 64
+def sampleInBall : Nat := zeroPoly + 64
+def decodeZ : Nat := max unpack ntt + 64
+def encodeRow : Nat := useHint + 64
+def computeRow : Nat := max shake (max rejSample (max zeroPoly (max unpack (max ntt nttInv)))) + 64
+end Stack
 
 /-- A Boolean returned in a stack word. -/
 def flag (b : Bool) : UInt256 := UInt256.ofNat (if b then 1 else 0)
