@@ -1,4 +1,6 @@
 import MlDsa44.Proofs.Infra
+import MlDsa44.Proofs.Fn.Ntt.Fwd
+import MlDsa44.Proofs.Fn.Ntt.Inv
 /-!
 # `zeroPoly`, `ntt`, `nttInv`
 
@@ -15,8 +17,8 @@ namespace MlDsa44.Proofs
 open EvmSemantics
 open EvmSemantics.EVM
 
--- Gas budget: upper bound proved by the contracts below; set it to the exact
--- worst case once proved.
+-- Gas budgets: exact costs (`ntt`/`nttInv` have data-independent control flow;
+-- see `NttProof.n_reach`/`NttProof.i_reach` for the per-layer sums).
 namespace Gas
 
 def zeroPoly : Nat := 18218
@@ -67,7 +69,17 @@ theorem ntt_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', PolyAt m' p (Fips204.ntt f) ∧ Reduced (Fips204.ntt f) ∧
       FrameExcept m m' [(p, p + POLY)] ∧
       Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt := by
-  sorry
+  have ht : tail.length ≤ 960 := by
+    have := hr.depth; simp only [Stack.ntt, Stack.leaf] at this; omega
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hmem' : p + 8192 + 32 ≤ 32 * s.activeWords.toNat := by simpa only [POLY] using hmem
+  have hp' : 10720 ≤ p := by simp only [ZETA, POLY] at hp; omega
+  obtain ⟨M', ⟨hP, hRed, hF⟩, hReach⟩ := NttProof.n_reach (ret := ret) hs ht haw hmem' hp' hz hr f
+    ⟨hf, hred, Infra.FrameExcept.refl _ _⟩
+  rw [NttModel.ntt_eq]
+  refine ⟨M', hP, hRed, hF, ?_⟩
+  rw [Infra.call_iff, Entry.ntt, Gas.ntt]
+  exact hReach.of_eq (by simp) (by simp)
 
 theorem nttInv_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.nttInv ret tail) {m : ByteArray} {p : Nat} {f : Fips204.Poly}
@@ -76,6 +88,16 @@ theorem nttInv_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', PolyAt m' p (Fips204.nttInv f) ∧ Reduced (Fips204.nttInv f) ∧
       FrameExcept m m' [(p, p + POLY)] ∧
       Call s Entry.nttInv [wd p] ret tail m [] m' Gas.nttInv := by
-  sorry
+  have ht : tail.length ≤ 960 := by
+    have := hr.depth; simp only [Stack.nttInv, Stack.leaf] at this; omega
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hmem' : p + 8192 + 32 ≤ 32 * s.activeWords.toNat := by simpa only [POLY] using hmem
+  have hp' : 10720 ≤ p := by simp only [ZETA, POLY] at hp; omega
+  obtain ⟨M', ⟨hP, hRed, hF⟩, hReach⟩ := NttProof.i_reach (ret := ret) hs ht haw hmem' hp' hz hr f
+    ⟨hf, hred, Infra.FrameExcept.refl _ _⟩
+  rw [NttModel.nttInv_eq]
+  refine ⟨M', hP, hRed, hF, ?_⟩
+  rw [Infra.call_iff, Entry.nttInv, Gas.nttInv]
+  exact hReach.of_eq (by simp) (by simp)
 
 end MlDsa44.Proofs
