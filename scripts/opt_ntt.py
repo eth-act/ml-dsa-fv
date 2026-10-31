@@ -18,7 +18,9 @@ stack:  a' = a + u,  b' = a + 2q - u.
   so u < 2^18.2 + q < 2q (the subtraction never borrows). Outputs < 2^27.2.
 Inverse (Gentleman-Sande), merged 2 + 3 + 3:  a' = a + b,
   b' = mont((b + C_L - a) * zeta_m) (= -zeta_m (a - b), Alg 42).
-  Bounds: inputs < 2^27; a-values at most double per layer, so before layer L
+  Bounds: inputs < 2^27 (with `premont`, inputs < 2^58 are first
+  Montgomery-reduced at load: x / 2^32 + q < 2^27, adding a factor R^-1);
+  a-values at most double per layer, so before layer L
   lanes are < 2^(26+L) =: B; C_L = q * ceil(B / q) >= any a; Montgomery input
   < 2^(27+L) * 2^23 <= 2^58, u < 2^26 + q < 2^27. The 256^-1 * factor scaling
   is folded into layer 8: the zeta of its b-outputs is pre-multiplied and its
@@ -154,13 +156,15 @@ class Kernel:
         self.mont(st, bi)
 
     # ── memory ──────────────────────────────────────────────────────────
-    def load(self, st, ptr, offs):
+    def load(self, st, ptr, offs, mont=False):
         for i, o in enumerate(offs):
             st.dup(ptr, f"x{i}")
             if o:
                 st.push(o, "c")
                 st.op("ADD", 2, f"x{i}")
             st.op("MLOAD", 1, f"x{i}")
+            if mont:
+                self.mont(st, f"x{i}")
 
     def store(self, st, ptr, offs):
         n = len(offs)
@@ -267,6 +271,8 @@ class Kernel:
         """Subtraction constant for inverse layer L (1..8): >= 2^(26+L) and = 0 mod q."""
         return Q * -(-(1 << (26 + L)) // Q)
 
+    premont = False
+
     def gen_intt(self, name, factor):
         a = self.a
         a.region(name)
@@ -280,7 +286,7 @@ class Kernel:
         st.dup("P", "pj")
         lc = self.fresh("intc")
         a.label(lc)
-        self.load(st, "pj", [0, 32, 64, 96])
+        self.load(st, "pj", [0, 32, 64, 96], mont=self.premont)
         self.gs(st, "x0", "x1", ("zc", 64))
         self.gs(st, "x2", "x3", ("zc", 32))
         self.gs(st, "x0", "x2", ("zc", 0))

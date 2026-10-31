@@ -15,17 +15,21 @@ Measured gas for the valid empty-message vector (line 1 of each
 `calldata.txt`). This is frame gas, the quantity `mldsa44tool run-file` and
 `foundry/src/GasProbe.sol` measure:
 
-| set | reference | optimised | factor | 1M target | 16.6M budget | code size |
-|---|---:|---:|---:|---|---|---:|
-| ML-DSA-44 | 12,953,021 | **2,184,320** | 5.93x | not reached (2.18x over) | 13% | 23,109 B |
-| ML-DSA-65 | 21,334,964 | **3,993,518** | 5.34x | - | 24% | 23,312 B |
-| ML-DSA-87 | 35,708,719 | **5,514,373** | 6.48x | - | 33% | 23,882 B |
+| set | reference | optimised | factor | 1M target | 16.6M budget | worst case (|M| = 0) | code size |
+|---|---:|---:|---:|---|---|---:|---:|
+| ML-DSA-44 | 12,953,021 | **2,136,608** | 6.06x | not reached (2.14x over) | 13% | 2,895,812 | 22,553 B |
+| ML-DSA-65 | 21,334,964 | **3,930,640** | 5.43x | - | 24% | 5,350,581 | 22,512 B |
+| ML-DSA-87 | 35,708,719 | **5,478,088** | 6.52x | - | 33% | 8,014,074 | 23,443 B |
+
+Two optimisation rounds produced these numbers (steps 1–16 and 17–20 in
+the log). The worst case is the maximum over adversarial inputs at that
+length (section "Worst-case gas").
 
 * All three sizes are under the EIP-170 limit of 24,576 B. 65 and 87 now fit
   comfortably in one transaction; the reference versions did not.
 * **The 1M target for ML-DSA-44 is not reached.** The floor analysis below
   puts any implementation of this kind (compressed key, full SHAKE, no
-  helper contract) at about 1.1-1.2M, and our result is 1.9x that floor. For
+  helper contract) at about 1.1-1.2M, and our result is 1.86x that floor. For
   comparison, the published ~1.2M verifiers (ZKNox ETHDILITHIUM, Fireblocks)
   read a 20 KB pre-expanded public key (no ExpandA, no tr = H(pk)) and use an
   external Keccak-f helper contract.
@@ -41,18 +45,20 @@ signature: the RejNTTPoly fix-ups and SampleInBall.
 
 | \|M\| | 44 | 65 | 87 |
 |---:|---:|---:|---:|
-| 0 | 2,184,320 | 3,993,518 | 5,514,373 |
-| 1 | 2,187,005 | 4,008,289 | 5,508,249 |
-| 31 | 2,175,159 | 3,979,369 | 5,536,694 |
-| 32 | 2,156,898 | 3,987,461 | 5,561,718 |
-| 69 | 2,174,644 | 4,043,344 | 5,558,795 |
-| 70 | 2,234,428 | 4,022,217 | 5,573,427 |
-| 136 | 2,242,788 | 4,040,235 | 5,613,622 |
-| 206 | 2,241,035 | 4,077,333 | 5,653,240 |
-| 1000 | 2,424,151 | 4,233,704 | 5,870,368 |
+| 0 | 2,136,608 | 3,930,640 | 5,478,088 |
+| 1 | 2,138,943 | 3,944,711 | 5,473,014 |
+| 31 | 2,127,797 | 3,917,191 | 5,499,359 |
+| 32 | 2,109,886 | 3,925,283 | 5,523,683 |
+| 69 | 2,126,932 | 3,979,416 | 5,520,807 |
+| 70 | 2,218,968 | 3,992,991 | 5,537,492 |
+| 136 | 2,226,628 | 4,010,309 | 5,575,587 |
+| 206 | 2,226,625 | 4,047,057 | 5,615,555 |
+| 1000 | 2,409,391 | 4,204,828 | 5,831,983 |
 
-Across the 44 corpus (3,639 cases, messages up to 4,767 bytes) the median is
-2,295,297 and the maximum 3,462,766. The fuzz campaigns below give the mean
+For 44 and 65, messages of up to 69 bytes get μ from a SIMD slot. From 70
+bytes on, μ runs on kf1, which adds about 36k per 136 bytes. Across the 44
+corpus (3,639 cases, messages up to 4,767 bytes) the median is 2,278,787 and
+the maximum 3,448,006. The fuzz campaigns below give the mean
 for accepted signatures.
 
 ## Reproducing
@@ -64,6 +70,8 @@ scripts/opt_forge.sh MlDsaOpt/44/opt.hex 44    # revm: 48 vectors + 3591 corpus 
 scripts/opt_forge.sh MlDsaOpt/65/opt.hex 65    # revm: vectors/mldsa65/calldata.txt
 scripts/opt_forge.sh MlDsaOpt/87/opt.hex 87
 python3 scripts/opt_fuzz.py 65 400 111         # differential fuzzing (Python EVM vs FIPS model + dilithium-py)
+python3 scripts/opt_selftest.py                # model, kernels, constants, all vectors, forced 6th squeeze
+python3 scripts/opt_worstcase.py               # worst-case gas over adversarial inputs, per set
 .lake/build/bin/mldsa44tool run-file MlDsaOpt/44/opt.hex FILE   # Lean-semantics gas (one calldata per line)
 ```
 
@@ -125,8 +133,12 @@ Both variants share the following:
   | 65 | groups = (column j, rows 0..3) | row group 1's idle slots (rows 6, 7 do not exist), free | row group 1 |
 
   For 44 and 87, the A instances that tr displaces go to one extra group.
-* **Single sponges.** μ and the final c̃ hash use kf1. μ is seeded from tr's
-  lanes extracted from the SIMD slot.
+* **Single sponges.** The final c̃ hash uses kf1.
+  * μ: for |M| ≤ 69 (one padded block), μ is absorbed into a free slot
+    (`mu0`): 44's extra group, or 65's row group 1 after tr. It is squeezed
+    by that group's first permutation.
+  * Otherwise, and always for 87, μ is a kf1 sponge seeded from tr's lanes
+    extracted from the SIMD slot.
 * **Absorption.** Calldata words are byte-swapped per 64-bit lane and either
   multiplied by 1 + 2^64 + 2^128 + 2^192 (kf1), or spread to stride 4 with
   6 masked shift-OR stages and XORed into one slot (`trabs`, kf4). Squeezed
@@ -140,8 +152,10 @@ Both variants share the following:
   3. One rejection-flag word is recorded per 8 candidates.
 * **Fix-up (`fix`).** A slot with a rejection among its first 256 candidates
   (P ≈ 22% per instance) is compacted in place:
-  * Groups of 8 without a rejection become 8 masked word copies; flagged
-    groups are scanned candidate by candidate.
+  * Groups of 8 without a rejection become 8 masked word copies.
+  * Flagged groups are branch-free: every candidate is written at wp, and wp
+    advances by 32·[v < q]. A rejected value is overwritten by the next
+    accepted one; writes never overtake rp.
   * A sixth squeeze is made on demand, saving and restoring the kf4 state,
     because slots may carry tr. The 1008-byte bound is exact.
 * **Fused accumulation.** ACC_rb[t] += ABUF[t] · ẑ_j[t] adds 4 rows per word
@@ -159,8 +173,10 @@ Both variants share the following:
   * Layers are merged 3 + 3 + 2, with 8 words on the stack.
   * The docstring gives the bound argument for every layer.
   * 256^-1 and the Montgomery factor are folded into the last inverse layer.
-  * Cost: 99,705 per forward NTT and 109,353 per inverse NTT, each covering
-    4 polynomials.
+  * The inverse NTT also Montgomery-reduces the accumulator words as it
+    loads them in its first pass, so there is no separate reduction pass.
+  * Cost: 99,705 per forward NTT and 119,593 per inverse NTT (including the
+    reduction), each covering 4 polynomials.
 * **c·t1 is computed sparsely in the normal domain** (`tbuild`, `csum`). This
   removes NTT(t1), NTT(c) and the t1 decoding.
   * Each row group has a 6 KB table of 16-bit fields interleaved by row:
@@ -228,7 +244,15 @@ measured on 44 only; intermediate 44 values marked ~ are profile sums.
 | 13 | z decoder gather loop (code −1.3 KB) | ~2,290,000 | - | - | 20,404 |
 | 14 | tr (and H(c̃) for 44/65) ride in kf4 slots; Kronecker accumulation of displaced instances | 2,210,721 | 4,042,931 | 5,596,684 | 22,937 / 23,140 / 23,710 |
 | 15 | fix-up: exhaustion check off the accept path | 2,202,625 | 4,027,229 | 5,570,774 | 23,012 / 23,215 / 23,785 |
-| 16 | fix-up: flag-clean groups of 8 as masked word copies | **2,184,320** | **3,993,518** | **5,514,373** | 23,109 / 23,312 / 23,882 |
+| 16 | fix-up: flag-clean groups of 8 as masked word copies | 2,184,320 | 3,993,518 | 5,514,373 | 23,109 / 23,312 / 23,882 |
+| | *round 2* | | | | |
+| 17 | tr absorption: 4 lanes unrolled per word with spread masks on the stack; shared spread subroutine for the init (code −1.5 KB) | ~2,178,500 | - | - | 21,902 / 21,699 / 23,487 |
+| 18 | μ's first block squeezed in a free SIMD slot for \|M\| ≤ 69 (44, 65) | 2,148,021 | 3,954,166 | 5,503,014 | 22,597 / 22,575 / 23,506 |
+| 19 | fix-up: branch-free flagged groups (worst case −210k / −410k / −720k) | 2,146,971 | 3,951,366 | 5,498,814 | 22,855 / 22,833 / 23,764 |
+| 20 | accumulator reduction folded into the inverse NTT's loads; UseHint pointers derived from ACC | **2,136,608** | **3,930,640** | **5,478,088** | 22,553 / 22,512 / 23,443 |
+
+Round 2 stopped at step 20, because the remaining candidates are each below
+1% (see "Remaining headroom").
 
 ## Per-subroutine profile
 
@@ -238,26 +262,25 @@ JUMPDEST.
 | subroutine | 44 gas | calls | 65 gas | calls | 87 gas | calls |
 |---|---:|---:|---:|---:|---:|---:|
 | kf4 (4-state Keccak-f) | 1,005,950 | 25 | 2,011,900 | 50 | 3,017,850 | 75 |
-| kf1 (1-state Keccak-f) | 287,040 | 8 | 287,040 | 8 | 394,680 | 11 |
+| kf1 (1-state Keccak-f) | 251,160 | 7 | 251,160 | 7 | 394,680 | 11 |
 | blk (de-interleave + candidates) | 195,900 | 25 | 391,800 | 50 | 587,700 | 75 |
-| intt | 109,353 | 1 | 218,706 | 2 | 218,706 | 2 |
+| intt (incl. ACC reduction) | 119,593 | 1 | 239,186 | 2 | 239,186 | 2 |
 | ntt | 99,705 | 1 | 199,410 | 2 | 199,410 | 2 |
 | pass3 / pass3m / pass3k (A·ẑ) | 99,809 | 5 | 177,800 | 10 | 284,525 | 15 |
 | csum (sparse c·t1 sums) | 69,861 | 1 | 162,762 | 2 | 188,106 | 2 |
-| usehint | 67,875 | 1 | 119,878 | 2 | 119,878 | 2 |
+| usehint | 64,793 | 1 | 113,714 | 2 | 113,714 | 2 |
 | dz (z decode + norm) | 46,156 | 1 | 92,312 | 2 | 92,312 | 2 |
-| trabs (tr absorb into a slot) | 46,014 | 10 | 69,021 | 15 | 92,028 | 20 |
-| fix (RejNTTPoly fix-ups) | 32,399 | 3 | 67,344 | 7 | 109,711 | 11 |
+| trabs (tr / μ absorption into a slot) | 42,731 | 11 | 62,830 | 16 | 80,396 | 20 |
+| fix (RejNTTPoly fix-ups) | 31,349 | 3 | 64,544 | 7 | 105,511 | 11 |
 | tbuild (c·t1 tables) | 28,511 | 1 | 57,022 | 2 | 57,022 | 2 |
-| main (init, memory, glue) | 18,648 | 1 | 28,682 | 1 | 28,181 | 1 |
-| mred | 17,497 | 1 | 34,994 | 2 | 34,994 | 2 |
+| main (init, memory, glue) | 18,016 | 1 | 27,894 | 1 | 27,934 | 1 |
 | sample_in_ball | 15,559 | 1 | 19,639 | 1 | 28,259 | 1 |
 | decode_hint | 11,198 | 1 | 6,612 | 1 | 10,780 | 1 |
 | pack (w1Encode) | 11,107 | 1 | 17,478 | 2 | 18,502 | 2 |
-| cext / ginit / gfix / group / hash_mu / final_hash / expand_a | 21,738 | | 31,118 | | 31,729 | |
+| cext / ginit / gfix / group / spr / mu0 / hash_mu / final_hash / expand_a | 25,210 | | 34,577 | | 32,201 | |
 
 Keccak (kf4 + kf1) is 59% of the ML-DSA-44 total. Including the work tied to
-it (`blk`, `trabs`, `cext`, absorption) the share is 70%.
+it (`blk`, `trabs`, `cext`, absorption) the share is 71%.
 
 ## Provenance: Yul or bytecode
 
@@ -321,9 +344,9 @@ All cases below were run on the final artifacts. SHA-256 of `opt.hex`:
 
 | set | SHA-256 |
 |---|---|
-| 44 | c2835c4d7fbf2b74fa8e687a6c7b435f0416a97fc60ae3941d4e8e4a5d061c66 |
-| 65 | 9e4f2f4acbeca95b17d461e3a435fb85cdcef5ebc95494ef59b581fe688924a6 |
-| 87 | 70bcc8f7a3d18d5ba729f0369438ede06612dcd18549990034b775d4c05dc422 |
+| 44 | 947bd2821b80e384110fcee27613528400d07ff2a9c2013f9b58498d1b6d4a00 |
+| 65 | bfeb614eec67ce8efeea285eff856610bd800ebdb0073c5979cc5995c58fcf69 |
+| 87 | 6d19e93d462d938093a127fcbc0e24804b15ab3dcdd3d4206e8a1c17b6e5e979 |
 
 * **revm (Foundry), verdicts:**
   * 44: `fixtures/vectors.txt` (48 rows: the 47 rows of `vectors/calldata.txt`
@@ -334,7 +357,7 @@ All cases below were run on the final artifacts. SHA-256 of `opt.hex`:
     with `OPT_HEX`/`OPT_SET`. The existing suites are unchanged.
 * **Lean semantics vs revm, gas, 44:** `mldsa44tool run-file` on the 46
   non-empty rows of `vectors/calldata.txt` returned the expected word with
-  exactly the revm frame gas on every row: total 99,484,377 in both. The
+  exactly the revm frame gas on every row: total 98,120,835 in both. The
   empty-calldata row cannot be fed to `run-file`, so short calldata was
   checked with 1, 1312 and 3731 bytes: 37 gas, the same as revm on empty
   calldata.
@@ -347,8 +370,8 @@ All cases below were run on the final artifacts. SHA-256 of `opt.hex`:
     bytecode runs in the exact-gas Python EVM.
   * Final artifacts: 44: 400, 65: 800, 87: 800 cases, 0 failures (see the
     campaign table at the end).
-  * An earlier campaign of 1,500 cases on the build before step 16 also had
-    0 failures.
+  * Earlier builds also had 0 failures: 1,500 cases before step 16 and
+    2,000 cases at step 16.
 * **Rare paths, forced by debug builds** (not shipped):
   * `dbg_force6` with `OPT_DBG_NO_OVERLAY=1` squeezes the sixth block
     whenever a fix-up runs. Every vector of all three sets returns the right
@@ -357,6 +380,9 @@ All cases below were run on the final artifacts. SHA-256 of `opt.hex`:
   * `dbg_switch` (fix-up step 15) forced the switch from the fast to the
     checked loop at once. All verdicts were correct; that loop was
     restructured into the group-wise fix-up in step 16.
+* **`scripts/opt_selftest.py`** passes on the final generator. It covers
+  the model against all vectors, the Keccak kernels, the constants, all
+  vectors on all three bytecodes, and the forced sixth squeeze.
 * **Kernel unit tests** against the Python reference:
   * Keccak, both variants with complemented lanes: random states;
   * NTT/INTT, 4 lanes: placeholder vs optimised kernel, end to end;
@@ -384,9 +410,20 @@ empty message. Only μ and the final hash are inherently sequential.
   is **≥ 27k per kf4 call and ≥ 19k per kf1 call**. Ours are 40.2k and 35.9k.
   The difference is mostly stack traffic (DUP/SWAP) and loading lanes twice
   per round.
+
+  Round 2 re-costed this with the state kept in memory, which is
+  unavoidable since 25 lanes do not fit a 16-deep stack. Every term is
+  already near its own minimum: kf4 at 1,677 gas per round = rotations 609
+  (29 × 21; the 14-gas MULMOD rotation is unsound on all-ones words) + lane
+  loads/stores ~450 + D application 150 + column parities 210 + chi 465 (10
+  DUPs per plane is minimal when each B is used 3 times). Computing the next
+  round's column parities inside chi was ruled out: DUP/XOR/SWAP/POP per
+  output cost more than the 8.4 gas per reloaded lane they save. So the
+  practical floor of this design is about 38k (kf4) and 34k (kf1), not
+  27k / 19k.
 * **Keccak floor.** With perfect 4-way packing, 91 parallelisable
   permutations need ≥ 23 kf4 calls, plus 8 sequential kf1:
-  23 × 27k + 8 × 19k ≈ **0.77M**. Ours is 25 kf4 + 8 kf1 = 1.29M.
+  23 × 27k + 8 × 19k ≈ **0.77M**. Ours is 25 kf4 + 7 kf1 = 1.26M.
 * **Packing overhead.** De-interleaving the 20 squeezed 4-state blocks of
   ExpandA is 420 words × 6 delta swaps ≈ 0.09M.
 * **Arithmetic floor:**
@@ -395,7 +432,7 @@ empty message. Only μ and the final hash are inherently sequential.
   * sparse c·t1: ≥ 64·τ loads ≈ 0.04M;
   * z decode, norm check, UseHint and packing: ≈ 0.1M.
 * **Total floor ≈ 1.15M** for this design family: compressed key, FIPS
-  SHAKE, opcode-level Keccak, no helper contract. Ours, at 2.18M, is 1.9x
+  SHAKE, opcode-level Keccak, no helper contract. Ours, at 2.14M, is 1.86x
   that.
 
 Reaching 1M would require removing work, not implementing it better:
@@ -403,7 +440,7 @@ Reaching 1M would require removing work, not implementing it better:
 1. **An expanded public key** (Â and t̂1 as calldata or code, as ZKNox and
    Fireblocks do).
    * It removes 90 of the 99 permutations, `blk`, `fix` and `trabs`: about
-     1.4M of the current 2.18M.
+     1.4M of the current 2.14M.
    * With the kernels here the rest would be about 0.8M: 9 kf1 calls, the
      NTTs, and A·ẑ read from the key.
 2. **A Keccak-f precompile or opcode**, which would remove ~70% of the cost.
@@ -412,23 +449,23 @@ Reaching 1M would require removing work, not implementing it better:
 
 ## Remaining headroom
 
-These were identified but not implemented:
+Every remaining candidate is below 1% of the total:
 
-| idea | saving (44 unless stated) | notes |
+| idea | saving | why not done |
 |---|---|---|
-| μ's first block in the extra group's free slot | ≈ 33k (also 65) | messages ≤ 745 bytes |
-| tr absorption unrolled 2x | ≈ 3k | |
-| Shoup multiplication in NTT pass A | ≈ 1.2k per NTT | |
+| cheaper kf1 re-replication (AND + MUL, 4 ops instead of 6) | ≈ 14k (44) | the valid window drifts up ~58 bits per 2 rounds, so no aligned block survives to seed the next period |
+| unrolled Keccak rounds with immediate iota and less loop overhead | ≈ 0.4k per call | +1.5 KB code per variant; 87 has 1.1 KB left |
+| Shoup multiplication in NTT pass A | ≈ 1.2k per forward NTT | the inverse NTT cannot use it (multiplicands exceed 2^32) |
 | pre-multiplied c codes in `csum` | ≈ 1.5k per row group | |
+| lazy de-interleave of the last block's tail when no group needs a fix-up | ≈ 4k (44) | |
+| skipping masked tr lanes in the last calldata word | ≈ 5k (44) | |
 
-Larger structural options:
+There is no kf4 call left to remove:
 
-* An unrolled Keccak round with immediate iota constants: about −0.4k per
-  call, at a cost of +1.5 KB code per variant.
-* A smaller memory footprint.
-
-The code-size limit (23.9 KB for 87) is now the main constraint on further
-unrolling.
+* For 44, the extra group's 5 squeezes are needed by its two displaced
+  ExpandA instances; its other slots carry H(c̃) and μ.
+* For 87, all 60 slots of the 15 groups carry ExpandA instances or tr.
+* For 65, tr, H(c̃) and μ use idle slots.
 
 ## Proof plan sketch
 
@@ -465,7 +502,7 @@ loop composition. The likely contracts, bottom up:
 6. **pass3, pass3m, pass3k.** Lane-wise product lemma (products < 2^51,
    sums < 2^57, no cross-lane carry). The Kronecker identity: lane 3 of
    X·Z′ = Σ_i X_{3−i} Z′_i, and lower lanes stay below 2^64.
-7. **mred, usehint, pack.** Exactness of the multiply-shift quotients:
+7. **intt load reduction, usehint, pack.** Exactness of the multiply-shift quotients:
    K = 53 for x mod q on x < 2^32, and the 2γ2 dividers. The UseHint formula
    (r1 + m + h(2·pos − 1)) mod m equals Algorithm 40 (checked exhaustively
    here; a symbolic proof needs a range split). w1 bit-stream packing.
@@ -476,21 +513,58 @@ loop composition. The likely contracts, bottom up:
    the reference contracts. The z norm check is the SIMD range lemma.
 10. **main.** Composition and the gas schedule.
 
-The gas schedule must charge worst cases on the data-dependent paths:
-SampleInBall (≤ 264 bytes), hint decoding (≤ ω), fix-ups (≤ 336 candidates
-per instance, ≤ 1 sixth squeeze per group) and μ blocks. A rough worst-case
-bound for 44 is ~3.0M. The worst case needs a fix-up in every ExpandA
-instance (probability ≈ 0.22^16) and the sixth squeeze, which is
-astronomically rare; typical gas is the 2.18–2.4M measured above.
+The gas schedule must charge the worst cases measured in "Worst-case gas"
+(next section).
+
+## Worst-case gas
+
+`scripts/opt_worstcase.py` reports, for each set, the maximum over
+adversarial inputs at a given calldata length. Control flow depends on data
+in only four places:
+
+1. RejNTTPoly fix-ups and the sixth squeeze;
+2. SampleInBall's byte loop;
+3. HintBitUnpack's loops;
+4. μ's block count, which depends on the message length only.
+
+The script measures each routine in isolation (crafted memory, `start_pc`)
+on its most expensive path:
+
+* **Fix-ups:** all 42 flag words set, 256 accepted plus 80 rejected
+  candidates, and one sixth squeeze per group.
+* **SampleInBall:** 264 − τ rejected bytes, then τ accepted bytes, each
+  hitting an existing nonzero position. For 87, the second kf1 squeeze is
+  added.
+* **Hints:** ω strictly decreasing indices in one row, so every index takes
+  the failing order check.
+
+It then replaces the typical run's data-dependent gas with these maxima.
+
+| set (\|M\| = 0) | typical | worst | fix-ups typical / worst | SampleInBall typical / worst | hints typical / worst |
+|---|---:|---:|---|---|---|
+| 44 | 2,136,608 | 2,895,812 | 33,643 / 760,969 | 15,559 / 45,405 | 11,198 / 13,230 |
+| 65 | 3,930,640 | 5,350,581 | 69,162 / 1,457,380 | 19,639 / 48,595 | 6,612 / 9,379 |
+| 87 | 5,478,088 | 8,014,074 | 112,453 / 2,541,139 | 28,259 / 133,566 | 10,780 / 12,773 |
+
+* **The worst/typical gap is almost entirely fix-ups.** One fully flagged
+  instance costs 32,279, and one sixth squeeze 48,271 per group.
+* **Step 19 shrank that gap.** Branch-free flagged groups cut the
+  per-instance worst case from 45,193 to 32,279.
+* **The worst case is not reachable in practice.** It needs a rejection in
+  every ExpandA instance (≈ 0.22^n) together with a sixth squeeze
+  (≈ 10^-38 per instance). Accepted fuzz cases peak at 2.45M (44), 4.26M (65)
+  and 5.78M (87).
+* **All worst cases fit the 16.6M budget.** For longer messages add one kf1
+  call (~36k) plus absorption per 136 bytes of μ input.
 
 ## Fuzz campaign (final artifacts)
 
-`scripts/opt_fuzz.py` with seeds 311 (44), 111 and 112 (65), 211 and 212
+`scripts/opt_fuzz.py` with seeds 321 (44), 121 and 122 (65), 221 and 222
 (87). Message lengths are random up to 1,200 bytes, so the means include
 extra μ blocks.
 
 | set | cases | accepted | failures | mean gas (accepted) | max gas (accepted) |
 |---|---:|---:|---:|---:|---:|
-| 44 | 400 | 60 | 0 | 2,233,098 | 2,489,209 |
-| 65 | 800 | 152 | 0 | 4,035,092 | 4,335,820 |
-| 87 | 800 | 142 | 0 | 5,580,500 | 5,858,659 |
+| 44 | 400 | 85 | 0 | 2,198,297 | 2,452,969 |
+| 65 | 800 | 157 | 0 | 3,997,112 | 4,256,534 |
+| 87 | 800 | 170 | 0 | 5,552,616 | 5,780,280 |

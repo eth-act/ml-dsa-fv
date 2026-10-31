@@ -13,11 +13,11 @@ analysis and proof plan are in `docs/opt.md`.
 Gas for a valid signature over an empty message, frame gas as measured by
 `mldsa44tool run-file` and foundry's GasProbe:
 
-| set | gas | reference | code size |
-|---|---:|---:|---:|
-| 44 | 2,184,320 | 12,953,021 | 23,109 B |
-| 65 | 3,993,518 | 21,334,964 | 23,312 B |
-| 87 | 5,514,373 | 35,708,719 | 23,882 B |
+| set | gas | worst case | reference | code size |
+|---|---:|---:|---:|---:|
+| 44 | 2,136,608 | 2,895,812 | 12,953,021 | 22,553 B |
+| 65 | 3,930,640 | 5,350,581 | 21,334,964 | 22,512 B |
+| 87 | 5,478,088 | 8,014,074 | 35,708,719 | 23,443 B |
 
 There is no Yul source. Every component is hand-written bytecode generated
 from Python (`scripts/gen_opt.py`, `opt_keccak.py`, `opt_ntt.py`,

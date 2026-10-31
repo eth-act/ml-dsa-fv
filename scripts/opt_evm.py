@@ -47,7 +47,7 @@ def mem_cost(words: int) -> int:
 
 def run(code: bytes, calldata: bytes = b"", gas: int = 1 << 40, memory: bytearray | None = None,
         profile: bool = False, stack: list | None = None, stop_pc: int | None = None,
-        max_steps: int = 1 << 62):
+        max_steps: int = 1 << 62, start_pc: int = 0):
     """Execute `code`; returns dict(status, ret, gas_used, memory, stack, prof).
 
     status: 'return' | 'revert' | 'stop' | 'invalid' | 'oog' | 'error:<msg>'.
@@ -72,7 +72,7 @@ def run(code: bytes, calldata: bytes = b"", gas: int = 1 << 40, memory: bytearra
     cd = calldata
     cdl = len(cd)
     used = 0
-    pc = 0
+    pc = start_pc
     prof = [0] * (n + 1) if profile else None
     cnt = [0] * (n + 1) if profile else None
     G = GAS
