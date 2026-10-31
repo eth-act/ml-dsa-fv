@@ -297,8 +297,10 @@ def verifyInternal (pk M' sig : ByteArray) : Bool :=
   | _, _, _ => false
 
 /-- Algorithm 3, `ML-DSA.Verify(pk, M, σ, ctx)` with the empty context:
-`M' = IntegerToBytes(0, 1) ‖ IntegerToBytes(0, 1) ‖ M`. -/
+`M' = IntegerToBytes(0, 1) ‖ IntegerToBytes(0, 1) ‖ M`. Inputs of nonstandard
+length are rejected (§3.6.2). -/
 def verify (pk msg sig : ByteArray) : Bool :=
-  verifyInternal pk (ByteArray.mk #[0, 0] ++ msg) sig
+  pk.size == pkLen && sig.size == sigLen &&
+    verifyInternal pk (ByteArray.mk #[0, 0] ++ msg) sig
 
 end MlDsa44.Fips204

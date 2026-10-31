@@ -24,6 +24,11 @@ theorem accepts_eq_flat {cd : ByteArray} (hcd : 3732 ≤ cd.size) :
     accepts cd = flatAccepts (pkOf cd) (ByteArray.mk #[0, 0] ++ msgOf cd) (sigOf cd) := by
   unfold accepts
   rw [pkLen_eq, sigLen_eq, decide_eq_true (by omega), Bool.true_and, Fips204.verify]
+  have h1 : ((cd.extract 0 1312).size == Fips204.pkLen) = true := by
+    rw [beq_iff_eq]; show _ = pkLen; rw [pkLen_eq]; simp [ByteArray.size_extract]; omega
+  have h2 : ((cd.extract 1312 (1312 + 2420)).size == Fips204.sigLen) = true := by
+    rw [beq_iff_eq]; show _ = sigLen; rw [sigLen_eq]; simp [ByteArray.size_extract]; omega
+  rw [h1, h2, Bool.true_and, Bool.true_and]
   exact verifyInternal_eq_flat _ _ _ (by simp [ByteArray.size_extract]; omega)
     (by simp [ByteArray.size_extract]; omega)
 
