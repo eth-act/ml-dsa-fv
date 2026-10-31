@@ -16,7 +16,15 @@ semantics:
   accepts, `0` otherwise (including calldata shorter than 3732 bytes);
 * `Correct code`: from a fresh Osaka frame, every sufficiently large gas
   budget evaluates to that return;
-* `CorrectWithSchedule code schedule`: `schedule |calldata|` gas suffices.
+* `CorrectWithSchedule code schedule`: `schedule |calldata|` gas suffices;
+* `CorrectInAnyContextWithSchedule code schedule`: from *any* entry state of
+  a frame running `code` (arbitrary world state, caller, value, address,
+  depth, static flag, precompile config and enclosing call stack) with
+  `schedule |calldata|` gas, the frame halts by `RETURN` with that word,
+  having used at most the schedule and changed only frame-local fields
+  (no storage, account, log, refund, return-data or call-stack effects);
+* `CorrectInAnyContext code`: the `Correct` conclusion from any top-level
+  frame entry.
 
 `MlDsa44/Spec/Fips202.lean` defines SHAKE128/256 on top of the semantics'
 Keccak-f[1600]; `MlDsa44/Spec/Fips204.lean` transcribes FIPS 204 Algorithms
@@ -50,12 +58,15 @@ bytes. The theorems are about the frozen bytes
 ## Result
 
 ```lean
+theorem MlDsa44.Proofs.reference_correctInAnyContextWithSchedule :
+    CorrectInAnyContextWithSchedule referenceBytecode Gas.schedule
+theorem MlDsa44.Proofs.reference_correctInAnyContext : CorrectInAnyContext referenceBytecode
 theorem MlDsa44.Proofs.reference_correctWithSchedule :
     CorrectWithSchedule referenceBytecode Gas.schedule
 theorem MlDsa44.Proofs.reference_correct : Correct referenceBytecode
 ```
 
-Both depend only on `propext`, `Classical.choice`, `Quot.sound`; no `sorry`,
+All depend only on `propext`, `Classical.choice`, `Quot.sound`; no `sorry`,
 `native_decide` or project axioms anywhere in the tree.
 
 `Gas.schedule` (`MlDsa44/Proofs/Gas.lean`) is a function of the calldata

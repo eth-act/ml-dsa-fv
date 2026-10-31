@@ -30,24 +30,29 @@ theorem readPadded_mstore0 (M : ByteArray) (v : Nat) :
   have := EvmProof.Memory.readPadded_writeBytes_same M (Data.Bytes.natToBytesPadded v 32) 0
   rwa [natToBytesPadded_size] at this
 
+/-- `t` differs from `s` only in frame-local machine fields. -/
+def FrameLocal (s t : State) : Prop :=
+  t = { s with pc := t.pc, stack := t.stack, memory := t.memory,
+               activeWords := t.activeWords, halt := t.halt, hReturn := t.hReturn,
+               gasAvailable := t.gasAvailable }
+
 theorem short_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNat = 0)
-    (hcs : s₀.callStack = []) (hpc : callState s₀ 0 [] .empty = s₀)
+    (hpc : callState s₀ 0 [] .empty = s₀)
     (hlen : s₀.executionEnv.calldata.size < 3732) :
     ∃ final : State, ∃ g : EvmProof.GasSteps s₀ final,
-      g.cost ≤ Gas.short ∧ final.isDone = true ∧
-        final.toResult = .returned (spec s₀.executionEnv.calldata) := by
+      g.cost ≤ Gas.short ∧ final.halt = .Returned ∧
+        final.hReturn = spec s₀.executionEnv.calldata ∧ FrameLocal s₀ final := by
   have hrun := short_block h0 haw hlen
   obtain ⟨g, hg⟩ := (reach_block_pot (h0.callState 0 [] .empty) _ (cost := 264) (by decide +kernel)
     hrun).of_eq hpc rfl
-  refine ⟨_, g, ?_, ?_, ?_⟩
+  refine ⟨_, g, ?_, rfl, ?_, rfl⟩
   · refine hg.trans (le_of_eq ?_)
     change 264 + MachineState.memCost 1 - MachineState.memCost s₀.activeWords.toNat = 267
     rw [haw]; rfl
-  · simp [State.isDone, State.isHalted, State.isRunning, callState, hcs]
   · have hacc : accepts s₀.executionEnv.calldata = false := by
       unfold accepts
       rw [pkLen_eq, sigLen_eq, decide_eq_false (by omega), Bool.false_and]
-    change ExecutionResult.returned (MachineState.readPadded _ 0 32) = _
+    change MachineState.readPadded _ 0 32 = _
     rw [readPadded_mstore0, spec_eq, hacc]
     rfl
 
@@ -70,11 +75,11 @@ theorem valid_cost (mlen : Nat) (hml : mlen < 2 ^ 64) :
   omega
 
 theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNat = 0)
-    (hcs : s₀.callStack = []) (hpc : callState s₀ 0 [] .empty = s₀)
+    (hpc : callState s₀ 0 [] .empty = s₀)
     (hfit : s₀.executionEnv.calldata.size < 2 ^ 64) (hlen : 3732 ≤ s₀.executionEnv.calldata.size) :
     ∃ final : State, ∃ g : EvmProof.GasSteps s₀ final,
-      g.cost ≤ Gas.schedule s₀.executionEnv.calldata.size ∧ final.isDone = true ∧
-        final.toResult = .returned (spec s₀.executionEnv.calldata) := by
+      g.cost ≤ Gas.schedule s₀.executionEnv.calldata.size ∧ final.halt = .Returned ∧
+        final.hReturn = spec s₀.executionEnv.calldata ∧ FrameLocal s₀ final := by
   -- size the memory
   have hrun := size_block h0 haw hlen hfit
   have hR0 := (reach_block_pot (h0.callState 0 [] .empty) _ (cost := 281) (by decide +kernel)
@@ -118,14 +123,14 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
   -- assemble
   have h := (((((hR0.trans hR1).trans hR2).trans hR3).trans hR4).trans hR5).trans hR6
   obtain ⟨g, hg⟩ := h
-  refine ⟨_, g, ?_, ?_, ?_⟩
+  refine ⟨_, g, ?_, rfl, ?_, ?_⟩
   · refine hg.trans ?_
     simp only [callState]
     rw [← hs1, sized_activeWords _ _ hml, haw, show cd.size = mlen + 3732 by omega]
     exact valid_cost mlen hml
-  · rw [← hs1]
-    simp [finalState, State.isDone, State.isHalted, State.isRunning, callState, sized, hcs]
-  · change ExecutionResult.returned (MachineState.readPadded _ 0 32) = _
+  · change MachineState.readPadded _ 0 32 = _
     rw [readPadded_mstore0, spec_eq, ← hcd, ← hres]
+  · rw [← hs1]
+    rfl
 
 end MlDsa44.Proofs.Main

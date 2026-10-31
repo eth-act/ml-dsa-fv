@@ -94,4 +94,51 @@ theorem correct_of_schedule {code : ByteArray} {schedule : Nat → Nat}
     (h : CorrectWithSchedule code schedule) : Correct code :=
   fun calldata hfit => ⟨schedule calldata.size, fun g hg => h calldata hfit g hg⟩
 
+/-! ## Any calling context
+
+`Correct` fixes one fresh top-level frame. The statements below quantify over
+every entry state of a frame running `code`: the world state, caller, origin,
+call value, executing address, gas price, depth, static flag, precompile
+configuration and the enclosing call stack are all arbitrary. -/
+
+/-- `s` is the first state of a fresh Osaka frame executing `code` as bytecode
+(not as a native precompile). -/
+structure FrameEntry (code : ByteArray) (s : EVM.State) : Prop where
+  code : s.executionEnv.code = code
+  pc : s.pc = 0
+  stack : s.stack = []
+  memory : s.memory = .empty
+  activeWords : s.activeWords = 0
+  running : s.halt = .Running
+  osaka : s.executionEnv.fork = .Osaka
+  notPrecompile : Precompile.isPrecompileWithConfig s.executionEnv.precompileConfig
+    s.executionEnv.fork s.executionEnv.codeAddr = false
+  calldataFits : CalldataFits s.executionEnv.calldata
+
+/-- **Frame-level correctness in any context, with a gas bound.** From any
+frame entry with at least `schedule |calldata|` gas, execution reaches a state
+where the frame has halted by `RETURN` with the verification word, having used
+at most `schedule |calldata|` gas. That state differs from the entry state only
+in frame-local machine fields (pc, stack, memory, memory size, halt flag,
+return buffer, gas): accounts, storage, substate (logs, refunds, touched and
+destroyed accounts), return data, environment and the enclosing call stack are
+untouched. What a caller observes after this frame returns is then fixed by
+the EVM semantics' frame-return rule. -/
+def CorrectInAnyContextWithSchedule (code : ByteArray) (schedule : Nat → Nat) : Prop :=
+  ∀ s : EVM.State, FrameEntry code s →
+    schedule s.executionEnv.calldata.size ≤ s.gasAvailable →
+    ∃ t : EVM.State, Steps s t ∧
+      t.halt = .Returned ∧ t.hReturn = spec s.executionEnv.calldata ∧
+      s.gasAvailable - schedule s.executionEnv.calldata.size ≤ t.gasAvailable ∧
+      t = { s with pc := t.pc, stack := t.stack, memory := t.memory,
+                   activeWords := t.activeWords, halt := t.halt, hReturn := t.hReturn,
+                   gasAvailable := t.gasAvailable }
+
+/-- **Correctness in any top-level context.** The `Correct` conclusion from
+every frame entry with no suspended callers. -/
+def CorrectInAnyContext (code : ByteArray) : Prop :=
+  ∀ s : EVM.State, FrameEntry code s → s.callStack = [] →
+    ∃ g₀ : Nat, ∀ g : Nat, g₀ ≤ g →
+      Eval { s with gasAvailable := g } (.returned (spec s.executionEnv.calldata))
+
 end MlDsa44
