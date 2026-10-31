@@ -1,6 +1,6 @@
 name = "mldsa44"
 version = "0.1.0"
-defaultTargets = ["EvmProof", "MlDsa44"]
+defaultTargets = ["EvmProof", "MlDsa44", "MlDsa", "MlDsa65", "MlDsa87"]
 
 # Pins follow powdr-labs/eip8200-challenges@c165c97 so the vendored
 # `EvmProof` infrastructure builds unchanged against the same semantics.
@@ -43,3 +43,20 @@ name = "MlDsa44"
 [[lean_exe]]
 name = "mldsa44tool"
 root = "Tool"
+
+# Parametric FIPS 204 spec and EIP-8355 statements (ML-DSA-44/65/87), the
+# anchoring proof to the ML-DSA-44 spec, and the 65/87 statements.
+[[lean_lib]]
+name = "MlDsa"
+
+[[lean_lib]]
+name = "MlDsa65"
+
+[[lean_lib]]
+name = "MlDsa87"
+
+# Developer tool for the parametric spec: spec checks for 44/65/87, bytecode
+# runs on the 65/87 vectors, per-function gas profiles.
+[[lean_exe]]
+name = "mldsatool"
+root = "MlDsaTool"
