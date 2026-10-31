@@ -1,0 +1,13 @@
+[package]
+name = "mldsa44-oracle-rust"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# Independent verdict oracle: RustCrypto `ml-dsa` (pure Rust, FIPS 204 final).
+[dependencies]
+ml-dsa = { version = "=0.1.1", default-features = false }
+hex = "0.4"
+
+[profile.release]
+opt-level = 3

@@ -1,0 +1,39 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+remappings = ["forge-std/=lib/forge-std/src/"]
+via_ir = true
+optimizer = true
+optimizer_runs = 200
+
+# `MlDsa44.initialState` fixes `fork := .Osaka`; the cross-check runs the
+# frozen bytes under the same fork.
+evm_version = "osaka"
+
+# One verification is ~13M gas and a table test makes every call in one
+# transaction.
+gas_limit = 9999999999999
+memory_limit = 4294967296
+
+# The suite reads the frozen artifact and the Lean sources it is pinned to,
+# the vector files, and the fixtures produced by scripts/xcheck_fixtures.py.
+fs_permissions = [
+    { access = "read", path = "../MlDsa44/Reference" },
+    { access = "read", path = "../vectors" },
+    { access = "read-write", path = "../vectors/fuzz" },
+    { access = "read", path = "./fixtures" },
+    { access = "read-write", path = "./cache" },
+]
+
+# The mutation fuzzer asks the oracles (Lean spec, RustCrypto, Go, dilithium-py)
+# through scripts/xcheck_oracle.py.
+ffi = true
+
+[fuzz]
+runs = 256
+seed = "0x8212"
+
+[fmt]
+line_length = 110

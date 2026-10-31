@@ -12,6 +12,9 @@ Developer tool (not part of any proof):
                        backend) and write lowercase hex;
 * `run HEX`            execute the bytecode in the pinned semantics on
                        `vectors/calldata.txt`, compare with the spec, print gas;
+* `spec-file FILE`     print the spec verdict (`0`/`1`) for each calldata line;
+* `run-file HEX FILE`  execute the bytecode on each calldata line of FILE and
+                       print size, gas, halt and returndata (no expectation);
 * `bytes HEX NS`       print a reducible Lean byte literal for the artifact;
 * `instrs HEX NS`      print the disassembled instruction list.
 -/
@@ -91,6 +94,35 @@ def runVectors (hexPath : String) : IO UInt32 := do
     | _ => throw (IO.userError "malformed calldata row")
   IO.println s!"max gas: {maxGas}, failures: {failures}"
   return if failures == 0 then 0 else 1
+
+/-- Verdict of the Lean specification (`MlDsa44.accepts`) for every line of
+`path` whose first field is hex calldata (`-` = empty): prints `0`/`1`. -/
+def specFile (path : String) : IO UInt32 := do
+  for row in ← readLines path do
+    match row with
+    | cd :: _ => IO.println (if accepts (← decodeHex cd) then "1" else "0")
+    | [] => pure ()
+  return 0
+
+/-- Execute the bytecode in the pinned semantics on every line of `path`
+(first field hex calldata, `-` = empty), with no expected value: prints
+`size<TAB>gas<TAB>halt<TAB>returndata` per line, `gas` measured exactly as in
+`run` (fresh `initialState` frame with 10⁹ gas). -/
+def runFile (hexPath path : String) : IO UInt32 := do
+  let code ← decodeHex (← IO.FS.readFile hexPath)
+  for row in ← readLines path do
+    match row with
+    | cd :: _ =>
+      let input ← decodeHex cd
+      let start := initialState code input 1_000_000_000
+      let final := runEvm 400_000_000 start
+      let gas := start.gasAvailable - final.gasAvailable
+      let halt := if !final.isDone then "notdone"
+        else if final.halt == .Returned then "returned" else s!"{repr final.halt}"
+      IO.println s!"{input.size}\t{gas}\t{halt}\t{Hex.bytesToHex final.hReturn}"
+      (← IO.getStdout).flush
+    | [] => pure ()
+  return 0
 
 /-- Compile without the optimizer pipeline: parse, normalize (hoist and
 disambiguate functions) and compile with the verified classic code generator.
@@ -207,10 +239,12 @@ def main (args : List String) : IO UInt32 := do
   | ["compile", yul, hex] => compileYul false yul hex
   | ["compile-opt", yul, hex] => compileYul true yul hex
   | ["run", hex] => runVectors hex
+  | ["spec-file", file] => specFile file
+  | ["run-file", hex, file] => runFile hex file
   | ["bytes", hex, ns] => emitBytes hex ns
   | ["instrs", hex] => emitInstrs hex
   | ["layout", yul] => emitLayout yul
   | ["artifact", yul] => emitArtifact yul
   | _ =>
-    IO.eprintln "usage: mldsa44tool (spec | compile[-opt] YUL HEX | run HEX | bytes HEX NS | instrs HEX | layout YUL | artifact YUL)"
+    IO.eprintln "usage: mldsa44tool (spec | spec-file FILE | compile[-opt] YUL HEX | run HEX | run-file HEX FILE | bytes HEX NS | instrs HEX | layout YUL | artifact YUL)"
     return 64
