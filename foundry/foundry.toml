@@ -19,8 +19,13 @@ memory_limit = 4294967296
 
 # The suite reads the frozen artifact and the Lean sources it is pinned to,
 # the vector files, and the fixtures produced by scripts/xcheck_fixtures.py.
+# OptVerdicts.t.sol (enabled by OPT_HEX) also reads the alternate verifier
+# artifacts and the ML-DSA-65/87 reference bytecode.
 fs_permissions = [
     { access = "read", path = "../MlDsa44/Reference" },
+    { access = "read", path = "../MlDsa65/Reference" },
+    { access = "read", path = "../MlDsa87/Reference" },
+    { access = "read", path = "../MlDsaOpt" },
     { access = "read", path = "../vectors" },
     { access = "read-write", path = "../vectors/fuzz" },
     { access = "read", path = "./fixtures" },

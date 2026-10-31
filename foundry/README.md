@@ -129,6 +129,7 @@ are pinned in `fixtures/schedule.txt` and re-checked in Solidity.
 | `VectorsTest.test_harness_detects_mismatches` | negative control: a line with Lean gas + 1 and one with a flipped verdict are flagged |
 | `FuzzCorpusTest.test_corpus_*` | `fixtures/fuzz/<category>.txt`, one test per category |
 | `DifferentialFuzzTest.testFuzz_*` | forge-native mutation fuzzing with live oracles through `vm.ffi` → [`scripts/xcheck_oracle.py`](../scripts/xcheck_oracle.py) |
+| `OptVerdictsTest.test_*` | only with `OPT_HEX` set (otherwise they return immediately): verdict-only replay of an alternate (optimised, unproved) verifier, below |
 
 Each replayed line asserts: revm call succeeds and returns exactly
 `abi.encode(expected)`; revm frame gas `==` Lean-semantics gas; revm gas `≤`
@@ -152,6 +153,28 @@ is appended with full calldata to `vectors/fuzz/revm_failures.txt` (fuzz runs:
 | length | 451 | 0 | truncated to 0, 1, 31–33, 1311–1313, 3700, 3730, 3731 and 240 random sizes < 3732; message truncated by 1 … len(M) bytes; message extended by 1…299 random or zero bytes |
 | other | 228 | 0 | signature under another key; signature of another message; random signature; random key; random calldata; all-zero / all-0xff calldata, signature, key |
 | **total** | **3591** | **580** | |
+
+### Alternate verifiers (`test/OptVerdicts.t.sol`)
+
+```sh
+scripts/opt_forge.sh MlDsaOpt/44/opt.hex 44            # vectors + corpus, 3639 cases (~30 s)
+scripts/opt_forge.sh MlDsaOpt/65/opt.hex 65            # vectors/mldsa65/calldata.txt, 57 cases
+scripts/opt_forge.sh MlDsaOpt/87/opt.hex 87 [MATCH]    # optional forge --match-test regex
+```
+
+The script runs `OPT_HEX=<path relative to foundry/> OPT_SET=<44|65|87> forge
+test --match-contract OptVerdictsTest`; the bytecode is etched at `0x8212`,
+`0x8213` or `0x8214`. Set 44 replays `fixtures/vectors.txt` and every
+`fixtures/fuzz/<category>.txt`; sets 65/87 replay
+`../vectors/mldsa<set>/calldata.txt`. Each line only has to return
+`abi.encode(expected)` (frame gas capped at 10⁸); gas is measured with
+`GasProbe` and recorded, not compared. Every case is written to
+`cache/opt/<set>_<name>.tsv` (`set file line size expected returned gas`),
+mismatches with full calldata to `cache/opt/failures_<set>_<name>.txt` (one
+file per test function); the script then prints cases, mismatches, gas
+min/median/max per file and the gas of the valid empty-message cases. The
+reference bytecodes (`MlDsa{44,65,87}/Reference/reference.hex`) pass with 0
+mismatches.
 
 ## Results
 
