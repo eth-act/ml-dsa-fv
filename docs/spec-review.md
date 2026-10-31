@@ -1,5 +1,12 @@
 # Independent trusted-specification audit
 
+> Audit by GPT-6.1 Sol, 2026-10-31. **Resolution:** the one finding (standalone
+> `Fips204.verify` accepting nonstandard key/signature lengths) is fixed:
+> `verify` now checks `pk.size = pkLen` and `sig.size = sigLen` (FIPS 204
+> §3.6.2); the counterexample (row-1 signature `++ 00`) now returns false, and
+> all proofs were updated and re-checked. Line numbers below refer to the
+> audited revision.
+
 ## 1. Verdict
 
 **Faithful on the EIP-8355 calldata domain, with one malformed-input deviation in the standalone `Fips204.verify` API.** No discrepancy was found in SHAKE/Keccak, ML-DSA-44 verification on correctly sized fields, or the EIP field extraction/output. The bounded samplers are a permitted FIPS 204 Appendix C implementation choice, not a discovered cryptographic error.
