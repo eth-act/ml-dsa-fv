@@ -1,0 +1,13 @@
+name = "gate_extract"
+defaultTargets = ["gate_extract", "gate_replay"]
+
+# Standalone package (Lean core only): the gate builds it from its own copy,
+# never from the revision under test.
+[[lean_exe]]
+name = "gate_extract"
+root = "GateExtract"
+supportInterpreter = true
+
+[[lean_exe]]
+name = "gate_replay"
+root = "GateReplay"
