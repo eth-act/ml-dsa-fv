@@ -125,7 +125,7 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
 
 def reflectBlock (tables : MetaM (Array Expr × Array Nat)) (sound : Name)
     (finish : Syntax) : TacticM Unit := do
-  try withOptions (fun o => o.set `maxRecDepth (10000 : Nat)) (reflectBlockImpl tables sound finish)
+  try withAtLeastMaxRecDepth 10000 (reflectBlockImpl tables sound finish)
   catch e =>
     trace[opt.reflect] "fallback: {e.toMessageData}"
     throw e

@@ -33,9 +33,9 @@ syntax "opt44_rreach " term:max (" with " "[" Lean.Parser.Tactic.simpLemma,* "]"
 macro_rules
   | `(tactic| opt44_rreach $path:term) => `(tactic| opt44_rreach $path with [])
   | `(tactic| opt44_rreach $path:term with [$extra:simpLemma,*]) => `(tactic| (
+      refine MlDsaOpt44.Proofs.Infra.reach_block (by assumption) $path (by decide +kernel) ?_
       first
-      | (refine MlDsaOpt44.Proofs.Infra.reach_block (by assumption) $path (by decide +kernel) ?_
-         opt44_reflect_core
+      | (opt44_reflect_core
            all_goals try simp (disch := first | assumption | omega) only
              [MlDsaOptCommon.Reflect.Aligned, MlDsaOptCommon.Reflect.Op.instr,
               MlDsaOptCommon.Reflect.Op.next, MlDsaOptCommon.Reflect.endPC,
@@ -68,4 +68,4 @@ macro_rules
               Nat.shiftRight_eq_div_pow, $extra,*]
            all_goals first | assumption | omega | rfl | (intro; trivial) | (repeat' constructor)
            done)
-      | opt44_reach $path with [$extra,*]))
+      | opt44_block [$extra,*]))
