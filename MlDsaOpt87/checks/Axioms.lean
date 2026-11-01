@@ -63,3 +63,6 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt87.Proofs.pass3_call
 #print axioms MlDsaOpt87.Proofs.pass3m_call
 #print axioms MlDsaOpt87.Proofs.seg_mu
+#print axioms MlDsaOpt87.Proofs.csum_call
+#print axioms MlDsaOpt87.Proofs.csum_congr
+#print axioms MlDsaOpt87.Proofs.csum_lt

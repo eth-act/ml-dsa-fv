@@ -1,5 +1,6 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Fn.Csum.Defs
+import MlDsaOpt87.Math.G4.Csum
 import MlDsaOpt44.Math
 import MlDsa.Bridge44
 /-!
@@ -76,16 +77,25 @@ theorem useHint_emod (h r : Int) :
 theorem useHint_range (h r : Int) : 0 ≤ Fips204.useHint P h r ∧ Fips204.useHint P h r < 16 := by
   sorry
 
+set_option linter.unusedVariables false in
 /-- The windowed-sum identity behind `csum` (row group `g`, `t1` offset
 `32 + 1280 g`): `2^13 S'_r(t) + n_neg(t) ≡ 2^13 (c · t1_{4g+r})(t)` (negacyclic) mod `q`,
-and the lane value is below `2^29` (τ · 1023 < 2^16). Template: `MlDsaOpt44.Proofs.csum_congr`. -/
+and the lane value is below `2^29` (τ · 1023 < 2^16). Proof: `Math/G4/Csum.lean` (WP G4). -/
 theorem csum_congr (cd : ByteArray) (hcd : HDR ≤ cd.size) (c : Fips204.Poly)
     (hc : cOf cd = some c) {g r t : Nat} (hg : g < 2) (hr : r < 4) (hrow : 4 * g + r < 8)
     (ht : t < 256) :
     2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t < 2 ^ 29 ∧
       (((2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t : Nat) : Int) -
         2 ^ 13 * negacyclic c (t1Of cd (4 * g + r)) t) % (Fips204.q : Int) = 0 := by
-  sorry
+  exact G4.csum_congr_main cd c hc hrow ht
+
+set_option linter.unusedVariables false in
+/-- The `csum` lane bound for every row of both row groups (as `MlDsaOpt65.Proofs.csum_lt`;
+here every row exists). -/
+theorem csum_lt (cd : ByteArray) (hcd : HDR ≤ cd.size) (c : Fips204.Poly)
+    (hc : cOf cd = some c) {g r t : Nat} (hg : g < 2) (hr : r < 4) (ht : t < 256) :
+    2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t < 2 ^ 29 :=
+  G4.csum_lt_main cd c hc _ r t
 
 /-- The 136 stream lanes of `μ ‖ w1Encode(w1)` (1088 bytes): lanes `0 … 7` are μ. -/
 theorem finBytes_le64_mu (cd : ByteArray) {x : Nat} (hx : x < 8) :
