@@ -19,7 +19,8 @@ theorem for the kernel; a block of 20 instructions has about 50 of them.
 lower bound `d ≤ b` of the right side, both literal, built through `+` and
 multiplication by literals from hypotheses `x ≤ c`, `x < c`, `x + k ≤ c`,
 `d ≤ x`, then `Nat.blt c d` (or `Nat.ble`) by evaluation. A goal it cannot prove this way
-goes to `assumption` (reducible transparency), then `omega`.
+goes to `assumption` (reducible transparency), then `omega` if the goal is
+arithmetic and `omega` has not already failed on it in the same context.
 -/
 
 namespace MlDsaOptCommon
@@ -187,8 +188,7 @@ private def boundProof? (a b : Expr) (strict : Bool) : MetaM (Option Expr) := do
     return some (mkApp7 (mkConst ``disch_le) a b ua.c lb.c ua.h lb.h trueRefl)
 
 /-- A proof of `goal` from literal bounds, or `none`. -/
-private def fastProof? (goal : Expr) : MetaM (Option Expr) := do
-  let goal ← instantiateMVars goal
+private def leafProof? (goal : Expr) : MetaM (Option Expr) := do
   if let some (a, b, strict) := leHyp? goal then
     return ← boundProof? a b strict
   let_expr Not p := goal | return none
@@ -199,8 +199,50 @@ private def fastProof? (goal : Expr) : MetaM (Option Expr) := do
   let some h ← boundProof? a b false | return none
   return some (mkApp3 (mkConst ``disch_not_lt) a b h)
 
+/-- A proof of `goal` from literal bounds, or `none`; `p ∨ q` (e.g.
+non-overlap of two memory ranges) from either side. -/
+private def fastProof? (goal : Expr) : MetaM (Option Expr) := do
+  let goal ← instantiateMVars goal
+  if let some (p, q) := goal.app2? ``Or then
+    if let some h ← leafProof? p then return some (mkApp3 (mkConst ``Or.inl) p q h)
+    if let some h ← leafProof? q then return some (mkApp3 (mkConst ``Or.inr) p q h)
+    return none
+  leafProof? goal
+
+/-- A `Nat`/`Int` (in)equation, or a `¬`/`∧`/`∨`/`↔` of one. -/
+private partial def isArith (e : Expr) : Bool :=
+  let ni (t : Expr) := t.isConstOf ``Nat || t.isConstOf ``Int
+  match_expr e with
+  | Eq t _ _ => ni t
+  | Ne t _ _ => ni t
+  | LT.lt t _ _ _ => ni t
+  | LE.le t _ _ _ => ni t
+  | GT.gt t _ _ _ => ni t
+  | GE.ge t _ _ _ => ni t
+  | Dvd.dvd t _ _ _ => ni t
+  | Not p => isArith p
+  | And p q => isArith p || isArith q
+  | Or p q => isArith p || isArith q
+  | Iff p q => isArith p || isArith q
+  | _ => false
+
+/-- Whether `omega` can use anything of `goal` itself: its conclusion (after
+`∀`/`→`) or one of its premises is arithmetic. Other goals (`Nonempty …`,
+`∀ t, o = Op.jump t → False`, `b = true`; about half of all fallbacks, from the
+reflection `simp`) `omega` proves only from contradictory hypotheses. -/
+private def omegaApplicable (goal : Expr) : MetaM Bool :=
+  forallTelescope goal fun xs c => do
+    if isArith c then return true
+    xs.anyM fun x => return isArith (← inferType x)
+
+/-- Goals, with their local context, on which `omega` already failed: it would
+fail again. A `simp` call meets the same failing side goal (an `if` condition, a
+`% 2 ^ 64` it cannot drop) at many instructions. -/
+initialize omegaFailed : IO.Ref (Std.HashSet (Expr × Array FVarId)) ← IO.mkRef {}
+
 /-- Discharger of the block tactics: linear bounds from literal bounds, else a
-hypothesis matching up to reducible unfolding, else `omega`.
+hypothesis matching up to reducible unfolding, else `omega` (on arithmetic goals
+only, and not again on a goal it already failed on in the same context).
 
 (`assumption` at default transparency is avoided on purpose: on goals such as
 `word M rp / 2 ^ sh < 2 ^ 256` it unfolds `<`, `/` and `word` against every
@@ -216,9 +258,21 @@ elab "blk_disch" : tactic => do
     withReducible g.assumptionCore
   if done then
     replaceMainGoal []
-  else
-    trace[blk_disch] "fallback: {← g.getType}"
+    return
+  let (tgt, key) ← g.withContext do
+    let tgt ← instantiateMVars (← g.getType)
+    return (tgt, (tgt, (← getLCtx).getFVarIds))
+  unless ← g.withContext (omegaApplicable tgt) do
+    throwError "blk_disch: not an arithmetic goal{indentExpr tgt}"
+  if (← omegaFailed.get).contains key then
+    throwError "blk_disch: omega already failed on{indentExpr tgt}"
+  trace[blk_disch] "fallback: {tgt}"
+  try
     evalTactic (← `(tactic| omega))
+  catch ex =>
+    unless tgt.hasMVar do
+      omegaFailed.modify fun c => (if c.size > 100000 then {} else c).insert key
+    throw ex
 
 initialize registerTraceClass `blk_disch
 
