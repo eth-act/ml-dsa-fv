@@ -4,3 +4,4 @@ import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 import MlDsaOptCommon.Bits
 import MlDsaOptCommon.Reach
+import MlDsaOptCommon.Chunk

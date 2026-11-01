@@ -1,4 +1,5 @@
 import MlDsaOpt65.Infra.Code
+import MlDsaOptCommon.Chunk
 import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 set_option warningAsError true
@@ -13,7 +14,10 @@ instruction at a time: the head `stepL (some st) l` is reduced to `some st'`
 (via `stepL_located`, `runInstr` and the simprocs of `Infra.Code`) before the
 next fold step is visited.
 
-The tactic `opt65_block [extra lemmas]` packages the whole recipe.
+The tactic `opt65_block [extra lemmas]` packages the whole recipe. It runs the
+path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
+one `simp` over a long path makes a proof whose kernel check grows much faster
+than the path.
 -/
 
 namespace MlDsaOpt65.Proofs.Infra
@@ -122,7 +126,8 @@ macro_rules
   | `(tactic| opt65_block [$extra,*]) => `(tactic| (
       rw [MlDsaOpt65.Proofs.Infra.runLocatedBlock_eq_foldl _ _
         (by first | assumption | simp (disch := assumption) only [MlDsaOptCommon.callState, MlDsaOpt65.Proofs.Ctx.running])]
-      simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
+      try rw [MlDsaOpt65.Proofs.Artifact.locatedPath]
+      foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
           (disch := first | assumption | omega) only
         [MlDsaOpt65.Proofs.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, MlDsaOpt65.Proofs.Infra.stepL_located, MlDsaOpt65.Proofs.Infra.stepL_none,
