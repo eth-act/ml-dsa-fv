@@ -1,5 +1,6 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
+import MlDsaOpt44.Fn.Kf1.Main
 /-!
 # `kf4` and `kf1`: Keccak-f[1600] (work packages WP1, WP2)
 
@@ -38,7 +39,7 @@ theorem kf1_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', (∀ S : Fips202.SpongeState, S.size = 25 → KS1 m S →
         KS1 m' (EvmSemantics.Crypto.Keccak.permute S)) ∧
       FrameExcept m m' [(KS, KS + 800), (KB, KB + 800)] ∧
-      Call s Entry.kf1 [] ret tail m [] m' Gas.kf1 := by
-  sorry
+      Call s Entry.kf1 [] ret tail m [] m' Gas.kf1 :=
+  Kf1.kf1_main hs hr m hrc
 
 end MlDsaOpt44.Proofs
