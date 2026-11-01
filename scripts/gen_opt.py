@@ -54,10 +54,17 @@ M16 = bytepattern(0x0000FFFF, 4)
 M32 = bytepattern(0x00000000FFFFFFFF, 8)
 
 
+VERSIONS = ("v2", "v3")
+DEFAULT_VERSION = "v3"
+
+
 class Layout:
-    def __init__(self, nn):
+    def __init__(self, nn, version=DEFAULT_VERSION):
+        assert version in VERSIONS, version
         p = derived(nn)
         self.nn = nn
+        self.version = version
+        self.v3 = version == "v3"
         self.p = p
         self.k, self.l = p["k"], p["l"]
         self.PK, self.SIG = p["pklen"], p["siglen"]
@@ -107,6 +114,8 @@ class Layout:
         alloc("TRL", 8 * 32)      # tr lanes (from a SIMD slot)
         alloc("MU", 8 * 32)       # mu lanes (short messages: from a SIMD slot)
         alloc("BK", 25 * 32)      # kf4 state backup (6th RejNTTPoly block)
+        if self.v3:
+            alloc("KZ", 25 * 32)  # kf1 third round buffer (v3: 3 rounds per iteration)
         self.TOP = addr
         self.regions = regions
 
@@ -114,6 +123,7 @@ class Layout:
 class Gen:
     def __init__(self, L: Layout):
         self.L = L
+        self.v3 = L.v3
         self.a = Asm()
         self.n = 0
         self.nttk = NttKernel(self.a, L.TBL)
@@ -1052,6 +1062,81 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    def gen_pass3x(self, name, rb, insts):
+        """Mixed accumulation (v3): ABUF slot s holds an instance of row
+        4 rb + l and column j for each (s, l, j) in insts. Instances with the
+        same column and the same slot-to-lane shift share one product:
+        ACC_rb[t] += ((ABUF[t] >> 64 max(s-l, 0)) masked << 64 max(l-s, 0))
+        * z_hat_j[t]. Lanes are < 2^23 * 2^32 per product, sums < 2^64.
+        Entry [ret]."""
+        a, L = self.a, self.L
+        a.region(name)
+        a.label(name)
+        terms = {}
+        for (sl, ln, j) in insts:
+            terms.setdefault((j, ln - sl), []).append(sl)
+        st = Stack(a, ["ret"])
+        st.push(0, "o")
+        loop = self.fresh("p3xl")
+        layout = list(st.s)
+        a.label(loop)
+        st.push(L.ACC + 0x2000 * rb, "addr")
+        st.dup("o", "oo")
+        st.op("ADD", 2, "addr")
+        st.dup("addr", "accv")
+        st.op("MLOAD", 1, "accv")
+        st.push(L.ABUF, "X")
+        st.dup("o", "oo")
+        st.op("ADD", 2, "X")
+        st.op("MLOAD", 1, "X")
+        items = sorted(terms.items())
+        for n, ((j, d), slots) in enumerate(items):
+            last = n == len(items) - 1
+            if last:
+                st.rename("X", "x")
+            else:
+                st.dup("X", "x")
+            mask = sum(M64 << (64 * s_) for s_ in slots)
+            if mask != ALL:
+                st.push(mask, "m")
+                st.op("AND", 2, "x")
+            if d > 0:
+                st.push(64 * d, "c")
+                st.op("SHL", 2, "x")
+            elif d < 0:
+                st.push(-64 * d, "c")
+                st.op("SHR", 2, "x")
+            st.push(L.ZH + 0x2000 * (j // 4), "z")
+            st.dup("o", "oo")
+            st.op("ADD", 2, "z")
+            st.op("MLOAD", 1, "z")
+            if j % 4:
+                st.push(64 * (j % 4), "c")
+                st.op("SHR", 2, "z")
+            if j % 4 != 3:
+                st.push(M64, "m")
+                st.op("AND", 2, "z")
+            st.op("MUL", 2, "x")
+            # accv += x
+            if last:
+                st.op("ADD", 2, "accv")
+            else:
+                st.swap(1)                    # [.., accv, x, X]
+                st.swap(2)                    # [.., X, x, accv]
+                st.op("ADD", 2, "accv")
+                st.swap(1)                    # [.., accv, X]
+        st.swap(1)
+        st.op("MSTORE", 2)
+        st.add_const("o", 32)
+        assert st.s == layout, st.s
+        st.dup("o", "x")
+        st.push(256 * 32, "e")
+        st.op("GT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        st.pop("o")
+        a.op("JUMP")
+
     def gen_pass3k(self, name, rb, j0, n):
         """Kronecker accumulation for the extra group: slots 3, 2, .. hold
         A[r][j0], A[r][j0+1], .. (r = 4 rb + 3). With Z' = z_hat_{j0..} in
@@ -1463,6 +1548,19 @@ class Gen:
             rows = [4 * rb + s if 4 * rb + s < k else None for s in range(4)]
             return dict(slots=[('A', r, j) if r is not None else None for r in rows],
                         p3=('aligned', rb, j), keep=None)
+        if L.nn == 65 and self.v3:
+            # rows 0-3: 5 aligned groups. Rows 4, 5 (10 instances), tr (3 runs),
+            # H(c-tilde) and mu share 4 groups (16 slot-runs); instances sit in
+            # arbitrary slots and are accumulated by per-group "mix" passes.
+            for j in range(l):
+                groups.append(pure(0, j))
+            inst = [('A', 4 + (i % 2), i // 2) for i in range(2 * l)]
+            plan = [inst[0:3] + [('tr', 0)], inst[3:6] + [('tr', 1)], inst[6:9] + [('tr', 2)],
+                    inst[9:10] + [('c',), ('mu',), None]]
+            for gi, slots in enumerate(plan):
+                mix = [(s_, r[1] - 4, r[2]) for s_, r in enumerate(slots) if r and r[0] == 'A']
+                groups.append(dict(slots=slots, keep=3 if gi in (1, 2) else None, p3=('mix', 1, mix)))
+            return groups
         if L.nn == 65:
             for j in range(l):
                 g = pure(0, j)
@@ -1959,6 +2057,8 @@ class Gen:
                 rb, j = p3[1], p3[2]
                 lm = sum(M64 << (64 * s_) for s_ in Aslots)
                 self.call("pass3m", [L.ACC + 0x2000 * rb, L.ZH + 0x2000 * (j // 4), 64 * (j % 4), lm])
+            elif p3[0] == 'mix':
+                self.call(f"pass3x{gi}")
             else:
                 self.call(f"pass3k{gi}")
 
@@ -2188,6 +2288,7 @@ class Gen:
 
     # ── NTT-domain glue ─────────────────────────────────────────────────
     DIVK = {190464: (39, 2886403), 523776: (42, 8396809)}
+    DIVG2 = {95232: (38, 2886403), 261888: (42, 16793617)}   # exact floor(y / g2), y < q + g2
 
     def gen_usehint(self):
         """usehint: entry [ret, wp] (wp = ACC_g): for the 256 row-packed words
@@ -2230,45 +2331,78 @@ class Gen:
         st.op("MUL", 2, "qq")
         st.swap(1)
         st.op("SUB", 2, "r")
-        # r1 = (r + g2 - 1) div 2g2
-        st.dup("r", "r1")
-        st.push(X4(g2 - 1), "c")
-        st.op("ADD", 2, "r1")
-        st.push(M, "c")
-        st.op("MUL", 2, "r1")
-        st.push(K, "c")
-        st.op("SHR", 2, "r1")
-        st.push(lanemask(6), "c")
-        st.op("AND", 2, "r1")
-        # pos = (r + g2 - r1 2g2) > g2
-        st.dup("r1", "e")
-        st.push(2 * g2, "c")
-        st.op("MUL", 2, "e")
-        st.dup("r", "rr")
-        st.push(X4(g2), "c")
-        st.op("ADD", 2, "rr")
-        st.op("SUB", 2, "e")
-        st.push(X4((1 << 24) - g2 - 1), "c")
-        st.op("ADD", 2, "e")
-        st.push(24, "c")
-        st.op("SHR", 2, "e")
-        st.push(lanemask(1), "c")
-        st.op("AND", 2, "pos")
-        # h
-        st.dup("wp", "h")
-        st.push(L.HP - L.ACC, "c")
-        st.op("ADD", 2, "h")
-        st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
-        st.swap(1)
-        st.dup("h", "hh")
-        st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
-        st.push(1, "c")
-        st.op("SHL", 2, "hpos")
-        st.swap(1)
-        st.push(X4(m), "c")
-        st.op("SUB", 2, "mh")            # m - h
-        st.op("ADD", 2, "v")
-        st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
+        if self.v3:
+            # D = (r + g2 - 1) div g2 (exact multiply-shift); r1 = D >> 1 and
+            # r0 > 0 iff D is odd, so h * pos = h & D and
+            # v = (D >> 1) + m - h + 2 (h & D), in [m - 1, 2m]
+            KD, MD = self.DIVG2[g2]
+            st.push(X4(g2 - 1), "c")
+            st.op("ADD", 2, "D")
+            st.push(MD, "c")
+            st.op("MUL", 2, "D")
+            st.push(KD, "c")
+            st.op("SHR", 2, "D")
+            st.push(lanemask(7), "c")
+            st.op("AND", 2, "D")
+            st.dup("wp", "h")
+            st.push(L.HP - L.ACC, "c")
+            st.op("ADD", 2, "h")
+            st.op("MLOAD", 1, "h")       # [D, h]
+            st.dup("D", "d2")
+            st.dup("h", "h2")
+            st.op("AND", 2, "hd")
+            st.dup("hd", "hd2")
+            st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
+            st.swap(1)
+            st.push(X4(m), "c")
+            st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
+            st.op("ADD", 2, "t")         # [D, t]
+            st.swap(1)
+            st.push(1, "c")
+            st.op("SHR", 2, "r1")
+            st.push(lanemask(6), "c")
+            st.op("AND", 2, "r1")
+            st.op("ADD", 2, "v")
+        else:
+            # r1 = (r + g2 - 1) div 2g2
+            st.dup("r", "r1")
+            st.push(X4(g2 - 1), "c")
+            st.op("ADD", 2, "r1")
+            st.push(M, "c")
+            st.op("MUL", 2, "r1")
+            st.push(K, "c")
+            st.op("SHR", 2, "r1")
+            st.push(lanemask(6), "c")
+            st.op("AND", 2, "r1")
+            # pos = (r + g2 - r1 2g2) > g2
+            st.dup("r1", "e")
+            st.push(2 * g2, "c")
+            st.op("MUL", 2, "e")
+            st.dup("r", "rr")
+            st.push(X4(g2), "c")
+            st.op("ADD", 2, "rr")
+            st.op("SUB", 2, "e")
+            st.push(X4((1 << 24) - g2 - 1), "c")
+            st.op("ADD", 2, "e")
+            st.push(24, "c")
+            st.op("SHR", 2, "e")
+            st.push(lanemask(1), "c")
+            st.op("AND", 2, "pos")
+            # h
+            st.dup("wp", "h")
+            st.push(L.HP - L.ACC, "c")
+            st.op("ADD", 2, "h")
+            st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
+            st.swap(1)
+            st.dup("h", "hh")
+            st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
+            st.push(1, "c")
+            st.op("SHL", 2, "hpos")
+            st.swap(1)
+            st.push(X4(m), "c")
+            st.op("SUB", 2, "mh")            # m - h
+            st.op("ADD", 2, "v")
+            st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
         if m & (m - 1) == 0:
             st.push(X4(m - 1), "c")
             st.op("AND", 2, "v")
@@ -2285,8 +2419,9 @@ class Gen:
             st.op("MUL", 2, "qq")
             st.swap(1)
             st.op("SUB", 2, "v")
-        st.swap(1)
-        st.pop()                         # drop r
+        if not self.v3:
+            st.swap(1)
+            st.pop()                     # drop r
         st.dup("wp", "p")
         st.op("MSTORE", 2)
         st.add_const("wp", 32)
@@ -2594,6 +2729,8 @@ class Gen:
         for gi, g in enumerate(self.schedule):
             if g['p3'][0] == 'kron':
                 self.gen_pass3k(f"pass3k{gi}", *g['p3'][1:])
+            elif g['p3'][0] == 'mix':
+                self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
         self.gen_gfix()
         self.gen_ginit()
         self.gen_trabs()
@@ -2608,7 +2745,7 @@ class Gen:
         self.gen_usehint()
         self.gen_pack()
         self.gen_ntts()
-        gen_keccak_f(a, "kf1", L.KS, L.KB, L.RC1, unroll=2, scale=1)
+        gen_keccak_f(a, "kf1", L.KS, L.KB, L.RC1, unroll=2, scale=1, kz_addr=L.KZ if self.v3 else None)
         gen_keccak_f(a, "kf4", L.KS, L.KB, L.RC4, unroll=2, scale=4)
         return a.assemble()
 
@@ -2633,22 +2770,42 @@ def layout_text(g, code):
 
 
 def main(argv):
-    sets = [int(x) for x in argv] or [44, 65, 87]
+    """gen_opt.py [--version v2|v3] [--out DIR] [44|65|87 ...]
+
+    v2 = the formally verified artifacts (MlDsaOptNN/Bytecode.lean), written to
+    MlDsaOpt/NN/v2/ by default; v3 = the current design, written to MlDsaOpt/NN/.
+    --out DIR writes DIR/NN/ instead."""
+    version, out, sets = DEFAULT_VERSION, None, []
+    it = iter(argv)
+    for x in it:
+        if x == "--version":
+            version = next(it)
+        elif x == "--out":
+            out = next(it)
+        else:
+            sets.append(int(x))
+    sets = sets or [44, 65, 87]
+    root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "MlDsaOpt")
     for nn in sets:
-        L = Layout(nn)
+        L = Layout(nn, version)
         g = Gen(L)
         code = g.build()
         assert len(code) <= 24576, f"{nn}: {len(code)} bytes exceeds EIP-170"
-        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "MlDsaOpt", str(nn))
+        if out is not None:
+            d = os.path.join(out, str(nn))
+        elif version == "v2":
+            d = os.path.join(root, str(nn), "v2")
+        else:
+            d = os.path.join(root, str(nn))
         os.makedirs(d, exist_ok=True)
         with open(os.path.join(d, "opt.hex"), "w") as f:
             f.write(code.hex() + "\n")
         with open(os.path.join(d, "opt.asm"), "w") as f:
-            f.write(f"; GENERATED by scripts/gen_opt.py {nn}; do not edit.\n")
+            f.write(f"; GENERATED by scripts/gen_opt.py --version {version} {nn}; do not edit.\n")
             f.write(g.a.listing())
         with open(os.path.join(d, "layout.txt"), "w") as f:
             f.write(layout_text(g, code))
-        print(nn, len(code), "bytes")
+        print(nn, version, len(code), "bytes", d)
 
 
 if __name__ == "__main__":

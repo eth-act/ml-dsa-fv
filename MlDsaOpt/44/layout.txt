@@ -1,4 +1,4 @@
-ML-DSA-44 optimised verifier: 22553 bytes (limit 24576)
+ML-DSA-44 optimised verifier: 23091 bytes (limit 24576)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   3439   3439 bytes  main
@@ -23,12 +23,12 @@ Subroutines / regions (pc ranges of the generated code):
    13659 ..  13924    265 bytes  group
    13924 ..  14732    808 bytes  tbuild
    14732 ..  15457    725 bytes  csum
-   15457 ..  15808    351 bytes  usehint
-   15808 ..  16897   1089 bytes  pack
-   16897 ..  18164   1267 bytes  ntt
-   18164 ..  19645   1481 bytes  intt
-   19645 ..  21032   1387 bytes  kf1
-   21032 ..  22553   1521 bytes  kf4
+   15457 ..  15739    282 bytes  usehint
+   15739 ..  16828   1089 bytes  pack
+   16828 ..  18095   1267 bytes  ntt
+   18095 ..  19576   1481 bytes  intt
+   19576 ..  21570   1994 bytes  kf1
+   21570 ..  23091   1521 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
@@ -51,9 +51,10 @@ Memory map (byte offsets):
   TRL    0x00fd00 .. 0x00fe00  (256 bytes)
   MU     0x00fe00 .. 0x00ff00  (256 bytes)
   BK     0x00ff00 .. 0x010220  (800 bytes)
+  KZ     0x010300 .. 0x010620  (800 bytes)
   TT     0x005000 (overlays ABUF/FL/ZH after ExpandA)
   SP     0x006800 (overlays ABUF/FL/ZH after ExpandA)
-  top    0x010220 (touched once at entry)
+  top    0x010620 (touched once at entry)
 
 SIMD groups (slot roles; each group squeezes 5 blocks of 4 states):
    0: slots=[('A', 0, 0), ('A', 1, 0), ('A', 2, 0), ('A', 3, 0)] keep=None acc=('aligned', 0, 0)

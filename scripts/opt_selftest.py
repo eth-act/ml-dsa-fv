@@ -51,19 +51,19 @@ def test_model():
 
 
 def test_keccak():
-    ST, BT, RCT = 0, 0x320, 0x640
+    ST, BT, RCT, KZ = 0, 0x320, 0x640, 0x940
     rng = random.Random(1)
-    for scale in (4, 1):
+    for scale, kz in ((4, None), (1, None), (1, KZ)):
         a = Asm()
         a.pushl("done")
         a.jump("kf")
         a.label("done")
         a.op("STOP")
-        gen_keccak_f(a, "kf", ST, BT, RCT, 2, scale)
+        gen_keccak_f(a, "kf", ST, BT, RCT, 2, scale, kz_addr=kz)
         code = a.assemble()
         for _ in range(3):
             states = [[rng.getrandbits(64) for _ in range(25)] for _ in range(4 if scale == 4 else 1)]
-            mem = bytearray(RCT + 24 * 32)
+            mem = bytearray(KZ + 25 * 32)
             for i in range(25):
                 w = opt_ref.interleave([s[i] for s in states]) if scale == 4 else states[0][i] * REP
                 if i in COMPLEMENTED:
@@ -79,7 +79,7 @@ def test_keccak():
                 assert all(opt_ref.deinterleave(out[i]) == [e[i] for e in exp] for i in range(25))
             else:
                 assert all(out[i] == exp[0][i] * REP for i in range(25))
-        print(f"keccak: scale {scale} ok, {r['gas_used']} gas per call")
+        print(f"keccak: scale {scale}{' (v3, 3-round decay)' if kz else ''} ok, {r['gas_used']} gas per call")
 
 
 def test_constants():
@@ -94,6 +94,15 @@ def test_constants():
             assert (x * m) >> k == x // d
     for v in range(43, 89):
         assert v - 44 * (((v * 94) >> 12) & 3) == v % 44
+    # v3 UseHint: D = (r + g2 - 1) div g2 by multiply-shift; the result
+    # ((D >> 1) + m - h + 2 (h & D)) mod m equals FIPS 204 Algorithm 40
+    for g2, (k, mm) in {95232: (38, 2886403), 261888: (42, 16793617)}.items():
+        m = (Q - 1) // (2 * g2)
+        for r in range(Q):
+            D = ((r + g2 - 1) * mm) >> k
+            assert D == (r + g2 - 1) // g2
+            assert (D >> 1) % m == opt_ref.use_hint(0, r, g2)
+            assert ((D >> 1) + m - 1 + 2 * (D & 1)) % m == opt_ref.use_hint(1, r, g2)
     print("constants: multiply-shift quotients exact")
 
 
@@ -138,8 +147,25 @@ def test_bytecode(force6=False):
               + (f", {ext} vectors with 6th-block checks" if force6 else ""))
 
 
+# SHA-256 of the formally verified v2 artifacts (MlDsaOpt44/65/87 Bytecode.lean)
+V2_SHA256 = {
+    44: "947bd2821b80e384110fcee27613528400d07ff2a9c2013f9b58498d1b6d4a00",
+    65: "bfeb614eec67ce8efeea285eff856610bd800ebdb0073c5979cc5995c58fcf69",
+    87: "6d19e93d462d938093a127fcbc0e24804b15ab3dcdd3d4206e8a1c17b6e5e979",
+}
+
+
+def test_v2_reproducible():
+    import gen_opt
+    for nn, h in V2_SHA256.items():
+        code = gen_opt.Gen(gen_opt.Layout(nn, "v2")).build()
+        assert hashlib.sha256((code.hex() + "\n").encode()).hexdigest() == h, f"v2 {nn} not reproduced"
+    print("v2: proved artifacts reproduced byte for byte")
+
+
 def main():
     quick = sys.argv[1:] == ["quick"]
+    test_v2_reproducible()
     test_model()
     test_keccak()
     test_constants()

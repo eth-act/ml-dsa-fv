@@ -42,14 +42,15 @@ CHI = [
 ]
 
 
-def rot_top(st: Stack, n4: int, name: str, decay: bool = False):
+def rot_top(st: Stack, n4: int, name: str, decay=None):
     """Rotate the top word left by n4 bits (256-bit rotation), consuming it.
 
-    decay (replicated representation only): a single shift by d = n4 or
-    n4 - 64 (|d| <= 32); the result is only valid on the input's valid bit
-    window shifted by d (see gen_keccak_f)."""
-    if decay and n4 % 64:
-        d = n4 if n4 <= 32 else n4 - 64
+    decay = a (replicated representation only): a single shift by the
+    d = n4 (mod 64) with a <= d < a + 64; the result is only valid on the
+    input's valid bit window shifted by d (see gen_keccak_f). v2 uses
+    a = -31 (|d| <= 32), v3 a = -1 (left shifts only)."""
+    if decay is not None and n4 % 64:
+        d = ((n4 - decay) % 64) + decay
         st.a.push(abs(d))
         st.a.op("SHL" if d > 0 else "SHR")
         st.rename(st.top(), name)
@@ -69,7 +70,7 @@ def rot_top(st: Stack, n4: int, name: str, decay: bool = False):
 
 
 def round_body(st: Stack, src: int, dst: int, rc_name: str, rc_off: int, scale: int = 4,
-               decay: bool = False, rerep: bool = False):
+               decay=None, rerep=None):
     """One Keccak round reading lanes at `src`, writing at `dst`.
 
     The iota constant is mload(rc_name + rc_off) where rc_name is a stack
@@ -157,12 +158,18 @@ def round_body(st: Stack, src: int, dst: int, rc_name: str, rc_off: int, scale: 
                     st.op("ADD", 2, "rp")
                 st.op("MLOAD", 1, "rc")
                 st.op("XOR", 2, "o")
-            if rerep:
+            if rerep == "mid":
                 # valid window contains bits [64, 128): replicate that block
                 st.push(64, "c")
                 st.op("SHR", 2, "o")
                 st.dup("M64", "m")
                 st.op("AND", 2, "o")
+                st.dup("REP", "r")
+                st.op("MUL", 2, "o")
+            elif rerep == "top":
+                # valid window contains bits [192, 256): replicate that block
+                st.push(192, "c")
+                st.op("SHR", 2, "o")
                 st.dup("REP", "r")
                 st.op("MUL", 2, "o")
             a.push(dst + 32 * (xo + 5 * yo))
@@ -173,25 +180,45 @@ def round_body(st: Stack, src: int, dst: int, rc_name: str, rc_off: int, scale: 
         st.pop()
 
 
-def gen_keccak_f(a: Asm, name: str, st_addr: int, bt_addr: int, rct: int, unroll: int = 2, scale: int = 4):
-    """Subroutine `name`: Keccak-f on the 25 interleaved words at st_addr.
+def gen_keccak_f(a: Asm, name: str, st_addr: int, bt_addr: int, rct: int, unroll: int = 2, scale: int = 4,
+                 kz_addr=None):
+    """Subroutine `name`: Keccak-f on the 25 words at st_addr.
 
-    Entry stack: [ret]. Clobbers bt_addr..bt_addr+800. Exit: jumps to ret.
+    Entry stack: [ret]. Clobbers bt_addr..bt_addr+800 (and kz_addr..+800).
+    Exit: jumps to ret.
+
+    scale 4: interleaved 4-state kernel, rounds alternate st -> bt -> st.
+    scale 1, kz_addr None (v2): replicated kernel, 2 rounds per iteration,
+      decay offset -31, re-replication of bits [64, 128) in round 2.
+    scale 1, kz_addr given (v3): 3 rounds per iteration st -> bt -> kz -> st,
+      decay offset -1 (left shifts only), re-replication of bits
+      [192, 256) in round 3 (no mask: (w >> 192) * REP).
     """
-    assert 24 % unroll == 0 and unroll % 2 == 0
     a.region(name)
     a.label(name)
     st = Stack(a, ["ret"])
     st.push(rct, "rp")
     decay = scale == 1
-    if decay:
-        assert unroll == 2
-        st.push((1 << 64) - 1, "M64")
+    v3 = decay and kz_addr is not None
+    if v3:
+        unroll = 3
         st.push(REP, "REP")
+        bufs = [(st_addr, bt_addr), (bt_addr, kz_addr), (kz_addr, st_addr)]
+        plan = [(src, dst, -1, "top" if r == 2 else None) for r, (src, dst) in enumerate(bufs)]
+    else:
+        assert unroll % 2 == 0
+        if decay:
+            assert unroll == 2
+            st.push((1 << 64) - 1, "M64")
+            st.push(REP, "REP")
+        plan = []
+        for r in range(unroll):
+            src, dst = (st_addr, bt_addr) if r % 2 == 0 else (bt_addr, st_addr)
+            plan.append((src, dst, -31 if decay else None, "mid" if decay and r % 2 == 1 else None))
+    assert 24 % unroll == 0
     a.label(name + "_loop")
-    for r in range(unroll):
-        src, dst = (st_addr, bt_addr) if r % 2 == 0 else (bt_addr, st_addr)
-        round_body(st, src, dst, "rp", 32 * r, scale, decay=decay, rerep=decay and r % 2 == 1)
+    for r, (src, dst, dec, rr) in enumerate(plan):
+        round_body(st, src, dst, "rp", 32 * r, scale, decay=dec, rerep=rr)
     st.add_const("rp", 32 * unroll)
     st.dup("rp", "c")
     a.push(rct + 32 * 24)
@@ -201,7 +228,8 @@ def gen_keccak_f(a: Asm, name: str, st_addr: int, bt_addr: int, rct: int, unroll
     st.s.pop()
     if decay:
         st.pop("REP")
-        st.pop("M64")
+        if not v3:
+            st.pop("M64")
     st.pop("rp")
     a.op("JUMP")
 
@@ -209,29 +237,34 @@ def gen_keccak_f(a: Asm, name: str, st_addr: int, bt_addr: int, rct: int, unroll
 REP = 1 | 1 << 64 | 1 << 128 | 1 << 192
 
 
-def decay_windows():
-    """Valid bit windows of all lanes after two decay rounds from full windows."""
+def decay_windows(rounds=2, offset=-31):
+    """Valid bit windows of all lanes after `rounds` decay rounds (shift
+    offset as in rot_top) from full windows."""
     def inter(ws):
         return max(w[0] for w in ws), min(w[1] for w in ws)
 
     def sh(w, d):
         return max(0, w[0] + d), min(256, w[1] + d)
 
+    def dsh(n):
+        return ((n - offset) % 64) + offset if n % 64 else 0
+
     win = [(0, 256)] * 25
-    for _ in range(2):
+    for _ in range(rounds):
         C = [inter([win[x + 5 * y] for y in range(5)]) for x in range(5)]
-        D = [inter([C[(x - 1) % 5], sh(C[(x + 1) % 5], 1)]) for x in range(5)]
+        D = [inter([C[(x - 1) % 5], sh(C[(x + 1) % 5], dsh(1))]) for x in range(5)]
         A = [inter([win[i], D[i % 5]]) for i in range(25)]
         B = [None] * 25
         for x in range(5):
             for y in range(5):
-                r = ROT[x + 5 * y]
-                B[y + 5 * ((2 * x + 3 * y) % 5)] = sh(A[x + 5 * y], r if r <= 32 else r - 64)
+                B[y + 5 * ((2 * x + 3 * y) % 5)] = sh(A[x + 5 * y], dsh(ROT[x + 5 * y]))
         win = [inter([B[5 * (i // 5) + k] for k in range(5)]) for i in range(25)]
     return win
 
 
-assert all(lo <= 64 and hi >= 128 for lo, hi in decay_windows())
+# v2: [64, 128) valid after 2 rounds; v3: [192, 256) valid after 3 rounds
+assert all(lo <= 64 and hi >= 128 for lo, hi in decay_windows(2, -31))
+assert all(lo <= 192 and hi >= 256 for lo, hi in decay_windows(3, -1))
 
 
 def rc_table(scale=4):
