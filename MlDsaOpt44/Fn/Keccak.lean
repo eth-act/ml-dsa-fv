@@ -1,6 +1,7 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
 import MlDsaOpt44.Fn.Kf1.Main
+import MlDsaOpt44.Fn.Kf4.Main
 /-!
 # `kf4` and `kf1`: Keccak-f[1600] (work packages WP1, WP2)
 
@@ -30,8 +31,8 @@ theorem kf4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', (∀ S, Sized4 S → KS4 m S →
         KS4 m' fun k => EvmSemantics.Crypto.Keccak.permute (S k)) ∧
       FrameExcept m m' [(KS, KS + 800), (KB, KB + 800)] ∧
-      Call s Entry.kf4 [] ret tail m [] m' Gas.kf4 := by
-  sorry
+      Call s Entry.kf4 [] ret tail m [] m' Gas.kf4 :=
+  Kf4.kf4_spec hs hr m hrc
 
 /-- **kf1**: Keccak-f on the replicated state in `KS`. -/
 theorem kf1_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
