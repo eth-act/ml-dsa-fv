@@ -1,5 +1,7 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
+import MlDsaOpt44.Fn.Decode.ZLoop
+import MlDsaOpt44.Fn.Decode.HintMain
 /-!
 # Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack) (WP8)
 
@@ -27,8 +29,8 @@ theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', ∃ f, f < 2 ^ 256 ∧ ((f &&& zBits = 0) ↔ okZ s.executionEnv.calldata = true) ∧
       (∀ t, t < 256 → word m' (ZH + 32 * t) = pack4 fun k => zLane s.executionEnv.calldata k t) ∧
       FrameExcept m m' [(ZH, ZH + 8192)] ∧
-      Call s Entry.dz [wd ZH, wd Z0] ret tail m [wd f] m' Gas.dz := by
-  sorry
+      Call s Entry.dz [wd ZH, wd Z0] ret tail m [wd f] m' Gas.dz :=
+  DecodeZ.dz_main hs hr m hcd
 
 /-- **dhint**: `[ret] ↦ [ok]`, `HP` initially zero. Every `HP` word is four
 bit lanes; if the hint decodes, lane `r` of `HP[t]` is `h[r][t]`. -/
@@ -39,7 +41,7 @@ theorem dhint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ h, hintOf s.executionEnv.calldata = some h →
         ∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (HP + 32 * t)) r = (h[r]![t]!).toNat) ∧
       FrameExcept m m' [(HP, HP + 8192)] ∧
-      Call s Entry.dhint [] ret tail m [flag (okH s.executionEnv.calldata)] m' Gas.dhint := by
-  sorry
+      Call s Entry.dhint [] ret tail m [flag (okH s.executionEnv.calldata)] m' Gas.dhint :=
+  DecodeH.dhint_main hs hr m hcd hz
 
 end MlDsaOpt44.Proofs
