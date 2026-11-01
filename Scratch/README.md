@@ -3,6 +3,99 @@
 Only scratch files; no shared tactic, theorem, generator, or build configuration
 was changed. Base: `623dd95146893e6c43d6906133fc3ca2f2407b5e`.
 
+## Full BodyA result (supersedes the initial experiment below)
+
+**The full original BodyA statement is proved by reflection.** A kernel-checked
+proof-term equality in `BodyAAudit.lean` verifies that its type is identical to
+the original theorem. Both report exactly `[propext, Classical.choice, Quot.sound]`.
+
+The fair single-file benchmark is generated `BodyAAll.lean`: it contains the
+entire instruction/PC alignment certificate, symbolic execution certificate,
+all `unz`/`candMem` bridges, memory/stack obligations, and the final Reach proof.
+Only the reusable soundness library is imported in addition to original imports.
+
+Sequential, isolated same-orb measurements (wall seconds, peak RSS KB):
+
+| File | Runs | RSS |
+| --- | --- | ---: |
+| Original master BodyA | 94.67 (earlier 96.61) | 2976816 |
+| Chunked BodyA | 18.76, 17.68 | 2875236, 2850348 |
+| Full reflective BodyAAll | 7.30, 7.09, 6.91 | 2761848, 2751716, 2829724 |
+| Reusable MemoryReflection soundness | 3.69 | 2323152 |
+
+Using the 7.09 s median, reflection is **13.4× faster than master and 2.5–2.6×
+faster than chunking**. Even charging the reusable soundness build once, 10.78 s
+beats chunking. These are module measurements, not a whole-repository speedup.
+The split BodyAReflect file is 5.43–5.57 s but imports the 3.80 s BodyAData
+alignment module; do not present 5.43 s as the all-in result.
+
+Chunk baseline source is copied from `speed/block-chunks` commit
+`51cbbb9ecf233ede7482f2861d5862f1eae9267d` into scratch by
+`prepare_baseline.py`; only tactic names/import location change. Original
+shared infrastructure is not replaced. Generated baseline files are disposable.
+
+The memory extension uses mutually recursive Term/Mem syntax denoting exact
+`readWord`, `writeBytes`, and `natToBytesPadded`. It preserves arbitrary memory
+aliasing: each load records its memory version. `located_sound` proves that
+emitted bounds keep activeWords unchanged. The result certificate computes
+peak stack prefix **17** once and all **11** memory accesses (3 loads, 8 stores).
+The real hypotheses discharge the bounds. Compositional delta/unzip and
+candidate/flag/store bridges prevent expansion of the full symbolic expression.
+
+Reproduce after the original dependencies are built:
+
+```sh
+export LEAN_PATH="$PWD:${LEAN_PATH:-}"
+lake env lean -o Scratch/MemoryReflection.olean Scratch/MemoryReflection.lean
+python3 Scratch/generate_reflect.py
+/usr/bin/time -f '%e s %M KB' lake env lean Scratch/BodyAAll.lean
+python3 Scratch/prepare_baseline.py
+lake env lean -o Scratch/BaselineChunk.olean Scratch/BaselineChunk.lean
+/usr/bin/time -f '%e s %M KB' lake env lean Scratch/BodyAChunked.lean
+/usr/bin/time -f '%e s %M KB' lake env lean MlDsaOpt44/Fn/Blk/BodyA.lean
+lake env lean -o Scratch/BodyAData.olean Scratch/BodyAData.lean
+lake env lean -o Scratch/BodyAReflect.olean Scratch/BodyAReflect.lean
+lake env lean -o .lake/build/lib/lean/MlDsaOpt44/Fn/Blk/BodyA.olean MlDsaOpt44/Fn/Blk/BodyA.lean
+lake env lean Scratch/BodyAAudit.lean
+python3 Scratch/reflection_coverage.py
+```
+
+Audit controls reject an incorrect peak and a missing access list, and check
+underflow, DUP out-of-range, PUSH0, and exact memory-version preservation.
+The implementation supports ADD, AND, OR, XOR, SHL, SHR, PUSH0–32, DUP1–16,
+MLOAD, MSTORE, and JUMPDEST: every opcode BodyA uses.
+
+Opcode-only coverage over literal opt44/65/87_reach lists:
+
+| Artifact | Supported / total |
+| --- | ---: |
+| Opt44 | 47 / 404 |
+| Opt65 | 67 / 497 |
+| Opt87 | 74 / 528 |
+| Total | **188 / 1429 = 13.2%** |
+
+This is an eligibility upper bound, not automatic proof coverage. Memory
+non-expansion, stack shape and target bridges still must hold. The soundness
+lemma is currently tied to Opt44 alignment tables. Largest opcode gaps by
+number of calls containing them: SWAP1 593, JUMP 555, JUMPI 426, POP 313,
+ISZERO 254, GT 248, SWAP2 231, MUL 222, CALLDATALOAD 201. Counts overlap.
+
+Recommended integration: add a shared reflection module; parameterize alignment
+over the artifact lookup interface. Have `proofgen_artifact.py` emit supported
+opcode descriptors and alignment certificates. A reflective `opt*_reach` fast
+path should reify the initial stack/memory and expected output, execute the
+symbolic program, kernel-check its result/peak/access list, and emit ordinary
+omega obligations for symbolic addresses. Reuse denotation lemmas for user
+definitions (`unz`, `candMem`, later `thetaY`) rather than expanding everything.
+Keep the chunked tactic as fallback for unsupported opcodes or unmatched target
+forms. This prototype hand-authors those compositional bridges; automatic
+reification and general target normalization remain implementation work.
+
+Recommendation: adopt reflection incrementally for expensive supported blocks;
+the decisive experiment wins. Do not extrapolate 13.4× to all 1,429 proofs.
+
+## Initial 12-instruction experiment (historical)
+
 ## Reproduce
 
 ```sh
