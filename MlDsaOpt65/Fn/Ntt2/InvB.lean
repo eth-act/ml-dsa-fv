@@ -118,12 +118,14 @@ theorem iB_body {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
       intro t ht hS
       obtain ⟨i, rfl⟩ : ∃ i, t = 32 * (n / 4) + n % 4 + 4 * i := ⟨t % 32 / 4, by omega⟩
       have hi : i < 8 := by omega
+      rw [show 59648 + 32 * (32 * (n / 4) + n % 4 + 4 * i) =
+        128 * i + (59648 + 1024 * (n / 4) + 32 * (n % 4)) by omega]
       interval_cases i
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_0
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_1
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_2
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_3
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_4
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_5
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_6
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v3_7
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_0
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_1
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_2
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_3
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_4
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_5
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_6
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v3_7
