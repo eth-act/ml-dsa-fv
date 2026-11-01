@@ -1,0 +1,53 @@
+# Builds every default target and the developer tools for each master commit
+# and publishes the .lake build outputs as assets of the `build-cache`
+# release, so .agents/setup restores a fully built tree instead of
+# rebuilding it (scripts/build-cache.sh).
+name: build-cache
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: build-cache
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # upload release assets
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 100   # build-cache.sh restore --ancestor walks first parents
+
+      # Toolchain, Mathlib cache, the nearest ancestor's build cache (so only
+      # modules changed since are rebuilt), dependencies and tools.
+      - name: Setup
+        run: .agents/setup
+
+      # Plain `lake build` is memory-safe here: 4 jobs at most 2.8 GB of
+      # private memory each (the rest of a module's RSS is shared .olean
+      # mappings); measured 17 GB peak with 16 jobs on a 43 GB orb.
+      - name: Build default targets and tools
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH" TMPDIR="$PWD/.lake/tmp"
+          lake build
+          lake build mldsa44tool mldsatool
+
+      - name: Pack
+        run: scripts/build-cache.sh pack "$RUNNER_TEMP/cache"
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/build-cache.sh publish "$RUNNER_TEMP/cache"

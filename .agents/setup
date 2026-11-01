@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Orb setup: Lean toolchain (elan, pinned by lean-toolchain), Mathlib build
-# cache, prebuilt dependency packages, and the Python oracle used by scripts/.
+# cache, the project's build cache (all of `lake build` and the tools, built by
+# CI for this commit), and the Python oracle used by scripts/.
+# Without a build cache for this commit it restores the nearest ancestor's (in
+# a fresh tree) or none, and builds the dependencies and tools itself.
 # Idempotent; a warm run only re-checks each step.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -25,11 +28,21 @@ timed lake --version
 step "Mathlib cache"
 timed lake exe cache get
 
+step "Build cache"
+timed scripts/build-cache.sh restore --ancestor || true
+
 step "Dependencies (evm_semantics, EvmProof)"
 timed lake build EvmProof
 
 step "Developer tools (mldsa44tool, mldsatool)"
 timed lake build mldsa44tool mldsatool
+
+step "Default targets"
+if lake build --no-build >/dev/null 2>&1; then
+  echo "    all built"
+else
+  echo "    not all built: \`lake build\` builds the rest"
+fi
 
 step "Python: dilithium-py -> .ref/pylib"
 if [ ! -d .ref/pylib/dilithium_py ]; then
