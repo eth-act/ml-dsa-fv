@@ -391,7 +391,17 @@ def snapshot(tree: str, label: str, opts) -> list[str]:
         raise SystemExit(f"gate: the revision tracks files under .lake/: {tracked_lake.splitlines()[:5]}")
     exe = tools(env)
     log(f"{label}: checking out into {WT}")
-    checkout(tree, opts.clean)
+    # An interrupted build can leave an .olean newer than its Lake trace (Lean wrote the
+    # output, Lake had not yet recorded it); a later `lake build` of other sources then
+    # accepts the stale .olean as up to date. The marker lives from checkout until every
+    # build command has exited on its own; if it is found, the build directory is wiped.
+    marker = WORK / "build-in-progress"
+    interrupted = marker.exists()
+    if interrupted:
+        log(f"{label}: an earlier build in {WT} was interrupted; building from scratch")
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(tree)
+    checkout(tree, opts.clean or interrupted)
     logf = WORK / f"log-{tree[:12]}.txt"
     logf.write_text("")
     # the Lean that actually runs in this worktree (elan honours overrides)
@@ -402,12 +412,16 @@ def snapshot(tree: str, label: str, opts) -> list[str]:
     targets = [f"+{r}" for r in roots] + EXES
     t = run(["lake", "build"], cwd=WT, env=env, check=False, logfile=logf)
     lines.append(f"K\tbuild default targets ({' '.join(defaults)})\t{'ok' if t.returncode == 0 else 'fail'}\t-")
+    build_rcs = []
     for x in targets:
         t2 = run(["lake", "build", x], cwd=WT, env=env, check=False, logfile=logf)
+        build_rcs.append(t2.returncode)
         lines.append(f"K\tbuild {x}\t{'ok' if t2.returncode == 0 else 'fail'}\t-")
     fresh = run(["lake", "build", "--no-build", *targets], cwd=WT, env=env, check=False, logfile=logf)
     lines.append(f"K\tbuild up to date (lake build --no-build)\t{'ok' if fresh.returncode == 0 else 'fail'}\t-")
     built = t.returncode == 0 and fresh.returncode == 0
+    if all(r >= 0 for r in [t.returncode, fresh.returncode] + build_rcs):  # none killed by a signal
+        marker.unlink()
     log(f"{label}: build {'ok' if built else 'FAILED'} (log {logf})")
     if not built:
         lines.append("K\tsnapshot\tfail\tbuild failed; nothing extracted")
@@ -506,12 +520,12 @@ def snapshot(tree: str, label: str, opts) -> list[str]:
 
 class Snap:
     FIELDS = ["key", "name", "kind", "module", "lt", "ct", "lv", "cv", "full", "axioms", "aux", "rel"]
-    WIDTH = {"R": 3, "K": 4, "F": 3, "C": 13, "X": 3, "D": 2, "N": 2, "H": 4, "B": 4, "O": 2, "M": 3, "I": 3}
+    WIDTH = {"R": 3, "K": 4, "F": 3, "C": 13, "X": 3, "D": 2, "N": 2, "H": 4, "B": 4, "O": 2, "M": 3, "I": 3, "S": 3}
 
     def __init__(self, lines):
         self.meta, self.checks, self.frozen, self.consts = {}, {}, {}, {}
         self.deps, self.viol, self.headline, self.bytes, self.orphans, self.modules = [], [], {}, {}, [], []
-        self.errors = []
+        self.errors, self.stale = [], []
         seen = set()
         for l in lines:
             f = l.split("\t")
@@ -544,6 +558,8 @@ class Snap:
                 self.bytes[f[1]] = (f[2], f[3])
             elif t == "O":
                 self.orphans.append(f[1])
+            elif t == "S":
+                self.stale.append(f"{f[1]}: trace records {f[2]}")
             elif t == "M":
                 self.modules.append(f[1])
 
@@ -620,6 +636,9 @@ def compare(base: Snap, head: Snap, allow_moves=False, allow_gate_change=False, 
     for name in bytecodes:
         if name not in head.bytes:
             fail(f"bytecode literal {name} not evaluated")
+    if head.stale:
+        fail("build outputs that Lake's traces do not record (an interrupted build; rerun, or --clean)",
+             head.stale)
     if head.viol:
         fail(f"axiom policy (decided by Lean's collectAxioms; allowed: {', '.join(ALLOWED_AXIOMS)})", head.viol)
     elif head.consts:

@@ -27,7 +27,7 @@ about 12 min to build from scratch, 2.5 min to extract, 12 min to replay
 generators; a second revision rebuilds and replays only what changed. To skip
 the first build, copy a checkout's `.lake/build` into `.lake/gate/wt/.lake/`.
 
-Regression tests: `python3 scripts/gate/test_gate.py` (37 tests, about a
+Regression tests: `python3 scripts/gate/test_gate.py` (38 tests, about a
 minute; they build small Lean fixtures under /tmp).
 
 ## What fails the gate
@@ -37,7 +37,12 @@ Per revision (HEAD must pass all of these):
 * **Build**: `lake build` (the default targets), every library root as an
   explicit module target (`lake build +MlDsa44 ...`, so lakefile facets cannot
   skip one), `lake build mldsa44tool mldsatool`, then `lake build --no-build`
-  of the same targets (nothing stale may be extracted).
+  of the same targets (nothing stale may be extracted). Lake judges a module
+  up to date by input hashes alone, so the extractor also checks that every
+  recorded `.olean` is the one its Lake trace records; a mismatch (left by an
+  interrupted build: an orphaned `lean` writing after `lake` died) fails. A
+  gate run interrupted during its build leaves a marker, and the next run
+  builds from scratch.
 * **Kernel replay** (`gate_replay`, the `replayFromImports` of the
   toolchain's `leanchecker` with bounded parallelism): every declaration of
   every project module (every module whose `.olean` was built in the

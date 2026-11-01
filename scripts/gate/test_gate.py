@@ -373,6 +373,36 @@ set_option debug.skipKernelTC true in
             self.check(h, "--bootstrap")
         self.assertIn(".lake/", str(e.exception))
 
+    def test_interrupted_build(self):
+        # The state a killed build leaves: HEAD's sources and traces, but an .olean from
+        # other sources (here BASE's, without the sorry), written by a `lean` that outlived
+        # `lake`. It is never extracted as HEAD's: the extractor checks every .olean against
+        # its trace, and a marker left by an interrupted gate run forces a clean build.
+        h = self.head({"Fx/B.lean": ("theorem uses_f : f 0 = 1 := rfl", "theorem uses_f : f 0 = 1 := sorry")})
+        code, text = self.check(h, "--bootstrap")
+        self.assertIn("sorryAx", text)
+        olean = gate.WT / ".lake" / "build" / "lib" / "lean" / "Fx" / "B.olean"
+        base_olean = self.repo / ".lake" / "build" / "lib" / "lean" / "Fx" / "B.olean"
+        tree = self.g("rev-parse", f"{h}^{{tree}}")
+
+        def recheck_head():  # BASE's snapshot stays cached, so the worktree is not rebuilt for it
+            for f in (gate.WORK / "snapshots").glob(f"{tree}-*.tsv"):
+                f.unlink()
+            return self.check(h, "--bootstrap")
+
+        shutil.copy(base_olean, olean)
+        code, text = recheck_head()
+        self.assertEqual(code, 1, text)
+        self.assertIn("FAIL build outputs that Lake's traces do not record", text)
+        self.assertNotIn("sorryAx", text)  # the stale .olean was the one extracted
+        shutil.copy(base_olean, olean)
+        (gate.WORK / "build-in-progress").write_text("killed")
+        code, text = recheck_head()
+        self.assertEqual(code, 1, text)
+        self.assertIn("sorryAx", text)
+        self.assertNotIn("traces do not record", text)
+        self.assertFalse((gate.WORK / "build-in-progress").exists())
+
     def test_unsupported_lakefile_settings(self):
         h = self.head({"lakefile.toml": ('name = "fx"\n', 'name = "fx"\nbuildDir = "out"\n')})
         with self.assertRaises(SystemExit):

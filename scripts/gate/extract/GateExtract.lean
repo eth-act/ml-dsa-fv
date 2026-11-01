@@ -1,4 +1,5 @@
 import Lean
+import Lake.Build.Trace
 /-!
 # Gate extractor
 
@@ -461,6 +462,22 @@ unsafe def main (args : List String) : IO UInt32 := do
   for m in modNames, d in env.header.moduleData do
     if isRec m then
       let f := localPath.find? m |>.getD ""
+      -- the .olean must be the one Lake's trace records for this module's inputs: an
+      -- interrupted build (an orphaned `lean` writing after `lake` died) leaves a newer
+      -- .olean under an older, still-matching trace
+      let recorded? ← do
+        let tf : System.FilePath := (f.dropEnd ".olean".length).toString ++ ".trace"
+        if !(← tf.pathExists) then pure none else
+        match Json.parse (← IO.FS.readFile tf) with
+        | .ok j => pure <| match j.getObjValD "outputs" |>.getObjValD "o" with
+          | .arr #[.str o] => some (o.dropEnd ".olean".length).toString
+          | .str o => some (o.dropEnd ".olean".length).toString
+          | _ => none
+        | .error _ => pure none
+      let actual := (← Lake.computeBinFileHash f).hex
+      if recorded? != some actual then
+        nViol := nViol + 1
+        lines := lines.push s!"S\t{esc (toString m)}\t{esc (recorded?.getD "-")} != {actual}"
       lines := lines.push s!"M\t{esc (toString m)}\t{esc f}"
       let imps := d.imports.toList.filterMap fun i => localPath.find? i.module
       lines := lines.push s!"I\t{esc f}\t{",".intercalate (imps.map esc)}"
