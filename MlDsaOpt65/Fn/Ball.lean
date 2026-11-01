@@ -1,12 +1,13 @@
-import MlDsaOpt65.Fn.Ball.Defs
+import MlDsaOpt65.Fn.Ball.Proof
 /-! # `sib` contract (ML-DSA-65)
 
-Open contract (statement only). The code is the ML-DSA-44 `sample_in_ball` with
+Proved in `Fn/Ball/{Blocks,Proof}.lean` (`sib_call_proof`). The code is the ML-DSA-44 `sample_in_ball` with
 `τ = 49` (loop start `i = 256 − τ = 207`) and the ML-DSA-65 `CB`/`BASES`/`IDX`
 addresses: it scans bytes `8 … 271` of the 272-byte stream `H(c̃)` (34 lanes in `CB`,
 squeezed from SIMD slot 2 of group 5 by `cext`) as FIPS 204 Algorithm 29 with the
-Appendix C limit. Call site: `sib []` at the start of segment sib (pc 6545). The proof
-mirrors `MlDsaOpt44/Fn/Ball/{Blocks,Proof}.lean` (`sib_call_proof`). -/
+Appendix C limit. Call site: `sib []` at the start of segment sib (pc 6545). `Blocks` is ported
+from `MlDsaOpt44/Fn/Ball/Blocks.lean`; `Proof` is the 44 proof over the parametric scan
+`MlDsaOptCommon.BallScan`. -/
 
 namespace MlDsaOpt65.Proofs
 
@@ -24,7 +25,7 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', (∀ c, Fips204.sampleInBallOf P bs = some c → CRep m' c) ∧
       (∀ i, i < P.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
       FrameExcept m m' [(CW, CW + 8192), (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64)] ∧
-      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf P bs).isSome] m' Gas.sib := by
-  sorry
+      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf P bs).isSome] m' Gas.sib :=
+  sib_call_proof hs hr m bs hbs hcb hz
 
 end MlDsaOpt65.Proofs
