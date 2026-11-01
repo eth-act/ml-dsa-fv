@@ -155,7 +155,7 @@ stated contracts. Port first: most 44 proofs carry over with
 | S3 pure groups | 65 `seg_g0`–`g4`, `seg_g9`; 87 `seg_g0`–`g9` | 44 `Main/SegGroups` | easy-medium |
 | S4 mixed 65 | `seg_g5`–`seg_g8` | 44 `Main/SegG234/*` | hard |
 | S5 mixed 87 | `seg_g10`–`seg_g14` | 44 `Main/SegG234/*` | hard |
-| S6 μ | `seg_mu` | 44 `Main/Mu/*` | medium |
+| S6 μ | `seg_mu` — **proved** (both sets, `Main/Mu/{Spec,Blocks,Proof}`: the 44 proof relocated) | 44 `Main/Mu/*` | medium |
 
 ### Guidance
 

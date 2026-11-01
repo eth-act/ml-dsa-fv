@@ -62,3 +62,4 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.intt_call
 #print axioms MlDsaOpt65.Proofs.pass3_call
 #print axioms MlDsaOpt65.Proofs.mu0_call
+#print axioms MlDsaOpt65.Proofs.seg_mu
