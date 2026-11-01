@@ -1,5 +1,6 @@
 import MlDsaOpt65.Infra.Code
 import MlDsaOptCommon.Chunk
+import MlDsaOptCommon.StateProj
 import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 set_option warningAsError true
@@ -134,6 +135,14 @@ macro_rules
         [MlDsaOpt65.Proofs.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, MlDsaOpt65.Proofs.Infra.stepL_located, MlDsaOpt65.Proofs.Infra.stepL_none,
          MlDsaOpt65.Proofs.Infra.guardHalt_running, EvmProof.Stepper.runInstr,
+         ↓MlDsaOptCommon.StateProj.toSharedState_proj, ↓MlDsaOptCommon.StateProj.pc_proj,
+         ↓MlDsaOptCommon.StateProj.stack_proj, ↓MlDsaOptCommon.StateProj.execLength_proj,
+         ↓MlDsaOptCommon.StateProj.halt_proj, ↓MlDsaOptCommon.StateProj.callStack_proj,
+         ↓MlDsaOptCommon.StateProj.toMachineState_proj, ↓MlDsaOptCommon.StateProj.accountMap_proj,
+         ↓MlDsaOptCommon.StateProj.substate_proj, ↓MlDsaOptCommon.StateProj.executionEnv_proj,
+         ↓MlDsaOptCommon.StateProj.gasAvailable_proj, ↓MlDsaOptCommon.StateProj.activeWords_proj,
+         ↓MlDsaOptCommon.StateProj.memory_proj, ↓MlDsaOptCommon.StateProj.returnData_proj,
+         ↓MlDsaOptCommon.StateProj.hReturn_proj,
          MlDsaOptCommon.callState, MlDsaOptCommon.wd,
          MlDsaOpt65.Proofs.Infra.instrAt_lit, MlDsaOpt65.Proofs.Infra.pcAt_lit,
          MlDsaOpt65.Proofs.Infra.isValidJumpDest_lit,

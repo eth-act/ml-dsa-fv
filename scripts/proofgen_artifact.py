@@ -596,6 +596,7 @@ end @P@.Infra
 
 BLOCK = '''import @NS@.Infra.Code
 import MlDsaOptCommon.Chunk
+import MlDsaOptCommon.StateProj
 import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 set_option warningAsError true
@@ -730,6 +731,14 @@ macro_rules
         [@P@.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, @P@.Infra.stepL_located, @P@.Infra.stepL_none,
          @P@.Infra.guardHalt_running, EvmProof.Stepper.runInstr,
+         ↓MlDsaOptCommon.StateProj.toSharedState_proj, ↓MlDsaOptCommon.StateProj.pc_proj,
+         ↓MlDsaOptCommon.StateProj.stack_proj, ↓MlDsaOptCommon.StateProj.execLength_proj,
+         ↓MlDsaOptCommon.StateProj.halt_proj, ↓MlDsaOptCommon.StateProj.callStack_proj,
+         ↓MlDsaOptCommon.StateProj.toMachineState_proj, ↓MlDsaOptCommon.StateProj.accountMap_proj,
+         ↓MlDsaOptCommon.StateProj.substate_proj, ↓MlDsaOptCommon.StateProj.executionEnv_proj,
+         ↓MlDsaOptCommon.StateProj.gasAvailable_proj, ↓MlDsaOptCommon.StateProj.activeWords_proj,
+         ↓MlDsaOptCommon.StateProj.memory_proj, ↓MlDsaOptCommon.StateProj.returnData_proj,
+         ↓MlDsaOptCommon.StateProj.hReturn_proj,
          MlDsaOptCommon.callState, MlDsaOptCommon.wd,
          @P@.Infra.instrAt_lit, @P@.Infra.pcAt_lit,
          @P@.Infra.isValidJumpDest_lit,
