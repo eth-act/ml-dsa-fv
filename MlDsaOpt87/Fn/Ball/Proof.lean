@@ -731,6 +731,28 @@ theorem ballFold_stop (bs : ByteArray) (k : Nat) (hk : 256 ≤ (ballFold P bs k)
 to be squeezed while `p ≤ 136`. -/
 def pot (p i : Nat) : Nat := 158 * (272 - p) + 329 * (256 - i) + 43 + if p ≤ 136 then 32706 else 0
 
+/-! Potential steps of the scan, stated with only the bounds they need (the
+in-place `unfold pot; split_ifs <;> omega` saw the whole loop context). -/
+
+theorem pot_visit {k : Nat} (i : Nat) (hk : k < 264) :
+    (48 + if 8 + k = 136 then 32706 else 0) + pot (8 + k + 1) i + 110 ≤ pot (8 + k) i := by
+  unfold pot; split_ifs <;> omega
+
+theorem pot_accA {k i : Nat} (hk : k < 264) (hi : i < 256) :
+    (48 + if 8 + k = 136 then 32706 else 0) + 286 + 153 ≤ pot (8 + k) i := by
+  unfold pot; split_ifs <;> omega
+
+theorem pot_accC {k i : Nat} (hk : k < 264) (hi : i < 256) :
+    (48 + if 8 + k = 136 then 32706 else 0) + 286 + 143 + pot (8 + (k + 1)) (i + 1) ≤
+      pot (8 + k) i := by
+  unfold pot; split_ifs <;> omega
+
+section
+/- Keep `KSU` folded while elaborating the recursion: matching its pattern
+variables against the discriminants otherwise unfolds `word` down to the
+memory bytes before failing (16 s). -/
+attribute [local irreducible] KSU
+
 set_option maxHeartbeats 1000000 in
 theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.sib ret tail) (htail : tail.length ≤ 960)
@@ -772,8 +794,8 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         KSU M2 (permN (if 8 + (k + 1) ≤ 136 then 1 else 2) (S0 cd)) := fun M2 h => by
       have : (if 8 + (k + 1) ≤ 136 then 1 else 2) = (8 + k) / 136 + 1 := by split <;> omega
       rwa [this]
-    have hvc : (48 + if 8 + k = 136 then 32706 else 0) + pot (8 + k + 1) i + 110 ≤ pot (8 + k) i := by
-      unfold pot; split_ifs <;> omega
+    have hvc : (48 + if 8 + k = 136 then 32706 else 0) + pot (8 + k + 1) i + 110 ≤ pot (8 + k) i :=
+      pot_visit i (by omega)
     by_cases hacc : (cStream cd)[8 + k]!.toNat ≤ i
     · -- accept
       have hst : ballFold P (cStream cd) (k + 1) =
@@ -820,8 +842,8 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       have hdiv : le64 (cStream cd) 0 / 2 ^ (i - 196) / 2 = le64 (cStream cd) 0 / 2 ^ (i + 1 - 196) := by
         rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ, show (i - 196).succ = i + 1 - 196 by omega]
       rw [← hset] at hinv'
-      have hvA : (48 + if 8 + k = 136 then 32706 else 0) + 286 + 153 ≤ pot (8 + k) i := by
-        unfold pot; split_ifs <;> omega
+      have hvA : (48 + if 8 + k = 136 then 32706 else 0) + 286 + 153 ≤ pot (8 + k) i :=
+        pot_accA (by omega) (by omega)
       by_cases hlast : i + 1 < 256
       · have hKC := ksu_scan hK1 c (i := i) (j := j) (nn := negCount c) (sg := sg)
           (code := if sg = 1 then 1 else 2 ^ 256 - 1) (cnt := i - 196)
@@ -837,8 +859,8 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (i - 196) hcntB (by omega)
         rw [hdiv, show 8 + k + 1 = 8 + (k + 1) by omega] at hC
         have hvC : (48 + if 8 + k = 136 then 32706 else 0) + 286 + 143 + pot (8 + (k + 1)) (i + 1) ≤
-            pot (8 + k) i := by
-          unfold pot; split_ifs <;> omega
+            pot (8 + k) i :=
+          pot_accC (by omega) (by omega)
         exact (((hV.trans hAB).trans hC).trans hreach).mono hvC
       · have hD := sib_accD hs htail hsized
           (sibMB M1 c i j (negCount c) sg (if sg = 1 then 1 else 2 ^ 256 - 1)) hr.jumpdest hr.small
@@ -865,6 +887,8 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       exact ((hV.trans hR).trans hreach).mono (by
         have : 8 + k + 1 = 8 + (k + 1) := by omega
         rw [this] at hvc; omega)
+
+end
 
 /-- The final invariant is `CRep`. -/
 theorem crep_of_sinv {m M : ByteArray} {c : Fips204.Poly} (h : SInv m M c 256) : CRep M c := by
@@ -914,7 +938,7 @@ theorem sib_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     split_ifs <;> first
       | (exfalso; omega)
       | rfl
-      | (rw [MlDsaOpt44.Proofs.rep_cpl_xor _ (by norm_num) (by first | exact le64_lt _ _ | norm_num),
+      | (rw [MlDsaOpt44.Proofs.rep_cpl_xor _ (by norm_num) (by first | with_reducible exact le64_lt _ _ | norm_num),
           Nat.zero_xor])
   have hav : ∀ a, a < 24 → Avoids [(KS, KS + 800)] (RC1 + 32 * a) (RC1 + 32 * a + 32) := fun a ha => by
     simp only [avoids_cons, avoids_nil, and_true, KS, RC1]; omega
