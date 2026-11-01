@@ -108,7 +108,14 @@ message; the proved schedule bounds the adversarial worst case:
 pitfalls: `MlDsaOpt44/PLAN.md`.
 
 ML-DSA-65/87 optimised bytecodes (`MlDsaOpt/65`, `MlDsaOpt/87`, 3.93M / 5.48M
-gas) are validated on revm and vectors; their proofs are in progress.
+gas typical) are in progress in `MlDsaOpt65/` and `MlDsaOpt87/`: the same four
+statements against `MlDsa65.Spec` / `MlDsa87.Spec` are proved from open
+segment, contract and bridge lemmas (`sorry`, listed by
+`MlDsaOpt{65,87}/checks/Axioms.lean`). The 13 (65) / 14 (87) kernels shared
+with ML-DSA-44 are proved, by re-checking the 44 proofs relocated with
+`scripts/proofgen_port.py`. Proved schedules: 5,549,448 (65) and 8,249,418
+(87) gas for short messages, above the adversarial worst cases 5,350,581 and
+8,014,074. Plan and work packages: `MlDsaOpt65/PLAN.md`.
 
 ## Proof structure
 

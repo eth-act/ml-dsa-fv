@@ -1,6 +1,6 @@
 name = "mldsa44"
 version = "0.1.0"
-defaultTargets = ["EvmProof", "MlDsa44", "MlDsa", "MlDsa65", "MlDsa87", "MlDsaOptCommon", "MlDsaOpt44"]
+defaultTargets = ["EvmProof", "MlDsa44", "MlDsa", "MlDsa65", "MlDsa87", "MlDsaOptCommon", "MlDsaOpt44", "MlDsaOpt65", "MlDsaOpt87"]
 
 # Pins follow powdr-labs/eip8200-challenges@c165c97 so the vendored
 # `EvmProof` infrastructure builds unchanged against the same semantics.
@@ -68,3 +68,11 @@ name = "MlDsaOptCommon"
 
 [[lean_lib]]
 name = "MlDsaOpt44"
+
+# The ML-DSA-65 and ML-DSA-87 artifacts (kernels shared with ML-DSA-44 are
+# ported from `MlDsaOpt44` by `scripts/proofgen_port.py`).
+[[lean_lib]]
+name = "MlDsaOpt65"
+
+[[lean_lib]]
+name = "MlDsaOpt87"
