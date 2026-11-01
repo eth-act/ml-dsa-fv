@@ -1,4 +1,4 @@
-import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Main.Rho.Blocks
 /-! # Segment `3078 … 3439`: `RHO1` (spread ρ and c̃ lanes, eight `spr` calls). -/
 
 namespace MlDsaOpt44.Proofs
@@ -13,7 +13,7 @@ theorem seg_rho {s : State} (hs : Ctx s) {m : ByteArray}
     (hI : Inv3 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv4 s.executionEnv.calldata m' ∧
       Reach (callState s 3078 [flag b] m) (callState s 3439 [flag b] m') Gas.pRho := by
-  sorry
+  exact seg_rho_proof hs hI b
 
 
 end MlDsaOpt44.Proofs

@@ -1,4 +1,4 @@
-import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Main.Tbl.Blocks
 /-! # Segment `1085 … 3068`: the 248 NTT zeta records (straight line). -/
 
 namespace MlDsaOpt44.Proofs
@@ -12,7 +12,7 @@ open MlDsaOpt44.Proofs.Infra
 theorem seg_tbl {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv1 cd m) (b : Bool) :
     ∃ m', Inv2 cd m' ∧
       Reach (callState s 1085 [flag b] m) (callState s 3068 [flag b] m') Gas.pTbl := by
-  sorry
+  exact seg_tbl_proof hs hI b
 
 
 end MlDsaOpt44.Proofs

@@ -12,7 +12,8 @@ open MlDsaOpt44.Proofs.Infra
 /-- `6001 … RETURN`: hash `FIN` with `kf1`, compare with c̃, return. The
 comparison `E` is the commitment check whenever `FIN` holds a well-formed
 832-byte hash input. -/
-theorem seg_fin {s : State} (hs : Ctx s) {m : ByteArray} (hrc : RC1Table m) (b : Bool) :
+theorem seg_fin {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
+    (hrc : RC1Table m) (b : Bool) :
     ∃ E : Bool, ∃ pc stk m',
       (∀ X : ByteArray, X.size = 832 → FinAt m X → E = (ctOf s.executionEnv.calldata == Fips204.H X 32)) ∧
       Reach (callState s 6001 [flag b] m)

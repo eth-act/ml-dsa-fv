@@ -74,7 +74,7 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
     ∃ final : State, ∃ g : EvmProof.GasSteps s₀ final,
       g.cost ≤ Gas.schedule s₀.executionEnv.calldata.size ∧ final.halt = .Returned ∧
         final.hReturn = spec s₀.executionEnv.calldata ∧ FrameLocal s₀ final := by
-  obtain ⟨m0, hI0, hR0⟩ := seg_init h0 haw hlen
+  obtain ⟨m0, hI0, hR0⟩ := seg_init h0 haw hlen hfit
   have hR0' := hR0.of_eq hpc rfl
   have hs : Ctx (sized s₀) := sized_ctx h0 hfit
   have hcd : (sized s₀).executionEnv.calldata = s₀.executionEnv.calldata := rfl
@@ -84,8 +84,8 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
   obtain ⟨m2, hI2, hR2⟩ := seg_tbl hs hI1 (ok1 s₁.executionEnv.calldata)
   obtain ⟨m3, hI3, hR3⟩ := seg_ntt hs hI2 (ok1 s₁.executionEnv.calldata) hlen1
   obtain ⟨m4, hI4, hR4⟩ := seg_rho hs hI3 (ok1 s₁.executionEnv.calldata)
-  obtain ⟨m5, hI5, hR5⟩ := seg_g0 hs hI4 (ok1 s₁.executionEnv.calldata)
-  obtain ⟨m6, hI6, hR6⟩ := seg_g1 hs hI5
+  obtain ⟨m5, hI5, hR5⟩ := seg_g0 hs hlen1 hI4 (ok1 s₁.executionEnv.calldata)
+  obtain ⟨m6, hI6, hR6⟩ := seg_g1 hs hlen1 hI5
     (ok1 s₁.executionEnv.calldata && okCol s₁.executionEnv.calldata 0)
   obtain ⟨m7, hI7, hR7⟩ := seg_g234 hs hlen1 hI6
     ((ok1 s₁.executionEnv.calldata && okCol s₁.executionEnv.calldata 0) &&
@@ -97,7 +97,7 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
     (ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata)
   obtain ⟨m11, hI11, hR11⟩ := seg_w hs hlen1 hI10
     (ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata)
-  obtain ⟨E, pc, stk, m12, hE, hR12⟩ := seg_fin hs hI11.rc1
+  obtain ⟨E, pc, stk, m12, hE, hR12⟩ := seg_fin hs hlen1 hI11.rc1
     (ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata)
   have hbit : ((ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata) && E) =
       optAccepts s₁.executionEnv.calldata := result_bit _ E m11 hI11 hE

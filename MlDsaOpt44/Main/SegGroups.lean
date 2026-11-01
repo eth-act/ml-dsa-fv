@@ -27,7 +27,8 @@ theorem group_glue {s : State} (hs : Ctx s) {m : ByteArray} {b : Bool} {col : Na
     (hblk : Reach (callState s pc [flag b] m) (callState s 13659 [wd 15, wd col, wd 0, wd ret, flag b] m)
       cost)
     (hj : Decode.isValidJumpDest optBytecode ret = true) (hret : ret < 2 ^ 16)
-    (hrc : RC4Table m) (hrho : Rho1At m s.executionEnv.calldata) (hcol : col < 4) :
+    (hrc : RC4Table m) (hrho : Rho1At m s.executionEnv.calldata) (hcol : col < 4)
+    (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', (okCol s.executionEnv.calldata col = true →
         ∀ t, t < 256 → word m' (ACC + 32 * t) =
           (word m (ACC + 32 * t) +
@@ -37,7 +38,7 @@ theorem group_glue {s : State} (hs : Ctx s) {m : ByteArray} {b : Bool} {col : Na
       Reach (callState s pc [flag b] m)
         (callState s ret [flag (okCol s.executionEnv.calldata col), flag b] m') (cost + Gas.group) := by
   obtain ⟨m', hpost, hfr, hc⟩ := group_call hs (ret := ret) (tail := [flag b])
-    (retOK_main (by decide) (by simp) hj hret) m hrc hrho hcol
+    (retOK_main (by decide) (by simp) hj hret) m hrc hrho hcol hcd
   exact ⟨m', hpost, hfr, hblk.trans hc⟩
 
 theorem accSum_congr {cd m m' : ByteArray} {t : Nat}
@@ -86,7 +87,7 @@ theorem accCols_step {m m' : ByteArray} {cd : ByteArray} {n : Nat} (hn : n < 4)
     exact Nat.lt_of_le_of_lt this h')]
   exact congrArg pack4 (funext fun r => (accSum_congr (hzh t ht) r (n + 1)).symm)
 
-theorem seg_g0 {s : State} (hs : Ctx s) {m : ByteArray}
+theorem seg_g0 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : Inv4 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', InvG s.executionEnv.calldata m' 1 ∧
       Reach (callState s 3439 [flag b] m)
@@ -95,7 +96,7 @@ theorem seg_g0 {s : State} (hs : Ctx s) {m : ByteArray}
       21 := by
     opt44_reach [1139, 1140, 1141, 1142, 1143, 1144]
   obtain ⟨m', hpost, hfr, hR⟩ := group_glue hs 21 hb1 (by simp only [isValidJumpDest_lit])
-    (by norm_num) hI.rc4 hI.rho (by norm_num : (0 : Nat) < 4)
+    (by norm_num) hI.rc4 hI.rho (by norm_num : (0 : Nat) < 4) hcd
   have hb2 : Reach (callState s 3450 [flag (okCol s.executionEnv.calldata 0), flag b] m')
       (callState s 3452 [flag (b && okCol s.executionEnv.calldata 0)] m') 4 := by
     opt44_reach [1145, 1146] with [flag, ite01_land]
@@ -111,11 +112,11 @@ theorem seg_g0 {s : State} (hs : Ctx s) {m : ByteArray}
     accCols_step (by norm_num) hacc0 (fun k hk t ht => (hI.zhat k hk t ht).1) hzh hpost,
     (hI.zMisc.mono (le_refl _) (by unfold MISC TBL; omega)).frame hfr (by unfold groupFrame; avoids_tac),
     hI.zCw.frame hfr (by unfold groupFrame; avoids_tac),
-    (hI.zHigh.mono (by unfold BASES IDX; omega) (by unfold ACC HP; omega)).frame hfr
+    (hI.zHigh.mono (le_refl _) (by unfold ACC HP; omega)).frame hfr
       (by unfold groupFrame; avoids_tac)⟩,
     (hR.trans hb2).mono (by unfold Gas.pG0; omega)⟩
 
-theorem seg_g1 {s : State} (hs : Ctx s) {m : ByteArray}
+theorem seg_g1 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : InvG s.executionEnv.calldata m 1) (b : Bool) :
     ∃ m', InvG s.executionEnv.calldata m' 2 ∧
       Reach (callState s 3452 [flag b] m)
@@ -124,7 +125,7 @@ theorem seg_g1 {s : State} (hs : Ctx s) {m : ByteArray}
       22 := by
     opt44_reach [1147, 1148, 1149, 1150, 1151, 1152]
   obtain ⟨m', hpost, hfr, hR⟩ := group_glue hs 22 hb1 (by simp only [isValidJumpDest_lit])
-    (by norm_num) hI.rc4 hI.rho (by norm_num : (1 : Nat) < 4)
+    (by norm_num) hI.rc4 hI.rho (by norm_num : (1 : Nat) < 4) hcd
   have hb2 : Reach (callState s 3464 [flag (okCol s.executionEnv.calldata 1), flag b] m')
       (callState s 3466 [flag (b && okCol s.executionEnv.calldata 1)] m') 4 := by
     opt44_reach [1153, 1154] with [flag, ite01_land]

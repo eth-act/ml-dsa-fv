@@ -29,10 +29,10 @@ theorem seg_ntt {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv2 cd m) (b 
   intro k hk t ht
   refine ⟨(hp k hk t ht).1, ?_⟩
   have hpoly : lanesPoly m ZH k = (Array.range 256).map fun t => (zLane cd k t : Int) := by
-    apply Array.ext (by simp [lanesPoly])
+    apply Array.ext (by simp only [lanesPoly, Array.size_map])
     intro i h1 _
     simp only [lanesPoly, Array.size_map, Array.size_range] at h1
-    simp [lanesPoly, hlanes k hk i h1]
+    simp only [lanesPoly, Array.getElem_map, Array.getElem_range, hlanes k hk i h1]
   have := (hp k hk t ht).2
   rwa [hpoly, ntt_zLane cd hcd hk] at this
 
