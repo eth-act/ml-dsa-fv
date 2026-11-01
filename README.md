@@ -85,6 +85,31 @@ the data-dependent branches in rejection sampling, `SampleInBall`, hint
 decoding and `UseHint` are charged at their proved worst case). Every
 subroutine budget is the exact worst-case cost of its contract.
 
+## Optimised verifier (verified)
+
+`MlDsaOpt/44/opt.hex` (22,553 bytes; hand-scheduled SIMD bytecode generated
+by `scripts/gen_opt.py`, see `docs/opt.md`) is verified with the same four
+statements, in `MlDsaOpt44/` (`MlDsaOpt44/Main.lean`):
+
+```lean
+theorem MlDsaOpt44.Proofs.opt_correctInAnyContextWithSchedule :
+    MlDsa44.CorrectInAnyContextWithSchedule optBytecode Proofs.Gas.schedule
+theorem MlDsaOpt44.Proofs.opt_correctInAnyContext : MlDsa44.CorrectInAnyContext optBytecode
+theorem MlDsaOpt44.Proofs.opt_correctWithSchedule :
+    MlDsa44.CorrectWithSchedule optBytecode Proofs.Gas.schedule
+theorem MlDsaOpt44.Proofs.opt_correct : MlDsa44.Correct optBytecode
+```
+
+again depending only on `propext`, `Classical.choice`, `Quot.sound`
+(`MlDsaOpt44/checks/Axioms.lean`). Typical gas is 2.14M for an empty
+message; the proved schedule bounds the adversarial worst case:
+2,963,435 for messages up to 69 bytes, +37,128 per further 136-byte block
+(plus calldata-copy and memory terms). Proof plan, work packages and
+pitfalls: `MlDsaOpt44/PLAN.md`.
+
+ML-DSA-65/87 optimised bytecodes (`MlDsaOpt/65`, `MlDsaOpt/87`, 3.93M / 5.48M
+gas) are validated on revm and vectors; their proofs are in progress.
+
 ## Proof structure
 
 | Module | Content |
