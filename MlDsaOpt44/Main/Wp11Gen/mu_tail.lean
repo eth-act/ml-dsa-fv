@@ -5,15 +5,15 @@ theorem padLane_hi {r x : Nat} (hr : r < 136) (hx : 17 ≤ x) : padLane r x = 0 
 /-- Exit: padding, the final permutation and the copy of μ's lanes to `FIN`. -/
 theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     {m M : ByteArray}
-    (hI : MuInv s.executionEnv.calldata m M ((muMsg s.executionEnv.calldata).size / 136)) :
+    (hI : MuInv s.executionEnv.calldata m M ((muMsgW s.executionEnv.calldata).size / 136)) :
     ∃ M', FinMu M' s.executionEnv.calldata ∧ RC1Table M' ∧
       FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] ∧
-      Reach (callState s 5727 [wd ((muMsg s.executionEnv.calldata).size -
-          136 * ((muMsg s.executionEnv.calldata).size / 136)),
-          wd (3802 + 136 * ((muMsg s.executionEnv.calldata).size / 136)), flag b] M)
+      Reach (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size -
+          136 * ((muMsgW s.executionEnv.calldata).size / 136)),
+          wd (3802 + 136 * ((muMsgW s.executionEnv.calldata).size / 136)), flag b] M)
         (callState s 5926 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
   set cd := s.executionEnv.calldata with hcdef
-  set L := (muMsg cd).size
+  set L := (muMsgW cd).size
   set n := L / 136
   have hr : L - 136 * n = L % 136 := by omega
   have hr' : L % 136 < 136 := Nat.mod_lt _ (by norm_num)
@@ -27,14 +27,14 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     unfold muLanes
     by_cases h : x < 17
     · rw [if_pos (by omega), if_pos h, show muPad cd =
-        Fips202.pad 136 0x1F (muMsg cd) from rfl, le64_pad_last _ h, Nat.xor_assoc,
+        Fips202.pad 136 0x1F (muMsgW cd) from rfl, le64_pad_last _ h, Nat.xor_assoc,
         show 136 * n = L / 136 * 136 by ring]
     · rw [if_neg (by omega), if_neg h, Nat.xor_zero, padLane_hi hr' (by omega), Nat.xor_zero]
   obtain ⟨M6, hk6, hf6, hc6⟩ := kf1_call hs (ret := 5868) (tail := [flag b])
     (retOK_mu (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M5
     ((hI.rc1).frame fr5 (by avoids_tac))
   have hP : (muPad cd).size = (n + 1) * 136 := by
-    rw [show muPad cd = Fips202.pad 136 0x1F (muMsg cd) from rfl, pad_size _ _ (by norm_num)]
+    rw [show muPad cd = Fips202.pad 136 0x1F (muMsgW cd) from rfl, pad_size _ _ (by norm_num)]
   have hK6 : KS1 M6 (Fips202.absorb 136 (muPad cd)) := by
     rw [absorb_eq _ _ (n + 1) (by norm_num) hP, absorbPre_succ,
       show n * 136 = L / 136 * 136 from rfl]
@@ -48,7 +48,7 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, FIN]
   refine ⟨M7, fun x hx => ?_, ((hI.rc1.frame fr5 (by avoids_tac)).frame hf6 (by avoids_tac)).frame fr7
     (by avoids_tac), hfr, (((h1.trans r5).trans hc6).trans r7).mono (by omega)⟩
-  rw [f7 x hx, hK6 x (by omega), le64_muOf cd hx]
+  rw [f7 x hx, hK6 x (by omega), le64_muOf_absorb cd hx]
   have hl := laneOf_lt (Fips202.absorb 136 (muPad cd)) x
   split
   · rename_i h
@@ -93,9 +93,9 @@ theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.call
   · have hlong : 3802 ≤ s.executionEnv.calldata.size := by unfold mlenOf at hsh; omega
     have r0 := mu_chk_long hs b m hfit hlong
     obtain ⟨M0, hI0, r1⟩ := mu_setup hs hcd b hI.trl hI.rc1
-    have hL := muMsg_size s.executionEnv.calldata hcd
+    have hL := muMsgW_size s.executionEnv.calldata hcd
     rw [← hL] at r1
-    obtain ⟨M, hIn, r2⟩ := mu_loop hs hcd b hI0 ((muMsg s.executionEnv.calldata).size / 136)
+    obtain ⟨M, hIn, r2⟩ := mu_loop hs hcd b hI0 ((muMsgW s.executionEnv.calldata).size / 136)
       (Nat.mul_div_le _ _)
     obtain ⟨M', hmu, hrc, hfr, r3⟩ := mu_finish hs b hIn
     refine ⟨M', inv6 M' hfr hmu hrc, (((r0.trans r1).trans r2).trans r3).mono ?_⟩

@@ -14,7 +14,7 @@ open MlDsaOpt44.Proofs.Infra
 
 /-- Lanes at the loop head after `j` absorbed blocks: block `j`'s raw lanes xored in. -/
 def muLanes (cd : ByteArray) (j x : Nat) : Nat :=
-  laneOf (absorbPre 136 (muPad cd) j) x ^^^ (if x < 17 then le64 (muMsg cd) (136 * j + 8 * x) else 0)
+  laneOf (absorbPre 136 (muPad cd) j) x ^^^ (if x < 17 then le64 (muMsgW cd) (136 * j + 8 * x) else 0)
 
 structure MuInv (cd m M : ByteArray) (j : Nat) : Prop where
   rc1 : RC1Table M
@@ -26,11 +26,11 @@ theorem lane_case {W W' x v : Nat} (h1 : W' = W ^^^ rep v) (h2 : W = rep (cpl x 
   rw [h1, h2, rep_cpl_xor x (v := 0) (by norm_num) hv, Nat.zero_xor]
 
 theorem lane8_eq (cd : ByteArray) :
-    18446744073709486080 &&& lane (bswapNet (word cd 3730)) 3 = le64 (muMsg cd) (8 * 8) := by
-  rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsg_64]
+    18446744073709486080 &&& lane (bswapNet (word cd 3730)) 3 = le64 (muMsgW cd) (8 * 8) := by
+  rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsgW_64]
 
 theorem muLanes_zero (cd : ByteArray) (x : Nat) :
-    muLanes cd 0 x = if x < 17 then le64 (muMsg cd) (8 * x) else 0 := by
+    muLanes cd 0 x = if x < 17 then le64 (muMsgW cd) (8 * x) else 0 := by
   unfold muLanes
   rw [absorbPre_zero, laneOf_emptyState, Nat.zero_xor, Nat.mul_zero, Nat.zero_add]
 
@@ -58,11 +58,11 @@ theorem mu_setup {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata
   have w4 : ∀ a, a + 32 ≤ KS + 512 ∨ KS + 544 ≤ a → word M4 a = word M3 a := fun a ha =>
     FrameExcept.word fr4 (by simp only [avoids_cons, avoids_nil, and_true]; omega)
   have e1 : ∀ x, x < 25 → word M1 (KS + 32 * x) =
-      rep (cpl x (if x < 8 then le64 (muMsg s.executionEnv.calldata) (8 * x) else 0)) := by
+      rep (cpl x (if x < 8 then le64 (muMsgW s.executionEnv.calldata) (8 * x) else 0)) := by
     intro x hx
     rw [f1 x hx]
     split
-    · rw [htr x (by omega), le64_muMsg_lo _ (by omega)]
+    · rw [htr x (by omega), le64_muMsgW_lo _ (by omega)]
     · rfl
   have hfr : FrameExcept m M4 [(KS, KS + 800), (KB, KB + 800)] := by
     refine (((fr1.trans fr2).trans fr3).trans fr4).mono ?_
@@ -95,34 +95,34 @@ theorem mu_setup {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata
     · rw [if_pos (by norm_num : (9 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega), w3 _ (by unfold KS; omega)]
       refine (lane_case f2.2.1 ((e1 9 (by omega)).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 2 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 9)]
+      rw [lane_bswapNet _ _ (by omega : 2 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 9)]
     · rw [if_pos (by norm_num : (10 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega), w3 _ (by unfold KS; omega)]
       refine (lane_case f2.2.2.1 ((e1 10 (by omega)).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 1 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 10)]
+      rw [lane_bswapNet _ _ (by omega : 1 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 10)]
     · rw [if_pos (by norm_num : (11 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega), w3 _ (by unfold KS; omega)]
       refine (lane_case f2.2.2.2 ((e1 11 (by omega)).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 0 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 11)]
+      rw [lane_bswapNet _ _ (by omega : 0 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 11)]
     · rw [if_pos (by norm_num : (12 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega)]
       refine (lane_case f3.1 (((w2 _ (by unfold KS; omega)).trans (e1 12 (by omega))).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 12)]
+      rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 12)]
     · rw [if_pos (by norm_num : (13 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega)]
       refine (lane_case f3.2.1 (((w2 _ (by unfold KS; omega)).trans (e1 13 (by omega))).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 2 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 13)]
+      rw [lane_bswapNet _ _ (by omega : 2 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 13)]
     · rw [if_pos (by norm_num : (14 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega)]
       refine (lane_case f3.2.2.1 (((w2 _ (by unfold KS; omega)).trans (e1 14 (by omega))).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 1 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 14)]
+      rw [lane_bswapNet _ _ (by omega : 1 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 14)]
     · rw [if_pos (by norm_num : (15 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega)]
       refine (lane_case f3.2.2.2 (((w2 _ (by unfold KS; omega)).trans (e1 15 (by omega))).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 0 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 15)]
+      rw [lane_bswapNet _ _ (by omega : 0 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 15)]
     · rw [if_pos (by norm_num : (16 : Nat) < 17)]
       refine (lane_case f4 ((((w3 _ (by unfold KS; omega)).trans (w2 _ (by unfold KS; omega))).trans (e1 16 (by omega))).trans (by rw [if_neg (by omega)])) (lane_lt64 _ _)).trans ?_
-      rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsg_hi _ (by omega : 66 ≤ 8 * 16)]
+      rw [lane_bswapNet _ _ (by omega : 3 < 4), le64_muMsgW_hi _ (by omega : 66 ≤ 8 * 16)]
     · rw [if_neg (by norm_num : ¬ (17 : Nat) < 17)]
       rw [w4 _ (by unfold KS; omega), w3 _ (by unfold KS; omega), w2 _ (by unfold KS; omega), e1 17 (by omega), if_neg (by omega)]
     · rw [if_neg (by norm_num : ¬ (18 : Nat) < 17)]
@@ -154,15 +154,15 @@ theorem retOK_mu {B ret : Nat} {tail : List UInt256} (hB : B ≤ 1000) (htl : ta
 
 /-- One loop visit absorbing the next full block. -/
 theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) (b : Bool)
-    {m M : ByteArray} (j : Nat) (hj : 136 * (j + 1) ≤ (muMsg s.executionEnv.calldata).size)
+    {m M : ByteArray} (j : Nat) (hj : 136 * (j + 1) ≤ (muMsgW s.executionEnv.calldata).size)
     (hI : MuInv s.executionEnv.calldata m M j) :
     ∃ M', MuInv s.executionEnv.calldata m M' (j + 1) ∧
-      Reach (callState s 5727 [wd ((muMsg s.executionEnv.calldata).size - 136 * j), wd (3802 + 136 * j), flag b] M)
-        (callState s 5727 [wd ((muMsg s.executionEnv.calldata).size - 136 * (j + 1)),
+      Reach (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j), wd (3802 + 136 * j), flag b] M)
+        (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size - 136 * (j + 1)),
           wd (3802 + 136 * (j + 1)), flag b] M') (Gas.kf1 + Gas.absorb17 + 88) := by
   have hfit : s.executionEnv.calldata.size < 18446744073709551616 := hs.calldataFits
-  have hL := muMsg_size s.executionEnv.calldata hcd
-  set L := (muMsg s.executionEnv.calldata).size
+  have hL := muMsgW_size s.executionEnv.calldata hcd
+  set L := (muMsgW s.executionEnv.calldata).size
   have h1 := mu_loop1 hs b M (len := L - 136 * j) (off := 3802 + 136 * j) (by omega) (by omega)
   set S' := Fips202.xorBlock 136 (muPad s.executionEnv.calldata) (j * 136)
     (absorbPre 136 (muPad s.executionEnv.calldata) j)
@@ -172,7 +172,7 @@ theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     unfold muLanes
     by_cases h : x < 17
     · rw [if_pos (by omega), if_pos h, show muPad s.executionEnv.calldata =
-        Fips202.pad 136 0x1F (muMsg s.executionEnv.calldata) from rfl, le64_pad_full _ (by omega),
+        Fips202.pad 136 0x1F (muMsgW s.executionEnv.calldata) from rfl, le64_pad_full _ (by omega),
         show j * 136 + 8 * x = 136 * j + 8 * x by ring]
     · rw [if_neg (by omega), if_neg h, Nat.xor_zero]
   obtain ⟨M1, hk1, hf1, hc1⟩ := kf1_call hs (ret := 5743)
@@ -199,17 +199,17 @@ theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     unfold muLanes
     split
     · rw [rep_cpl_xor _ (laneOf_lt _ _) (le64_lt _ _),
-        le64_muMsg_hi _ (a := 136 * (j + 1) + 8 * x) (by omega),
+        le64_muMsgW_hi _ (a := 136 * (j + 1) + 8 * x) (by omega),
         show 3666 + (136 * (j + 1) + 8 * x) = 3802 + 136 * j + 8 * x by ring]
     · rw [Nat.xor_zero]
   · exact ((((h1.trans hc1).trans h2).trans hc2).trans h3).mono (by omega)
 
 theorem mu_loop {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) (b : Bool)
     {m M0 : ByteArray} (hI0 : MuInv s.executionEnv.calldata m M0 0) :
-    ∀ j, 136 * j ≤ (muMsg s.executionEnv.calldata).size →
+    ∀ j, 136 * j ≤ (muMsgW s.executionEnv.calldata).size →
       ∃ M, MuInv s.executionEnv.calldata m M j ∧
-        Reach (callState s 5727 [wd (muMsg s.executionEnv.calldata).size, wd 3802, flag b] M0)
-          (callState s 5727 [wd ((muMsg s.executionEnv.calldata).size - 136 * j),
+        Reach (callState s 5727 [wd (muMsgW s.executionEnv.calldata).size, wd 3802, flag b] M0)
+          (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j),
             wd (3802 + 136 * j), flag b] M) (j * (Gas.kf1 + Gas.absorb17 + 88))
   | 0, _ => ⟨M0, hI0, by simpa using Reach.refl _⟩
   | j + 1, hj => by
@@ -223,15 +223,15 @@ theorem padLane_hi {r x : Nat} (hr : r < 136) (hx : 17 ≤ x) : padLane r x = 0 
 /-- Exit: padding, the final permutation and the copy of μ's lanes to `FIN`. -/
 theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     {m M : ByteArray}
-    (hI : MuInv s.executionEnv.calldata m M ((muMsg s.executionEnv.calldata).size / 136)) :
+    (hI : MuInv s.executionEnv.calldata m M ((muMsgW s.executionEnv.calldata).size / 136)) :
     ∃ M', FinMu M' s.executionEnv.calldata ∧ RC1Table M' ∧
       FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] ∧
-      Reach (callState s 5727 [wd ((muMsg s.executionEnv.calldata).size -
-          136 * ((muMsg s.executionEnv.calldata).size / 136)),
-          wd (3802 + 136 * ((muMsg s.executionEnv.calldata).size / 136)), flag b] M)
+      Reach (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size -
+          136 * ((muMsgW s.executionEnv.calldata).size / 136)),
+          wd (3802 + 136 * ((muMsgW s.executionEnv.calldata).size / 136)), flag b] M)
         (callState s 5926 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
   set cd := s.executionEnv.calldata with hcdef
-  set L := (muMsg cd).size
+  set L := (muMsgW cd).size
   set n := L / 136
   have hr : L - 136 * n = L % 136 := by omega
   have hr' : L % 136 < 136 := Nat.mod_lt _ (by norm_num)
@@ -245,14 +245,14 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     unfold muLanes
     by_cases h : x < 17
     · rw [if_pos (by omega), if_pos h, show muPad cd =
-        Fips202.pad 136 0x1F (muMsg cd) from rfl, le64_pad_last _ h, Nat.xor_assoc,
+        Fips202.pad 136 0x1F (muMsgW cd) from rfl, le64_pad_last _ h, Nat.xor_assoc,
         show 136 * n = L / 136 * 136 by ring]
     · rw [if_neg (by omega), if_neg h, Nat.xor_zero, padLane_hi hr' (by omega), Nat.xor_zero]
   obtain ⟨M6, hk6, hf6, hc6⟩ := kf1_call hs (ret := 5868) (tail := [flag b])
     (retOK_mu (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M5
     ((hI.rc1).frame fr5 (by avoids_tac))
   have hP : (muPad cd).size = (n + 1) * 136 := by
-    rw [show muPad cd = Fips202.pad 136 0x1F (muMsg cd) from rfl, pad_size _ _ (by norm_num)]
+    rw [show muPad cd = Fips202.pad 136 0x1F (muMsgW cd) from rfl, pad_size _ _ (by norm_num)]
   have hK6 : KS1 M6 (Fips202.absorb 136 (muPad cd)) := by
     rw [absorb_eq _ _ (n + 1) (by norm_num) hP, absorbPre_succ,
       show n * 136 = L / 136 * 136 from rfl]
@@ -266,7 +266,7 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, FIN]
   refine ⟨M7, fun x hx => ?_, ((hI.rc1.frame fr5 (by avoids_tac)).frame hf6 (by avoids_tac)).frame fr7
     (by avoids_tac), hfr, (((h1.trans r5).trans hc6).trans r7).mono (by omega)⟩
-  rw [f7 x hx, hK6 x (by omega), le64_muOf cd hx]
+  rw [f7 x hx, hK6 x (by omega), le64_muOf_absorb cd hx]
   have hl := laneOf_lt (Fips202.absorb 136 (muPad cd)) x
   split
   · rename_i h
@@ -311,9 +311,9 @@ theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.call
   · have hlong : 3802 ≤ s.executionEnv.calldata.size := by unfold mlenOf at hsh; omega
     have r0 := mu_chk_long hs b m hfit hlong
     obtain ⟨M0, hI0, r1⟩ := mu_setup hs hcd b hI.trl hI.rc1
-    have hL := muMsg_size s.executionEnv.calldata hcd
+    have hL := muMsgW_size s.executionEnv.calldata hcd
     rw [← hL] at r1
-    obtain ⟨M, hIn, r2⟩ := mu_loop hs hcd b hI0 ((muMsg s.executionEnv.calldata).size / 136)
+    obtain ⟨M, hIn, r2⟩ := mu_loop hs hcd b hI0 ((muMsgW s.executionEnv.calldata).size / 136)
       (Nat.mul_div_le _ _)
     obtain ⟨M', hmu, hrc, hfr, r3⟩ := mu_finish hs b hIn
     refine ⟨M', inv6 M' hfr hmu hrc, (((r0.trans r1).trans r2).trans r3).mono ?_⟩
