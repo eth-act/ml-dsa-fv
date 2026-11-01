@@ -90,6 +90,9 @@ def main():
     ap.add_argument("-o", "--out", default="module-times.tsv")
     ap.add_argument("-j", "--jobs", type=int, default=1, help="parallel lean processes (1 = alone)")
     ap.add_argument("--lean-arg", action="append", default=[], help="extra argument for lean")
+    ap.add_argument("--save-output", metavar="DIR",
+                    help="write each module's lean output to DIR/<module>.txt (e.g. with "
+                         "--lean-arg=-Dprofiler=true for per-category times)")
     args = ap.parse_args()
 
     if args.modules:
@@ -98,6 +101,8 @@ def main():
         libs = args.libs or tomllib.loads((ROOT / "lakefile.toml").read_text())["defaultTargets"]
         mods = closure(libs)
     env = lean_env()
+    if args.save_output:
+        os.makedirs(args.save_output, exist_ok=True)
     lean = subprocess.run(["lake", "env", "which", "lean"], cwd=ROOT, check=True,
                           capture_output=True, text=True).stdout.strip()
     version = subprocess.run([lean, "--version"], capture_output=True, text=True).stdout.strip()
@@ -117,6 +122,8 @@ def main():
             for i, (mod, wall, cpu, rss, rc, out) in enumerate(
                     pool.map(lambda m: run_one(m, env, lean, args.lean_arg), mods), 1):
                 f.write(f"{mod}\t{wall:.1f}\t{cpu:.1f}\t{rss:.0f}\t{rc}\n")
+                if args.save_output:
+                    Path(args.save_output, mod + ".txt").write_text(out)
                 f.flush()
                 print(f"[{i}/{len(mods)}] {mod} {wall:.1f}s cpu {cpu:.1f}s {rss:.0f}MB"
                       + (f" EXIT {rc}" if rc else ""), flush=True)
