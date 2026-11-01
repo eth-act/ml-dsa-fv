@@ -4,6 +4,7 @@ import MlDsaOpt87.Budget
 /- Ported from `MlDsaOpt44/Fn/Group/Pass3.lean` by `scripts/proofgen_port.py 87`; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 /-! # `pass3`: 32 iterations of an 8-word unrolled `ACC[t] += ABUF[t] · lane k of ZH[t]` (WP6) -/
 

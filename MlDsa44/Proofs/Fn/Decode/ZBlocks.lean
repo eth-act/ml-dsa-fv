@@ -1,5 +1,6 @@
 import MlDsa44.Proofs.Fn.Decode.Bytes
 set_option warningAsError true
+set_option linter.unusedVariables false
 /-!
 # Straight-line blocks of `decodeZ`
 

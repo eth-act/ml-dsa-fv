@@ -1,5 +1,6 @@
 import MlDsaOpt44.Layout
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option maxRecDepth 100000
 /-!
 # `sib`: straight-line blocks

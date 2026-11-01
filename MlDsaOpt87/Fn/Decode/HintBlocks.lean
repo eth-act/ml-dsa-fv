@@ -2,6 +2,7 @@ import MlDsaOpt87.Fn.Decode.Defs
 import MlDsaOpt44.Fn.Decode.HintBlocks
 set_option maxHeartbeats 0
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 /-!
 # Straight-line blocks of `dhint` (ML-DSA-87, WP G2)

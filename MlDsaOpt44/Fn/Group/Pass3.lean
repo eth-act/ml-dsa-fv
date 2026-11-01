@@ -1,5 +1,6 @@
 import MlDsaOpt44.Fn.Group.Common
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 /-! # `pass3`: 32 iterations of an 8-word unrolled `ACC[t] += ABUF[t] · lane k of ZH[t]` (WP6) -/
 

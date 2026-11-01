@@ -3,6 +3,7 @@ import MlDsaOpt65.Budget
 /- Ported from `MlDsaOpt44/Fn/Ball/Blocks.lean` by `scripts/proofgen_port.py 65` --sub 63488=88064 --sub 43008=51200 --sub 40928=49120 --sub 217=207; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option maxRecDepth 100000
 /-!
 # `sib`: straight-line blocks

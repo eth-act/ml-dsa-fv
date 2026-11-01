@@ -1,5 +1,6 @@
 import MlDsaOpt44.Fn.Group.Common
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 /-! # `pass3m`: as `pass3` with the candidate words masked by `lm` (WP6) -/
 

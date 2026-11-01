@@ -1,5 +1,6 @@
 import MlDsa44.Proofs.Fn.UnpackZetas.Bytes
 set_option warningAsError true
+set_option linter.unusedVariables false
 /-!
 # `sampleInBall`: straight-line blocks
 

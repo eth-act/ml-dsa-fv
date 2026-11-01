@@ -4,6 +4,7 @@ import MlDsaOpt87.Budget
 /- Ported from `MlDsaOpt44/Fn/Group/Pass3m.lean` by `scripts/proofgen_port.py 87`; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 /-! # `pass3m`: as `pass3` with the candidate words masked by `lm` (WP6) -/
 

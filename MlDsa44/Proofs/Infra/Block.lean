@@ -3,6 +3,7 @@ import MlDsa44.Proofs.Infra.Word
 import MlDsa44.Proofs.Infra.Memory
 import MlDsaOptCommon.Chunk
 import MlDsaOptCommon.StateProj
+import MlDsaOptCommon.Disch
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
 /-!
@@ -21,7 +22,8 @@ path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
 one `simp` over a long path makes a proof whose kernel check grows much faster
 than the path. The `halt = .Running` premise is closed by
 `with_reducible assumption` or `simp` (plain `assumption` unfolded the state
-against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`).
+against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`). Side
+goals of the `simp` go to `blk_disch` (`MlDsaOptCommon.Disch`).
 -/
 
 namespace MlDsa44.Proofs.Infra
@@ -125,7 +127,7 @@ Goal shape: `EvmProof.Stepper.runLocatedBlock (Artifact.locatedPath [i₀, …])
 where `st` is concrete enough for `simp` to read its `pc`, stack shape, `halt`
 and code (e.g. `callState s pc stk m` with `hs : Ctx s` in context, which the
 tactic uses through `hs.code`/`hs.running`).  The stack-capacity checks are
-discharged by `omega`, so keep a hypothesis like `htail : tail.length ≤ 960`
+discharged by `blk_disch`, so keep a hypothesis like `htail : tail.length ≤ 960`
 in context.  Extra simp lemmas (value definitions of the target state,
 memory facts, …) go in the brackets. -/
 syntax "evm_block" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
@@ -137,7 +139,7 @@ macro_rules
         (by first | with_reducible assumption | simp (disch := assumption) only [MlDsa44.Proofs.callState, MlDsa44.Proofs.Ctx.running])]
       try rw [MlDsa44.Proofs.Artifact.locatedPath]
       foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
-          (disch := first | assumption | omega) only
+          (disch := blk_disch) only
         [MlDsa44.Proofs.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, MlDsa44.Proofs.Infra.stepL_located, MlDsa44.Proofs.Infra.stepL_none,
          MlDsa44.Proofs.Infra.guardHalt_running, EvmProof.Stepper.runInstr,

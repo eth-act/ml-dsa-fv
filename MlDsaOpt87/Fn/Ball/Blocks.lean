@@ -1,6 +1,7 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 0
 /-!

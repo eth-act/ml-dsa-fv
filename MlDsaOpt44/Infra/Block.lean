@@ -1,6 +1,7 @@
 import MlDsaOpt44.Infra.Code
 import MlDsaOptCommon.Chunk
 import MlDsaOptCommon.StateProj
+import MlDsaOptCommon.Disch
 import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 set_option warningAsError true
@@ -20,7 +21,8 @@ path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
 one `simp` over a long path makes a proof whose kernel check grows much faster
 than the path. The `halt = .Running` premise is closed by
 `with_reducible assumption` or `simp` (plain `assumption` unfolded the state
-against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`).
+against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`). Side
+goals of the `simp` go to `blk_disch` (`MlDsaOptCommon.Disch`).
 -/
 
 namespace MlDsaOpt44.Proofs.Infra
@@ -120,7 +122,7 @@ end MlDsaOpt44.Proofs.Infra
 Goal shape: `EvmProof.Stepper.runLocatedBlock (Artifact.locatedPath [i₀, …]) st = rhs`
 where `st` is concrete enough for `simp` to read its `pc`, stack shape, `halt`
 and code (e.g. `callState s pc stk m` with `hs : Ctx s` in context). Stack
-capacity checks are discharged by `omega` (keep `htail : tail.length ≤ K` in
+capacity checks are discharged by `blk_disch` (keep `htail : tail.length ≤ K` in
 context); memory accesses need `off + size ≤ 32 * s.activeWords.toNat`. -/
 syntax "opt44_block" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 
@@ -131,7 +133,7 @@ macro_rules
         (by first | with_reducible assumption | simp (disch := assumption) only [MlDsaOptCommon.callState, MlDsaOpt44.Proofs.Ctx.running])]
       try rw [MlDsaOpt44.Proofs.Artifact.locatedPath]
       foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
-          (disch := first | assumption | omega) only
+          (disch := blk_disch) only
         [MlDsaOpt44.Proofs.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, MlDsaOpt44.Proofs.Infra.stepL_located, MlDsaOpt44.Proofs.Infra.stepL_none,
          MlDsaOpt44.Proofs.Infra.guardHalt_running, EvmProof.Stepper.runInstr,

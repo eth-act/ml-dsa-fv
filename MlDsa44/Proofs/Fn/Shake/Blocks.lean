@@ -1,5 +1,6 @@
 import MlDsa44.Proofs.Fn.Shake.Evm
 set_option warningAsError true
+set_option linter.unusedSectionVars false
 /-!
 # Straight-line blocks of `shake` (instructions 1680‥1874)
 

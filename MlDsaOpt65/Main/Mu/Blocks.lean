@@ -1,6 +1,7 @@
 import MlDsaOpt44.Main.Mu.Lemmas
 import MlDsaOpt65.Main.Base
 set_option warningAsError true
+set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 set_option linter.unnecessarySeqFocus false
 /-! # `seg_mu` blocks (ML-DSA-65)

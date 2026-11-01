@@ -598,6 +598,7 @@ end @P@.Infra
 BLOCK = '''import @NS@.Infra.Code
 import MlDsaOptCommon.Chunk
 import MlDsaOptCommon.StateProj
+import MlDsaOptCommon.Disch
 import MlDsaOptCommon.Word
 import MlDsaOptCommon.Memory
 set_option warningAsError true
@@ -617,7 +618,8 @@ path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
 one `simp` over a long path makes a proof whose kernel check grows much faster
 than the path. The `halt = .Running` premise is closed by
 `with_reducible assumption` or `simp` (plain `assumption` unfolded the state
-against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`).
+against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`). Side
+goals of the `simp` go to `blk_disch` (`MlDsaOptCommon.Disch`).
 -/
 
 namespace @P@.Infra
@@ -717,7 +719,7 @@ end @P@.Infra
 Goal shape: `EvmProof.Stepper.runLocatedBlock (Artifact.locatedPath [i₀, …]) st = rhs`
 where `st` is concrete enough for `simp` to read its `pc`, stack shape, `halt`
 and code (e.g. `callState s pc stk m` with `hs : Ctx s` in context). Stack
-capacity checks are discharged by `omega` (keep `htail : tail.length ≤ K` in
+capacity checks are discharged by `blk_disch` (keep `htail : tail.length ≤ K` in
 context); memory accesses need `off + size ≤ 32 * s.activeWords.toNat`. -/
 syntax "@TAC@_block" (" [" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
 
@@ -728,7 +730,7 @@ macro_rules
         (by first | with_reducible assumption | simp (disch := assumption) only [MlDsaOptCommon.callState, @P@.Ctx.running])]
       try rw [@P@.Artifact.locatedPath]
       foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
-          (disch := first | assumption | omega) only
+          (disch := blk_disch) only
         [@P@.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, @P@.Infra.stepL_located, @P@.Infra.stepL_none,
          @P@.Infra.guardHalt_running, EvmProof.Stepper.runInstr,
