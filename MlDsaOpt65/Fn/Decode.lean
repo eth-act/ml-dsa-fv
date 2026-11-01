@@ -1,4 +1,7 @@
 import MlDsaOpt65.Fn.Decode.Defs
+import MlDsaOpt65.Fn.Decode.ZLoop
+import MlDsaOpt65.Fn.Decode.ZSpec
+import MlDsaOpt65.Fn.Decode.HintMain
 /-!
 # Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack), ML-DSA-65
 
@@ -32,8 +35,8 @@ theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ t, t < 256 → word m' (ZH + 0x2000 * g + 32 * t) =
         pack4 fun j => zLane s.executionEnv.calldata (4 * g + j) t) ∧
       FrameExcept m m' [(ZH + 0x2000 * g, ZH + 0x2000 * g + 8192)] ∧
-      Call s Entry.dz [wd (ZH + 0x2000 * g), wd (Z0 + 2560 * g)] ret tail m [wd f] m' Gas.dz := by
-  sorry
+      Call s Entry.dz [wd (ZH + 0x2000 * g), wd (Z0 + 2560 * g)] ret tail m [wd f] m' Gas.dz :=
+  DecodeZ.dz_main hs hr m hg
 
 /-- Pure (open): the norm check of `z ∈ R^ℓ` is the conjunction of the per-polynomial
 field checks of the first `ℓ = 5` polynomials of the stream. Together with `dz_call`
@@ -41,8 +44,8 @@ this gives the segment-zh flag `(f₀ ||| (f₁ &&& M64)) &&& zBits = 0 ↔ okZ`
 Proof: unfold `sigDecode`/`bitUnpack` (`bitlen (2γ1 − 1) = 20`), `extract_extract`
 (`CTOFF + 48 + 640 k = Z0 + 640 k ≤ HDR`), `|γ1 − raw| < γ1 − β ↔ β < raw < 2γ1 − β`. -/
 theorem okZ_iff_zNormOk (cd : ByteArray) (hcd : HDR ≤ cd.size) :
-    okZ cd = true ↔ ∀ k, k < P.l → zNormOk cd k := by
-  sorry
+    okZ cd = true ↔ ∀ k, k < P.l → zNormOk cd k :=
+  DecodeZ.okZ_iff_zNormOk cd hcd
 
 /-- **dhint**: `[ret] ↦ [okH]`, `HP` (two row groups, `HP + 0x2000 g`) initially zero.
 FIPS 204 Algorithm 21 on the hint bytes; row `r < 6` ORs bit `64 (r % 4)` into
@@ -58,7 +61,8 @@ theorem dhint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ h, hintOf s.executionEnv.calldata = some h → ∀ r, r < 8 → ∀ t, t < 256 →
         lane (word m' (HP + 0x2000 * (r / 4) + 32 * t)) (r % 4) = (h[r]![t]!).toNat) ∧
       FrameExcept m m' [(HP, HP + 0x4000)] ∧
-      Call s Entry.dhint [] ret tail m [flag (okH s.executionEnv.calldata)] m' Gas.dhint := by
-  sorry
+      Call s Entry.dhint [] ret tail m [flag (okH s.executionEnv.calldata)] m' Gas.dhint :=
+  -- `hcd` is not needed: the hint bytes are read through `extract` (zeros past the end)
+  (fun _ => DecodeH.dhint_main hs hr m hz) hcd
 
 end MlDsaOpt65.Proofs
