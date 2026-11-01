@@ -79,3 +79,7 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.hintBitUnpack_range
 #print axioms MlDsaOpt65.Proofs.ntt_zLane
 #print axioms MlDsaOpt65.Proofs.sib_call
+#print axioms MlDsaOpt65.Proofs.seg_g5
+#print axioms MlDsaOpt65.Proofs.seg_g6
+#print axioms MlDsaOpt65.Proofs.seg_g7
+#print axioms MlDsaOpt65.Proofs.seg_g8

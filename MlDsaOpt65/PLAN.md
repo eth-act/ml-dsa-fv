@@ -153,7 +153,7 @@ stated contracts. Port first: most 44 proofs carry over with
 | S1 straight-line | `seg_init`, `seg_tbl`, `seg_rho`, `seg_fin` | 44 `Main/{Init,Tbl,Rho,Fin}` + `Main/Wp11Gen/*.py` | medium |
 | S2 call segments | `seg_zh`, `seg_ntt`, `seg_sib`, `seg_ct`, `seg_w` | 44 `Main/Seg{Zh,Ntt,Sib,Ct,W}` | medium |
 | S3 pure groups | 65 `seg_g0`–`g4`, `seg_g9`; 87 `seg_g0`–`g9` | 44 `Main/SegGroups` | easy-medium |
-| S4 mixed 65 | `seg_g5`–`seg_g8` | 44 `Main/SegG234/*` | hard |
+| S4 mixed 65 | `seg_g5`–`seg_g8` — **proved** (`Main/S4/{Math,Round,G5,G6,G7,G8}`, axiom-clean) | 44 `Main/SegG234/*` | hard |
 | S5 mixed 87 | `seg_g10`–`seg_g14` | 44 `Main/SegG234/*` | hard |
 | S6 μ | `seg_mu` — **proved** (both sets, `Main/Mu/{Spec,Blocks,Proof}`: the 44 proof relocated) | 44 `Main/Mu/*` | medium |
 
