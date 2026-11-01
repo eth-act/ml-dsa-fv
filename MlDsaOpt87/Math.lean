@@ -2,6 +2,9 @@ import MlDsaOpt87.Layout
 import MlDsaOpt87.Fn.Csum.Defs
 import MlDsaOpt87.Math.G4.Csum
 import MlDsaOpt65.Math.G5.Hint
+import MlDsaOpt65.Math.M1.Ball
+import MlDsaOpt65.Math.M1.Hint
+import MlDsaOpt87.Math.M1.Verify
 import MlDsaOpt44.Math
 import MlDsa.Bridge44
 /-!
@@ -49,25 +52,25 @@ theorem nttInv_range (x : Fips204.Poly) (t : Nat) (ht : t < 256) :
 
 /-! ## Parameter-dependent facts (open) -/
 
-/-- SampleInBall (τ = 60) outputs 256 coefficients in `{−1, 0, 1}`.
-Template: `MlDsaOpt44.Proofs.Facts.sampleInBallOf_inv`. -/
+/-- SampleInBall (τ = 60) outputs 256 coefficients in `{−1, 0, 1}`
+(`MlDsaOpt65/Math/M1/Ball.lean`). -/
 theorem sampleInBallOf_coeffs (bs : ByteArray) (c : Fips204.Poly)
     (h : Fips204.sampleInBallOf P bs = some c) :
     c.size = 256 ∧ ∀ t, t < 256 → c[t]! = 0 ∨ c[t]! = 1 ∨ c[t]! = -1 := by
-  sorry
+  have := MlDsaOptM1.sampleInBallOf_inv P (by decide) h
+  exact ⟨this.1, this.2.1⟩
 
 /-- The `dz` lanes of a 20-bit `z_k` polynomial are `ẑ_k` after the NTT
-(`γ1 + q − raw ≡ γ1 − raw`). Template: `MlDsaOpt44.Proofs.SpecFacts.ntt_zLane`. -/
-theorem ntt_zLane (cd : ByteArray) (hcd : HDR ≤ cd.size) {k : Nat} (hk : k < 7) :
-    Fips204.ntt ((Array.range 256).map fun t => (zLane cd k t : Int)) = zHat cd k := by
-  sorry
+(`γ1 + q − raw ≡ γ1 − raw`; `MlDsaOpt87/Math/M1/Verify.lean`). -/
+theorem ntt_zLane (cd : ByteArray) (_hcd : HDR ≤ cd.size) {k : Nat} (hk : k < 7) :
+    Fips204.ntt ((Array.range 256).map fun t => (zLane cd k t : Int)) = zHat cd k :=
+  M1.ntt_zLane cd hk
 
-/-- HintBitUnpack (k = 8, ω = 75) outputs 0/1 coefficients.
-Template: `MlDsaOpt44.Proofs.Facts.hintBitUnpack_range`. -/
+/-- HintBitUnpack (k = 8, ω = 75) outputs 0/1 coefficients (`MlDsaOpt65/Math/M1/Hint.lean`). -/
 theorem hintBitUnpack_range (y : ByteArray) (h : Array Fips204.Poly)
     (hh : Fips204.hintBitUnpack P y = some h) {r t : Nat} (hr : r < 8) (ht : t < 256) :
-    (0 : Int) ≤ h[r]![t]! ∧ h[r]![t]! ≤ 1 := by
-  sorry
+    (0 : Int) ≤ h[r]![t]! ∧ h[r]![t]! ≤ 1 :=
+  MlDsaOptM1.hintBitUnpack_range P y h hh hr ht
 
 /-- `UseHint` only sees its argument modulo `q` (`MlDsaOpt65/Math/G5/Hint.lean`). -/
 theorem useHint_emod (h r : Int) :

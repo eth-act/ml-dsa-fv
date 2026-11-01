@@ -70,11 +70,14 @@ theorem ntt_zLane (cd : ByteArray) {k : Nat} (hk : k < 5) :
     MlDsa44.Proofs.Math.getElem!_map (zPolys cd)[k]! (· % (Fips204.q : Int)) t
       (by rw [hZ]; exact ht),
     MlDsa44.Proofs.Math.getElem!_map_range 256 t _ ht, zPolys_coeff cd hk ht]
-  have hlt := rawZ_lt cd k t
-  have hq : ((Fips204.q : Nat) : Int) = 8380417 := rfl
+  have hlt : rawZ cd k t < 1048576 := rawZ_lt cd k t
   unfold zLane
-  rw [hq, show Fips204.q = 8380417 from rfl]
-  omega
+  generalize rawZ cd k t = r at hlt ⊢
+  have e : ((2 ^ 19 + Fips204.q - r : Nat) : Int) = ((2 ^ 19 : Int) - r) + (Fips204.q : Int) := by
+    rw [Nat.cast_sub (by unfold Fips204.q; omega)]
+    push_cast
+    ring
+  rw [e, Int.add_emod_right]
 
 /-! ## One row of `w′` -/
 

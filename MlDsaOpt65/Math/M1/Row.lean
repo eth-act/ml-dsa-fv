@@ -128,4 +128,29 @@ theorem bitUnpack_get (v : ByteArray) (a b : Nat) {j : Nat} (hj : j < 256) :
 theorem bitsToInteger_lt (v : ByteArray) (p c : Nat) : Fips204.bitsToInteger v p c < 2 ^ c := by
   rw [Bridge44.bitsToInteger_eq]; exact MlDsa44.Proofs.Decode.bitsToInteger_lt v p c
 
+/-! ## `verifyInternal` with the decodings named -/
+
+/-- `Verify_internal` once `pkDecode` and `sigDecode` are named; stated for
+an arbitrary parameter set so that no decoding is ever evaluated. -/
+theorem verifyInternal_flat (P : Params) (pk M' sig rho cT : ByteArray) (t1 z : Array Fips204.Poly)
+    (hint? : Option (Array Fips204.Poly)) (hp : Fips204.pkDecode P pk = (rho, t1))
+    (hs : Fips204.sigDecode P sig = (cT, z, hint?)) :
+    Fips204.verifyInternal P pk M' sig =
+      match (generalizing := false) hint?, Fips204.expandA P rho, Fips204.sampleInBall P cT with
+      | some h, some A, some c =>
+        Fips204.normBelow z (P.gamma1 - P.beta) &&
+          cT == Fips204.H (Fips204.H (Fips204.H pk 64 ++ M') 64 ++ Fips204.w1Encode P
+            ((Array.range P.k).map fun i => (Array.range 256).map fun j =>
+              Fips204.useHint P h[i]![j]! ((Array.range P.k).map fun i =>
+                Fips204.nttInv ((Array.range 256).map fun j =>
+                  ((Fips204.matrixVectorNTT P A (z.map Fips204.ntt))[i]![j]! -
+                    (Fips204.multiplyNTT (Fips204.ntt c) ((t1.map fun p =>
+                      Fips204.ntt (p.map (· * 2 ^ Fips204.d))))[i]!)[j]!) %
+                        (Fips204.q : Int)))[i]![j]!)) (P.lambda / 4)
+      | _, _, _ => false := by
+  rw [Fips204.verifyInternal, hp, hs]
+  dsimp only
+  rcases hint? with _ | h <;> rcases Fips204.expandA P rho with _ | A <;>
+    rcases Fips204.sampleInBall P cT with _ | c <;> rfl
+
 end MlDsaOptM1

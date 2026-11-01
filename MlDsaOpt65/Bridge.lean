@@ -1,5 +1,6 @@
 import MlDsaOpt65.Layout
 import MlDsaOpt44.Math.SpongeG234
+import MlDsaOpt65.Math.M1.Verify
 /-!
 # The verification result in the optimised data flow (ML-DSA-65)
 
@@ -23,15 +24,14 @@ theorem pkLen_eq : MlDsa65.pkLen = 1952 := by decide
 
 theorem sigLen_eq : MlDsa65.sigLen = 3309 := by decide
 
-/-- **Bridge** (open): for calldata of at least `|pk| + |σ| = 5261` bytes, the
+/-- **Bridge**: for calldata of at least `|pk| + |σ| = 5261` bytes, the
 EIP-8355 verdict `MlDsa65.accepts` (FIPS 204 `ML-DSA.Verify` at
-`Params.mldsa65`) is the bytecode's flag-and-hash result `optAccepts`. Proof
-plan: mirror `MlDsaOpt44.Proofs.BridgeMain.accepts_eq_optAccepts`
+`Params.mldsa65`) is the bytecode's flag-and-hash result `optAccepts`
 (`verifyInternal` flattened, per-row convolution identity, `useHint` mod `q`,
-flag order `((okZ ∧ okH) ∧ okA) ∧ okC`). -/
+flag order `((okZ ∧ okH) ∧ okA) ∧ okC`; proof in `MlDsaOpt65/Math/M1/Verify.lean`). -/
 theorem accepts_eq_optAccepts (cd : ByteArray) (hcd : 5261 ≤ cd.size) :
-    MlDsa65.accepts cd = optAccepts cd := by
-  sorry
+    MlDsa65.accepts cd = optAccepts cd :=
+  M1.accepts_eq_optAccepts cd hcd
 
 theorem simpleBitPack15_size (w : Fips204.Poly) : (Fips204.simpleBitPack w 15).size = 128 := by
   simp only [Fips204.simpleBitPack]

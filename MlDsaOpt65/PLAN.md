@@ -79,7 +79,7 @@ offset), `pass3_call` (`Fn/Group.lean`, generalised to pointers), and for 87
 | `Budget.lean` | subroutine budgets (`proofgen_gas_param.py NN --analyse`) | definitions |
 | `Fn/*.lean` | contracts (see table) | 14 (65) / 14 (87) proved, rest **open** |
 | `Math.lean` | spec facts: parameter-free ones proved via `MlDsa/Bridge44.lean`, the rest **open** | partly open |
-| `Bridge.lean` | `pkLen_eq`, `sigLen_eq`, `finBytes_size` proved; `accepts_eq_optAccepts` **open** | open |
+| `Bridge.lean` | `pkLen_eq`, `sigLen_eq`, `finBytes_size`, `accepts_eq_optAccepts` proved (WP M1: `MlDsaOptNN/Math/M1/Verify.lean`; parametric helpers `MlDsaOpt65/Math/M1/{Row,Ball,Hint}.lean`, namespace `MlDsaOptM1`) | proved |
 | `Main/Inv.lean`, `Main/Base.lean`, `Main/Frame.lean` | boundary invariants, segment budgets, frame transport (`avoids_tac`, `X.frame`) | definitions / proved |
 | `Main/Seg*.lean` | one theorem per segment | **open** |
 | `Main/Short.lean`, `Main/Valid.lean`, `Gas.lean`, `Main.lean` | short path, composition, schedule, final theorems | proved |

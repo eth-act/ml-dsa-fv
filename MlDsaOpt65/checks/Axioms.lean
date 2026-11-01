@@ -72,3 +72,7 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.useHint_range
 #print axioms MlDsaOpt65.Proofs.finBytes_le64_mu
 #print axioms MlDsaOpt65.Proofs.finBytes_le64_w1
+#print axioms MlDsaOpt65.Proofs.accepts_eq_optAccepts
+#print axioms MlDsaOpt65.Proofs.sampleInBallOf_coeffs
+#print axioms MlDsaOpt65.Proofs.hintBitUnpack_range
+#print axioms MlDsaOpt65.Proofs.ntt_zLane
