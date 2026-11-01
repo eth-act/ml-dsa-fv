@@ -49,14 +49,12 @@ theorem init_rc4 {{s : State}} (hs : Ctx s) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
   opt44_reach [{L(8,80)}]
-  rfl
 
 theorem init_rc1a {{s : State}} (hs : Ctx s) (M : ByteArray) :
     Reach (callState s 664 [] M) (callState s {pc(141)} [wd {int(rows[80][2].split()[1],16)}] (storeWords M RC1 rc1v 12)) 207 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
   opt44_reach [{L(80,141)}]
-  rfl
 
 theorem init_rc1b {{s : State}} (hs : Ctx s) (M : ByteArray) :
     Reach (callState s {pc(141)} [wd {int(rows[80][2].split()[1],16)}] (storeWords M RC1 rc1v 12))
@@ -64,7 +62,6 @@ theorem init_rc1b {{s : State}} (hs : Ctx s) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
   opt44_reach [{L(141,202)}]
-  rfl
 
 theorem initMem_frame : FrameExcept initM0 initMem [(RC4, RC4 + 768), (RC1, RC1 + 768)] := by
   unfold initMem

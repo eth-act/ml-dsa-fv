@@ -54,7 +54,6 @@ theorem seg_zh {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
   have hb3 : Reach (callState s 1083 [flag (okH s.executionEnv.calldata), flag (okZ s.executionEnv.calldata)] m2)
       (callState s 1085 [flag (ok1 s.executionEnv.calldata)] m2) 4 := by
     opt44_reach [218, 219] with [flag, ite01_land, ok1]
-    all_goals rfl
   refine ⟨m2, ⟨(hI.rc4.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),
     (hI.rc1.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),
     ZAt.frame (fun t ht => hz t ht) hfr2 (by avoids_tac), ⟨hhb, hhp⟩,

@@ -71,7 +71,6 @@ theorem rc_block1 {s : State} (hs : Ctx s) (mlen : Nat) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2535 ≤ s.activeWords.toNat := hs.sized
   evm_reach [3158, 3159, 3160, 3161, 3162, 3163, 3164, 3165, 3166, 3167, 3168, 3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181]
-  rfl
 
 theorem rc_block2 {s : State} (hs : Ctx s) (mlen : Nat) (M : ByteArray) :
     Reach (callState s 4847 [wd mlen] (storeWords M RC rcv 8))
@@ -79,7 +78,6 @@ theorem rc_block2 {s : State} (hs : Ctx s) (mlen : Nat) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2535 ≤ s.activeWords.toNat := hs.sized
   evm_reach [3182, 3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3192, 3193, 3194, 3195, 3196, 3197, 3198, 3199, 3200, 3201, 3202, 3203, 3204, 3205]
-  rfl
 
 theorem rc_block3 {s : State} (hs : Ctx s) (mlen : Nat) (M : ByteArray) :
     Reach (callState s 4925 [wd mlen] (storeWords M RC rcv 16))
@@ -87,7 +85,6 @@ theorem rc_block3 {s : State} (hs : Ctx s) (mlen : Nat) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2535 ≤ s.activeWords.toNat := hs.sized
   evm_reach [3206, 3207, 3208, 3209, 3210, 3211, 3212, 3213, 3214, 3215, 3216, 3217, 3218, 3219, 3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232]
-  rfl
 
 theorem sized_activeWords (s : State) (mlen : Nat) (h : mlen < 2 ^ 64) :
     (sized s mlen).activeWords.toNat = sizedWords mlen :=

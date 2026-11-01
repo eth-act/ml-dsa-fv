@@ -36,7 +36,7 @@ macro_rules
       refine MlDsa44.Proofs.Infra.reach_block (by assumption) $path (by decide +kernel) ?_
       first
       | (evm_reflect_core
-           all_goals try simp (disch := first | assumption | omega) only
+           reflect_simp_all simp (config := { maxDischargeDepth := 1 }) (disch := blk_disch) only
              [MlDsaOptCommon.Reflect.Aligned, MlDsaOptCommon.Reflect.Op.instr,
               MlDsaOptCommon.Reflect.Op.next, MlDsaOptCommon.Reflect.endPC,
               MlDsaOptCommon.Reflect.Condition.Holds, List.foldl_cons, List.foldl_nil,
@@ -53,11 +53,13 @@ macro_rules
               List.cons_append, List.nil_append, List.length_cons, List.length_nil,
               List.getD_cons_zero, List.getD_cons_succ, List.mem_cons, List.not_mem_nil,
               ↓reduceIte, if_pos, if_neg, Nat.reduceMod, ne_eq, not_false_eq_true,
-              Bool.true_eq, Bool.false_eq, decide_eq_true_eq, decide_eq_false_iff_not,
+              decide_eq_true_eq, decide_eq_false_iff_not,
               not_true_eq_false, decide_true, decide_false,
               or_false, forall_eq_or_imp, forall_eq, forall_const, false_implies,
               and_true, true_and, eq_self_iff_true, eq_iff_iff, iff_true, iff_false,
+              Bool.false_eq_true, Bool.true_eq_false,
               Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, Nat.reduceLT, Nat.reduceEqDiff,
+              Nat.reduceOr, Nat.reduceAnd, Nat.reduceXor, Nat.reduceSub, Nat.reduceDiv,
               MlDsaOptCommon.wd, EvmProof.Word.literal_eq_ofNat,
               MlDsaOptCommon.callState, MlDsa44.Proofs.callState, MlDsa44.Proofs.wd, MlDsaOptCommon.ofNat_land,
               MlDsaOptCommon.ofNat_lor, MlDsaOptCommon.ofNat_xor, MlDsaOptCommon.ofNat_mul,
@@ -69,3 +71,10 @@ macro_rules
            all_goals first | assumption | omega | rfl | (intro; trivial) | (repeat' constructor)
            done)
       | evm_block [$extra,*]))
+
+-- Keep the public spelling and the chunked block fallback. Importing this
+-- module enables reflection for generated and handwritten reach calls alike.
+macro_rules
+  | `(tactic| evm_reach $path:term with [$extra:simpLemma,*]) =>
+      `(tactic| evm_rreach $path with [$extra,*])
+  | `(tactic| evm_reach $path:term) => `(tactic| evm_rreach $path)

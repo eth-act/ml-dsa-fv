@@ -136,18 +136,15 @@ theorem init_run {{s : State}} (h0 : Ctx0 s) (haw : s.activeWords.toNat = 0)
 theorem init_rc4 {{s : State}} (hs : Ctx s) (M : ByteArray) :
     Reach (callState s 15 [] M) (callState s 664 [] (storeWords M RC4 rc4v 24)) 216 := by
 {pre(nn)}  opt{nn}_reach [{L(8, 80)}]
-  rfl
 
 theorem init_rc1a {{s : State}} (hs : Ctx s) (M : ByteArray) :
     Reach (callState s 664 [] M) (callState s {X.pc(141)} [wd {rcw}] (storeWords M RC1 rc1v 12)) 207 := by
 {pre(nn)}  opt{nn}_reach [{L(80, 141)}]
-  rfl
 
 theorem init_rc1b {{s : State}} (hs : Ctx s) (M : ByteArray) :
     Reach (callState s {X.pc(141)} [wd {rcw}] (storeWords M RC1 rc1v 12))
       (callState s 992 [] (storeWords M RC1 rc1v 24)) 206 := by
 {pre(nn)}  opt{nn}_reach [{L(141, 202)}]
-  rfl
 
 theorem initMem_frame : FrameExcept initM0 initMem [(RC4, RC4 + 768), (RC1, RC1 + 768)] := by
   unfold initMem
@@ -220,7 +217,6 @@ def gen_tbl(nn):
 theorem tbl_b{k} {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     Reach (callState s {X.pc(a)} [flag b] M) (callState s {X.pc(b)} [flag b] (tblChunk M {k})) 279 := by
 {pre(nn)}  opt{nn}_reach [{', '.join(str(i) for i in range(a, b))}]
-  rfl
 '''
     chain = '(tbl_b0 hs b m)'
     for k in range(1, 8):

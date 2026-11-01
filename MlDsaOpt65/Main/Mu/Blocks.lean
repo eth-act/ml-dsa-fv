@@ -82,7 +82,6 @@ theorem mu_L1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray)
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt65_reach [1771, 1772, 1773, 1774, 1775, 1776, 1777, 1778, 1779, 1780, 1781, 1782, 1783, 1784, 1785, 1786, 1787, 1788, 1789, 1790, 1791, 1792, 1793, 1794, 1795, 1796, 1797, 1798, 1799, 1800, 1801, 1802, 1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815, 1816, 1817, 1818, 1819, 1820, 1821, 1822, 1823, 1824, 1825, 1826, 1827, 1828, 1829, 1830, 1831, 1832, 1833, 1834, 1835, 1836, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 1848, 1849, 1850, 1851, 1852, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 1860, 1861, 1862, 1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 1875, 1876] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, TRL, Nat.reduceMul, Nat.reduceAdd] <;> s6mu_chain_facts
     all_goals (try simp (disch := assumption) only [not_rep_lit'])
@@ -211,7 +210,6 @@ theorem mu_copy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt65_reach [2153, 2154, 2155, 2156, 2157, 2158, 2159, 2160, 2161, 2162, 2163, 2164, 2165, 2166, 2167, 2168, 2169, 2170, 2171, 2172, 2173, 2174, 2175, 2176, 2177, 2178, 2179, 2180, 2181, 2182, 2183, 2184, 2185, 2186, 2187] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [FIN, KS, Nat.reduceMul, Nat.reduceAdd] <;> s6mu_chain_facts
     all_goals norm_num
@@ -229,7 +227,6 @@ theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Na
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt65_reach [2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143, 2144, 2145, 2146, 2147, 2148, 2149, 2150, 2151, 2152] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     have hm8 : len % 8 < 8 := Nat.mod_lt _ (by omega)
     have hk : 7 &&& len = len % 8 := by

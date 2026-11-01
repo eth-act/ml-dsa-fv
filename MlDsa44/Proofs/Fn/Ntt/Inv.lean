@@ -41,6 +41,7 @@ theorem i_outer_in (M : ByteArray) {len m : Nat} (hl : len < 256) :
     (callState s 3273 (wd 0 :: wd len :: wd m :: wd p :: wd ret :: tail) M) 28 := by
   evm_reach [2100, 2101, 2102, 2103, 2104, 2105, 2106, 2107]
 
+set_option opt.reflect.enabled false in
 theorem i_mid_in (M : ByteArray) {st len k : Nat} (hst : st < 256) (hk : k < 256)
     (hzq : word M (2528 + k * 32) < 8380417) :
     Infra.Reach (callState s 3273 (wd st :: wd len :: wd (k + 1) :: wd p :: wd ret :: tail) M)

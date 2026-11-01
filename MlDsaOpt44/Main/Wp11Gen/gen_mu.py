@@ -69,7 +69,6 @@ out.append(f'''
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [{L(4943,5306)}] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, TRL, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals (try simp (disch := assumption) only [not_rep_lit'])
@@ -143,7 +142,6 @@ theorem mu_copy {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) :
 {pre}  refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [{L(5868,5926)}] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [FIN, KS, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals norm_num

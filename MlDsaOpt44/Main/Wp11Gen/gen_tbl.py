@@ -69,7 +69,6 @@ theorem tbl_b{k} {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) :
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
   opt44_reach [{idx}]
-  rfl
 ''')
 chain='(tbl_b0 hs b m)'
 for k in range(1,8):

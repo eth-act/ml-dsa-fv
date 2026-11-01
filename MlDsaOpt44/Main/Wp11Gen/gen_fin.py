@@ -29,7 +29,6 @@ theorem fin_init {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) :
 {pre}  refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [{L(6001,6126)}] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals (try simp [cpl, complemented])
@@ -44,7 +43,6 @@ theorem fin_abs {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) {{p : Nat}
 {pre}  refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [{Lx(6126,6359)}] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, Nat.reduceMul, Nat.reduceAdd, Nat.zero_add, Nat.add_zero] <;>
       chain_facts <;> rw [xor_mod_lit (word_lt_lit _ _) (word_lt_lit _ _)]
@@ -70,7 +68,6 @@ theorem fin_pad {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) (q : Nat) 
 {pre}  refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [{Lx(6374,6476)}] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, finTail, Nat.reduceMul, Nat.reduceAdd, Nat.zero_add,
       Nat.reduceEqDiff, ite_true, ite_false, ↓reduceIte] <;> chain_facts

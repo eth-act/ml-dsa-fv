@@ -7,6 +7,22 @@ open EvmSemantics EvmSemantics.EVM YulEvmCompiler
 
 initialize registerTraceClass `opt.reflect
 
+register_option opt.reflect.enabled : Bool := {
+  defValue := true
+  descr := "Use reflection before the chunked block tactic"
+}
+
+/-- Elaborate the block's simp set once, then reuse it for every obligation. -/
+elab "reflect_simp_all " stx:tactic : tactic => withMainContext do
+  let r ← mkSimpContext stx (eraseLocal := false)
+  let mut remaining := []
+  for goal in (← getGoals) do
+    setGoals [goal]
+    r.dischargeWrapper.with fun discharge? => do
+      discard <| simpLocation r.ctx r.simprocs discharge? (.targets #[] true)
+    remaining := remaining ++ (← getGoals)
+  setGoals remaining
+
 /-- Decode an instruction expression obtained from the artifact's checked tables.
 The returned syntax is untrusted; the alignment proof checks it in the kernel. -/
 def reflectInstr (e : Expr) (pc next : Nat) : MetaM Expr := do
@@ -125,7 +141,9 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
 
 def reflectBlock (tables : MetaM (Array Expr × Array Nat)) (sound : Name)
     (finish : Syntax) : TacticM Unit := do
-  try withAtLeastMaxRecDepth 10000 (reflectBlockImpl tables sound finish)
+  unless opt.reflect.enabled.get (← getOptions) do
+    throwError "reflection disabled"
+  try withoutRecover <| withAtLeastMaxRecDepth 10000 (reflectBlockImpl tables sound finish)
   catch e =>
     trace[opt.reflect] "fallback: {e.toMessageData}"
     throw e

@@ -76,7 +76,6 @@ theorem mu_L1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray)
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [1567, 1568, 1569, 1570, 1571, 1572, 1573, 1574, 1575, 1576, 1577, 1578, 1579, 1580, 1581, 1582, 1583, 1584, 1585, 1586, 1587, 1588, 1589, 1590, 1591, 1592, 1593, 1594, 1595, 1596, 1597, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [KS, TRL, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals (try simp (disch := assumption) only [not_rep_lit'])
@@ -205,7 +204,6 @@ theorem mu_copy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     interval_cases x <;> simp only [FIN, KS, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals norm_num
@@ -223,7 +221,6 @@ theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Na
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     have hm8 : len % 8 < 8 := Nat.mod_lt _ (by omega)
     have hk : 7 &&& len = len % 8 := by

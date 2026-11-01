@@ -8,7 +8,6 @@ theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Na
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt44_reach [1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948] with [word_mstore_disjoint]
-    rfl
   · intro x hx
     have hm8 : len % 8 < 8 := Nat.mod_lt _ (by omega)
     have hk : 7 &&& len = len % 8 := by
