@@ -43,6 +43,11 @@ theorem pd_eq : pd = 1 := rfl
 theorem uses_f : f 0 = 1 := rfl
 theorem uses_tac : 2 < 3 := by my_tac
 theorem g.proof_1 : 2 + 2 = 4 := rfl
+def hh (n : Nat) : Nat := match n with
+  | 0 => 1
+  | _ + 1 => 2
+theorem hh_pos (n : Nat) : 0 < hh n := by
+  unfold hh; split <;> decide
 """,
 }
 
@@ -220,6 +225,13 @@ class Fixture(unittest.TestCase):
         v = self.variant({"Fx/B.lean": ("theorem uses_f", "def «zz\tC\tf_pos\nC» : Nat := 0\ntheorem uses_f")})
         self.assertEqual(v.errors, [])
         self.assertFails(v, "axiom policy")
+
+    def test_match_splitter_is_auxiliary(self):
+        # `split` realizes `hh.match_1.splitter` in the using module; a proof that stops
+        # using `split` drops it, which is not a removed constant
+        out = self.assertPasses(self.variant({"Fx/B.lean": ("unfold hh; split <;> decide",
+                                                            "cases n <;> exact Nat.succ_pos _")}))
+        self.assertNotIn("splitter", "\n".join(l for l in out if not l.startswith("info")))
 
     def test_removed(self):
         self.assertFails(self.variant({"Fx/B.lean": ("theorem uses_f : f 0 = 1 := rfl\n", "")}), "removed")

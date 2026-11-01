@@ -364,12 +364,16 @@ def relevant (env : Environment) (isProject : Name → Bool) (seeds : Array Name
   return seen
 
 /-- Elaborator- or compiler-generated names (`match_1`, `proof_1`, `eq_1`, `_cstage1`,
-`eq_def`, ...): whether they exist depends on how proofs are written, so the
-signature diff does not compare them by name (their meaning still enters every
-closure digest and their axioms are still audited). -/
-def isAux (env : Environment) (n : Name) : Bool :=
+`eq_def`, ...), and anything generated under one (`match_1.splitter`, realized in
+whichever module first uses `split`): whether they exist depends on how proofs are
+written, so the signature diff does not compare them by name (their meaning still
+enters every closure digest and their axioms are still audited). -/
+partial def isAux (env : Environment) (n : Name) : Bool :=
   let u := privateToUserName n
-  u.isInternalDetail || isReservedName env n || isReservedName env u
+  u.isInternalDetail || isReservedName env n || isReservedName env u ||
+    (match u with
+     | .str p _ | .num p _ => !p.isAnonymous && isAux env p
+     | .anonymous => false)
 
 def parseArgs (args : List String) : Std.HashMap String (List String) := Id.run do
   let mut m : Std.HashMap String (List String) := {}

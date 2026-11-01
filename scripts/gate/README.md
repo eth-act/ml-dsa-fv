@@ -27,7 +27,7 @@ about 12 min to build from scratch, 2.5 min to extract, 12 min to replay
 generators; a second revision rebuilds and replays only what changed. To skip
 the first build, copy a checkout's `.lake/build` into `.lake/gate/wt/.lake/`.
 
-Regression tests: `python3 scripts/gate/test_gate.py` (35 tests, about a
+Regression tests: `python3 scripts/gate/test_gate.py` (36 tests, about a
 minute; they build small Lean fixtures under /tmp).
 
 ## What fails the gate
@@ -110,7 +110,7 @@ through a dependency. A definition body that no theorem statement reaches
 are listed as notes.
 
 Elaborator- and compiler-generated names (`Name.isInternalDetail` or a
-reserved name such as `eq_def`, unless it is a theorem with a source range,
+reserved name such as `eq_def`, or a name under one such as `match_1.splitter`, unless it is a theorem with a source range,
 i.e. one a person wrote) come and go with the way proofs are written; they are
 not compared by name, but their meaning enters every closure hash
 that mentions them and their axioms are audited like everything else.
