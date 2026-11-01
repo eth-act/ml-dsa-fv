@@ -34,7 +34,9 @@ import re
 import shutil
 import subprocess
 import sys
+import signal
 import tempfile
+import fcntl
 import tomllib
 import atexit
 from pathlib import Path, PurePosixPath
@@ -127,14 +129,31 @@ def log(msg: str) -> None:
     print(f"[gate] {msg}", file=sys.stderr, flush=True)
 
 
+def _run(cmd, **kw):
+    """`subprocess.run` in a session of its own: if the gate stops for any reason while
+    the command runs, its whole process group (`lake` and every `lean` it started) is
+    killed, so no orphan can write into the worktree afterwards."""
+    with subprocess.Popen(cmd, start_new_session=True, **kw) as p:
+        try:
+            out, err = p.communicate()
+        except BaseException:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            raise
+        return subprocess.CompletedProcess(cmd, p.returncode, out, err)
+
+
 def run(cmd, cwd=None, check=True, env=None, capture=True, logfile=None, stdin=None):
     if logfile is not None:
         with open(logfile, "ab") as f:
             f.write(f"\n$ {' '.join(map(str, cmd))}\n".encode())
             f.flush()
-            p = subprocess.run(cmd, cwd=cwd, env=env, stdout=f, stderr=subprocess.STDOUT, stdin=stdin)
+            p = _run(cmd, cwd=cwd, env=env, stdout=f, stderr=subprocess.STDOUT, stdin=stdin)
     else:
-        p = subprocess.run(cmd, cwd=cwd, env=env, capture_output=capture, stdin=stdin)
+        cap = subprocess.PIPE if capture else None
+        p = _run(cmd, cwd=cwd, env=env, stdout=cap, stderr=cap, stdin=stdin)
     if check and p.returncode != 0:
         err = (p.stderr or b"").decode(errors="replace") if logfile is None else f"see {logfile}"
         raise SystemExit(f"gate: command failed ({p.returncode}): {' '.join(map(str, cmd))}\n{err}")
@@ -215,6 +234,49 @@ def checkout(tree: str, clean: bool) -> None:
         pk.symlink_to(ROOT / ".lake" / "packages")
     if clean and (lk / "build").exists():
         shutil.rmtree(lk / "build")
+
+
+def worktree_users() -> list[str]:
+    """Other processes whose working directory or open files are inside the worktree."""
+    users = []
+    wt = str(WT.resolve()) if WT.exists() else str(WT)
+    for proc in Path("/proc").iterdir():
+        if not proc.name.isdigit() or int(proc.name) == os.getpid():
+            continue
+        try:
+            paths = [os.readlink(proc / "cwd")] + [os.readlink(fd) for fd in (proc / "fd").iterdir()]
+        except OSError:
+            continue
+        if any(x == wt or x.startswith(wt + "/") for x in paths):
+            try:
+                cmd = (proc / "cmdline").read_bytes().replace(b"\0", b" ").decode(errors="replace")[:80]
+            except OSError:
+                cmd = "?"
+            users.append(f"{proc.name} {cmd}")
+    return users
+
+
+def lock_work() -> None:
+    """One gate run per checkout: they share the worktree and its build directory."""
+    global _LOCK
+    WORK.mkdir(parents=True, exist_ok=True)
+    f = open(WORK / "lock", "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        f.close()
+        raise SystemExit(f"gate: another gate run holds {WORK / 'lock'}")
+    _LOCK = f
+
+
+def unlock_work() -> None:
+    global _LOCK
+    if _LOCK is not None:
+        _LOCK.close()
+        _LOCK = None
+
+
+_LOCK = None
 
 
 def deps_state(tree: str) -> list[str]:
@@ -395,6 +457,10 @@ def snapshot(tree: str, label: str, opts) -> list[str]:
     # output, Lake had not yet recorded it); a later `lake build` of other sources then
     # accepts the stale .olean as up to date. The marker lives from checkout until every
     # build command has exited on its own; if it is found, the build directory is wiped.
+    users = worktree_users()
+    if users:
+        raise SystemExit(f"gate: processes are still using {WT} (an earlier, interrupted run?): {users[:5]}; "
+                         "stop them and rerun")
     marker = WORK / "build-in-progress"
     interrupted = marker.exists()
     if interrupted:
@@ -780,6 +846,16 @@ def main(argv=None):
     c.add_argument("--bootstrap", action="store_true")
     c.add_argument("--report")
     opts = ap.parse_args(argv)
+    # SIGTERM unwinds like Ctrl-C, so running commands are killed with their children
+    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    lock_work()
+    try:
+        return _main(opts)
+    finally:
+        unlock_work()
+
+
+def _main(opts):
     if opts.cmd == "snapshot":
         r = resolve(opts.rev)
         if r[0] != "tree":

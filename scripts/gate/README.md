@@ -42,7 +42,10 @@ Per revision (HEAD must pass all of these):
   recorded `.olean` is the one its Lake trace records; a mismatch (left by an
   interrupted build: an orphaned `lean` writing after `lake` died) fails. A
   gate run interrupted during its build leaves a marker, and the next run
-  builds from scratch.
+  builds from scratch. Every command runs in a process group of its own that
+  is killed with the gate (so no `lean` outlives it); one gate run at a time
+  holds `.lake/gate/lock`; and a run refuses to start while any process still
+  works inside the worktree.
 * **Kernel replay** (`gate_replay`, the `replayFromImports` of the
   toolchain's `leanchecker` with bounded parallelism): every declaration of
   every project module (every module whose `.olean` was built in the

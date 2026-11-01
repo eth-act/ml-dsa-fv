@@ -459,6 +459,58 @@ class RepoGenerators(unittest.TestCase):
             subprocess.run(["git", "reset", "-q", "--hard", "HEAD~1"], cwd=self.wt, check=True)
 
 
+class Concurrency(unittest.TestCase):
+    """No second writer in the gate's worktree (no Lean)."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="gate-conc-"))
+        self.saved = (gate.WORK, gate.WT)
+        gate.WORK, gate.WT = self.tmp / "gate", self.tmp / "gate" / "wt"
+        gate.WT.mkdir(parents=True)
+
+    def tearDown(self):
+        gate.unlock_work()
+        gate.WORK, gate.WT = self.saved
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_second_run_refused(self):
+        gate.lock_work()
+        p = subprocess.run([sys.executable, "-c", f"""
+import sys; sys.path.insert(0, {str(Path(gate.__file__).parent)!r})
+import gate; from pathlib import Path
+gate.WORK = Path({str(gate.WORK)!r}); gate.main(["check", "HEAD"])"""], capture_output=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn(b"another gate run holds", p.stderr)
+
+    def test_process_in_worktree_detected(self):
+        p = subprocess.Popen(["sleep", "30"], cwd=gate.WT)
+        try:
+            self.assertTrue(any(u.startswith(f"{p.pid} ") for u in gate.worktree_users()))
+        finally:
+            p.kill()
+            p.wait()
+        self.assertEqual(gate.worktree_users(), [])
+
+    def test_stopped_gate_kills_command_group(self):
+        # the production bug: `lean` outlived a killed `lake` and wrote stale .olean files
+        pidf = self.tmp / "pid"
+        g = subprocess.Popen([sys.executable, "-c", f"""
+import sys, signal; sys.path.insert(0, {str(Path(gate.__file__).parent)!r})
+import gate
+signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+gate.run(["bash", "-c", "sleep 300 & echo $! > {pidf}; wait"])"""])
+        for _ in range(100):
+            if pidf.exists() and pidf.read_text().strip():
+                break
+            __import__("time").sleep(0.1)
+        child = int(pidf.read_text())
+        g.terminate()
+        g.wait(timeout=10)
+        __import__("time").sleep(0.5)
+        self.assertFalse(Path(f"/proc/{child}").exists() and
+                         Path(f"/proc/{child}/stat").read_text().split()[2] != "Z", "grandchild survived")
+
+
 def lines(consts=(), checks=(), extra=()):
     out = ["R\tlabel\tx", "R\tgate\tk", "R\ttoolchain\tt", "R\tlean\tg", "R\tmanifest\tm",
            "K\tkernel replay\tok\t-",
