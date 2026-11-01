@@ -1,4 +1,7 @@
 import MlDsaOpt44.Fn.Ball
+import MlDsaOpt44.Fn.Ct.Defs
+import MlDsaOpt44.Fn.Ct.TBuildRun
+import MlDsaOpt44.Fn.Ct.CsumMain
 /-!
 # Sparse `c · t1` in the normal domain: `tbuild`, `csum` (WP10)
 
@@ -21,40 +24,24 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa44
 
-/-- Window table entry `e < 768` of row `r`. -/
-def tEntry (cd : ByteArray) (r e : Nat) : Nat :=
-  if 256 ≤ e ∧ e < 512 then t1v cd r (e - 256) else 1023 - t1v cd r (e % 256)
-
-/-- The table `tbuild` writes at `tt`. -/
-def TTable (m : ByteArray) (tt : Nat) (cd : ByteArray) : Prop :=
-  ∀ e, e < 768 → ∀ r, r < 4 → be16 m (tt + 6142 - 8 * e - 2 * r) = tEntry cd r e
-
 /-- **tbuild**: `[TT, 32, ret]`. -/
 theorem tbuild_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.tbuild ret tail) (m : ByteArray) (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', TTable m' TT s.executionEnv.calldata ∧
       FrameExcept m m' [(TT, TT + 6144)] ∧
       Call s Entry.tbuild [wd TT, wd 32] ret tail m [] m' Gas.tbuild := by
-  sorry
-
-/-- `S'_r(t)`: the window sum of row `r` at `t`. -/
-def sPrime (c : Fips204.Poly) (cd : ByteArray) (r t : Nat) : Nat :=
-  ((List.range 256).map fun p =>
-    if c[p]! = 0 then 0 else tEntry cd r (t + 256 - p + if c[p]! = -1 then 256 else 0)).sum
-
-/-- `n_neg(t)`: negative contributions to `(c · t1)(t)`. -/
-def nNeg (c : Fips204.Poly) (t : Nat) : Nat :=
-  ((List.range 256).filter fun p => (p ≤ t ∧ c[p]! = -1) ∨ (t < p ∧ c[p]! = 1)).length
+  unfold TTable tEntry; exact TB.tbuild_main hs hr m hcd
 
 /-- **csum**: `[SP, TT, ret]`. -/
 theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.csum ret tail) (m : ByteArray) :
+    (hr : RetOK Stack.csum ret tail) (m : ByteArray)
+    (hb : ∀ i, i < Fips204.tau → word m (BASES + 32 * i) ≤ 6112) :
     ∃ m', (∀ c : Fips204.Poly, c.size = 256 → (∀ t, t < 256 → c[t]! = 0 ∨ c[t]! = 1 ∨ c[t]! = -1) →
         CRep m c → TTable m TT s.executionEnv.calldata →
         ∀ t, t < 256 → word m' (SP + 32 * t) =
           pack4 fun r => 2 ^ 13 * sPrime c s.executionEnv.calldata r t + nNeg c t) ∧
       FrameExcept m m' [(SP, SP + 8192)] ∧
-      Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum := by
-  sorry
+      Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum :=
+  CS.csum_main hs hr m hb
 
 end MlDsaOpt44.Proofs

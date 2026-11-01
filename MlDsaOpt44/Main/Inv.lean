@@ -135,7 +135,7 @@ structure InvG (cd m : ByteArray) (n : Nat) : Prop where
   acc : AccCols m cd n
   zMisc : ZeroOn m MISC (MISC + 0x1e0)
   zCw : ZeroOn m CW ABUF
-  zIdx : ZeroOn m IDX ACC
+  zIdx : ZeroOn m BASES ACC
 
 structure Inv5 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
@@ -163,6 +163,8 @@ structure Inv7 (cd m : ByteArray) : Prop where
   acc : AccAt m cd
   fmu : FinMu m cd
   crep : okC cd = true → CRep m (cD cd)
+  /-- `csum` loads from `BASES[i] + TT − 32 u`: the bases stay inside the window table. -/
+  bases : ∀ i, i < Fips204.tau → word m (BASES + 32 * i) ≤ 6112
 
 structure Inv8 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m

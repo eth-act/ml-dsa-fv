@@ -24,6 +24,10 @@ theorem seg_ct {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     opt44_reach [1995, 1996, 1997, 1998, 1999, 2000] with [TT, SP]
   obtain ⟨m2, hsp, hfr2, hc2⟩ := csum_call hs (ret := 5962) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
+    (fun i hi => by
+      have : i < 39 := hi
+      rw [word_frame hfr1 (lo := BASES) (hi := BASES + 2048) (by avoids_tac) (by omega) (by omega)]
+      exact hI.bases i hi)
   have hb3 : Reach (callState s 5962 [flag b] m2) (callState s 5963 [flag b] m2) 1 := by
     opt44_reach [2001]
   refine ⟨m2, ⟨(hI.rc1.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),
