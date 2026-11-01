@@ -4,7 +4,8 @@ from collections import Counter
 import re
 
 root = Path(__file__).resolve().parent.parent
-supported = {0x01, 0x16, 0x17, 0x18, 0x1B, 0x1C, 0x51, 0x52, 0x5B} | set(range(0x5F, 0x90))
+supported = {0x01, 0x02, 0x03, 0x10, 0x11, 0x14, 0x15, 0x16, 0x17, 0x18,
+             0x19, 0x1B, 0x1C, 0x50, 0x51, 0x52, 0x56, 0x57, 0x5B} | set(range(0x5F, 0xA0))
 total = eligible = 0
 missing = Counter()
 for level in (44, 65, 87):
@@ -17,7 +18,7 @@ for level in (44, 65, 87):
         pc += 1 + (o - 0x5F if 0x60 <= o <= 0x7F else 0)
     n = ok = 0
     for path in (root / f"MlDsaOpt{level}").rglob("*.lean"):
-        for match in re.finditer(rf"\bopt{level}_reach\s*\[([\d,\s]+)\]", path.read_text()):
+        for match in re.finditer(rf"\bopt{level}_r?reach\s*\[([\d,\s]+)\]", path.read_text()):
             indices = [int(i) for i in match[1].split(",") if i.strip()]
             bad = {ops[i] for i in indices} - supported
             n += 1
