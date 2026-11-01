@@ -173,6 +173,29 @@ theorem word_wrU (m : ByteArray) (a x : Nat) (v : UInt256) (h : x = a ∨ x + 32
   · rw [if_pos rfl, word_mstore _ _ _ (show v.toNat < 2 ^ 256 from v.val.isLt)]
   · rw [if_neg (by omega), word_mstore_disjoint _ _ h]
 
+/-! `word_wrU` for a read and a write at literal offsets `b`, `a` from one base
+`P`: the side condition is closed, so the generated bodies discharge it by
+`rfl` instead of one `omega` per pair. -/
+
+theorem word_wrU_add_eq (m : ByteArray) (P a b : Nat) (v : UInt256) (h : decide (a = b) = true) :
+    word (wrU m (a + P) v) (b + P) = v.toNat := by
+  rw [of_decide_eq_true h, word_wrU _ _ _ _ (Or.inl rfl), if_pos rfl]
+
+theorem word_wrU_add_ne (m : ByteArray) (P a b : Nat) (v : UInt256)
+    (h : (decide (b + 32 ≤ a) || decide (a + 32 ≤ b)) = true) :
+    word (wrU m (a + P) v) (b + P) = word m (b + P) := by
+  simp only [Bool.or_eq_true, decide_eq_true_eq] at h
+  rw [word_wrU _ _ _ _ (by omega), if_neg (by omega)]
+
+theorem word_wrU_base_eq (m : ByteArray) (P b : Nat) (v : UInt256) (h : decide (b = 0) = true) :
+    word (wrU m P v) (b + P) = v.toNat := by
+  rw [of_decide_eq_true h, Nat.zero_add, word_wrU _ _ _ _ (Or.inl rfl), if_pos rfl]
+
+theorem word_wrU_base_ne (m : ByteArray) (P b : Nat) (v : UInt256) (h : decide (32 ≤ b) = true) :
+    word (wrU m P v) (b + P) = word m (b + P) := by
+  simp only [decide_eq_true_eq] at h
+  rw [word_wrU _ _ _ _ (by omega), if_neg (by omega)]
+
 theorem frame_wrU {m m' : ByteArray} {P a : Nat} (v : UInt256)
     (h : FrameExcept m m' [(P, P + 8192)]) (ha1 : P ≤ a) (ha2 : a + 32 ≤ P + 8192) :
     FrameExcept m (wrU m' a v) [(P, P + 8192)] := by
