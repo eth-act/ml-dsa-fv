@@ -5,6 +5,7 @@ import MlDsaOpt44.Fn.Group.Pass3
 import MlDsaOpt44.Fn.Group.Pass3m
 import MlDsaOpt44.Fn.Group.Pass3k4
 import MlDsaOpt44.Fn.Group.Main
+import MlDsaOpt44.Fn.Group.Defs
 /-!
 # Fused ExpandA · ẑ: `pass3`, `pass3m`, `pass3k4`, `group` (WP6)
 
@@ -61,11 +62,6 @@ theorem pass3k4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' [(ACC, ACC + 8192)] ∧
       Call s Entry.pass3k4 [] ret tail m [] m' Gas.pass3k4 := by
   exact GroupP.pass3k4_reach hs hr m
-
-/-- `RHO1[x] = spread(ρ lane x)`, `RHO1[4 + x] = spread(c̃ lane x)` (`init_rho1`). -/
-def Rho1At (m : ByteArray) (cd : ByteArray) : Prop :=
-  ∀ x, x < 4 → word m (RHO1 + 32 * x) = spread (le64 cd (8 * x)) ∧
-    word m (RHO1 + 32 * (4 + x)) = spread (le64 cd (CTOFF + 8 * x))
 
 /-- Regions a SIMD group may write. -/
 def groupFrame : List (Nat × Nat) :=

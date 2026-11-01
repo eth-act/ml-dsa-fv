@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Fn.Decode
 set_option warningAsError true
 /-! # Segment `992 … 1085`: `dz`, the norm-flag check, `dhint`. -/
 

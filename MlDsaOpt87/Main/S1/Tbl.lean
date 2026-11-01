@@ -1,5 +1,5 @@
 import MlDsaOpt87.Main.S1.Tac
-import MlDsaOpt44.Main.Tbl.Blocks
+import MlDsaOpt44.Main.Tbl.Defs
 set_option warningAsError true
 set_option maxHeartbeats 0
 /-! # Segment `1135 … 3118`: the 248 NTT zeta records (straight line).

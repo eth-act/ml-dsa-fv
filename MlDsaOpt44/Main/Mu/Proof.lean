@@ -1,5 +1,7 @@
 import MlDsaOpt44.Main.Mu.Blocks
 import MlDsaOpt44.Main.Mu.Spec
+import MlDsaOpt44.Fn.Keccak
+import MlDsaOpt44.Fn.Sponge
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
 /-! # `seg_mu`: composition of the blocks with `kf1` and `absorb17` -/

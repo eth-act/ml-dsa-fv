@@ -133,6 +133,8 @@ theorem reach_mcopy {s : State} (hs : Ctx s) (i : Fin 11792) {pc d src n : Nat}
   refine ⟨g, le_of_eq ?_⟩
   have hpot := EvmProof.Meter.runLocatedBlock_cost_potential (locatedPath [i]) hrun
   change runLocatedBlockCost (locatedPath [i]) _ = _
+  -- an opaque final memory keeps `change` from unfolding `writeBytes` (7 s)
+  generalize MachineState.writeBytes m (MachineState.readPadded m src n) d = mw at hpot
   change _ + MachineState.memCost s.activeWords.toNat = _ + MachineState.memCost s.activeWords.toNat at hpot
   have hw : EvmProof.Meter.runLocatedBlockCostWithoutMemory (locatedPath [i])
       (callState s pc (wd d :: wd src :: wd n :: rest) m) = 3 + 3 * ((n + 31) / 32) := by

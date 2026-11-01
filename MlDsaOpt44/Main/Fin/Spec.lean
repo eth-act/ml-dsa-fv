@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.Mu.Spec
+import MlDsaOpt44.Math.SpongeSeed
 set_option warningAsError true
 /-!
 # The c̃ comparison of `seg_fin`

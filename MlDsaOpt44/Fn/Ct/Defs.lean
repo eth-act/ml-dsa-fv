@@ -1,4 +1,4 @@
-import MlDsaOpt44.Fn.Ball
+import MlDsaOpt44.Layout
 /-! Definitions of the `c · t1` window table and sums (used by `Fn/Ct.lean`). -/
 
 namespace MlDsaOpt44.Proofs

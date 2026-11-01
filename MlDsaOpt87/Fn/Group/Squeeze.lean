@@ -1,6 +1,6 @@
 import MlDsaOpt87.Fn.Keccak
 import MlDsaOpt87.Fn.Blk
-import MlDsaOpt44.Math.Sponge
+import MlDsaOpt44.Math.SpongeBytes
 import MlDsaOpt87.Fn.Group.Common
 import MlDsaOpt87.Fn.Group.Defs
 /- Ported from `MlDsaOpt44/Fn/Group/Squeeze.lean` by `scripts/proofgen_port.py 87`; hand adjustments are marked `-- port:`. -/

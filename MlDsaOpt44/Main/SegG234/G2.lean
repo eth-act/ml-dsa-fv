@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.SegG234.Round
+import MlDsaOpt44.Fn.Group
 set_option warningAsError true
 /-!
 # Group 2 of `seg_g234` (`3466 … 3898`)

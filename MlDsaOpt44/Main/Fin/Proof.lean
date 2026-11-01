@@ -1,5 +1,6 @@
 import MlDsaOpt44.Main.Fin.Blocks
 import MlDsaOpt44.Main.Fin.Spec
+import MlDsaOpt44.Fn.Keccak
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
 /-! # `seg_fin`: six absorbed blocks of `FIN`, the padded last block, the c̃ comparison -/

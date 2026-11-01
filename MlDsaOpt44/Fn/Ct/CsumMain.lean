@@ -1,6 +1,7 @@
 import MlDsaOpt44.Fn.Ct.CsumIter
 import MlDsaOpt44.Fn.Ct.CsumT
 import MlDsaOpt44.Fn.Ct.CsumSpec
+import MlDsaOpt44.Fn.Ball.Defs
 /-!
 # `csum` (WP10): the stored words and the contract body
 -/

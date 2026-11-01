@@ -74,6 +74,38 @@ execution 2,267 → 1,250, simp 1,063 → 1,028, import 858 → 869,
 interpretation 325 → 480, typeclass inference 389 → 386. Modules using the
 block tactics are two thirds of the CPU (4,282 of 6,506 s at e3d6f39).
 
+### Shorter critical path (`speed/critical-path`)
+
+Lake runs at most one job per hardware thread (16 here) and starts ready
+modules first-in, first-out. So the full build is bounded by the longest
+import chain (weighted by in-build module times) and by total work / 16, and
+every hop of a chain that becomes ready behind a backlog waits for it: at
+1db7dba the longest chain was 284 s and work / 16 was 236 s, but the build
+took 373 s, 130 s of it queueing along the chain that finished last. That
+chain ran through `Infra.Code` (33 s, its 30 kernel checks one after
+another), the `kf1` → `fix` → `group` proofs (because `Main.Inv` imported
+every `Fn` family), then `Main.Tbl.Blocks` (40 s) and the 65/87 table
+segments, which imported it for six definitions (33 s).
+
+* `Infra/Code` is generated as `Infra/Tables`, `Infra/TablesOk0..N` (five
+  chunks each, built in parallel) and `Infra/Code`: 33 s → about 11 s.
+* `Infra/Reach`: `reach_mcopy` generalizes the final memory before `change`
+  (which unfolded `writeBytes`): 8.8 s → 1.5 s.
+* `MlDsaOpt44.Main.Inv` imports `Fn.{Group,Ball,Ct}.Defs` as 65/87 do, and
+  each `Seg*` imports the `Fn` family it calls; vocabulary moved, unchanged,
+  to `Fn/Group/Defs`, `Fn/Fix/Defs` and `Main/Tbl/Defs` so `Math.Sponge` and
+  the 65/87 table segments no longer wait for the `fix` proofs or 44's table
+  segment.
+
+Clean `lake build`, alternating on the same orb (1db7dba vs. the branch):
+373 s, 372 s → 311 s, 308 s wall (−17%); CPU 4,237 s, 4,226 s → 4,329 s,
+4,297 s. The extra 2% CPU is mostly hyperthread contention (8 cores × 2
+threads; the busier schedule slows every module a little), plus 25 small
+modules. Modelled with FIFO scheduling: 350 s → 289 s; the longest chain is
+now within a few seconds of three others (`kf1` → `fix` → `group` → main
+G2/G3, the `MlDsa44` reference Keccak → SHAKE → row → hashes chain, and the
+`Infra` chain), so further import surgery buys little until total work drops.
+
 ## Things that did not help
 
 * Hash-consing the proof before the kernel sees it

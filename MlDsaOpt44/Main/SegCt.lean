@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Fn.Ct
 set_option warningAsError true
 /-! # Segment `5936 … 5963`: `tbuild`, `csum`. -/
 

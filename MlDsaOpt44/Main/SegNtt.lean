@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Fn.Ntt
 set_option warningAsError true
 /-! # Segment `3068 … 3078`: `ntt(ZH)`. -/
 
