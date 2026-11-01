@@ -1,4 +1,4 @@
-import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Main.Fin.Proof
 /-! # Segment `6001 … RETURN`: the final hash, the c̃ comparison and the return. -/
 
 namespace MlDsaOpt44.Proofs
@@ -18,7 +18,7 @@ theorem seg_fin {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
       (∀ X : ByteArray, X.size = 832 → FinAt m X → E = (ctOf s.executionEnv.calldata == Fips204.H X 32)) ∧
       Reach (callState s 6001 [flag b] m)
         (finalState s pc stk m' (if (b && E) = true then 1 else 0)) Gas.pFin := by
-  sorry
+  exact seg_fin_proof hs hcd hrc b
 
 
 end MlDsaOpt44.Proofs
