@@ -8,7 +8,7 @@
 #       --ancestor, fall back to the nearest first-parent ancestor that has one
 #   scripts/build-cache.sh pack DIR               write HEAD's cache to DIR
 #   scripts/build-cache.sh publish DIR [KEEP]     upload DIR (needs gh auth) and
-#       prune the release to the KEEP newest caches (default 20)
+#       prune the release to the KEEP newest caches (default 10)
 #
 # A cache is only used when lean-toolchain and lake-manifest.json are
 # identical to the commit it was built from; everything in it was built in one
@@ -94,7 +94,7 @@ cmd_pack() {
 }
 
 cmd_publish() {
-  local dir=$1 keep=${2:-20} head; head=$(git rev-parse HEAD)
+  local dir=$1 keep=${2:-10} head; head=$(git rev-parse HEAD)
   gh release view "$TAG" -R "$REPO" >/dev/null 2>&1 ||
     gh release create "$TAG" -R "$REPO" --prerelease --title "Build cache" \
       --notes "Lake build outputs per master commit, used by .agents/setup (scripts/build-cache.sh). Not a release." \
