@@ -60,8 +60,9 @@ theorem ginit_lane0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5080, 5081, 5082, 5083, 5084, 5085, 5086, 5087, 5088, 5089, 5090, 5091, 5092, 5093, 5094, 5095, 5096, 5097, 5098] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 0]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -73,8 +74,9 @@ theorem ginit_lane1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5099, 5100, 5101, 5102, 5103, 5104, 5105, 5106, 5107, 5108, 5109, 5110, 5111, 5112, 5113, 5114, 5115, 5116] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 1]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -86,8 +88,9 @@ theorem ginit_lane2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5117, 5118, 5119, 5120, 5121, 5122, 5123, 5124, 5125, 5126, 5127, 5128, 5129, 5130, 5131, 5132, 5133, 5134] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 2]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -99,8 +102,9 @@ theorem ginit_lane3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5135, 5136, 5137, 5138, 5139, 5140, 5141, 5142, 5143, 5144, 5145, 5146, 5147, 5148, 5149, 5150] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 3]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -112,8 +116,9 @@ theorem ginit_lane4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5151, 5152, 5153, 5154, 5155, 5156, 5157, 5158, 5159, 5160, 5161, 5162, 5163] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 4]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -125,8 +130,9 @@ theorem ginit_lane5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5164, 5165, 5166, 5167, 5168, 5169, 5170, 5171, 5172, 5173, 5174] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 5]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -138,8 +144,9 @@ theorem ginit_lane6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5175, 5176, 5177, 5178, 5179, 5180, 5181, 5182, 5183, 5184] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 6]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -151,8 +158,9 @@ theorem ginit_lane7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5185, 5186, 5187, 5188, 5189, 5190, 5191, 5192] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 7]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane8 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -164,8 +172,9 @@ theorem ginit_lane8 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5193, 5194, 5195, 5196, 5197, 5198, 5199, 5200] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 8]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane9 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -177,8 +186,9 @@ theorem ginit_lane9 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5201, 5202, 5203, 5204, 5205, 5206, 5207, 5208] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 9]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane10 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -190,8 +200,9 @@ theorem ginit_lane10 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5209, 5210, 5211, 5212, 5213, 5214, 5215, 5216] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 10]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane11 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -203,8 +214,9 @@ theorem ginit_lane11 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5217, 5218, 5219, 5220, 5221, 5222, 5223, 5224] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 11]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane12 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -216,8 +228,9 @@ theorem ginit_lane12 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5225, 5226, 5227, 5228, 5229, 5230, 5231, 5232] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 12]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane13 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -229,8 +242,9 @@ theorem ginit_lane13 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5233, 5234, 5235, 5236, 5237, 5238, 5239, 5240] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 13]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane14 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -242,8 +256,9 @@ theorem ginit_lane14 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5241, 5242, 5243, 5244, 5245, 5246, 5247, 5248] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 14]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane15 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -255,8 +270,9 @@ theorem ginit_lane15 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5249, 5250, 5251, 5252, 5253, 5254, 5255, 5256] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 15]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane16 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -268,8 +284,9 @@ theorem ginit_lane16 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5257, 5258, 5259, 5260, 5261, 5262, 5263, 5264, 5265, 5266] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 16]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane17 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -281,8 +298,9 @@ theorem ginit_lane17 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5267, 5268, 5269, 5270, 5271, 5272, 5273, 5274] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 17]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane18 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -294,8 +312,9 @@ theorem ginit_lane18 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5275, 5276, 5277, 5278, 5279, 5280, 5281, 5282] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 18]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane19 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -307,8 +326,9 @@ theorem ginit_lane19 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5283, 5284, 5285, 5286, 5287, 5288, 5289, 5290] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 19]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane20 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -320,8 +340,9 @@ theorem ginit_lane20 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5291, 5292, 5293, 5294, 5295, 5296, 5297, 5298, 5299, 5300, 5301, 5302] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 20]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane21 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -333,8 +354,9 @@ theorem ginit_lane21 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5303, 5304, 5305, 5306, 5307, 5308, 5309, 5310] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 21]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane22 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -346,8 +368,9 @@ theorem ginit_lane22 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5311, 5312, 5313, 5314, 5315, 5316, 5317, 5318] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 22]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane23 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -359,8 +382,9 @@ theorem ginit_lane23 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   refine reach_block hs [5319, 5320, 5321, 5322, 5323, 5324, 5325, 5326] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 23]
   opt65_block [word_storeWords_out]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 set_option maxRecDepth 100000 in
 theorem ginit_lane24 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -374,8 +398,9 @@ theorem ginit_lane24 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hret := hr.small
   have hj := hr.jumpdest
   refine reach_block hs [5327, 5328, 5329, 5330, 5331, 5332, 5333, 5334, 5335, 5336, 5337, 5338, 5339, 5340] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ 24]
   opt65_block [word_storeWords_out, hj]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit65_value
+  refine wb_congr ?_ (by norm_num); ginit65_value
 
 theorem ginitWord_lt (m : ByteArray) {keep amult cmult l4 : Nat} (hk : keep < 2 ^ 256)
     (hl : l4 < 2 ^ 256) (x : Nat) : ginitWord m keep amult cmult l4 x < 2 ^ 256 := by

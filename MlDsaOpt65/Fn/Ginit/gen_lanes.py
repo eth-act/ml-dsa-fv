@@ -137,8 +137,9 @@ theorem ginit_lane{x} {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UIn
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz{extra}
   refine reach_block hs [{idx}] (by decide +kernel) ?_
+  rw [storeWords_succ _ _ _ {x}]
   opt{NN}_block [{lemmas}]
-  rw [storeWords_succ]; refine wb_congr ?_ (by norm_num); ginit{NN}_value
+  refine wb_congr ?_ (by norm_num); ginit{NN}_value
 """)
 
 chain = "(ginit_lane0 hs hr m hk hl)"

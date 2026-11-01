@@ -68,6 +68,7 @@ theorem tbl_b{k} {{s : State}} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     Reach (callState s {pc(a)} [flag b] M) (callState s {pc(b)} [flag b] (tblChunk M {k})) 279 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
+  simp only [tblChunk, storeWords_succ, storeWords_zero]
   opt44_reach [{idx}]
 ''')
 chain='(tbl_b0 hs b m)'
