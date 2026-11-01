@@ -77,10 +77,10 @@ offset), `pass3_call` (`Fn/Group.lean`, generalised to pointers), and for 87
 | `MlDsaOptNN/{Bytecode,Artifact,Infra/*,Infra}.lean`, `listing.tsv` | generated: `python3 scripts/proofgen_artifact.py MlDsaOpt/NN/opt.hex MlDsaOptNN MlDsaOptNN optNN <2833 \| 2865>` | proved |
 | `Layout.lean` | memory map (constants differing from 44), calldata offsets, `Entry`, `Stack`, spec-level data at `P = Params.mldsaNN`, `optAccepts`; shared 44 vocabulary re-exported (`export MlDsaOpt44.Proofs (…)`) | definitions |
 | `Budget.lean` | subroutine budgets (`proofgen_gas_param.py NN --analyse`) | definitions |
-| `Fn/*.lean` | contracts (see table) | 13 (65) / 14 (87) proved, rest **open** |
+| `Fn/*.lean` | contracts (see table) | 14 (65) / 14 (87) proved, rest **open** |
 | `Math.lean` | spec facts: parameter-free ones proved via `MlDsa/Bridge44.lean`, the rest **open** | partly open |
 | `Bridge.lean` | `pkLen_eq`, `sigLen_eq`, `finBytes_size` proved; `accepts_eq_optAccepts` **open** | open |
-| `Main/Inv.lean`, `Main/Base.lean` (+ 65 `Main/Frame.lean`) | boundary invariants, segment budgets | definitions / proved |
+| `Main/Inv.lean`, `Main/Base.lean`, `Main/Frame.lean` | boundary invariants, segment budgets, frame transport (`avoids_tac`, `X.frame`) | definitions / proved |
 | `Main/Seg*.lean` | one theorem per segment | **open** |
 | `Main/Short.lean`, `Main/Valid.lean`, `Gas.lean`, `Main.lean` | short path, composition, schedule, final theorems | proved |
 
@@ -100,7 +100,7 @@ offset), `pass3_call` (`Fn/Group.lean`, generalised to pointers), and for 87
 | sib | **open** | **open** | `Fn/Ball` | 65 stream from `CB`; 87 squeezes H(c̃) with kf1 |
 | csum | **open** | **open** | `Fn/Csum` | `g < 2` |
 | usehint, pack | **open** | **open** | `Fn/Hint` | `γ2 = (q−1)/32`, 4-bit w1 |
-| mu0 | **open** | — | `Fn/Mu0` | 44 code with `TRL` as PUSH3 |
+| mu0 | proved | — | `Fn/Mu0` | 44 code with `TRL` as PUSH3; port in `Fn/Mu0/` (`--sub` HDR, TRL, return pcs), `muBlock` in `Fn/Mu0/Defs` |
 | pass3k14 | — | **open** | `Fn/Pass3k14` | Kronecker group 14 (`kronWord14`) |
 
 ## Segments and gas

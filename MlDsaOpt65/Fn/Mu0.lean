@@ -1,15 +1,18 @@
-import MlDsaOpt65.Layout
-import MlDsaOpt65.Budget
+import MlDsaOpt65.Fn.Mu0.Defs
+import MlDsaOpt65.Fn.Mu0.Mu0
 /-!
 # `mu0`: μ's single padded block into a SIMD slot (ML-DSA-65)
 
-Open contract (statement only). The code is the ML-DSA-44 `mu0` with this artifact's
-`HDR` (`|M| = CALLDATASIZE − HDR`, the message read from `HDR − 2`) and `TRL`
-(`PUSH3 0x015d00 …` instead of `PUSH2 0xfd00 …`: the instruction count is unchanged, the
-pcs shift). Call site: `mu0 [3]` in group 8 (slot 3 is the μ slot,
-`MlDsaOpt/65/layout.txt`). The proof is the port of `MlDsaOpt44/Fn/Sponge/{Mu0,MuBlocks,
-MuFinal,MuVal,MuMath}.lean` (`WP4.mu0_call_aux`) by `scripts/proofgen_port.py 65`
-(`spr`, `trabs` calls through the 65 contracts of `Fn/Sponge.lean`).
+The code is the ML-DSA-44 `mu0` with this artifact's `HDR` (`|M| = CALLDATASIZE − HDR`,
+the message read from `HDR − 2`) and `TRL` (`PUSH3 0x015d00 …` instead of `PUSH2 0xfd00 …`:
+the instruction count is unchanged, the pcs shift). Call site: `mu0 [3]` in group 8 (slot 3
+is the μ slot, `MlDsaOpt/65/layout.txt`). `muBlock` is defined in `Fn/Mu0/Defs.lean`. The
+proof is the port of `MlDsaOpt44/Fn/Sponge/{Mu0,MuBlocks,MuFinal,MuVal,MuMath}.lean`
+(`WP4.mu0_call_aux`) to `Fn/Mu0/` by
+`scripts/proofgen_port.py 65 --sub 3732=5261 --sub 3730=5259 --sub 3731=5260 --sub 3666=5195
+--sub 64768=89344 … --sub 64992=89568 --sub 12633=13221 … --sub 12905=13500
+--path Fn/Sponge/=Fn/Mu0/` (full command in each file's header; `-- port:` hand edits:
+65 `spr`/`trabs` imports, `muBlock` import, unfolding `HDR`).
 -/
 
 namespace MlDsaOpt65.Proofs
@@ -18,10 +21,6 @@ open EvmSemantics
 open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
-
-/-- μ's single padded SHAKE256 block for `|M| ≤ 69`: `tr ‖ 0 ‖ 0 ‖ M ‖ pad`. -/
-def muBlock (tr : ByteArray) (cd : ByteArray) : ByteArray :=
-  MlDsa44.Fips202.pad 136 0x1F (tr ++ (ByteArray.mk #[0, 0] ++ msgOf cd))
 
 /-- **mu0**: `[sh, ret]`; for `|M| ≤ 69` slot `sh` absorbs μ's single block (with `tr`
 read from `TRL`), otherwise nothing. -/
@@ -36,7 +35,7 @@ theorem mu0_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           else word m (KS + 32 * x)) ∧
       (69 < mlenOf s.executionEnv.calldata → m' = m) ∧
       FrameExcept m m' [(KS, KS + 800)] ∧
-      Call s Entry.mu0 [wd sh] ret tail m [] m' Gas.mu0 := by
-  sorry
+      Call s Entry.mu0 [wd sh] ret tail m [] m' Gas.mu0 :=
+  WP4.mu0_call_aux hs hr m hsh hcd
 
 end MlDsaOpt65.Proofs
