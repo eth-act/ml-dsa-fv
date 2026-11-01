@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Orb setup: Lean toolchain (elan, pinned by lean-toolchain), Mathlib build
+# cache, prebuilt dependency packages, and the Python oracle used by scripts/.
+# Idempotent; a warm run only re-checks each step.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+step() { printf '\n==> %s\n' "$*"; }
+timed() { local t=$SECONDS; "$@"; printf '    (%ss)\n' $((SECONDS - t)); }
+
+export PATH="$HOME/.elan/bin:$PATH"
+# README: Lean builds need TMPDIR inside the repo (large temporaries).
+export TMPDIR="$PWD/.lake/tmp"
+mkdir -p "$TMPDIR"
+
+step "elan"
+if ! command -v elan >/dev/null; then
+  timed bash -c 'curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh |
+    sh -s -- -y --default-toolchain none --no-modify-path'
+fi
+
+step "Lean toolchain $(cat lean-toolchain)"
+timed lake --version
+
+step "Mathlib cache"
+timed lake exe cache get
+
+step "Dependencies (evm_semantics, EvmProof)"
+timed lake build EvmProof
+
+step "Developer tools (mldsa44tool, mldsatool)"
+timed lake build mldsa44tool mldsatool
+
+step "Python: dilithium-py -> .ref/pylib"
+if [ ! -d .ref/pylib/dilithium_py ]; then
+  timed python3 -m pip install --quiet --target .ref/pylib dilithium-py
+fi
+
+step "Shell environment"
+marker="# ml-dsa-fv: elan and Lean TMPDIR"
+for f in "$HOME/.bashrc" "$HOME/.bash_profile"; do
+  if ! grep -Fqx "$marker" "$f" 2>/dev/null; then
+    cat >> "$f" <<EOF
+
+$marker
+export PATH="\$HOME/.elan/bin:\$PATH"
+export TMPDIR="$PWD/.lake/tmp"
+EOF
+  fi
+done
+
+echo "setup done"
