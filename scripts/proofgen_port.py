@@ -3,6 +3,13 @@
 
 Usage:
   python3 scripts/proofgen_port.py NN [--sub OLD=NEW ...] [--path OLD=NEW ...] FILE ...
+  python3 scripts/proofgen_port.py --reloc NN [--all-jd] [--pc-lines REGEX] FILE ...
+
+`--reloc NN` relocates files of `MlDsaOptNN/` in place from the v2 bytes
+(`MlDsaOpt/NN/v2/`) to the current bytes of the same set (`reloc_maps`,
+`reloc_text`): unchanged regions are mapped whole, changed ones on their common
+prefix/suffix; memory size v2 → v3 in memory-size contexts only. Every relocated
+proof is re-checked by the kernel; read the `CHECK` / `RELOC` lines.
 
 e.g.  python3 scripts/proofgen_port.py 65 MlDsaOpt44/Fn/Kf4/Blocks1.lean
 
@@ -58,16 +65,26 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-MEMW = {44: 2065, 65: 2833, 87: 2865}
+MEMW = {44: 2097, 65: 2865, 87: 2897}             # v3 (current bytes)
+MEMW_V2 = {44: 2065, 65: 2833, 87: 2865}          # v2 (`MlDsaOpt/NN/v2/`)
 
 
-def regions(nn):
+def regions(nn, sub=""):
     out = {}
-    for l in open(os.path.join(ROOT, "MlDsaOpt", str(nn), "layout.txt")):
+    for l in open(os.path.join(ROOT, "MlDsaOpt", str(nn), sub, "layout.txt")):
         m = re.match(r"\s*(\d+) \.\.\s+(\d+)\s+\d+ bytes\s+(\S+)", l)
         if m:
             out[m.group(3)] = (int(m.group(1)), int(m.group(2)))
     return out
+
+
+def kz(nn):
+    """Base of `kf1`'s third buffer `KZ` (v3 layout)."""
+    for l in open(os.path.join(ROOT, "MlDsaOpt", str(nn), "layout.txt")):
+        m = re.match(r"\s*KZ\s+0x([0-9a-f]+)", l)
+        if m:
+            return int(m.group(1), 16)
+    raise SystemExit(f"no KZ in MlDsaOpt/{nn}/layout.txt")
 
 
 def listing(nn):
@@ -109,6 +126,175 @@ def maps(nn):
             kinds[p44[x]] = name
         pc[b] = b2
     return idx, pc, kinds
+
+
+def disasm(nn, sub=""):
+    """[(pc, opcode, immediate)] of `MlDsaOpt/NN/[sub/]opt.hex`, one entry per
+    instruction (the order of `listing.tsv`)."""
+    txt = open(os.path.join(ROOT, "MlDsaOpt", str(nn), sub, "opt.hex")).read().strip()
+    code = bytes.fromhex(txt[2:] if txt.startswith("0x") else txt)
+    out, i = [], 0
+    while i < len(code):
+        o = code[i]
+        w = o - 0x5F if 0x5F <= o <= 0x7F else 0
+        out.append((i, o, int.from_bytes(code[i + 1:i + 1 + w], "big") if w else None))
+        i += 1 + w
+    return out
+
+
+def reloc_maps(nn):
+    """Index and pc maps v2 → v3 of one set (`--reloc`).
+
+    A region with the same instruction count in both versions is mapped
+    entirely. A changed region is mapped on its longest common prefix and
+    suffix, comparing instructions modulo PUSH2 immediates (jump targets), so
+    the unchanged parts of the main flow keep their proofs. Everything else
+    (the changed code) is unmapped: its proofs have to be rewritten."""
+    ra, rb = regions(nn, "v2"), regions(nn)
+    da, db = disasm(nn, "v2"), disasm(nn)
+    pa, pb = [p for p, _, _ in da], [p for p, _, _ in db]
+    key = lambda t: (t[1], None if t[1] == 0x61 else t[2])
+    idx, pc = {}, {}
+    for name, (a, b) in ra.items():
+        if name not in rb:
+            continue
+        a2, b2 = rb[name]
+        ia = [i for i, p in enumerate(pa) if a <= p < b]
+        ib = [i for i, p in enumerate(pb) if a2 <= p < b2]
+        if len(ia) == len(ib):
+            pairs = list(zip(ia, ib))
+            pc[b] = b2
+        else:
+            pairs = []
+            k = 0
+            while k < min(len(ia), len(ib)) and key(da[ia[k]]) == key(db[ib[k]]):
+                pairs.append((ia[k], ib[k]))
+                k += 1
+            j = 1
+            while j <= min(len(ia), len(ib)) - k and key(da[ia[-j]]) == key(db[ib[-j]]):
+                pairs.append((ia[-j], ib[-j]))
+                j += 1
+            if j > 1:
+                pc[b] = b2
+            print(f"reloc {nn}: {name} changed ({len(ia)} -> {len(ib)} instructions); "
+                  f"mapped prefix {k}, suffix {j - 1}")
+        for x, y in pairs:
+            idx[x] = y
+            pc[pa[x]] = pb[y]
+    jd = {p for p, o, _ in da if o == 0x5B}
+    return idx, pc, jd
+
+
+L, R = "\x02", "\x03"            # protect relocated numbers from later passes
+
+
+def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_lines=None):
+    """In-place v2 → v3 relocation of one file of `MlDsaOptNN` (`--reloc`).
+
+    Contexts as in the 44 → NN port (`then N` / `else N` only inside
+    `callState s (if …)`), plus the `Entry` pcs of `Layout.lean`. With
+    `all_jd`, every other 4–5 digit number that is a moved v2 JUMPDEST (and
+    not a layout constant in `data`) is relocated too and reported as `RELOC`
+    (custom block predicates carry pcs as plain arguments); on lines matching
+    the regex `pc_lines`, every moved v2 instruction pc is."""
+    def map_list(m):
+        def one(t):
+            n = int(t.group(0))
+            if n not in idx:
+                report.append(f"{fname}: index {n} in a changed region (unmapped)")
+                return t.group(0)
+            return L + str(idx[n]) + R
+        return m.group(1) + re.sub(r"\d+", one, m.group(2)) + "]"
+
+    out = re.sub(rf"((?:opt{nn}_reach|locatedPath|blockCostEval|reach_block(?:_pot)?\s+\S+)\s*\[)([^\]]*)\]",
+                 map_list, src)
+
+    def map_mcopy(m):
+        n = int(m.group(2))
+        if n not in idx:
+            report.append(f"{fname}: reach_mcopy index {n} unmapped")
+            return m.group(0)
+        return m.group(1) + L + str(idx[n]) + R
+    out = re.sub(r"((?:reach_mcopy|reach_ret)\s+\S+\s+⟨?)(\d+)", map_mcopy, out)
+
+    def map_pc(m):
+        n = int(m.group(2))
+        if n in pcm:
+            return m.group(1) + L + str(pcm[n]) + R
+        if n in jd:
+            report.append(f"{fname}: pc {n} in a changed region (unmapped): {m.group(0)}")
+        return m.group(0)
+
+    out = re.sub(r"(callState\s+(?:\w+|\([^()]*\))\s+)(\d+)\b", map_pc, out)
+    out = re.sub(r"(callState\s+\w+\s+\(if [^()]*\bthen\s+)(\d+)\b", map_pc, out)
+    out = re.sub(r"(callState\s+\w+\s+\(if [^()]*\belse\s+)(\d+)\b", map_pc, out)
+
+    def map_jd(m):
+        n = int(m.group(2))
+        if n in jd and n in pcm:
+            if pcm[n] != n:
+                report.append(f"{fname}: relocated stack word wd {n} -> {pcm[n]} (v2 JUMPDEST)")
+            return m.group(1) + L + str(pcm[n]) + R
+        return m.group(0)
+    out = re.sub(r"(\bwd\s+)(\d+)\b", map_jd, out)
+
+    # `namespace Entry … end Entry` (Layout.lean): subroutine entry pcs
+    def map_entry(m):
+        return re.sub(r"(def \w+ : Nat := )(\d+)", lambda e: map_pc(e), m.group(0))
+    out = re.sub(r"namespace Entry\n.*?\nend Entry", map_entry, out, flags=re.S)
+    old, new = MEMW_V2[nn], MEMW[nn]           # memory-size contexts only (never index lists)
+    out = re.sub(rf"\b{old}(?=\s*≤\s*(?:s\.activeWords|32 \* s\.activeWords))", str(new), out)
+    out = re.sub(rf"(32 \* |memWords = |memWords : Nat := ){old}\b", rf"\g<1>{new}", out)
+    moved = {n for n, v in pcm.items() if v != n}
+    lines = out.split("\n")
+    for k, l in enumerate(lines):
+        if f"opt{nn}_reach" in l or "locatedPath" in l:
+            continue
+        bare = re.sub(f"{L}[^{R}]*{R}", "", l)
+        for m in re.finditer(r"(?<![\w.])(\d{4,5})(?![\w.])", bare):
+            n = int(m.group(1))
+            if n in jd and n in moved and all_jd and n not in data:
+                report.append(f"RELOC {fname}:{k + 1}: {n} -> {pcm[n]}: {l.strip()[:100]}")
+            elif n in jd and (n in moved or n not in pcm):
+                report.append(f"{fname}:{k + 1}: {n}: {l.strip()[:100]}")
+        if all_jd:
+            anypc = pc_lines is not None and re.search(pc_lines, l)
+            def sub(m):
+                n = int(m.group(1))
+                ok = (n in jd or anypc) and n in moved and n not in data
+                if ok and n not in jd:
+                    report.append(f"RELOC {fname}:{k + 1}: {n} -> {pcm[n]} (pc-line): {l.strip()[:100]}")
+                return str(pcm[n]) if ok else m.group(0)
+            parts = re.split(f"({L}[^{R}]*{R})", l)
+            lines[k] = "".join(p if p.startswith(L) else
+                               re.sub(r"(?<![\w.])(\d{4,5})(?![\w.])", sub, p) for p in parts)
+    return "\n".join(lines).replace(L, "").replace(R, "")
+
+
+def layout_data(nn):
+    """Every address constant of `layout.txt` (both versions), as a guard for `--all-jd`."""
+    out = set()
+    for sub in ("v2", ""):
+        for l in open(os.path.join(ROOT, "MlDsaOpt", str(nn), sub, "layout.txt")):
+            for h in re.findall(r"0x[0-9a-f]+", l):
+                out.add(int(h, 16))
+    return out
+
+
+def reloc_main(nn, files, all_jd=False, pc_lines=None):
+    idx, pcm, jd = reloc_maps(nn)
+    data = layout_data(nn)
+    report = []
+    for f in files:
+        path = os.path.join(ROOT, f)
+        src = open(path).read()
+        out = reloc_text(src, nn, idx, pcm, jd, report, f, all_jd, data, pc_lines)
+        if out != src:
+            with open(path, "w") as fh:
+                fh.write(out)
+            print(f"relocated {f}")
+    for r in report:
+        print("CHECK", r)
 
 
 def namespaces44():
@@ -168,7 +354,13 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
 
     out = re.sub(r"(\bwd\s+)(\d+)\b", map_jd, out)
     out = re.sub(r"(\b(?:then|else)\s+)(\d+)\b", map_pc, out)
-    out = re.sub(r"\b2065\b", str(MEMW[nn]), out)
+    old, new = MEMW[44], MEMW[nn]              # memory-size contexts only (never index lists)
+    out = re.sub(rf"\b{old}(?=\s*≤\s*(?:s\.activeWords|32 \* s\.activeWords))", str(new), out)
+    out = re.sub(rf"(32 \* |memWords = |memWords : Nat := ){old}\b", rf"\g<1>{new}", out)
+    kz44, kzn = kz(44), kz(nn)                 # kf1's third buffer (v3): word addresses
+    out = re.sub(r"(?<![\w.])(\d{5})(?![\w.])", lambda m: str(int(m.group(1)) - kz44 + kzn)
+                 if kz44 <= int(m.group(1)) < kz44 + 800 and (int(m.group(1)) - kz44) % 32 == 0
+                 else m.group(0), out)
     for old, new in subs:
         out = re.sub(rf"\b{re.escape(old)}\b", new, out)
     out = out.replace(tac44, tacn)
@@ -251,6 +443,20 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
 def main(argv):
     if not argv:
         raise SystemExit(__doc__)
+    if argv[0] == "--reloc":
+        nn = int(argv[1])
+        rest = argv[2:]
+        all_jd, pc_lines, files = False, None, []
+        it = iter(rest)
+        for a in it:
+            if a == "--all-jd":
+                all_jd = True
+            elif a == "--pc-lines":
+                pc_lines = next(it)
+            else:
+                files.append(os.path.relpath(a, ROOT) if os.path.isabs(a) else a)
+        reloc_main(nn, files, all_jd, pc_lines)
+        return
     nn = int(argv[0])
     subs, files, paths = [], [], []
     it = iter(argv[1:])

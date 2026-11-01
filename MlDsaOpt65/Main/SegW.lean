@@ -139,50 +139,50 @@ theorem S2.w_group {cd : ByteArray} (hcd : HDR ≤ cd.size) {g nr : Nat} (hg : g
 theorem seg_w {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : Inv8 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv9 s.executionEnv.calldata m' ∧
-      Reach (callState s 6610 [flag b] m) (callState s 6688 [flag b] m') Gas.pW := by
-  have hb1 : Reach (callState s 6610 [flag b] m)
-      (callState s Entry.intt [wd (ACC + 0x2000 * 0), wd 6620, flag b] m) 17 := by
-    opt65_reach [2238, 2239, 2240, 2241] with [ACC, Entry.intt]
+      Reach (callState s 6564 [flag b] m) (callState s 6642 [flag b] m') Gas.pW := by
+  have hb1 : Reach (callState s 6564 [flag b] m)
+      (callState s Entry.intt [wd (ACC + 0x2000 * 0), wd 6574, flag b] m) 17 := by
+    opt65_reach [2218, 2219, 2220, 2221] with [ACC, Entry.intt]
   obtain ⟨m1, hintt0, hfr1, hc1⟩ := intt_call hs (p := ACC + 0x2000 * 0) (Or.inl (by omega))
-    (ret := 6620) (tail := [flag b])
+    (ret := 6574) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.tbl
-  have hb2 : Reach (callState s 6620 [flag b] m1)
-      (callState s Entry.usehint [wd (ACC + 0x2000 * 0), wd 6631, flag b] m1) 18 := by
-    opt65_reach [2242, 2243, 2244, 2245, 2246] with [ACC, Entry.usehint]
-  obtain ⟨m2, huh0, hlt0, hfr2, hc2⟩ := usehint_call hs (ret := 6631) (tail := [flag b])
+  have hb2 : Reach (callState s 6574 [flag b] m1)
+      (callState s Entry.usehint [wd (ACC + 0x2000 * 0), wd 6585, flag b] m1) 18 := by
+    opt65_reach [2222, 2223, 2224, 2225, 2226] with [ACC, Entry.usehint]
+  obtain ⟨m2, huh0, hlt0, hfr2, hc2⟩ := usehint_call hs (ret := 6585) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
     (g := 0) (by norm_num)
-  have hb3 : Reach (callState s 6631 [flag b] m2)
-      (callState s Entry.pack [wd 4, wd (FIN + 256 + 2048 * 0), wd (ACC + 0x2000 * 0), wd 6648,
+  have hb3 : Reach (callState s 6585 [flag b] m2)
+      (callState s Entry.pack [wd 4, wd (FIN + 256 + 2048 * 0), wd (ACC + 0x2000 * 0), wd 6602,
         flag b] m2) 24 := by
-    opt65_reach [2247, 2248, 2249, 2250, 2251, 2252, 2253] with [ACC, FIN, Entry.pack]
-  obtain ⟨m3, hpk0, hfr3, hc3⟩ := pack_call hs (ret := 6648) (tail := [flag b])
+    opt65_reach [2227, 2228, 2229, 2230, 2231, 2232, 2233] with [ACC, FIN, Entry.pack]
+  obtain ⟨m3, hpk0, hfr3, hc3⟩ := pack_call hs (ret := 6602) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m2
     (g := 0) (nr := 4) (by norm_num) (Or.inr rfl)
   have htbl3 : TblAt m3 :=
     TblAt.frame (TblAt.frame (TblAt.frame hI.tbl hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3
       (by avoids_tac)
-  have hb4 : Reach (callState s 6648 [flag b] m3)
-      (callState s Entry.intt [wd (ACC + 0x2000 * 1), wd 6659, flag b] m3) 18 := by
-    opt65_reach [2254, 2255, 2256, 2257, 2258] with [ACC, Entry.intt]
+  have hb4 : Reach (callState s 6602 [flag b] m3)
+      (callState s Entry.intt [wd (ACC + 0x2000 * 1), wd 6613, flag b] m3) 18 := by
+    opt65_reach [2234, 2235, 2236, 2237, 2238] with [ACC, Entry.intt]
   obtain ⟨m4, hintt1, hfr4, hc4⟩ := intt_call hs (p := ACC + 0x2000 * 1) (Or.inr (by omega))
-    (ret := 6659) (tail := [flag b])
+    (ret := 6613) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m3 htbl3
-  have hb5 : Reach (callState s 6659 [flag b] m4)
-      (callState s Entry.usehint [wd (ACC + 0x2000 * 1), wd 6670, flag b] m4) 18 := by
-    opt65_reach [2259, 2260, 2261, 2262, 2263] with [ACC, Entry.usehint]
-  obtain ⟨m5, huh1, hlt1, hfr5, hc5⟩ := usehint_call hs (ret := 6670) (tail := [flag b])
+  have hb5 : Reach (callState s 6613 [flag b] m4)
+      (callState s Entry.usehint [wd (ACC + 0x2000 * 1), wd 6624, flag b] m4) 18 := by
+    opt65_reach [2239, 2240, 2241, 2242, 2243] with [ACC, Entry.usehint]
+  obtain ⟨m5, huh1, hlt1, hfr5, hc5⟩ := usehint_call hs (ret := 6624) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m4
     (g := 1) (by norm_num)
-  have hb6 : Reach (callState s 6670 [flag b] m5)
-      (callState s Entry.pack [wd 2, wd (FIN + 256 + 2048 * 1), wd (ACC + 0x2000 * 1), wd 6687,
+  have hb6 : Reach (callState s 6624 [flag b] m5)
+      (callState s Entry.pack [wd 2, wd (FIN + 256 + 2048 * 1), wd (ACC + 0x2000 * 1), wd 6641,
         flag b] m5) 24 := by
-    opt65_reach [2264, 2265, 2266, 2267, 2268, 2269, 2270] with [ACC, FIN, Entry.pack]
-  obtain ⟨m6, hpk1, hfr6, hc6⟩ := pack_call hs (ret := 6687) (tail := [flag b])
+    opt65_reach [2244, 2245, 2246, 2247, 2248, 2249, 2250] with [ACC, FIN, Entry.pack]
+  obtain ⟨m6, hpk1, hfr6, hc6⟩ := pack_call hs (ret := 6641) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m5
     (g := 1) (nr := 2) (by norm_num) (Or.inl rfl)
-  have hb7 : Reach (callState s 6687 [flag b] m6) (callState s 6688 [flag b] m6) 1 := by
-    opt65_reach [2271]
+  have hb7 : Reach (callState s 6641 [flag b] m6) (callState s 6642 [flag b] m6) 1 := by
+    opt65_reach [2251]
   refine ⟨m6, ⟨RC1Table.frame (RC1Table.frame (RC1Table.frame (RC1Table.frame (RC1Table.frame
       (RC1Table.frame hI.rc1 hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3 (by avoids_tac)) hfr4
       (by avoids_tac)) hfr5 (by avoids_tac)) hfr6 (by avoids_tac), ?_⟩,

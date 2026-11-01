@@ -7,7 +7,7 @@ set_option warningAsError true
 
 Vocabulary for every proof about `MlDsaOpt/87/opt.hex`
 (`MlDsaOpt/87/layout.txt`, generator `scripts/gen_opt.py 87`). Memory is sized
-once at entry to `memWords = 2865` words (`MSTORE` at `0x16600`) and never
+once at entry to `memWords = 2897` words (`MSTORE` at `0x16a00`) and never
 grows. The calling convention, the representations and the contract form are
 those of `MlDsaOpt44/Layout.lean`.
 
@@ -57,8 +57,12 @@ def MU : Nat := 0x16200
 def BK : Nat := 0x16300
 /-- `2^13 S'(t) + n_neg(t)`, row-packed, one 8 KB table per row group (overlay of ZH). -/
 def SP : Nat := 0x8000
-/-- One past the highest byte; the entry store at `TOP − 32` sizes memory. -/
+/-- One past the highest byte of the regions the main flow reads or keeps
+(`MISC … BK`). Only `kf1`'s third buffer `KZ` lies above; the entry store at
+`KZ + 800 − 32 = 0x16a00` sizes memory. -/
 def TOP : Nat := 0x16620
+/-- `kf1`'s third state buffer (scratch, clobbered by every `kf1` call). -/
+def KZ : Nat := 0x16700
 
 /-! ## Calldata offsets -/
 
@@ -92,11 +96,11 @@ def group : Nat := 15099
 def tbuild : Nat := 15364
 def csum : Nat := 16172
 def usehint : Nat := 17065
-def pack : Nat := 17404
-def ntt : Nat := 17787
-def intt : Nat := 19054
-def kf1 : Nat := 20535
-def kf4 : Nat := 21922
+def pack : Nat := 17336
+def ntt : Nat := 17719
+def intt : Nat := 18986
+def kf1 : Nat := 20467
+def kf4 : Nat := 22461
 end Entry
 
 /-! ## Stack budgets (as for ML-DSA-44) -/

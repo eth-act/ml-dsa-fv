@@ -25,8 +25,8 @@ import opt_ref  # noqa: E402
 
 Q = opt_ref.Q
 M64 = (1 << 64) - 1
-GAS = dict(kf4=40238, kf1=35880, blk=7836, ntt=99705, intt=119593, pass3=17780, pass3m=19318,
-           pass3k4=25613, tbuild=28511, csum=69861, usehint=64793, pack=11107, dz=46156, spr=120,
+GAS = dict(kf4=40238, kf1=32571, blk=7836, ntt=99705, intt=119593, pass3=17780, pass3m=19318,
+           pass3k4=25613, tbuild=28511, csum=69861, usehint=56089, pack=11107, dz=46156, spr=120,
            ginit=754, absorb17=1160)
 
 

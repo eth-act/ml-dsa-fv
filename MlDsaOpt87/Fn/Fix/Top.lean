@@ -23,7 +23,7 @@ open MlDsa44
 /-! ## First-flag scan -/
 
 theorem scan_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
     (lm nm : Nat) (M : ByteArray) (g0 : Nat) (hg0 : g0 < 32)
     (h0 : ∀ g, g < g0 → word M (31232 + 32 * g) / 2 ^ (23 + 64 * sl) % 2 = 0) :
     ∀ d g, g + d = g0 →
@@ -99,7 +99,7 @@ macro "fx_av" : tactic => `(tactic| (
 
 theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.fix ret tail) (htail : tail.length ≤ 960)
-    (hsz : 2865 ≤ s.activeWords.toNat) (sl : Nat) (M : ByteArray) (hrc : RC4Table M)
+    (hsz : 2897 ≤ s.activeWords.toNat) (sl : Nat) (M : ByteArray) (hrc : RC4Table M)
     (h6 : word M 4064 = 0) (rp wp fp : Nat) :
     ∃ M5, Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 15003 32352 rp wp fp M)
         (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14467 32576 rp wp fp M5) 48350 ∧

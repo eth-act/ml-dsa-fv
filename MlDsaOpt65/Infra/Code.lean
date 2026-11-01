@@ -4,7 +4,7 @@ set_option warningAsError true
 
 # Instruction-address facts for the frozen artifact
 
-The kernel walks `instructionList` (11461 entries behind 29 appended chunks)
+The kernel walks `instructionList` (11980 entries behind 30 appended chunks)
 linearly, so proofs must never reduce `artifact.instructionPC n`,
 `located i` or `instructionList[n]` by evaluation. Instead:
 
@@ -125,7 +125,7 @@ open Lean Meta Elab Command
 /-- The instruction `Expr`s of `instructionList`, in order (uncached). -/
 def instrExprsRaw : MetaM (Array Expr) := do
   let mut out := #[]
-  for k in [0:29] do
+  for k in [0:30] do
     let name := Name.mkStr `MlDsaOpt65.Proofs.Artifact s!"instructions{k}"
     let some v := (← getEnv).find? name |>.bind (·.value?) | throwError "missing {name}"
     let mut e := v
@@ -218,157 +218,163 @@ theorem size_instructions2 : (instructions2.map isz).sum = 916 := by
 theorem tables_ok3 : checkAll instrTree pcTree 1200 3549 instructions3 = true := by
   decide +kernel
 
-theorem size_instructions3 : (instructions3.map isz).sum = 1366 := by
+theorem size_instructions3 : (instructions3.map isz).sum = 1388 := by
   decide +kernel
 
-theorem tables_ok4 : checkAll instrTree pcTree 1600 4915 instructions4 = true := by
+theorem tables_ok4 : checkAll instrTree pcTree 1600 4937 instructions4 = true := by
   decide +kernel
 
-theorem size_instructions4 : (instructions4.map isz).sum = 1267 := by
+theorem size_instructions4 : (instructions4.map isz).sum = 1223 := by
   decide +kernel
 
-theorem tables_ok5 : checkAll instrTree pcTree 2000 6182 instructions5 = true := by
+theorem tables_ok5 : checkAll instrTree pcTree 2000 6160 instructions5 = true := by
   decide +kernel
 
-theorem size_instructions5 : (instructions5.map isz).sum = 691 := by
+theorem size_instructions5 : (instructions5.map isz).sum = 693 := by
   decide +kernel
 
-theorem tables_ok6 : checkAll instrTree pcTree 2400 6873 instructions6 = true := by
+theorem tables_ok6 : checkAll instrTree pcTree 2400 6853 instructions6 = true := by
   decide +kernel
 
-theorem size_instructions6 : (instructions6.map isz).sum = 840 := by
+theorem size_instructions6 : (instructions6.map isz).sum = 839 := by
   decide +kernel
 
-theorem tables_ok7 : checkAll instrTree pcTree 2800 7713 instructions7 = true := by
+theorem tables_ok7 : checkAll instrTree pcTree 2800 7692 instructions7 = true := by
   decide +kernel
 
-theorem size_instructions7 : (instructions7.map isz).sum = 536 := by
+theorem size_instructions7 : (instructions7.map isz).sum = 541 := by
   decide +kernel
 
-theorem tables_ok8 : checkAll instrTree pcTree 3200 8249 instructions8 = true := by
+theorem tables_ok8 : checkAll instrTree pcTree 3200 8233 instructions8 = true := by
   decide +kernel
 
-theorem size_instructions8 : (instructions8.map isz).sum = 592 := by
+theorem size_instructions8 : (instructions8.map isz).sum = 587 := by
   decide +kernel
 
-theorem tables_ok9 : checkAll instrTree pcTree 3600 8841 instructions9 = true := by
+theorem tables_ok9 : checkAll instrTree pcTree 3600 8820 instructions9 = true := by
   decide +kernel
 
-theorem size_instructions9 : (instructions9.map isz).sum = 801 := by
+theorem size_instructions9 : (instructions9.map isz).sum = 878 := by
   decide +kernel
 
-theorem tables_ok10 : checkAll instrTree pcTree 4000 9642 instructions10 = true := by
+theorem tables_ok10 : checkAll instrTree pcTree 4000 9698 instructions10 = true := by
   decide +kernel
 
 theorem size_instructions10 : (instructions10.map isz).sum = 963 := by
   decide +kernel
 
-theorem tables_ok11 : checkAll instrTree pcTree 4400 10605 instructions11 = true := by
+theorem tables_ok11 : checkAll instrTree pcTree 4400 10661 instructions11 = true := by
   decide +kernel
 
-theorem size_instructions11 : (instructions11.map isz).sum = 857 := by
+theorem size_instructions11 : (instructions11.map isz).sum = 851 := by
   decide +kernel
 
-theorem tables_ok12 : checkAll instrTree pcTree 4800 11462 instructions12 = true := by
+theorem tables_ok12 : checkAll instrTree pcTree 4800 11512 instructions12 = true := by
   decide +kernel
 
-theorem size_instructions12 : (instructions12.map isz).sum = 913 := by
+theorem size_instructions12 : (instructions12.map isz).sum = 674 := by
   decide +kernel
 
-theorem tables_ok13 : checkAll instrTree pcTree 5200 12375 instructions13 = true := by
+theorem tables_ok13 : checkAll instrTree pcTree 5200 12186 instructions13 = true := by
   decide +kernel
 
-theorem size_instructions13 : (instructions13.map isz).sum = 854 := by
+theorem size_instructions13 : (instructions13.map isz).sum = 850 := by
   decide +kernel
 
-theorem tables_ok14 : checkAll instrTree pcTree 5600 13229 instructions14 = true := by
+theorem tables_ok14 : checkAll instrTree pcTree 5600 13036 instructions14 = true := by
   decide +kernel
 
-theorem size_instructions14 : (instructions14.map isz).sum = 683 := by
+theorem size_instructions14 : (instructions14.map isz).sum = 996 := by
   decide +kernel
 
-theorem tables_ok15 : checkAll instrTree pcTree 6000 13912 instructions15 = true := by
+theorem tables_ok15 : checkAll instrTree pcTree 6000 14032 instructions15 = true := by
   decide +kernel
 
-theorem size_instructions15 : (instructions15.map isz).sum = 604 := by
+theorem size_instructions15 : (instructions15.map isz).sum = 552 := by
   decide +kernel
 
-theorem tables_ok16 : checkAll instrTree pcTree 6400 14516 instructions16 = true := by
+theorem tables_ok16 : checkAll instrTree pcTree 6400 14584 instructions16 = true := by
   decide +kernel
 
-theorem size_instructions16 : (instructions16.map isz).sum = 839 := by
+theorem size_instructions16 : (instructions16.map isz).sum = 694 := by
   decide +kernel
 
-theorem tables_ok17 : checkAll instrTree pcTree 6800 15355 instructions17 = true := by
+theorem tables_ok17 : checkAll instrTree pcTree 6800 15278 instructions17 = true := by
   decide +kernel
 
-theorem size_instructions17 : (instructions17.map isz).sum = 756 := by
+theorem size_instructions17 : (instructions17.map isz).sum = 754 := by
   decide +kernel
 
-theorem tables_ok18 : checkAll instrTree pcTree 7200 16111 instructions18 = true := by
+theorem tables_ok18 : checkAll instrTree pcTree 7200 16032 instructions18 = true := by
   decide +kernel
 
-theorem size_instructions18 : (instructions18.map isz).sum = 957 := by
+theorem size_instructions18 : (instructions18.map isz).sum = 1003 := by
   decide +kernel
 
-theorem tables_ok19 : checkAll instrTree pcTree 7600 17068 instructions19 = true := by
+theorem tables_ok19 : checkAll instrTree pcTree 7600 17035 instructions19 = true := by
   decide +kernel
 
-theorem size_instructions19 : (instructions19.map isz).sum = 578 := by
+theorem size_instructions19 : (instructions19.map isz).sum = 693 := by
   decide +kernel
 
-theorem tables_ok20 : checkAll instrTree pcTree 8000 17646 instructions20 = true := by
+theorem tables_ok20 : checkAll instrTree pcTree 8000 17728 instructions20 = true := by
   decide +kernel
 
-theorem size_instructions20 : (instructions20.map isz).sum = 610 := by
+theorem size_instructions20 : (instructions20.map isz).sum = 553 := by
   decide +kernel
 
-theorem tables_ok21 : checkAll instrTree pcTree 8400 18256 instructions21 = true := by
+theorem tables_ok21 : checkAll instrTree pcTree 8400 18281 instructions21 = true := by
   decide +kernel
 
-theorem size_instructions21 : (instructions21.map isz).sum = 540 := by
+theorem size_instructions21 : (instructions21.map isz).sum = 605 := by
   decide +kernel
 
-theorem tables_ok22 : checkAll instrTree pcTree 8800 18796 instructions22 = true := by
+theorem tables_ok22 : checkAll instrTree pcTree 8800 18886 instructions22 = true := by
   decide +kernel
 
-theorem size_instructions22 : (instructions22.map isz).sum = 583 := by
+theorem size_instructions22 : (instructions22.map isz).sum = 559 := by
   decide +kernel
 
-theorem tables_ok23 : checkAll instrTree pcTree 9200 19379 instructions23 = true := by
+theorem tables_ok23 : checkAll instrTree pcTree 9200 19445 instructions23 = true := by
   decide +kernel
 
-theorem size_instructions23 : (instructions23.map isz).sum = 617 := by
+theorem size_instructions23 : (instructions23.map isz).sum = 628 := by
   decide +kernel
 
-theorem tables_ok24 : checkAll instrTree pcTree 9600 19996 instructions24 = true := by
+theorem tables_ok24 : checkAll instrTree pcTree 9600 20073 instructions24 = true := by
   decide +kernel
 
-theorem size_instructions24 : (instructions24.map isz).sum = 553 := by
+theorem size_instructions24 : (instructions24.map isz).sum = 568 := by
   decide +kernel
 
-theorem tables_ok25 : checkAll instrTree pcTree 10000 20549 instructions25 = true := by
+theorem tables_ok25 : checkAll instrTree pcTree 10000 20641 instructions25 = true := by
   decide +kernel
 
-theorem size_instructions25 : (instructions25.map isz).sum = 542 := by
+theorem size_instructions25 : (instructions25.map isz).sum = 628 := by
   decide +kernel
 
-theorem tables_ok26 : checkAll instrTree pcTree 10400 21091 instructions26 = true := by
+theorem tables_ok26 : checkAll instrTree pcTree 10400 21269 instructions26 = true := by
   decide +kernel
 
-theorem size_instructions26 : (instructions26.map isz).sum = 524 := by
+theorem size_instructions26 : (instructions26.map isz).sum = 559 := by
   decide +kernel
 
-theorem tables_ok27 : checkAll instrTree pcTree 10800 21615 instructions27 = true := by
+theorem tables_ok27 : checkAll instrTree pcTree 10800 21828 instructions27 = true := by
   decide +kernel
 
-theorem size_instructions27 : (instructions27.map isz).sum = 547 := by
+theorem size_instructions27 : (instructions27.map isz).sum = 541 := by
   decide +kernel
 
-theorem tables_ok28 : checkAll instrTree pcTree 11200 22162 instructions28 = true := by
+theorem tables_ok28 : checkAll instrTree pcTree 11200 22369 instructions28 = true := by
   decide +kernel
 
-theorem size_instructions28 : (instructions28.map isz).sum = 350 := by
+theorem size_instructions28 : (instructions28.map isz).sum = 547 := by
+  decide +kernel
+
+theorem tables_ok29 : checkAll instrTree pcTree 11600 22916 instructions29 = true := by
+  decide +kernel
+
+theorem size_instructions29 : (instructions29.map isz).sum = 506 := by
   decide +kernel
 
 theorem prefix_length1 : (instructions0 ++ instructions1).length = 800 := by
@@ -399,7 +405,7 @@ theorem prefix_length3 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length2, instructions3_length]
   rfl
 
-theorem prefix_size3 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3).map isz).sum = 4915 := by
+theorem prefix_size3 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3).map isz).sum = 4937 := by
   rewrite [List.map_append, List.sum_append, prefix_size2, size_instructions3]
   rfl
 
@@ -411,7 +417,7 @@ theorem prefix_length4 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length3, instructions4_length]
   rfl
 
-theorem prefix_size4 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4).map isz).sum = 6182 := by
+theorem prefix_size4 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4).map isz).sum = 6160 := by
   rewrite [List.map_append, List.sum_append, prefix_size3, size_instructions4]
   rfl
 
@@ -423,7 +429,7 @@ theorem prefix_length5 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length4, instructions5_length]
   rfl
 
-theorem prefix_size5 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5).map isz).sum = 6873 := by
+theorem prefix_size5 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5).map isz).sum = 6853 := by
   rewrite [List.map_append, List.sum_append, prefix_size4, size_instructions5]
   rfl
 
@@ -435,7 +441,7 @@ theorem prefix_length6 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length5, instructions6_length]
   rfl
 
-theorem prefix_size6 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6).map isz).sum = 7713 := by
+theorem prefix_size6 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6).map isz).sum = 7692 := by
   rewrite [List.map_append, List.sum_append, prefix_size5, size_instructions6]
   rfl
 
@@ -447,7 +453,7 @@ theorem prefix_length7 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length6, instructions7_length]
   rfl
 
-theorem prefix_size7 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7).map isz).sum = 8249 := by
+theorem prefix_size7 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7).map isz).sum = 8233 := by
   rewrite [List.map_append, List.sum_append, prefix_size6, size_instructions7]
   rfl
 
@@ -459,7 +465,7 @@ theorem prefix_length8 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length7, instructions8_length]
   rfl
 
-theorem prefix_size8 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8).map isz).sum = 8841 := by
+theorem prefix_size8 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8).map isz).sum = 8820 := by
   rewrite [List.map_append, List.sum_append, prefix_size7, size_instructions8]
   rfl
 
@@ -471,7 +477,7 @@ theorem prefix_length9 : (instructions0 ++ instructions1 ++ instructions2 ++ ins
   rewrite [List.length_append, prefix_length8, instructions9_length]
   rfl
 
-theorem prefix_size9 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9).map isz).sum = 9642 := by
+theorem prefix_size9 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9).map isz).sum = 9698 := by
   rewrite [List.map_append, List.sum_append, prefix_size8, size_instructions9]
   rfl
 
@@ -483,7 +489,7 @@ theorem prefix_length10 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length9, instructions10_length]
   rfl
 
-theorem prefix_size10 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10).map isz).sum = 10605 := by
+theorem prefix_size10 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10).map isz).sum = 10661 := by
   rewrite [List.map_append, List.sum_append, prefix_size9, size_instructions10]
   rfl
 
@@ -495,7 +501,7 @@ theorem prefix_length11 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length10, instructions11_length]
   rfl
 
-theorem prefix_size11 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11).map isz).sum = 11462 := by
+theorem prefix_size11 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11).map isz).sum = 11512 := by
   rewrite [List.map_append, List.sum_append, prefix_size10, size_instructions11]
   rfl
 
@@ -507,7 +513,7 @@ theorem prefix_length12 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length11, instructions12_length]
   rfl
 
-theorem prefix_size12 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12).map isz).sum = 12375 := by
+theorem prefix_size12 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12).map isz).sum = 12186 := by
   rewrite [List.map_append, List.sum_append, prefix_size11, size_instructions12]
   rfl
 
@@ -519,7 +525,7 @@ theorem prefix_length13 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length12, instructions13_length]
   rfl
 
-theorem prefix_size13 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13).map isz).sum = 13229 := by
+theorem prefix_size13 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13).map isz).sum = 13036 := by
   rewrite [List.map_append, List.sum_append, prefix_size12, size_instructions13]
   rfl
 
@@ -531,7 +537,7 @@ theorem prefix_length14 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length13, instructions14_length]
   rfl
 
-theorem prefix_size14 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14).map isz).sum = 13912 := by
+theorem prefix_size14 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14).map isz).sum = 14032 := by
   rewrite [List.map_append, List.sum_append, prefix_size13, size_instructions14]
   rfl
 
@@ -543,7 +549,7 @@ theorem prefix_length15 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length14, instructions15_length]
   rfl
 
-theorem prefix_size15 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15).map isz).sum = 14516 := by
+theorem prefix_size15 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15).map isz).sum = 14584 := by
   rewrite [List.map_append, List.sum_append, prefix_size14, size_instructions15]
   rfl
 
@@ -555,7 +561,7 @@ theorem prefix_length16 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length15, instructions16_length]
   rfl
 
-theorem prefix_size16 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16).map isz).sum = 15355 := by
+theorem prefix_size16 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16).map isz).sum = 15278 := by
   rewrite [List.map_append, List.sum_append, prefix_size15, size_instructions16]
   rfl
 
@@ -567,7 +573,7 @@ theorem prefix_length17 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length16, instructions17_length]
   rfl
 
-theorem prefix_size17 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17).map isz).sum = 16111 := by
+theorem prefix_size17 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17).map isz).sum = 16032 := by
   rewrite [List.map_append, List.sum_append, prefix_size16, size_instructions17]
   rfl
 
@@ -579,7 +585,7 @@ theorem prefix_length18 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length17, instructions18_length]
   rfl
 
-theorem prefix_size18 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18).map isz).sum = 17068 := by
+theorem prefix_size18 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18).map isz).sum = 17035 := by
   rewrite [List.map_append, List.sum_append, prefix_size17, size_instructions18]
   rfl
 
@@ -591,7 +597,7 @@ theorem prefix_length19 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length18, instructions19_length]
   rfl
 
-theorem prefix_size19 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19).map isz).sum = 17646 := by
+theorem prefix_size19 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19).map isz).sum = 17728 := by
   rewrite [List.map_append, List.sum_append, prefix_size18, size_instructions19]
   rfl
 
@@ -603,7 +609,7 @@ theorem prefix_length20 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length19, instructions20_length]
   rfl
 
-theorem prefix_size20 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20).map isz).sum = 18256 := by
+theorem prefix_size20 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20).map isz).sum = 18281 := by
   rewrite [List.map_append, List.sum_append, prefix_size19, size_instructions20]
   rfl
 
@@ -615,7 +621,7 @@ theorem prefix_length21 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length20, instructions21_length]
   rfl
 
-theorem prefix_size21 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21).map isz).sum = 18796 := by
+theorem prefix_size21 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21).map isz).sum = 18886 := by
   rewrite [List.map_append, List.sum_append, prefix_size20, size_instructions21]
   rfl
 
@@ -627,7 +633,7 @@ theorem prefix_length22 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length21, instructions22_length]
   rfl
 
-theorem prefix_size22 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22).map isz).sum = 19379 := by
+theorem prefix_size22 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22).map isz).sum = 19445 := by
   rewrite [List.map_append, List.sum_append, prefix_size21, size_instructions22]
   rfl
 
@@ -639,7 +645,7 @@ theorem prefix_length23 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length22, instructions23_length]
   rfl
 
-theorem prefix_size23 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23).map isz).sum = 19996 := by
+theorem prefix_size23 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23).map isz).sum = 20073 := by
   rewrite [List.map_append, List.sum_append, prefix_size22, size_instructions23]
   rfl
 
@@ -651,7 +657,7 @@ theorem prefix_length24 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length23, instructions24_length]
   rfl
 
-theorem prefix_size24 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24).map isz).sum = 20549 := by
+theorem prefix_size24 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24).map isz).sum = 20641 := by
   rewrite [List.map_append, List.sum_append, prefix_size23, size_instructions24]
   rfl
 
@@ -663,7 +669,7 @@ theorem prefix_length25 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length24, instructions25_length]
   rfl
 
-theorem prefix_size25 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25).map isz).sum = 21091 := by
+theorem prefix_size25 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25).map isz).sum = 21269 := by
   rewrite [List.map_append, List.sum_append, prefix_size24, size_instructions25]
   rfl
 
@@ -675,7 +681,7 @@ theorem prefix_length26 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length25, instructions26_length]
   rfl
 
-theorem prefix_size26 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26).map isz).sum = 21615 := by
+theorem prefix_size26 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26).map isz).sum = 21828 := by
   rewrite [List.map_append, List.sum_append, prefix_size25, size_instructions26]
   rfl
 
@@ -687,7 +693,7 @@ theorem prefix_length27 : (instructions0 ++ instructions1 ++ instructions2 ++ in
   rewrite [List.length_append, prefix_length26, instructions27_length]
   rfl
 
-theorem prefix_size27 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27).map isz).sum = 22162 := by
+theorem prefix_size27 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27).map isz).sum = 22369 := by
   rewrite [List.map_append, List.sum_append, prefix_size26, size_instructions27]
   rfl
 
@@ -695,11 +701,11 @@ theorem prefix_ok27 : checkAll instrTree pcTree 0 0 (instructions0 ++ instructio
   checkAll_append _ _ _ _ _ _ prefix_ok26
     (by rewrite [prefix_length26, prefix_size26]; exact tables_ok27)
 
-theorem prefix_length28 : (instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28).length = 11461 := by
+theorem prefix_length28 : (instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28).length = 11600 := by
   rewrite [List.length_append, prefix_length27, instructions28_length]
   rfl
 
-theorem prefix_size28 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28).map isz).sum = 22512 := by
+theorem prefix_size28 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28).map isz).sum = 22916 := by
   rewrite [List.map_append, List.sum_append, prefix_size27, size_instructions28]
   rfl
 
@@ -707,23 +713,35 @@ theorem prefix_ok28 : checkAll instrTree pcTree 0 0 (instructions0 ++ instructio
   checkAll_append _ _ _ _ _ _ prefix_ok27
     (by rewrite [prefix_length27, prefix_size27]; exact tables_ok28)
 
+theorem prefix_length29 : (instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28 ++ instructions29).length = 11980 := by
+  rewrite [List.length_append, prefix_length28, instructions29_length]
+  rfl
+
+theorem prefix_size29 : ((instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28 ++ instructions29).map isz).sum = 23422 := by
+  rewrite [List.map_append, List.sum_append, prefix_size28, size_instructions29]
+  rfl
+
+theorem prefix_ok29 : checkAll instrTree pcTree 0 0 (instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28 ++ instructions29) = true :=
+  checkAll_append _ _ _ _ _ _ prefix_ok28
+    (by rewrite [prefix_length28, prefix_size28]; exact tables_ok29)
+
 
 /-- Validation of both trees, one kernel evaluation per instruction chunk. -/
 theorem tables_ok : checkAll instrTree pcTree 0 0 instructionList = true := by
   unfold instructionList
-  exact prefix_ok28
+  exact prefix_ok29
 
-theorem instrTree_get {n : Nat} (h : n < 11461) : instrTree.get n = instructionList[n]? := by
+theorem instrTree_get {n : Nat} (h : n < 11980) : instrTree.get n = instructionList[n]? := by
   have := (checkAll_spec _ _ _ _ _ tables_ok).1 n (by simpa using h)
   simpa using this
 
-theorem pcTree_get {n : Nat} (h : n ≤ 11461) : pcTree.get n = some (pcOf n) := by
+theorem pcTree_get {n : Nat} (h : n ≤ 11980) : pcTree.get n = some (pcOf n) := by
   have := (checkAll_spec _ _ _ _ _ tables_ok).2 n (by simpa using h)
   simpa [pcOf] using this
 
 /-- Offset from a tree lookup. -/
 theorem instructionPC_eq_of (n pc : Nat)
-    (h : (decide (n ≤ 11461) && pcTree.get n == some pc) = true) :
+    (h : (decide (n ≤ 11980) && pcTree.get n == some pc) = true) :
     artifact.instructionPC n = pc := by
   simp only [Bool.and_eq_true, decide_eq_true_eq, beq_iff_eq] at h
   rw [instructionPC_eq_pcOf]
@@ -738,16 +756,16 @@ noncomputable def instrAt (n : Nat) : Instr := (instrTree.get n).getD (.op .INVA
 /-- Byte offset of instruction `n`, read from the lookup tree. -/
 noncomputable def pcAt (n : Nat) : Nat := (pcTree.get n).getD 0
 
-theorem located_instruction_eq (i : Fin 11461) : (located i).instruction = instrAt i.val := by
+theorem located_instruction_eq (i : Fin 11980) : (located i).instruction = instrAt i.val := by
   have h := instrTree_get i.isLt
   rw [List.getElem?_eq_getElem (by simp)] at h
   change instructionList[i.val]'_ = (instrTree.get i.val).getD _
   rw [h]
   rfl
 
-theorem located_index_eq (i : Fin 11461) : (located i).index = i.val := rfl
+theorem located_index_eq (i : Fin 11980) : (located i).index = i.val := rfl
 
-theorem instructionPC_eq_pcAt {n : Nat} (h : n ≤ 11461) :
+theorem instructionPC_eq_pcAt {n : Nat} (h : n ≤ 11980) :
     artifact.instructionPC n = pcAt n := by
   rw [instructionPC_eq_pcOf, pcAt, pcTree_get h]
   rfl
@@ -777,7 +795,7 @@ theorem eq_of_isJumpdest {i : Instr} (h : isJumpdest i = true) : i = .op .JUMPDE
 
 /-- Kernel-evaluable check that instruction `n` is a JUMPDEST at byte `pc`. -/
 noncomputable def jumpdestAt (n pc : Nat) : Bool :=
-  decide (n < 11461) && (instrTree.get n).map isJumpdest == some true && pcTree.get n == some pc
+  decide (n < 11980) && (instrTree.get n).map isJumpdest == some true && pcTree.get n == some pc
 
 /-- Every JUMPDEST instruction's offset is a valid jump target. -/
 theorem jumpdest_of (n pc : Nat) (h : jumpdestAt n pc = true) :

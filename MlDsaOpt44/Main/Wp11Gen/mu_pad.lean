@@ -1,9 +1,9 @@
 theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat} (hlen : len < 136) :
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = word M (KS + 32 * x) ^^^ rep (padLane len x)) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
-      Reach (callState s 5766 [wd len, wd off, flag b] M) (callState s 19645 [wd 5868, flag b] M') 100 := by
+      Reach (callState s 5766 [wd len, wd off, flag b] M) (callState s 19576 [wd 5868, flag b] M') 100 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2065 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
   have h7 : 7 &&& len ≤ 7 := Nat.and_le_left
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3

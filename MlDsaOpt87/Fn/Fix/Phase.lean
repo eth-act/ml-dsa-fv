@@ -20,7 +20,7 @@ open MlDsa44
 
 /-- One visit of the group loop body: a flagged or a clean group. -/
 theorem group_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
     (c : Nat → Nat) (flim g w : Nat) (M : ByteArray) (hg : g < 42) (hfl : 31232 + 32 * g ≠ flim)
     (hflim : flim < 65536) (hacc : AccAt M sl c (8 * g) w)
     (hcand : ∀ i, i < 8 → lane (word M (20480 + 32 * (8 * g + i))) sl = c (8 * g + i))
@@ -65,7 +65,7 @@ theorem group_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
 coefficients are accepted (return `1`), or the loop reaches the
 exhaustion test `fxe` with fewer. -/
 theorem phase {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (hj : Decode.isValidJumpDest optBytecode ret = true) (hret : ret < 65536)
     {sl : Nat} (hsl : sl < 4) (c : Nat → Nat) (lim : Nat) (hlim : lim ≤ 42) :
     ∀ d g w (M : ByteArray), g + d = lim → AccAt M sl c (8 * g) w → w < 256 →

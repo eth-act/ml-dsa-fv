@@ -3,16 +3,16 @@ import MlDsaOpt44.Fn.Kf1.Tables
 # `kf1`: word model of one round and its 64-bit lane mirror
 
 `kf1` keeps one Keccak state with every lane replicated, `rep v`, and computes
-a round with single shifts instead of rotations (`scripts/opt_keccak.py`,
-`rot_top` with `decay`). The word model below is the round exactly as the code
-computes it (operand order of every opcode included), so the block lemmas of
-`Blocks*.lean` can state their post-states with it:
+a round with single left shifts instead of rotations (`scripts/opt_keccak.py`,
+`rot_top` with decay, shift offset −1). The word model below is the round
+exactly as the code computes it (operand order of every opcode included), so
+the block lemmas of `Blocks*.lean` can state their post-states with it:
 
 * `Cw A x`: column parity `C_x` of the words `A`;
 * `Dw C x`: `D_x = C_{x−1} ⊕ (C_{x+1} << 1)`;
-* `Bw A D j`: `shf j (D_{j mod 5} ⊕ A_j)` (theta, then rho by one shift);
+* `Bw A D j`: `shf j (D_{j mod 5} ⊕ A_j)` (theta, then rho by one left shift);
 * `outW A D rc j`: chi (`chiW`) of the five `B`s of row `j / 5`, iota on lane 0;
-* `rerepW o`: `((o >> 64) & M64) · REP`, the re-replication of the second round.
+* `rerepW o`: `(o >> 192) · REP`, the re-replication of the third round.
 
 `CL`, `DL`, `BL`, `outL` mirror the model on `UInt64` lanes (shifts become
 rotations). `Win.lean` relates the two on bit windows.
@@ -22,9 +22,6 @@ namespace MlDsaOpt44.Proofs.Kf1
 
 open EvmSemantics
 open EvmSemantics.EVM
-
-/-- `2^64 − 1`, as the code pushes it. -/
-def M64w : UInt256 := UInt256.ofNat 18446744073709551615
 
 /-- `1 + 2^64 + 2^128 + 2^192`, as the code pushes it. -/
 def REPw : UInt256 := UInt256.ofNat 6277101735386680764176071790128604879584176795969512275969
@@ -56,8 +53,8 @@ def outW (A D : Nat → UInt256) (rc : UInt256) (j : Nat) : UInt256 :=
   if j = 0 then rc.xor (chiW 0 fun k => Bw A D (srcLane 0 k))
   else chiW j fun k => Bw A D (srcLane (j / 5) k)
 
-/-- Re-replication of bits `[64, 128)`. -/
-def rerepW (o : UInt256) : UInt256 := REPw * UInt256.land M64w (o.shiftRight (UInt256.ofNat 64))
+/-- Re-replication of bits `[192, 256)`. -/
+def rerepW (o : UInt256) : UInt256 := REPw * o.shiftRight (UInt256.ofNat 192)
 
 /-- Output lane `j` of a round from the words `A`. -/
 def roundW (A : Nat → UInt256) (rc : UInt256) (j : Nat) : UInt256 := outW A (Dw (Cw A)) rc j

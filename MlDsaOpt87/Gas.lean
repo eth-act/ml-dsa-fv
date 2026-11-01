@@ -10,11 +10,11 @@ RejNTTPoly fix-ups including the sixth squeeze in every group, SampleInBall's
 byte loop (with the second `H(c̃)` block), HintBitUnpack's loops; μ's block
 count depends on the message length only (always the `kf1` sponge).
 
-`schedule (7219 + n) = 8,249,418 + ⌊(66 + n) / 136⌋ · 37,128` (`schedule_msg`):
-8,249,418 for `n ≤ 69`, 8,286,546 for `70 ≤ n ≤ 205`, and 37,128 more per
+`schedule (7219 + n) = 8,189,449 + ⌊(66 + n) / 136⌋ · 33,819` (`schedule_msg`):
+8,189,449 for `n ≤ 69`, 8,223,268 for `70 ≤ n ≤ 205`, and 33,819 more per
 further 136 message bytes (`python3 scripts/proofgen_gas_param.py 87
 --schedule`). The measured adversarial worst case of `docs/opt.md` is
-8,014,074 for `n = 0`; the difference is the conservative fix-up and
+7,954,105 for `n = 0`; the difference is the conservative fix-up and
 SampleInBall loop counts.
 -/
 
@@ -34,16 +34,16 @@ def schedule (size : Nat) : Nat :=
 
 /-- The schedule in closed form: one more `kf1` block per 136 message bytes. -/
 theorem schedule_msg (n : Nat) :
-    schedule (7219 + n) = 8249418 + (66 + n) / 136 * 37128 := by
+    schedule (7219 + n) = 8189449 + (66 + n) / 136 * 33819 := by
   unfold schedule
   rw [if_neg (by omega), Nat.add_sub_cancel_left]
   have hc : pInit + EvmSemantics.MachineState.memCost memWords + pZh + pSib + pTbl + pNtt + pRho +
       pG0 + pG1 + pG2 + pG3 + pG4 + pG5 + pG6 + pG7 + pG8 + pG9 +
-      pG10 + pG11 + pG12 + pG13 + pG14 + pCt + pW + pFin = 8175226 := by decide
+      pG10 + pG11 + pG12 + pG13 + pG14 + pCt + pW + pFin = 8121875 := by decide
   rw [hc]
   unfold pMu
-  have hk : kf1 + absorb17 + 88 = 37128 := rfl
-  have hp : kf1 + 202 = 36082 := rfl
+  have hk : kf1 + absorb17 + 88 = 33819 := rfl
+  have hp : kf1 + 202 = 32773 := rfl
   rw [hk, hp]
   generalize (66 + n) / 136 = X
   rw [Nat.add_mul, Nat.one_mul]

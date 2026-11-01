@@ -17,14 +17,19 @@ namespace MlDsaOpt65.Proofs.Gas
 /-! ## Constant-cost subroutines -/
 
 def kf4 : Nat := 40238
-def kf1 : Nat := 35880
+def kf1 : Nat := 32571
 def blk : Nat := 7836
 def ntt : Nat := 99705
 def intt : Nat := 119593
 def pass3 : Nat := 17780
+/-- `pass3x5 … pass3x8`: the mixed row-group-1 accumulations of groups 5–8 (v3). -/
+def pass3x5 : Nat := 38413
+def pass3x6 : Nat := 41485
+def pass3x7 : Nat := 36877
+def pass3x8 : Nat := 25613
 def tbuild : Nat := 28511
 def csum : Nat := 81381
-def usehint : Nat := 56857
+def usehint : Nat := 48153
 def dz : Nat := 46156
 def spr : Nat := 120
 def ginit : Nat := 792

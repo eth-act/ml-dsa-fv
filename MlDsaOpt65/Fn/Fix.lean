@@ -228,7 +228,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   classical
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.fix, Stack.kf4, Stack.blk, Stack.leaf] at this; omega
-  have hsz : 2833 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
+  have hsz : 2865 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
   have hret : ret < 65536 := by have := hr.small; omega
   have hsh : 64 * sl ≤ 192 := by omega
   obtain ⟨hB5, hp0, hp6⟩ := hp
@@ -254,7 +254,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (31232 + 32 * g0) hsh (by omega) (by omega) (by
       have := hf0; simp only [flagBit, FL] at this; rw [Nat.add_comm 23]; exact this)
   have hpre : Reach (callState s Entry.fix ([wd (64 * sl)] ++ wd ret :: tail) m)
-      (Fix.gst s ret tail (64 * sl) (Fix.lmask sl) (Fix.nmask sl) 13624 (31232 + 32 * 35)
+      (Fix.gst s ret tail (64 * sl) (Fix.lmask sl) (Fix.nmask sl) 13995 (31232 + 32 * 35)
         (20480 + 256 * g0) (20480 + 32 * (8 * g0)) (31232 + 32 * g0) m) (19 + g0 * 55 + 69) :=
     (he.trans hsc).trans (hhit.of_eq rfl (by
       rw [show 20480 + (31232 + 32 * g0 - 31232) * 8 = 20480 + 256 * g0 by omega,
@@ -478,7 +478,7 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (cst s ret tail pc' (Fix.gflags m) (if okb amask I k then 1 else 0) amask M) sk)
     (hcall : (amask / 2 ^ k &&& Fix.gflags m / 2 ^ (64 * k + 23)) % 2 = 1 →
       Reach (cst s ret tail pc (Fix.gflags m) (if okb amask I k then 1 else 0) amask M)
-        (callState s 13567 (wd (64 * k) :: wd rpc :: wd (Fix.gflags m) ::
+        (callState s 13938 (wd (64 * k) :: wd rpc :: wd (Fix.gflags m) ::
           wd (if okb amask I k then 1 else 0) :: wd amask :: wd ret :: tail) M) ck)
     (hret : ∀ (M' : ByteArray) (r : Nat), r < 2 →
       Reach (callState s rpc (wd r :: wd (Fix.gflags m) :: wd (if okb amask I k then 1 else 0) ::
@@ -573,7 +573,7 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (Gas.gfix n) := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.gfix, Stack.fix, Stack.kf4, Stack.blk, Stack.leaf] at this; omega
-  have hsz : 2833 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
+  have hsz : 2865 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
   have hret : ret < 65536 := by have := hr.small; omega
   have hgas : 630 + popcnt amask * Gas.fixNo + (Gas.fixSq - Gas.fixNo) ≤ Gas.gfix n := by
     unfold Gas.gfix Gas.gfix0
@@ -602,23 +602,23 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       ⟨hrc, hks, FrameExcept.refl _ _, fun j _ h2 h3 => hp j h2 h3, fun j hj => absurd hj (by omega),
         fun _ _ _ _ _ => rfl⟩
     have hfl := Fix.gflags_lt m
-    obtain ⟨M1, hI1, c0, hr0, hb0⟩ := gstep hs hr m S hS I hp (k := 0) (by omega) (pc := 11512)
-      (pc' := 11541) (rpc := 11536) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) m hI0
+    obtain ⟨M1, hI1, c0, hr0, hb0⟩ := gstep hs hr m S hS I hp (k := 0) (by omega) (pc := 11883)
+      (pc' := 11912) (rpc := 11907) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) m hI0
       (fun h => Fix.gx_skip0 (ret := ret) hs htail hsz m amask _ _ hamask hfl h)
       (fun h => Fix.gx_call0 (ret := ret) hs htail hsz m amask _ _ hamask hfl h)
       (fun M' r hr' => Fix.gx_ret0 (ret := ret) hs htail hsz M' amask _ _ r (by split <;> omega) hr')
-    obtain ⟨M2, hI2, c1, hr1, hb1⟩ := gstep hs hr m S hS I hp (k := 1) (by omega) (pc := 11541)
-      (pc' := 11573) (rpc := 11568) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M1 hI1
+    obtain ⟨M2, hI2, c1, hr1, hb1⟩ := gstep hs hr m S hS I hp (k := 1) (by omega) (pc := 11912)
+      (pc' := 11944) (rpc := 11939) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M1 hI1
       (fun h => Fix.gx_skip1 (ret := ret) hs htail hsz M1 amask _ _ hamask hfl h)
       (fun h => Fix.gx_call1 (ret := ret) hs htail hsz M1 amask _ _ hamask hfl h)
       (fun M' r hr' => Fix.gx_ret1 (ret := ret) hs htail hsz M' amask _ _ r (by split <;> omega) hr')
-    obtain ⟨M3, hI3, c2, hr2, hb2⟩ := gstep hs hr m S hS I hp (k := 2) (by omega) (pc := 11573)
-      (pc' := 11605) (rpc := 11600) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M2 hI2
+    obtain ⟨M3, hI3, c2, hr2, hb2⟩ := gstep hs hr m S hS I hp (k := 2) (by omega) (pc := 11944)
+      (pc' := 11976) (rpc := 11971) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M2 hI2
       (fun h => Fix.gx_skip2 (ret := ret) hs htail hsz M2 amask _ _ hamask hfl h)
       (fun h => Fix.gx_call2 (ret := ret) hs htail hsz M2 amask _ _ hamask hfl h)
       (fun M' r hr' => Fix.gx_ret2 (ret := ret) hs htail hsz M' amask _ _ r (by split <;> omega) hr')
-    obtain ⟨M4, hI4, c3, hr3, hb3⟩ := gstep hs hr m S hS I hp (k := 3) (by omega) (pc := 11605)
-      (pc' := 11637) (rpc := 11632) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M3 hI3
+    obtain ⟨M4, hI4, c3, hr3, hb3⟩ := gstep hs hr m S hS I hp (k := 3) (by omega) (pc := 11976)
+      (pc' := 12008) (rpc := 12003) (by simp only [Infra.isValidJumpDest_lit]) (by norm_num) M3 hI3
       (fun h => Fix.gx_skip3 (ret := ret) hs htail hsz M3 amask _ _ hamask hfl h)
       (fun h => Fix.gx_call3 (ret := ret) hs htail hsz M3 amask _ _ hamask hfl h)
       (fun M' r hr' => Fix.gx_ret3 (ret := ret) hs htail hsz M' amask _ _ r (by split <;> omega) hr')

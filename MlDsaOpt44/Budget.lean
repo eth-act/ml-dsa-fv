@@ -19,7 +19,7 @@ namespace MlDsaOpt44.Proofs.Gas
 /-! ## Constant-cost subroutines -/
 
 def kf4 : Nat := 40238
-def kf1 : Nat := 35880
+def kf1 : Nat := 32571
 def blk : Nat := 7836
 def ntt : Nat := 99705
 def intt : Nat := 119593
@@ -28,7 +28,7 @@ def pass3m : Nat := 19318
 def pass3k4 : Nat := 25613
 def tbuild : Nat := 28511
 def csum : Nat := 69861
-def usehint : Nat := 64793
+def usehint : Nat := 56089
 def pack : Nat := 11107
 def dz : Nat := 46156
 def spr : Nat := 120

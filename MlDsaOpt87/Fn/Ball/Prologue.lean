@@ -39,7 +39,7 @@ theorem sib_zero {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept M M' [(KS, KS + 800)] ∧
       Reach (callState s 8084 (wd ret :: tail) M) (callState s 8207 (wd ret :: tail) M') 218 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [2995, 2996, 2997, 2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3044, 3045, 3046, 3047, 3048, 3049, 3050, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065, 3066, 3067, 3068, 3069, 3070, 3071, 3072, 3073, 3074, 3075, 3076]
@@ -60,7 +60,7 @@ theorem sib_absW0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept M M' [(KS, KS + 800)] ∧
       Reach (callState s 8207 (wd ret :: tail) M) (callState s 8429 (absK ret tail) M') 255 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · unfold absK
@@ -103,7 +103,7 @@ theorem sib_absW1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept M M' [(KS, KS + 800)] ∧
       Reach (callState s 8429 (absK ret tail) M) (callState s 8531 (wd ret :: tail) M') 252 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · unfold absK
@@ -143,9 +143,9 @@ theorem sib_pad {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         if x = 8 then word M (KS + 32 * x) ^^^ rep 31
         else if x = 16 then word M (KS + 32 * x) ^^^ rep (2 ^ 63) else word M (KS + 32 * x)) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
-      Reach (callState s 8531 (wd ret :: tail) M) (callState s 20535 (wd 8615 :: wd ret :: tail) M') 50 := by
+      Reach (callState s 8531 (wd ret :: tail) M) (callState s 20467 (wd 8615 :: wd ret :: tail) M') 50 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [3243, 3244, 3245, 3246, 3247, 3248, 3249, 3250, 3251, 3252, 3253, 3254, 3255, 3256, 3257]
@@ -172,7 +172,7 @@ theorem sib_post {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Reach (callState s 8615 (wd ret :: tail) M)
         (headSt s ret tail 8 196 (18446744073709551615 &&& word M 0) M') 78 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [3258, 3259, 3260, 3261, 3262, 3263, 3264, 3265, 3266, 3267, 3268, 3269, 3270, 3271, 3272, 3273, 3274, 3275, 3276, 3277, 3278, 3279, 3280, 3281, 3282, 3283, 3284] with [word_mstore_disjoint]
@@ -189,9 +189,9 @@ theorem sib_rpre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = flip4 M x) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
       Reach (headSt s ret tail 136 i sg M)
-        (callState s 20535 (wd 8722 :: wd 136 :: wd i :: wd sg :: wd ret :: tail) M') 122 := by
+        (callState s 20467 (wd 8722 :: wd 136 :: wd i :: wd sg :: wd ret :: tail) M') 122 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [3285, 3286, 3287, 3288, 3289, 3290, 3291, 3292, 3293, 3294, 3295, 3296, 3297, 3298, 3299, 3300, 3301, 3302, 3303, 3304, 3305, 3306, 3307, 3308, 3309, 3310, 3311, 3312, 3313, 3314, 3315, 3316, 3317, 3318, 3319]
@@ -210,7 +210,7 @@ theorem sib_rpost {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Reach (callState s 8722 (wd 136 :: wd i :: wd sg :: wd ret :: tail) M)
         (nokSt s ret tail 136 i sg M') 61 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [3320, 3321, 3322, 3323, 3324, 3325, 3326, 3327, 3328, 3329, 3330, 3331, 3332, 3333, 3334, 3335, 3336, 3337, 3338, 3339, 3340]

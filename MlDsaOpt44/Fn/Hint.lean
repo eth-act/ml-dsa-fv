@@ -6,9 +6,9 @@ import MlDsaOpt44.Fn.Hint.PackMain
 # `usehint`, `pack` (WP10)
 
 * `usehint [ACC, ret]`: for the 256 row-packed words `W` at `ACC`, lane-wise
-  `W := UseHint(HP, (W − SP) mod q)`, with `x mod q` and the `2γ2` quotient by
-  exact multiply-shift (`K = 53` resp. `(39, 2886403)`), and the `mod 44` by
-  `(v · 94) >> 12`.
+  `W := UseHint(HP, (W − SP) mod q)`, with `x mod q` by exact multiply-shift (`K = 53`),
+  `D = ((r + γ2 − 1) · 2886403) >> 38 = 2 r1 + [r0 > 0]`, `(D >> 1) + 44 − h + 2 (h & D)`,
+  and the `mod 44` by `(v · 94) >> 12`.
 * `pack [4, FIN + 256, ACC, ret]`: `w1Encode` (6 bits per coefficient) of the
   four rows, each 64-bit stream lane replicated (`rep`) into `FIN` for `kf1`.
 -/

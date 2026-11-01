@@ -18,8 +18,9 @@ theorem permute_eq (A : Array UInt64) : permute A = rounds A 24 := by
   simp only [permute, Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size,
     List.forIn_pure_yield_eq_foldl, Id.run_pure, pure_bind, rounds, List.range_eq_range']
 
-theorem rounds_two (A : Array UInt64) (k : Nat) :
-    rounds A (2 * k + 2) = round (round (rounds A (2 * k)) RC[2 * k]!) RC[2 * k + 1]! := by
+theorem rounds_three (A : Array UInt64) (k : Nat) :
+    rounds A (3 * k + 3) =
+      round (round (round (rounds A (3 * k)) RC[3 * k]!) RC[3 * k + 1]!) RC[3 * k + 2]! := by
   simp only [rounds, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
 
 set_option maxRecDepth 100000 in

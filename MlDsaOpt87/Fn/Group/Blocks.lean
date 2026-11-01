@@ -22,7 +22,7 @@ open MlDsaOpt87.Proofs.Infra
 theorem g1_K {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {amask col rb ret : Nat} : ∀ b, b < 5 → ∀ M,
       Reach (callState s (15202 + 22 * b) (gB amask col rb ret tail) M)
-        (callState s 21922 (wd (15210 + 22 * b) :: gB amask col rb ret tail) M) 15 := by
+        (callState s 22461 (wd (15210 + 22 * b) :: gB amask col rb ret tail) M) 15 := by
   intro b hb M
   interval_cases b
   · opt87_reach [6743, 6744, 6745, 6746]

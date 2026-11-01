@@ -39,35 +39,34 @@ def pG1 : Nat := 26 + group
 def pG2 : Nat := 26 + group
 def pG3 : Nat := 26 + group
 def pG4 : Nat := 26 + group
-/-- `3634 … 4074`: group 5 (`A[4][0]`, `A[5][0]`, the c̃ stream, `tr` blocks 0–4):
-`ginit`, five `trabs 5` + `kf4` + `blk`, two `cext 17` (`CB`), `gfix [3]`
-(two active slots), `pass3`. -/
-def pG5 : Nat :=
-  450 + ginit + 5 * (trabs 5 + kf4 + blk) + 2 * cext 17 + gfix 2 + pass3
-/-- `4074 … 4517`: group 6 (`A[4][1]`, `A[5][1]`, `tr` blocks 5–9). -/
-def pG6 : Nat := 404 + ginit + 5 * (trabs 5 + kf4 + blk) + gfix 2 + pass3
-/-- `4517 … 5029`: group 7 (`A[4][2]`, `A[5][2]`, `tr` blocks 10–14, `cext 8` into
-`TRL`). -/
+/-- `3634 … 4033`: group 5 (instances 0–2: `A[4][0]`, `A[5][0]`, `A[4][1]`; `tr`
+blocks 0–4): `ginit`, five `trabs 5` + `kf4` + `blk`, `gfix [7]` (three active
+slots), `AND`, `pass3x5`. -/
+def pG5 : Nat := 392 + ginit + 5 * (trabs 5 + kf4 + blk) + gfix 3 + pass3x5
+/-- `4033 … 4468`: group 6 (instances 3–5: `A[5][1]`, `A[4][2]`, `A[5][2]`; `tr`
+blocks 5–9), `pass3x6`. -/
+def pG6 : Nat := 395 + ginit + 5 * (trabs 5 + kf4 + blk) + gfix 3 + pass3x6
+/-- `4468 … 4972`: group 7 (instances 6–8: `A[4][3]`, `A[5][3]`, `A[4][4]`; `tr`
+blocks 10–14, `cext 8` into `TRL`), `pass3x7`. -/
 def pG7 : Nat :=
-  464 + ginit + 4 * trabs 5 + trabs 2 + 5 * (kf4 + blk) + cext 8 + gfix 2 + pass3
-/-- `5029 … 5221`: group 8 (`A[4][3]`, `A[5][3]`, the μ rider: `mu0`, `cext 8`
-into `MU`). -/
-def pG8 : Nat := 300 + ginit + mu0 + 5 * (kf4 + blk) + cext 8 + gfix 2 + pass3
-/-- `5221 … 5236`: `group [3, 4, 1]` (`A[4][4]`, `A[5][4]`), `AND`. -/
-def pG9 : Nat := 27 + group
-/-- `5236 … 6545`: μ, from the SIMD slot (`|M| ≤ 69`, 195) or by `kf1`
+  455 + ginit + 4 * trabs 5 + trabs 2 + 5 * (kf4 + blk) + cext 8 + gfix 3 + pass3x7
+/-- `4972 … 5190`: group 8 (instance 9: `A[5][4]`; the c̃ stream: two `cext 17`
+into `CB`; the μ rider: `mu0`, `cext 8` into `MU`), `gfix [1]`, `pass3x8`, the
+return `JUMPDEST`. -/
+def pG8 : Nat := 341 + ginit + mu0 + 5 * (kf4 + blk) + 2 * cext 17 + cext 8 + gfix 1 + pass3x8
+/-- `5190 … 6499`: μ, from the SIMD slot (`|M| ≤ 69`, 195) or by `kf1`
 (`hash_mu`): selection 24, setup 983, one loop visit (`kf1` + `absorb17` + 88)
 per 136 bytes of `tr ‖ 0 ‖ 0 ‖ M` plus one, the final permutation (`kf1` + 202). -/
 def pMu (mlen : Nat) : Nat :=
   if mlen ≤ 69 then 195
   else 24 + 983 + ((66 + mlen) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
-/-- `6545 … 6555`: `sib`, `AND`. -/
+/-- `6499 … 6509`: `sib`, `AND`. -/
 def pSib : Nat := 19 + sib
-/-- `6555 … 6610`: `tbuild`, `csum` for each row group. -/
+/-- `6509 … 6564`: `tbuild`, `csum` for each row group. -/
 def pCt : Nat := 84 + 2 * (tbuild + csum)
-/-- `6610 … 6688`: `intt`, `usehint`, `pack` for each row group (4 and 2 rows). -/
+/-- `6564 … 6642`: `intt`, `usehint`, `pack` for each row group (4 and 2 rows). -/
 def pW : Nat := 120 + 2 * (intt + usehint) + pack 4 + pack 2
-/-- `6688 …`: the final hash (six absorbing `kf1` visits and the last one),
+/-- `6642 …`: the final hash (six absorbing `kf1` visits and the last one),
 the 48-byte c̃ comparison, `mstore(0, ok)`, `return(0, 32)`. -/
 def pFin : Nat := 220 + 6 * (kf1 + 495) + (kf1 + 485)
 

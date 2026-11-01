@@ -46,7 +46,7 @@ theorem g_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length
 
 theorem g_K {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21032 (wd (13770 + 22 * b) :: gB col ret tail) M) 15 := by
+      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15 := by
   intro b hb M
   interval_cases b
   · opt44_reach [6097, 6098, 6099, 6100]

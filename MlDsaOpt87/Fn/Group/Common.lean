@@ -27,7 +27,7 @@ theorem land_m64' (x : Nat) : 18446744073709551615 &&& x = x % 18446744073709551
 /-- The returning `JUMP` of a subroutine (proved without `opt87_block`, whose
 simp set reduces `isValidJumpDest optBytecode ret` far too deeply for a
 symbolic `ret`). -/
-theorem reach_ret {s : State} (hs : Ctx s) (i : Fin 11950) {pc ret : Nat}  -- port: instruction count
+theorem reach_ret {s : State} (hs : Ctx s) (i : Fin 12299) {pc ret : Nat}  -- port: instruction count
     {tail : List UInt256} (M : ByteArray)
     (hok : MlDsaOpt87.Proofs.Infra.blockOK [i] 8 = true)
     (hi : MlDsaOpt87.Proofs.Infra.instrAt i.val = .op (.StackMemFlow .JUMP))

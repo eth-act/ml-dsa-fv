@@ -33,7 +33,7 @@ theorem mu_L1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray)
       FrameExcept M M' [(KS, KS + 800)] ∧
       Reach (callState s 5593 [flag b] M) (callState s 5963 [flag b] M') 313 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   have h0 : word M 90368 < 2 ^ 64 := by simpa [TRL] using hT 0 (by omega)
   have h1 : word M 90400 < 2 ^ 64 := by simpa [TRL] using hT 1 (by omega)
   have h2 : word M 90432 < 2 ^ 64 := by simpa [TRL] using hT 2 (by omega)
@@ -60,21 +60,21 @@ theorem mu_L2a {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     Reach (callState s 5963 [flag b] M)
       (callState s 6133 (wd (bswapNet (word s.executionEnv.calldata 7217)) :: muK b) M) 120 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [1833, 1834, 1835, 1836, 1837, 1838, 1839, 1840, 1841, 1842, 1843, 1844, 1845, 1846, 1847, 1848, 1849, 1850, 1851, 1852, 1853, 1854, 1855, 1856, 1857, 1858, 1859, 1860, 1861, 1862, 1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872] with [muK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem mu_L3a {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     Reach (callState s 6205 (muK b) M)
       (callState s 6248 (wd (bswapNet (word s.executionEnv.calldata 7249)) :: muK b) M) 105 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948, 1949, 1950, 1951, 1952] with [muK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem mu_L4a {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     Reach (callState s 6310 (muK b) M)
       (callState s 6353 (wd (bswapNet (word s.executionEnv.calldata 7281)) :: muK b) M) 105 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030] with [muK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem mu_L2b {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
@@ -85,7 +85,7 @@ theorem mu_L2b {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089
       FrameExcept M M' [(KS + 256, KS + 384)] ∧
       Reach (callState s 6133 (wd Y :: muK b) M) (callState s 6205 (muK b) M') 143 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [1873, 1874, 1875, 1876, 1877, 1878, 1879, 1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890, 1891, 1892, 1893, 1894, 1895, 1896, 1897, 1898, 1899, 1900, 1901, 1902, 1903, 1904, 1905, 1906, 1907, 1908, 1909, 1910, 1911, 1912, 1913, 1914, 1915, 1916, 1917] with [muK, word_mstore_disjoint]
@@ -104,7 +104,7 @@ theorem mu_L3b {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089
       FrameExcept M M' [(KS + 384, KS + 512)] ∧
       Reach (callState s 6248 (wd Y :: muK b) M) (callState s 6310 (muK b) M') 137 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [1953, 1954, 1955, 1956, 1957, 1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995] with [muK, word_mstore_disjoint]
@@ -122,7 +122,7 @@ theorem mu_L4b {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089
       FrameExcept M M' [(KS + 512, KS + 544)] ∧
       Reach (callState s 6353 (wd Y :: muK b) M) (callState s 6384 [wd (66 + (s.executionEnv.calldata.size - 7219)), wd 7289, flag b] M') 59 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [2031, 2032, 2033, 2034, 2035, 2036, 2037, 2038, 2039, 2040, 2041, 2042, 2043, 2044, 2045, 2046, 2047, 2048, 2049, 2050, 2051] with [muK, word_mstore_disjoint]
@@ -136,16 +136,16 @@ theorem mu_L4b {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089
 theorem mu_loop1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat}
     (hlen : 136 ≤ len) (hl : len < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
     Reach (callState s 6384 [wd len, wd off, flag b] M)
-      (callState s 20535 [wd 6400, wd len, wd off, flag b] M) 37 := by
+      (callState s 20467 [wd 6400, wd len, wd off, flag b] M) 37 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [2052, 2053, 2054, 2055, 2056, 2057, 2058, 2059, 2060]
 
 theorem mu_loop2 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat} :
     Reach (callState s 6400 [wd len, wd off, flag b] M)
       (callState s 7488 [wd off, wd 6410, wd off, wd len, flag b] M) 21 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [2061, 2062, 2063, 2064, 2065, 2066]
 
 theorem mu_loop3 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat}
@@ -153,7 +153,7 @@ theorem mu_loop3 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : 
     Reach (callState s 6410 [wd off, wd len, flag b] M)
       (callState s 6384 [wd (len - 136), wd (136 + off), flag b] M) 30 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [2067, 2068, 2069, 2070, 2071, 2072, 2073, 2074, 2075]
 
 theorem mu_exit {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat}
@@ -161,7 +161,7 @@ theorem mu_exit {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : N
     Reach (callState s 6384 [wd len, wd off, flag b] M)
       (callState s 6423 [wd len, wd off, flag b] M) 23 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   opt87_reach [2052, 2053, 2054, 2055, 2056, 2057]
 
 theorem mu_copy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
@@ -170,7 +170,7 @@ theorem mu_copy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
       FrameExcept M M' [(FIN, FIN + 256)] ∧
       Reach (callState s 6525 [flag b] M) (callState s 6591 [flag b] M') 102 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
   · opt87_reach [2109, 2110, 2111, 2112, 2113, 2114, 2115, 2116, 2117, 2118, 2119, 2120, 2121, 2122, 2123, 2124, 2125, 2126, 2127, 2128, 2129, 2130, 2131, 2132, 2133, 2134, 2135, 2136, 2137, 2138, 2139, 2140, 2141, 2142, 2143] with [word_mstore_disjoint]
@@ -185,9 +185,9 @@ theorem mu_copy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
 theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat} (hlen : len < 136) :
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = word M (KS + 32 * x) ^^^ rep (padLane len x)) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
-      Reach (callState s 6423 [wd len, wd off, flag b] M) (callState s 20535 [wd 6525, flag b] M') 100 := by
+      Reach (callState s 6423 [wd len, wd off, flag b] M) (callState s 20467 [wd 6525, flag b] M') 100 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   have h7 : 7 &&& len ≤ 7 := Nat.and_le_left
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3

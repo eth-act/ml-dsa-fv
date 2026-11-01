@@ -51,7 +51,7 @@ macro "s5_sub" : tactic => `(tactic| (
 /-- One squeeze of a group: glue, `kf4`, glue, `blk b`. -/
 theorem s5_kb_round {s : State} (hs : Ctx s) {fb : UInt256} {stk : List UInt256} {m : ByteArray}
     {pc0 r1 r2 c1 c2 b : Nat} (hb : b ≤ 5)
-    (g1 : Reach (callState s pc0 stk m) (callState s 21922 [wd r1, fb] m) c1)
+    (g1 : Reach (callState s pc0 stk m) (callState s 22461 [wd r1, fb] m) c1)
     (g2 : ∀ m', Reach (callState s r1 [fb] m')
       (callState s 10772 [wd (FL + 224 * b), wd (ABUF + 1792 * b), wd r2, fb] m') c2)
     (hj1 : Decode.isValidJumpDest optBytecode r1 = true) (hr1 : r1 < 2 ^ 16)
@@ -92,7 +92,7 @@ theorem s5_absorb_round {s : State} (hs : Ctx s) (hcd : 2592 ≤ s.executionEnv.
     (g0 : Reach (callState s pc0 [fb] m) (callState s 13300
       [wd 0, wd 0xffffffffffffffff000000000000000000000000000000000000000000000000, wd 5, wd 3, wd off,
         wd r0, fb] m) c0)
-    (g1 : ∀ m', Reach (callState s r0 [fb] m') (callState s 21922 [wd r1, fb] m') c1)
+    (g1 : ∀ m', Reach (callState s r0 [fb] m') (callState s 22461 [wd r1, fb] m') c1)
     (g2 : ∀ m', Reach (callState s r1 [fb] m')
       (callState s 10772 [wd (FL + 224 * b), wd (ABUF + 1792 * b), wd r2, fb] m') c2)
     (hj0 : Decode.isValidJumpDest optBytecode r0 = true) (hr0 : r0 < 2 ^ 16)

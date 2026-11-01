@@ -2,7 +2,7 @@ import MlDsaOpt65.Main.Base
 import MlDsaOpt65.Fn.Ball
 import MlDsaOpt65.Math
 set_option warningAsError true
-/-! # Segment `6545 … 6555`: `sib` (stream `cStream cd` from `CB`), `AND`. -/
+/-! # Segment `6499 … 6555`: `sib` (stream `cStream cd` from `CB`), `AND`. -/
 
 namespace MlDsaOpt65.Proofs
 
@@ -14,15 +14,15 @@ open MlDsaOpt65.Proofs.Infra
 
 /-- `AND` of two flags (the code's flag accumulation). -/
 theorem S2.and_flags_block {s : State} (hs : Ctx s) {m : ByteArray} (a b : Bool) :
-    Reach (callState s 6553 [flag a, flag b] m) (callState s 6555 [flag (b && a)] m) 4 := by
-  opt65_reach [2212, 2213] with [flag, MlDsaOpt44.Proofs.ite01_land]
+    Reach (callState s 6507 [flag a, flag b] m) (callState s 6509 [flag (b && a)] m) 4 := by
+  opt65_reach [2192, 2193] with [flag, MlDsaOpt44.Proofs.ite01_land]
 
 theorem seg_sib {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv6 cd m) (b : Bool) :
     ∃ m', Inv7 cd m' ∧
-      Reach (callState s 6545 [flag b] m) (callState s 6555 [flag (b && okC cd)] m') Gas.pSib := by
-  have hblk : Reach (callState s 6545 [flag b] m) (callState s Entry.sib [wd 6553, flag b] m) 15 := by
-    opt65_reach [2208, 2209, 2210, 2211] with [Entry.sib]
-  obtain ⟨m', hpost, hbases, hfr, hcall⟩ := sib_call hs (ret := 6553) (tail := [flag b])
+      Reach (callState s 6499 [flag b] m) (callState s 6509 [flag (b && okC cd)] m') Gas.pSib := by
+  have hblk : Reach (callState s 6499 [flag b] m) (callState s Entry.sib [wd 6507, flag b] m) 15 := by
+    opt65_reach [2188, 2189, 2190, 2191] with [Entry.sib]
+  obtain ⟨m', hpost, hbases, hfr, hcall⟩ := sib_call hs (ret := 6507) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m
     (cStream cd) (cStream_size cd) hI.cb hI.fresh
   refine ⟨m', ⟨RC1Table.frame hI.rc1 hfr (by avoids_tac), TblAt.frame hI.tbl hfr (by avoids_tac),

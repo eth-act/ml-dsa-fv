@@ -7,8 +7,8 @@ set_option maxRecDepth 100000
 /-! # `sib` (ML-DSA-87): loop invariant, scan and the contract proof
 
 The bookkeeping (`SInv`, `sinv_accept`) is `MlDsaOpt44/Fn/Ball/Proof.lean` with `τ = 60`
-(loop start `196`) and the ML-DSA-87 `BASES`/`IDX` addresses; `sibRegions` also lists `KS`
-and `KB` (clobbered by `kf1`). The byte of position `p` is read from the `KS` block
+(loop start `196`) and the ML-DSA-87 `BASES`/`IDX` addresses; `sibRegions` also lists `KS`,
+`KB` and `KZ` (clobbered by `kf1`). The byte of position `p` is read from the `KS` block
 (`KSU`, `ksu_stream_byte`), refilled at `p = 136` (`sib_visit`); the scan is the parametric
 `MlDsaOptCommon.BallScan`. -/
 
@@ -152,8 +152,8 @@ theorem size_set! (a : Array Int) (j : Nat) (z : Int) : (a.set! j z).size = a.si
 
 /-- The scratch regions `sib` writes. -/
 abbrev sibRegions : List (Nat × Nat) :=
-  [(KS, KS + 800), (KB, KB + 800), (CW, CW + 8192), (BASES, BASES + 2048), (IDX, IDX + 256),
-    (NNEG, NNEG + 64)]
+  [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (CW, CW + 8192), (BASES, BASES + 2048),
+    (IDX, IDX + 256), (NNEG, NNEG + 64)]
 
 /-- Memory after placing `n = i − 196` coefficients of the array `c`: `f s` is
 the position whose window base sits in `BASES[s]`. -/
@@ -595,13 +595,14 @@ theorem land_rep {v : Nat} (hv : v < 2 ^ 64) : 18446744073709551615 &&& rep v = 
       unfold rep REP pack4; norm_num]
   omega
 
-/-- `KS` and `KB` changes keep the bookkeeping. -/
+/-- `KS`, `KB` and `KZ` changes (`kf1`) keep the bookkeeping. -/
 theorem sinv_frameKS {m M M' : ByteArray} {c : Fips204.Poly} {i : Nat} (h : SInv m M c i)
-    (hf : FrameExcept M M' [(KS, KS + 800), (KB, KB + 800)]) : SInv m M' c i := by
-  have hw : ∀ a, 1824 ≤ a → word M' a = word M a := fun a ha =>
-    hf.word (by simp only [avoids_cons, avoids_nil, and_true, KS, KB]; omega)
-  have hb : ∀ a, 1824 ≤ a → byteAt M' a = byteAt M a := fun a ha =>
-    hf.byteAt (by simp only [avoids_cons, avoids_nil, and_true, KS, KB]; omega)
+    (hi : i ≤ 256)
+    (hf : FrameExcept M M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)]) : SInv m M' c i := by
+  have hw : ∀ a, 1824 ≤ a → a + 32 ≤ TOP → word M' a = word M a := fun a ha ht =>
+    hf.word (by simp only [avoids_cons, avoids_nil, and_true, KS, KB, KZ, TOP] at *; omega)
+  have hb : ∀ a, 1824 ≤ a → a + 1 ≤ TOP → byteAt M' a = byteAt M a := fun a ha ht =>
+    hf.byteAt (by simp only [avoids_cons, avoids_nil, and_true, KS, KB, KZ, TOP] at *; omega)
   obtain ⟨hfr, hcw, hnneg, hcnt, ⟨f, finj, fmem, fslot⟩, hidx0, hfree⟩ := h
   refine ⟨(hfr.trans hf).mono ?_, fun t ht => ?_, ?_, ?_, ⟨f, finj, fmem, fun s hs => ?_⟩,
     fun t ht hc => ?_, fun s h1 h2 => ?_⟩
@@ -609,18 +610,20 @@ theorem sinv_frameKS {m M M' : ByteArray} {c : Fips204.Poly} {i : Nat} (h : SInv
     rcases List.mem_append.1 hr with h | h
     · exact ⟨r, h, le_rfl, le_rfl⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at h
-      rcases h with rfl | rfl <;> exact ⟨_, by simp [sibRegions], le_rfl, le_rfl⟩
-  · rw [hw _ (by simp only [CW]; omega)]; exact hcw t ht
-  · rw [hw _ (by simp only [NNEG]; omega)]; exact hnneg
-  · rw [hw _ (by simp only [CNT]; omega)]; exact hcnt
-  · rw [hw _ (by simp only [BASES]; omega), hb _ (by simp only [IDX]; omega)]; exact fslot s hs
-  · rw [hb _ (by simp only [IDX]; omega)]; exact hidx0 t ht hc
-  · rw [hw _ (by simp only [BASES]; omega)]; exact hfree s h1 h2
+      rcases h with rfl | rfl | rfl <;> exact ⟨_, by simp [sibRegions], le_rfl, le_rfl⟩
+  · rw [hw _ (by simp only [CW]; omega) (by simp only [CW, TOP]; omega)]; exact hcw t ht
+  · rw [hw _ (by simp only [NNEG]; omega) (by simp only [NNEG, TOP]; omega)]; exact hnneg
+  · rw [hw _ (by simp only [CNT]; omega) (by simp only [CNT, TOP]; omega)]; exact hcnt
+  · have hfs := ((fmem (f s)).1 ⟨s, hs, rfl⟩).1
+    rw [hw _ (by simp only [BASES]; omega) (by simp only [BASES, TOP]; omega),
+      hb _ (by simp only [IDX]; omega) (by simp only [IDX, TOP]; omega)]; exact fslot s hs
+  · rw [hb _ (by simp only [IDX]; omega) (by simp only [IDX, TOP]; omega)]; exact hidx0 t ht hc
+  · rw [hw _ (by simp only [BASES]; omega) (by simp only [BASES, TOP]; omega)]; exact hfree s h1 h2
 
 theorem rc1_of_frame {m M : ByteArray} (hrc : RC1Table m) (hf : FrameExcept m M sibRegions) :
     RC1Table M := fun i hi => by
   have hav : Avoids sibRegions (RC1 + 32 * i) (RC1 + 32 * i + 32) := by
-    simp only [sibRegions, avoids_cons, avoids_nil, and_true, KS, KB, CW, BASES, IDX, NNEG, RC1]
+    simp only [sibRegions, avoids_cons, avoids_nil, and_true, KS, KB, KZ, CW, BASES, IDX, NNEG, RC1]
     omega
   rw [hf.word hav]
   exact hrc i hi
@@ -661,9 +664,10 @@ theorem sib_visit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.sib ret tail) (htail : tail.length ≤ 960) {M : ByteArray} (hrc : RC1Table M)
     {cd : ByteArray} {p : Nat} (hp : p < 272) (hK : KSU M (permN (if p ≤ 136 then 1 else 2) (S0 cd)))
     (i sg : Nat) :
-    ∃ M1, KSU M1 (permN (p / 136 + 1) (S0 cd)) ∧ FrameExcept M M1 [(KS, KS + 800), (KB, KB + 800)] ∧
+    ∃ M1, KSU M1 (permN (p / 136 + 1) (S0 cd)) ∧
+      FrameExcept M M1 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)] ∧
       Reach (headSt s ret tail p i sg M) (nokSt s ret tail p i sg M1)
-        (48 + if p = 136 then 36015 else 0) := by
+        (48 + if p = 136 then 32706 else 0) := by
   by_cases h136 : p = 136
   · subst h136
     obtain ⟨M2, h2, f2, r2⟩ := sib_rpre hs htail M i sg
@@ -684,7 +688,7 @@ theorem sib_visit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     · refine ((f2.trans f3).trans f4).mono ?_
       intro r hr
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with h | h | h | h <;> subst h <;> simp
+      rcases hr with h | h | h | h | h <;> subst h <;> simp
     · exact ((r2.trans c3).trans r4).mono (by norm_num [Gas.kf1])
   · refine ⟨M, ?_, FrameExcept.refl _ _, ?_⟩
     · have : (if p ≤ 136 then 1 else 2) = p / 136 + 1 := by split <;> omega
@@ -725,12 +729,12 @@ theorem ballFold_stop (bs : ByteArray) (k : Nat) (hk : 256 ≤ (ballFold P bs k)
 
 /-- Cost potential at the loop head (position `p`, index `i`): the second block is still
 to be squeezed while `p ≤ 136`. -/
-def pot (p i : Nat) : Nat := 158 * (272 - p) + 329 * (256 - i) + 43 + if p ≤ 136 then 36015 else 0
+def pot (p i : Nat) : Nat := 158 * (272 - p) + 329 * (256 - i) + 43 + if p ≤ 136 then 32706 else 0
 
 set_option maxHeartbeats 1000000 in
 theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.sib ret tail) (htail : tail.length ≤ 960)
-    (hsized : 2865 ≤ s.activeWords.toNat) {cd : ByteArray} (hcd : Z0 ≤ cd.size)
+    (hsized : 2897 ≤ s.activeWords.toNat) {cd : ByteArray} (hcd : Z0 ≤ cd.size)
     (m : ByteArray) (hrc : RC1Table m) :
     ∀ n k M, n = 264 - k → k ≤ 264 → (ballFold P (cStream cd) k).2 < 256 →
       SInv m M (ballFold P (cStream cd) k).1 (ballFold P (cStream cd) k).2 →
@@ -759,7 +763,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     -- the visit (and the refill at `p = 136`)
     obtain ⟨M1, hK1, hf1, hV⟩ := sib_visit hs hr htail (rc1_of_frame hrc hinv.frame) (p := 8 + k)
       (by omega) hK i (le64 (cStream cd) 0 / 2 ^ (i - 196))
-    have hinv1 := sinv_frameKS hinv hf1
+    have hinv1 := sinv_frameKS hinv hi2 hf1
     have hj := ksu_stream_byte hcd (p := 8 + k) (by omega) hK1
     have hsigns : le64 (cStream cd) 0 / 2 ^ (i - 196) < 2 ^ 256 :=
       Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_trans (le64_lt _ 0) (by norm_num))
@@ -768,7 +772,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         KSU M2 (permN (if 8 + (k + 1) ≤ 136 then 1 else 2) (S0 cd)) := fun M2 h => by
       have : (if 8 + (k + 1) ≤ 136 then 1 else 2) = (8 + k) / 136 + 1 := by split <;> omega
       rwa [this]
-    have hvc : (48 + if 8 + k = 136 then 36015 else 0) + pot (8 + k + 1) i + 110 ≤ pot (8 + k) i := by
+    have hvc : (48 + if 8 + k = 136 then 32706 else 0) + pot (8 + k + 1) i + 110 ≤ pot (8 + k) i := by
       unfold pot; split_ifs <;> omega
     by_cases hacc : (cStream cd)[8 + k]!.toNat ≤ i
     · -- accept
@@ -816,7 +820,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       have hdiv : le64 (cStream cd) 0 / 2 ^ (i - 196) / 2 = le64 (cStream cd) 0 / 2 ^ (i + 1 - 196) := by
         rw [Nat.div_div_eq_div_mul, ← Nat.pow_succ, show (i - 196).succ = i + 1 - 196 by omega]
       rw [← hset] at hinv'
-      have hvA : (48 + if 8 + k = 136 then 36015 else 0) + 286 + 153 ≤ pot (8 + k) i := by
+      have hvA : (48 + if 8 + k = 136 then 32706 else 0) + 286 + 153 ≤ pot (8 + k) i := by
         unfold pot; split_ifs <;> omega
       by_cases hlast : i + 1 < 256
       · have hKC := ksu_scan hK1 c (i := i) (j := j) (nn := negCount c) (sg := sg)
@@ -832,7 +836,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (le64 (cStream cd) 0 / 2 ^ (i - 196)) j sg (byteAt M1 (IDX + j)) hlast (by omega) hsg1 hsigns
           (i - 196) hcntB (by omega)
         rw [hdiv, show 8 + k + 1 = 8 + (k + 1) by omega] at hC
-        have hvC : (48 + if 8 + k = 136 then 36015 else 0) + 286 + 143 + pot (8 + (k + 1)) (i + 1) ≤
+        have hvC : (48 + if 8 + k = 136 then 32706 else 0) + 286 + 143 + pot (8 + (k + 1)) (i + 1) ≤
             pot (8 + k) i := by
           unfold pot; split_ifs <;> omega
         exact (((hV.trans hAB).trans hC).trans hreach).mono hvC
@@ -892,12 +896,12 @@ theorem sib_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     (hcd : HDR ≤ s.executionEnv.calldata.size) (hz : SibFresh m) :
     ∃ m', (∀ c, cOf s.executionEnv.calldata = some c → CRep m' c) ∧
       (∀ i, i < P.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
-      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (CW, CW + 8192), (BASES, BASES + 2048),
+      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (CW, CW + 8192), (BASES, BASES + 2048),
         (IDX, IDX + 256), (NNEG, NNEG + 64)] ∧
       Call s Entry.sib [] ret tail m [flag (okC s.executionEnv.calldata)] m' Gas.sib := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.sib, Stack.kf1, Stack.leaf] at this; omega
-  have hsized : 2865 ≤ s.activeWords.toNat := hs.sized
+  have hsized : 2897 ≤ s.activeWords.toNat := hs.sized
   have hcd' : Z0 ≤ s.executionEnv.calldata.size := by unfold Z0; unfold HDR at hcd; omega
   -- the absorption prologue
   obtain ⟨M1, h1, f1, r1⟩ := sib_zero hs (ret := ret) htail m
@@ -933,15 +937,15 @@ theorem sib_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
       land_rep (MlDsaOpt44.Proofs.laneOf_lt _ _), Nat.sub_self, Nat.pow_zero, Nat.div_one]
     exact (le64_cStream hcd' (j := 0) (x := 0) (by omega) (by omega)).symm
   rw [hsg] at r6
-  have hfr6 : FrameExcept m M6 [(KS, KS + 800), (KB, KB + 800)] := by
+  have hfr6 : FrameExcept m M6 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)] := by
     refine (((((f1.trans f2).trans f3).trans f4).trans f5).trans f6).mono ?_
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with h | h | h | h | h | h | h <;> subst h <;> simp
+    rcases hr with h | h | h | h | h | h | h | h <;> subst h <;> simp
   -- the scan
   have h0 : SInv m M6 (MlDsaOptCommon.BallScan.ballFold P (cStream s.executionEnv.calldata) 0).1
       (MlDsaOptCommon.BallScan.ballFold P (cStream s.executionEnv.calldata) 0).2 := by
-    rw [MlDsaOptCommon.BallScan.ballFold_zero P]; exact sinv_frameKS (sinv_init m hz) hfr6
+    rw [MlDsaOptCommon.BallScan.ballFold_zero P]; exact sinv_frameKS (sinv_init m hz) (by omega) hfr6
   obtain ⟨M', k', hk', hinv, hfold, hreach⟩ := sib_loop hs hr htail hsized hcd' m hrc 264 0 M6 rfl
     (by omega) (by rw [MlDsaOptCommon.BallScan.ballFold_zero P]; decide) h0
     (by rw [if_pos (by norm_num)]; exact hK6)

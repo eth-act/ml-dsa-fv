@@ -65,7 +65,7 @@ theorem squeeze_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {col b : Nat} (hb : b < 5) {m M : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M I b)
     (hK : Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21032 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
+      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
     (hL : ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
       (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
         gB col ret tail) M) 21)
@@ -108,7 +108,7 @@ theorem squeezes {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {col : Nat} {m M0 : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M0 I 0)
     (hK : ∀ b, b < 5 → ∀ M, Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21032 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
+      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
     (hL : ∀ b, b < 5 → ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
       (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
         gB col ret tail) M) 21)

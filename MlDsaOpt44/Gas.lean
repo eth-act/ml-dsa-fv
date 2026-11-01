@@ -9,10 +9,10 @@ RejNTTPoly fix-ups including the sixth squeeze in every group, SampleInBall's
 byte loop, HintBitUnpack's loops; μ's block count depends on the message
 length only.
 
-`schedule (3732 + n)` is 2,963,435 for `n ≤ 69`, 3,074,585 for `70 ≤ n ≤
-205`, and grows by 37,128 per 136 message bytes (`scripts/proofgen_gas.py
+`schedule (3732 + n)` is 2,931,924 for `n ≤ 69`, 3,033,147 for `70 ≤ n ≤
+205`, and grows by 33,819 per 136 message bytes (`scripts/proofgen_gas.py
 --schedule`). The measured adversarial worst case of `docs/opt.md` is
-2,895,812 for `n = 0`; the difference is the conservative fix-up and
+2,864,301 for `n = 0`; the difference is the conservative fix-up and
 SampleInBall loop counts.
 -/
 

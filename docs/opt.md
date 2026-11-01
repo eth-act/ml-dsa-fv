@@ -9,13 +9,14 @@ parametric generator, `scripts/gen_opt.py`.
 
 There are two generator versions:
 
-* **v2** is the formally verified version. `MlDsaOpt44/`, `MlDsaOpt65/` and
-  `MlDsaOpt87/` prove the bytes that `python3 scripts/gen_opt.py --version v2`
-  writes to `MlDsaOpt/NN/v2/`. `scripts/opt_selftest.py` checks that they are
-  byte-identical to the proved artifacts (SHA-256 pinned).
 * **v3** is the current version (round 3), written to `MlDsaOpt/NN/`. It is
-  not yet proved. Section "Round 3 (v3)" lists the subroutines that differ
-  from v2.
+  formally verified: `MlDsaOpt44/`, `MlDsaOpt65/` and `MlDsaOpt87/` prove
+  these bytes (all four final theorems, standard axioms only). Section
+  "Round 3 (v3)" lists the subroutines that differ from v2.
+* **v2** was verified first (git tag `opt-v2-proved`). `python3
+  scripts/gen_opt.py --version v2` still writes those bytes to
+  `MlDsaOpt/NN/v2/`; `scripts/opt_selftest.py` checks they are byte-identical
+  to the v2 artifacts (SHA-256 pinned).
 
 ## Result
 

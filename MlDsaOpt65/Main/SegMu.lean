@@ -1,6 +1,6 @@
 import MlDsaOpt65.Main.Base
 import MlDsaOpt65.Main.Mu.Proof
-/-! # Segment `5236 … 6545`: μ from the SIMD slot (`|M| ≤ 69`) or `hash_mu` (`kf1`). -/
+/-! # Segment `5236 … 6499`: μ from the SIMD slot (`|M| ≤ 69`) or `hash_mu` (`kf1`). -/
 
 namespace MlDsaOpt65.Proofs
 
@@ -17,7 +17,7 @@ into `FIN[0, 8)`. The proof (`Main/Mu/*`) is `MlDsaOpt44/Main/Mu/*` relocated to
 theorem seg_mu {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
     {m : ByteArray} (hI : Inv5 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv6 s.executionEnv.calldata m' ∧
-      Reach (callState s 5236 [flag b] m) (callState s 6545 [flag b] m')
+      Reach (callState s 5190 [flag b] m) (callState s 6499 [flag b] m')
         (Gas.pMu (mlenOf s.executionEnv.calldata)) :=
   S6Mu.seg_mu_proof hs hcd hI b
 

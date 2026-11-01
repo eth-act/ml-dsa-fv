@@ -1,6 +1,9 @@
 import MlDsaOpt44.Fn.Hint.UseHint
 /-!
 # `usehint` (WP10): blocks, loop and the contract body
+
+Entry (13 gas), 256 visits of the loop body (219 gas each; `uh_body` stores `uhW` at
+`ACC + 32t`), exit (12 gas): `13 + 256 · 219 + 12 = 56089 = Gas.usehint`.
 -/
 
 namespace MlDsaOpt44.Proofs.UH
@@ -24,34 +27,29 @@ theorem uh_body {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     Reach (callState s 15464 (wd wp :: wd 51456 :: wd ret :: tail) M)
       (callState s 15464 (wd (32 + wp) :: wd 51456 :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
-          (uhW (word M wp) (word M (wp - 16640)) (word M (8192 + wp))).toNat 32) wp)) 253 := by
+          (uhW (word M wp) (word M (wp - 16640)) (word M (8192 + wp))).toNat 32) wp)) 219 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6939, 6940, 6941, 6942, 6943, 6944, 6945, 6946, 6947, 6948, 6949, 6950, 6951, 6952,
-    6953, 6954, 6955, 6956, 6957, 6958, 6959, 6960, 6961, 6962, 6963, 6964, 6965, 6966, 6967, 6968,
-    6969, 6970, 6971, 6972, 6973, 6974, 6975, 6976, 6977, 6978, 6979, 6980, 6981, 6982, 6983, 6984,
-    6985, 6986, 6987, 6988, 6989, 6990, 6991, 6992, 6993, 6994, 6995, 6996, 6997, 6998, 6999, 7000,
-    7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010, 7011, 7012, 7013, 7014, 7015, 7016,
-    7017] with [uhW, uhF, uhV, uhR, uhR1, uhPos, uhQ, uhX]
+  opt44_reach [6939, 6940, 6941, 6942, 6943, 6944, 6945, 6946, 6947, 6948, 6949, 6950, 6951, 6952, 6953, 6954, 6955, 6956, 6957, 6958, 6959, 6960, 6961, 6962, 6963, 6964, 6965, 6966, 6967, 6968, 6969, 6970, 6971, 6972, 6973, 6974, 6975, 6976, 6977, 6978, 6979, 6980, 6981, 6982, 6983, 6984, 6985, 6986, 6987, 6988, 6989, 6990, 6991, 6992, 6993, 6994, 6995, 6996, 6997, 6998, 6999, 7000, 7001, 7002, 7003, 7004, 7005, 7006] with [uhW, uhF, uhV, uhD, uhR, uhQ, uhX]
 
 theorem uh_last {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) :
     Reach (callState s 15464 (wd 51424 :: wd 51456 :: wd ret :: tail) M)
-      (callState s 15805 (wd 51456 :: wd 51456 :: wd ret :: tail)
+      (callState s 15736 (wd 51456 :: wd 51456 :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
-          (uhW (word M 51424) (word M 34784) (word M 59616)).toNat 32) 51424)) 253 := by
+          (uhW (word M 51424) (word M 34784) (word M 59616)).toNat 32) 51424)) 219 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6939, 6940, 6941, 6942, 6943, 6944, 6945, 6946, 6947, 6948, 6949, 6950, 6951, 6952, 6953, 6954, 6955, 6956, 6957, 6958, 6959, 6960, 6961, 6962, 6963, 6964, 6965, 6966, 6967, 6968, 6969, 6970, 6971, 6972, 6973, 6974, 6975, 6976, 6977, 6978, 6979, 6980, 6981, 6982, 6983, 6984, 6985, 6986, 6987, 6988, 6989, 6990, 6991, 6992, 6993, 6994, 6995, 6996, 6997, 6998, 6999, 7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010, 7011, 7012, 7013, 7014, 7015, 7016, 7017] with [uhW, uhF, uhV, uhR, uhR1, uhPos, uhQ, uhX]
+  opt44_reach [6939, 6940, 6941, 6942, 6943, 6944, 6945, 6946, 6947, 6948, 6949, 6950, 6951, 6952, 6953, 6954, 6955, 6956, 6957, 6958, 6959, 6960, 6961, 6962, 6963, 6964, 6965, 6966, 6967, 6968, 6969, 6970, 6971, 6972, 6973, 6974, 6975, 6976, 6977, 6978, 6979, 6980, 6981, 6982, 6983, 6984, 6985, 6986, 6987, 6988, 6989, 6990, 6991, 6992, 6993, 6994, 6995, 6996, 6997, 6998, 6999, 7000, 7001, 7002, 7003, 7004, 7005, 7006] with [uhW, uhF, uhV, uhD, uhR, uhQ, uhX]
 
 set_option maxRecDepth 100000 in
 theorem uh_ret {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)
     (hret : ret < 2 ^ 16) (M : ByteArray) :
-    Reach (callState s 15805 (wd 51456 :: wd 51456 :: wd ret :: tail) M) (callState s ret tail M) 12 := by
-  opt44_reach [7018, 7019, 7020] with [hj]
+    Reach (callState s 15736 (wd 51456 :: wd 51456 :: wd ret :: tail) M) (callState s ret tail M) 12 := by
+  opt44_reach [7007, 7008, 7009] with [hj]
 
 /-- Value stored at `ACC + 32 t`. -/
 def uv (M : ByteArray) (t : Nat) : Nat :=
@@ -69,7 +67,7 @@ theorem uh_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (j : Nat) (hj : j + 1 < 256) :
     Reach (callState s 15464 (wd (43264 + 32 * j) :: wd 51456 :: wd ret :: tail) (Mj M j))
       (callState s 15464 (wd (43264 + 32 * (j + 1)) :: wd 51456 :: wd ret :: tail) (Mj M (j + 1)))
-      253 := by
+      219 := by
   have hb := uh_body hs (ret := ret) htail (Mj M j) (43264 + 32 * j) (by omega) (by omega)
   rw [Mj_reads M (a := 43264 + 32 * j) (by unfold ACC; omega),
     Mj_reads M (a := 43264 + 32 * j - 16640) (by unfold ACC; omega),

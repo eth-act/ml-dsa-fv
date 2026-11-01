@@ -84,6 +84,9 @@ def measure(nn):
         out["pass3m"] = call("pass3m", [L.ACC, L.ZH, 128, (1 << 192) - 1])
     if "pass3k14" in lab:
         out["pass3k14"] = call("pass3k14", [])
+    for gi in (5, 6, 7, 8):                      # 65 v3: mixed row-group-1 accumulation
+        if f"pass3x{gi}" in lab:
+            out[f"pass3x{gi}"] = call(f"pass3x{gi}", [])
     out["tbuild"] = call("tbuild", [32, L.TT])
     out["csum"] = call("csum", [L.TT, L.SP])
     out["usehint"] = call("usehint", [L.ACC])
@@ -111,9 +114,9 @@ def analyse(nn, quiet=False):
     """Worst-case budgets of the data-dependent routines."""
     L, g, code, cd, base = setup(nn)
     lab = g.a.labels
-    names = ("kf4", "kf1", "blk", "ntt", "intt", "pass3", "pass3m", "pass3k14", "tbuild", "csum",
-             "usehint", "pack", "dz", "spr", "ginit", "absorb17", "trabs", "cext", "fix", "gfix",
-             "group", "sib", "dhint", "mu0")
+    names = ("kf4", "kf1", "blk", "ntt", "intt", "pass3", "pass3m", "pass3k14", "pass3x5", "pass3x6",
+             "pass3x7", "pass3x8", "tbuild", "csum", "usehint", "pack", "dz", "spr", "ginit", "absorb17",
+             "trabs", "cext", "fix", "gfix", "group", "sib", "dhint", "mu0")
     entries = {lab[n]: n for n in names if n in lab}
     meas = measure(nn) if not quiet else None
     const = {k: v for k, v in (meas or measure(nn)).items() if isinstance(v, int)}
@@ -225,9 +228,9 @@ def phases(nn, cuts):
 SEGMENTS = {
     65: [("init", 0, 992), ("zh", 992, 1110), ("tbl", 1110, 3093), ("ntt", 3093, 3115),
          ("rho", 3115, 3565), ("g0", 3565, 3578), ("g1", 3578, 3592), ("g2", 3592, 3606),
-         ("g3", 3606, 3620), ("g4", 3620, 3634), ("g5", 3634, 4074), ("g6", 4074, 4517),
-         ("g7", 4517, 5029), ("g8", 5029, 5221), ("g9", 5221, 5236), ("sib", 6545, 6555),
-         ("ct", 6555, 6610), ("w", 6610, 6688)],
+         ("g3", 3606, 3620), ("g4", 3620, 3634), ("g5", 3634, 4033), ("g6", 4033, 4468),
+         ("g7", 4468, 4972), ("g8", 4972, 5190), ("sib", 6499, 6509),
+         ("ct", 6509, 6564), ("w", 6564, 6642)],
     87: [("init", 0, 992), ("zh", 992, 1126), ("sib", 1126, 1135), ("tbl", 1135, 3118),
          ("ntt", 3118, 3140), ("rho", 3140, 3389), ("g0", 3389, 3402), ("g1", 3402, 3416),
          ("g2", 3416, 3430), ("g3", 3430, 3444), ("g4", 3444, 3458), ("g5", 3458, 3472),
@@ -236,8 +239,8 @@ SEGMENTS = {
          ("g14", 5435, 5593), ("ct", 6591, 6646), ("w", 6646, 6724)],
 }
 # start of the μ segment, end of μ (= start of the next segment), start of fin
-MU = {65: (5236, 6545), 87: (5593, 6591)}
-FIN = {65: 6688, 87: 6724}
+MU = {65: (5190, 6499), 87: (5593, 6591)}
+FIN = {65: 6642, 87: 6724}
 SHORT_LEN = {65: 5261 + 70, 87: None}
 
 

@@ -24,11 +24,11 @@ open MlDsaOptCommon
 open MlDsaOpt44.Proofs.Artifact
 
 /-- Static (memory-free) cost of a path, from the lookup trees. -/
-noncomputable def blockCost (path : List (Fin 11443)) : Nat :=
+noncomputable def blockCost (path : List (Fin 11792)) : Nat :=
   (path.map fun i => EvmProof.Meter.instrStaticCost .Osaka (instrAt i.val)).sum
 
 /-- Kernel-checkable side condition of `reach_block` (`by decide +kernel`). -/
-noncomputable def blockOK (path : List (Fin 11443)) (cost : Nat) : Bool :=
+noncomputable def blockOK (path : List (Fin 11792)) (cost : Nat) : Bool :=
   path.all (fun i => EvmProof.Meter.CopyFree (instrAt i.val)) && blockCost path == cost
 
 /-- `#eval`-able twin of `blockCost`, for finding the literal to state. -/
@@ -36,7 +36,7 @@ def blockCostEval (path : List Nat) : Nat :=
   (path.map fun i => EvmProof.Meter.instrStaticCost .Osaka
     (instructionList.getD i (.op .INVALID))).sum
 
-theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 11443)) {cost : Nat}
+theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 11792)) {cost : Nat}
     {pc pc' : Nat} {stk stk' : List UInt256} {m m' : ByteArray}
     (hok : blockOK path cost = true)
     (hrun : runLocatedBlock (locatedPath path) (callState s pc stk m) =
@@ -71,7 +71,7 @@ theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 11443)) {cost : N
     intro i _
     simp only [Function.comp, located_instruction_eq]
 
-theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 11443)) {cost : Nat}
+theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 11792)) {cost : Nat}
     (hok : blockOK path cost = true)
     (hrun : runLocatedBlock (locatedPath path) s = some t) :
     Reach s t (cost + MachineState.memCost t.activeWords.toNat -
@@ -101,7 +101,7 @@ theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 11443)) {c
     simp only [Function.comp, located_instruction_eq]
 
 /-- One `MCOPY` of `n` bytes from `src` to `d`, both inside the active memory. -/
-theorem reach_mcopy {s : State} (hs : Ctx s) (i : Fin 11443) {pc d src n : Nat}
+theorem reach_mcopy {s : State} (hs : Ctx s) (i : Fin 11792) {pc d src n : Nat}
     {rest : List UInt256} {m : ByteArray}
     (hi : instrAt i.val = .op .MCOPY) (hpc : pcAt i.val = pc)
     (hd : d < 2 ^ 256) (hsrc : src < 2 ^ 256) (hn : n < 2 ^ 256) (hpc' : pc + 1 < 2 ^ 256)

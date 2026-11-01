@@ -33,7 +33,7 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hcd : HDR ≤ s.executionEnv.calldata.size) (hz : SibFresh m) :
     ∃ m', (∀ c, cOf s.executionEnv.calldata = some c → CRep m' c) ∧
       (∀ i, i < P.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
-      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (CW, CW + 8192), (BASES, BASES + 2048),
+      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (CW, CW + 8192), (BASES, BASES + 2048),
         (IDX, IDX + 256), (NNEG, NNEG + 64)] ∧
       Call s Entry.sib [] ret tail m [flag (okC s.executionEnv.calldata)] m' Gas.sib :=
   sib_call_proof hs hr m hrc hcd hz

@@ -219,7 +219,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   classical
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.fix, Stack.kf4, Stack.blk, Stack.leaf] at this; omega
-  have hsz : 2065 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
+  have hsz : 2097 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
   have hret : ret < 65536 := by have := hr.small; omega
   have hsh : 64 * sl ≤ 192 := by omega
   obtain ⟨hB5, hp0, hp6⟩ := hp
@@ -553,7 +553,7 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (Gas.gfix n) := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.gfix, Stack.fix, Stack.kf4, Stack.blk, Stack.leaf] at this; omega
-  have hsz : 2065 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
+  have hsz : 2097 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
   have hret : ret < 65536 := by have := hr.small; omega
   have hgas : 630 + popcnt amask * Gas.fixNo + (Gas.fixSq - Gas.fixNo) ≤ Gas.gfix n := by
     unfold Gas.gfix Gas.gfix0

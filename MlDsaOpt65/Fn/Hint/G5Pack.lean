@@ -98,13 +98,13 @@ theorem pkA_congr {M M' : ByteArray} {wp : Nat}
 theorem pk_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (m : ByteArray) {nr : Nat} (hnr : nr = 2 ∨ nr = 4) {B F : Nat}
     (hB : B + 8192 ≤ 90656) (hF : F + 2048 ≤ 90656) :
-    Reach (callState s 16482 (wd nr :: wd F :: wd B :: wd (8192 + B) :: wd ret :: tail) m)
-      (callState s 16851 (wd nr :: wd (32 + (F + 32 * 15)) :: wd (512 + (B + 512 * 15)) ::
+    Reach (callState s 16785 (wd nr :: wd F :: wd B :: wd (8192 + B) :: wd ret :: tail) m)
+      (callState s 17154 (wd nr :: wd (32 + (F + 32 * 15)) :: wd (512 + (B + 512 * 15)) ::
         wd (8192 + B) :: wd ret :: tail) (Mi nr m B F 16)) (15 * cI nr + cI nr) := by
   have hstep : ∀ i, i < 15 → Reach
-      (callState s 16482 (wd nr :: wd (F + 32 * i) :: wd (B + 512 * i) :: wd (8192 + B) :: wd ret :: tail)
+      (callState s 16785 (wd nr :: wd (F + 32 * i) :: wd (B + 512 * i) :: wd (8192 + B) :: wd ret :: tail)
         (Mi nr m B F i))
-      (callState s 16482 (wd nr :: wd (F + 32 * (i + 1)) :: wd (B + 512 * (i + 1)) :: wd (8192 + B) ::
+      (callState s 16785 (wd nr :: wd (F + 32 * (i + 1)) :: wd (B + 512 * (i + 1)) :: wd (8192 + B) ::
         wd ret :: tail) (Mi nr m B F (i + 1))) (cI nr) := by
     intro i hi
     have h := pk_iter hs (ret := ret) htail (Mi nr m B F i) hnr (B + 512 * i) (F + 32 * i) (8192 + B)
@@ -112,7 +112,7 @@ theorem pk_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     rw [show 32 + (F + 32 * i) = F + 32 * (i + 1) by ring,
       show 512 + (B + 512 * i) = B + 512 * (i + 1) by ring] at h
     exact h
-  have hloop := Reach.loop (I := fun i => callState s 16482 (wd nr :: wd (F + 32 * i) ::
+  have hloop := Reach.loop (I := fun i => callState s 16785 (wd nr :: wd (F + 32 * i) ::
     wd (B + 512 * i) :: wd (8192 + B) :: wd ret :: tail) (Mi nr m B F i)) 15 hstep
   have hlast := pk_iterx hs (ret := ret) htail (Mi nr m B F 15) hnr (B + 512 * 15) (F + 32 * 15)
     (8192 + B) (by omega) (by omega) (by omega) (by omega)

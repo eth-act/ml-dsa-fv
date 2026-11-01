@@ -10,7 +10,7 @@ is the μ slot, `MlDsaOpt/65/layout.txt`). `muBlock` is defined in `Fn/Mu0/Defs.
 proof is the port of `MlDsaOpt44/Fn/Sponge/{Mu0,MuBlocks,MuFinal,MuVal,MuMath}.lean`
 (`WP4.mu0_call_aux`) to `Fn/Mu0/` by
 `scripts/proofgen_port.py 65 --sub 3732=5261 --sub 3730=5259 --sub 3731=5260 --sub 3666=5195
---sub 64768=89344 … --sub 64992=89568 --sub 12633=13221 … --sub 12905=13500
+--sub 64768=89344 … --sub 64992=89568 --sub 12633=13592 … --sub 12905=13871
 --path Fn/Sponge/=Fn/Mu0/` (full command in each file's header; `-- port:` hand edits:
 65 `spr`/`trabs` imports, `muBlock` import, unfolding `HDR`).
 -/

@@ -13,7 +13,9 @@ row-group pointers as parameters.
 * `usehint [ACC + 0x2000 g, ret]`: for the 256 row-packed words `W` at `ACC_g`, lane-wise
   `W := UseHint(HP_g, (W − SP_g) mod q)` (`HP_g = ACC_g + 0x4000`, `SP_g = ACC_g − 0x4900`),
   with `x mod q` by the exact multiply-shift `(x · 1074791297) >> 53`, the `2γ2 = 523776`
-  quotient by `((r + γ2 − 1) · 8396809) >> 42`, and `mod m = 16` by `AND 15`.
+  quotient and the sign of `r0` by one exact multiply-shift
+  `D = ((r + γ2 − 1) · 16793617) >> 42 = 2 r1 + [r0 > 0]`, the lane value
+  `(D >> 1) + 16 − h + 2 (h & D)`, and `mod m = 16` by `AND 15`.
 * `pack [nr, FIN + 256 + 2048 g, ACC + 0x2000 g, ret]`: `w1Encode` (4 bits per coefficient,
   16 stream lanes per row) of the rows `r < nr` of row group `g`, each 64-bit stream lane
   replicated (`rep`) into `FIN` for `kf1`; rows `≥ nr` are skipped.

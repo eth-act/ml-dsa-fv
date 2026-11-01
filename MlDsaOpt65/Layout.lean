@@ -7,7 +7,7 @@ set_option warningAsError true
 
 Vocabulary for every proof about `MlDsaOpt/65/opt.hex`
 (`MlDsaOpt/65/layout.txt`, generator `scripts/gen_opt.py 65`). Memory is sized
-once at entry to `memWords = 2833` words (`MSTORE` at `0x16200`) and never
+once at entry to `memWords = 2865` words (`MSTORE` at `0x16600`) and never
 grows. The calling convention, the representations and the contract form are
 those of `MlDsaOpt44/Layout.lean`.
 
@@ -17,7 +17,7 @@ those of `MlDsaOpt44/Layout.lean`.
 whose value is the same in all three artifacts: `KS … FL`, `ZH`, `TT`) is the
 `MlDsaOpt44.Proofs` constant, re-exported here, so the ML-DSA-44 lemmas about
 it apply verbatim. Constants whose value differs (`BASES` and above, `SP`,
-`TOP`, the calldata offsets, the entry pcs) are redefined below; inside
+`TOP`, `KZ`, the calldata offsets, the entry pcs) are redefined below; inside
 `MlDsaOpt65.Proofs` they shadow the ML-DSA-44 ones.
 
 **Spec-level data** is stated against the parametric `MlDsa.Fips204` at
@@ -57,8 +57,12 @@ def MU : Nat := 0x15e00
 def BK : Nat := 0x15f00
 /-- `2^13 S'(t) + n_neg(t)`, row-packed, one 8 KB table per row group (overlay of ZH). -/
 def SP : Nat := 0x8000
-/-- One past the highest byte; the entry store at `TOP − 32` sizes memory. -/
+/-- One past the highest byte of the regions the main flow reads or keeps
+(`MISC … BK`). Only `kf1`'s third buffer `KZ` lies above; the entry store at
+`KZ + 800 − 32 = 0x16600` sizes memory. -/
 def TOP : Nat := 0x16220
+/-- `kf1`'s third state buffer (scratch, clobbered by every `kf1` call). -/
+def KZ : Nat := 0x16300
 
 /-! ## Calldata offsets -/
 
@@ -74,28 +78,32 @@ def H0 : Nat := 5200
 /-! ## Subroutine entry points (`MlDsaOpt/65/layout.txt`) -/
 
 namespace Entry
-def absorb17 : Nat := 7461
-def sib : Nat := 8057
-def dhint : Nat := 8288
-def dz : Nat := 8975
-def blk : Nat := 9857
-def pass3 : Nat := 11032
-def gfix : Nat := 11314
-def ginit : Nat := 11644
-def trabs : Nat := 12084
-def cext : Nat := 12705
-def spr : Nat := 12979
-def mu0 : Nat := 13194
-def fix : Nat := 13567
-def group : Nat := 14256
-def tbuild : Nat := 14521
-def csum : Nat := 15329
-def usehint : Nat := 16134
-def pack : Nat := 16473
-def ntt : Nat := 16856
-def intt : Nat := 18123
-def kf1 : Nat := 19604
-def kf4 : Nat := 20991
+def absorb17 : Nat := 7415
+def sib : Nat := 8011
+def dhint : Nat := 8242
+def dz : Nat := 8929
+def blk : Nat := 9811
+def pass3 : Nat := 10986
+def pass3x5 : Nat := 11268
+def pass3x6 : Nat := 11390
+def pass3x7 : Nat := 11510
+def pass3x8 : Nat := 11622
+def gfix : Nat := 11685
+def ginit : Nat := 12015
+def trabs : Nat := 12455
+def cext : Nat := 13076
+def spr : Nat := 13350
+def mu0 : Nat := 13565
+def fix : Nat := 13938
+def group : Nat := 14627
+def tbuild : Nat := 14892
+def csum : Nat := 15700
+def usehint : Nat := 16505
+def pack : Nat := 16776
+def ntt : Nat := 17159
+def intt : Nat := 18426
+def kf1 : Nat := 19907
+def kf4 : Nat := 21901
 end Entry
 
 /-! ## Stack budgets (as for ML-DSA-44) -/
@@ -108,6 +116,7 @@ def blk : Nat := leaf
 def ntt : Nat := leaf
 def intt : Nat := leaf
 def pass3 : Nat := leaf
+def pass3x : Nat := leaf
 def tbuild : Nat := leaf
 def csum : Nat := leaf
 def usehint : Nat := leaf

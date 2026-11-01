@@ -25,7 +25,7 @@ open MlDsaOpt44.Proofs.Infra
 /-- `Avoids` side conditions on literal layout ranges (lists built with `++`). -/
 macro "frame_tac" : tactic => `(tactic| (
   simp only [avoids_cons, avoids_nil, avoids_append, List.cons_append, List.nil_append, and_true, KS, KB, RC4, RC1, MISC, NNEG, CNT, HAVE6, TBL, CW, ABUF, FL, ZH, BASES, IDX, ACC, HP, FIN,
-    RHO1, CB, TRL, MU, BK, TT, SP, TOP]
+    RHO1, CB, TRL, MU, BK, TT, SP, TOP, KZ]
   omega))
 
 theorem KS4.congr {m : ByteArray} {S S' : Nat → Fips202.SpongeState} (h : KS4 m S)
@@ -75,7 +75,7 @@ theorem sized4_permute {S : Nat → Fips202.SpongeState} (hS : Sized4 S) :
 /-- One squeeze of a group: glue, `kf4`, glue, `blk b`. -/
 theorem kb_round {s : State} (hs : Ctx s) {fb : UInt256} {stk : List UInt256} {m : ByteArray}
     {pc0 r1 r2 c1 c2 b : Nat} (hb : b ≤ 5)
-    (g1 : Reach (callState s pc0 stk m) (callState s 21032 [wd r1, fb] m) c1)
+    (g1 : Reach (callState s pc0 stk m) (callState s 21570 [wd r1, fb] m) c1)
     (g2 : ∀ m', Reach (callState s r1 [fb] m')
       (callState s 8887 [wd (FL + 224 * b), wd (ABUF + 1792 * b), wd r2, fb] m') c2)
     (hj1 : Decode.isValidJumpDest optBytecode r1 = true) (hr1 : r1 < 2 ^ 16)
@@ -201,7 +201,7 @@ theorem absorb_round {s : State} (hs : Ctx s) (hcd : 1312 ≤ s.executionEnv.cal
     (g0 : Reach (callState s pc0 [fb] m) (callState s 11497
       [wd 0, wd 0xffffffffffffffff000000000000000000000000000000000000000000000000, wd 5, wd 3, wd off,
         wd r0, fb] m) c0)
-    (g1 : ∀ m', Reach (callState s r0 [fb] m') (callState s 21032 [wd r1, fb] m') c1)
+    (g1 : ∀ m', Reach (callState s r0 [fb] m') (callState s 21570 [wd r1, fb] m') c1)
     (g2 : ∀ m', Reach (callState s r1 [fb] m')
       (callState s 8887 [wd (FL + 224 * b), wd (ABUF + 1792 * b), wd r2, fb] m') c2)
     (hj0 : Decode.isValidJumpDest optBytecode r0 = true) (hr0 : r0 < 2 ^ 16)

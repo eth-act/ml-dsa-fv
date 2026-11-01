@@ -8,33 +8,33 @@ namespace MlDsaOpt44.Proofs.Kf1
 
 open EvmSemantics
 
-/-- Rho of source lane `j` as the code does it: one shift by `d = ρ_j` or `ρ_j − 64`
-(decaying window). -/
+/-- Rho of source lane `j` as the code does it: one left shift by `ρ_j`
+(decaying window, shift offset −1). -/
 def shf : Nat → UInt256 → UInt256
   | 0, v => v
   | 1, v => v.shiftLeft (UInt256.ofNat 1)
-  | 2, v => v.shiftRight (UInt256.ofNat 2)
+  | 2, v => v.shiftLeft (UInt256.ofNat 62)
   | 3, v => v.shiftLeft (UInt256.ofNat 28)
   | 4, v => v.shiftLeft (UInt256.ofNat 27)
-  | 5, v => v.shiftRight (UInt256.ofNat 28)
-  | 6, v => v.shiftRight (UInt256.ofNat 20)
+  | 5, v => v.shiftLeft (UInt256.ofNat 36)
+  | 6, v => v.shiftLeft (UInt256.ofNat 44)
   | 7, v => v.shiftLeft (UInt256.ofNat 6)
-  | 8, v => v.shiftRight (UInt256.ofNat 9)
+  | 8, v => v.shiftLeft (UInt256.ofNat 55)
   | 9, v => v.shiftLeft (UInt256.ofNat 20)
   | 10, v => v.shiftLeft (UInt256.ofNat 3)
   | 11, v => v.shiftLeft (UInt256.ofNat 10)
-  | 12, v => v.shiftRight (UInt256.ofNat 21)
+  | 12, v => v.shiftLeft (UInt256.ofNat 43)
   | 13, v => v.shiftLeft (UInt256.ofNat 25)
-  | 14, v => v.shiftRight (UInt256.ofNat 25)
-  | 15, v => v.shiftRight (UInt256.ofNat 23)
-  | 16, v => v.shiftRight (UInt256.ofNat 19)
+  | 14, v => v.shiftLeft (UInt256.ofNat 39)
+  | 15, v => v.shiftLeft (UInt256.ofNat 41)
+  | 16, v => v.shiftLeft (UInt256.ofNat 45)
   | 17, v => v.shiftLeft (UInt256.ofNat 15)
   | 18, v => v.shiftLeft (UInt256.ofNat 21)
   | 19, v => v.shiftLeft (UInt256.ofNat 8)
   | 20, v => v.shiftLeft (UInt256.ofNat 18)
   | 21, v => v.shiftLeft (UInt256.ofNat 2)
-  | 22, v => v.shiftRight (UInt256.ofNat 3)
-  | 23, v => v.shiftRight (UInt256.ofNat 8)
+  | 22, v => v.shiftLeft (UInt256.ofNat 61)
+  | 23, v => v.shiftLeft (UInt256.ofNat 56)
   | 24, v => v.shiftLeft (UInt256.ofNat 14)
   | _, v => v
 

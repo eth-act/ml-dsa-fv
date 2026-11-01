@@ -23,7 +23,7 @@ open MlDsa44
 /-! ## First-flag scan -/
 
 theorem scan_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2833 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
+    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
     (lm nm : Nat) (M : ByteArray) (g0 : Nat) (hg0 : g0 < 32)
     (h0 : ∀ g, g < g0 → word M (31232 + 32 * g) / 2 ^ (23 + 64 * sl) % 2 = 0) :
     ∀ d g, g + d = g0 →
@@ -99,10 +99,10 @@ macro "fx_av" : tactic => `(tactic| (
 
 theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.fix ret tail) (htail : tail.length ≤ 960)
-    (hsz : 2833 ≤ s.activeWords.toNat) (sl : Nat) (M : ByteArray) (hrc : RC4Table M)
+    (hsz : 2865 ≤ s.activeWords.toNat) (sl : Nat) (M : ByteArray) (hrc : RC4Table M)
     (h6 : word M 4064 = 0) (rp wp fp : Nat) :
-    ∃ M5, Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14160 32352 rp wp fp M)
-        (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13624 32576 rp wp fp M5) 48350 ∧
+    ∃ M5, Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14531 32352 rp wp fp M)
+        (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13995 32576 rp wp fp M5) 48350 ∧
       FrameExcept M M5 sqRegions ∧ word M5 4064 = 1 ∧
       ∀ S, Sized4 S → KS4 M S →
         (∀ i, i < 56 → word M5 (29440 + 32 * i) =
@@ -121,7 +121,7 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have h1 := fx_sq_pre (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
     (by decide) (by decide) h6
   set M2 := MachineState.writeBytes M1 (MachineState.readPadded M1 0 800) 89856 with hM2
-  have h2 := Infra.reach_mcopy hs ⟨6221, by decide⟩ (pc := 14192) (d := 89856) (src := 0) (n := 800)
+  have h2 := Infra.reach_mcopy hs ⟨6391, by decide⟩ (pc := 14563) (d := 89856) (src := 0) (n := 800)
     (m := M1) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
   have hf2 : FrameExcept M M2 [(4064, 4096), (89856, 90656)] :=
@@ -133,15 +133,15 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · exact ⟨(4064, 4096), by simp, by simp⟩
       · exact ⟨(89856, 90656), by simp, by simp⟩)
   have h3 := fx_sq_kf4 (ret := ret) hs htail hsz M2 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
-  obtain ⟨M3, hk, hfk, hck⟩ := kf4_call hs (ret := 14200) (hrok _ rfl _
+  obtain ⟨M3, hk, hfk, hck⟩ := kf4_call hs (ret := 14571) (hrok _ rfl _
       (by simp only [Infra.isValidJumpDest_lit]) (by norm_num)) M2
     (rc4_frame hrc hf2 (by fx_av))
   have h5 := fx_sq_blk (ret := ret) hs htail hsz M3 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
-  obtain ⟨M4, hb, hfb, hcb⟩ := blk_call hs (ret := 14214) (hrok _ rfl _
+  obtain ⟨M4, hb, hfb, hcb⟩ := blk_call hs (ret := 14585) (hrok _ rfl _
       (by simp only [Infra.isValidJumpDest_lit]) (by norm_num)) M3 (b := 5) (by norm_num)
   have h7 := fx_sq_post (ret := ret) hs htail hsz M4 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
   set M5 := MachineState.writeBytes M4 (MachineState.readPadded M4 89856 800) 0 with hM5
-  have h8 := Infra.reach_mcopy hs ⟨6235, by decide⟩ (pc := 14223) (d := 0) (src := 89856) (n := 800)
+  have h8 := Infra.reach_mcopy hs ⟨6405, by decide⟩ (pc := 14594) (d := 0) (src := 89856) (n := 800)
     (m := M4) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
   have h9 := fx_cont (ret := ret) hs htail hsz M5 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp

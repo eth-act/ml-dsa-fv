@@ -20,44 +20,44 @@ open MlDsaOpt65.Proofs.Infra
 theorem seg_ct {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
     {m : ByteArray} (hI : Inv7 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv8 s.executionEnv.calldata m' ∧
-      Reach (callState s 6555 [flag b] m) (callState s 6610 [flag b] m') Gas.pCt := by
-  have hb1 : Reach (callState s 6555 [flag b] m)
-      (callState s Entry.tbuild [wd TT, wd 32, wd 6567, flag b] m) 20 := by
-    opt65_reach [2214, 2215, 2216, 2217, 2218] with [TT, Entry.tbuild]
-  obtain ⟨m1, htt1, hfr1, hc1⟩ := tbuild_call hs (ret := 6567) (tail := [flag b])
+      Reach (callState s 6509 [flag b] m) (callState s 6564 [flag b] m') Gas.pCt := by
+  have hb1 : Reach (callState s 6509 [flag b] m)
+      (callState s Entry.tbuild [wd TT, wd 32, wd 6521, flag b] m) 20 := by
+    opt65_reach [2194, 2195, 2196, 2197, 2198] with [TT, Entry.tbuild]
+  obtain ⟨m1, htt1, hfr1, hc1⟩ := tbuild_call hs (ret := 6521) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m
     (tp := TT) (off := 32) (by unfold TT; omega) (by unfold HDR at hcd; omega)
-  have hb2 : Reach (callState s 6567 [flag b] m1)
-      (callState s Entry.csum [wd (SP + 0x2000 * 0), wd (TT + 0x1800 * 0), wd 6581, flag b] m1)
+  have hb2 : Reach (callState s 6521 [flag b] m1)
+      (callState s Entry.csum [wd (SP + 0x2000 * 0), wd (TT + 0x1800 * 0), wd 6535, flag b] m1)
       21 := by
-    opt65_reach [2219, 2220, 2221, 2222, 2223, 2224] with [TT, SP, Entry.csum]
+    opt65_reach [2199, 2200, 2201, 2202, 2203, 2204] with [TT, SP, Entry.csum]
   have hbases1 : ∀ i, i < P.tau → word m1 (BASES + 32 * i) ≤ 6112 := fun i hi => by
     have : i < 49 := hi
     rw [word_frame hfr1 (lo := BASES) (hi := BASES + 2048) (by avoids_tac) (by omega) (by omega)]
     exact hI.bases i hi
-  obtain ⟨m2, hsp1, hfr2, hc2⟩ := csum_call hs (ret := 6581) (tail := [flag b])
+  obtain ⟨m2, hsp1, hfr2, hc2⟩ := csum_call hs (ret := 6535) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
     (g := 0) (by norm_num) hbases1
-  have hb3 : Reach (callState s 6581 [flag b] m2)
-      (callState s Entry.tbuild [wd (TT + 0x1800 * 1), wd 1312, wd 6595, flag b] m2) 21 := by
-    opt65_reach [2225, 2226, 2227, 2228, 2229, 2230] with [TT, Entry.tbuild]
-  obtain ⟨m3, htt2, hfr3, hc3⟩ := tbuild_call hs (ret := 6595) (tail := [flag b])
+  have hb3 : Reach (callState s 6535 [flag b] m2)
+      (callState s Entry.tbuild [wd (TT + 0x1800 * 1), wd 1312, wd 6549, flag b] m2) 21 := by
+    opt65_reach [2205, 2206, 2207, 2208, 2209, 2210] with [TT, Entry.tbuild]
+  obtain ⟨m3, htt2, hfr3, hc3⟩ := tbuild_call hs (ret := 6549) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m2
     (tp := TT + 0x1800 * 1) (off := 1312) (by unfold TT; omega) (by unfold HDR at hcd; omega)
-  have hb4 : Reach (callState s 6595 [flag b] m3)
-      (callState s Entry.csum [wd (SP + 0x2000 * 1), wd (TT + 0x1800 * 1), wd 6609, flag b] m3)
+  have hb4 : Reach (callState s 6549 [flag b] m3)
+      (callState s Entry.csum [wd (SP + 0x2000 * 1), wd (TT + 0x1800 * 1), wd 6563, flag b] m3)
       21 := by
-    opt65_reach [2231, 2232, 2233, 2234, 2235, 2236] with [TT, SP, Entry.csum]
+    opt65_reach [2211, 2212, 2213, 2214, 2215, 2216] with [TT, SP, Entry.csum]
   have hbases3 : ∀ i, i < P.tau → word m3 (BASES + 32 * i) ≤ 6112 := fun i hi => by
     have : i < 49 := hi
     rw [word_frame hfr3 (lo := BASES) (hi := BASES + 2048) (by avoids_tac) (by omega) (by omega),
       word_frame hfr2 (lo := BASES) (hi := BASES + 2048) (by avoids_tac) (by omega) (by omega)]
     exact hbases1 i hi
-  obtain ⟨m4, hsp2, hfr4, hc4⟩ := csum_call hs (ret := 6609) (tail := [flag b])
+  obtain ⟨m4, hsp2, hfr4, hc4⟩ := csum_call hs (ret := 6563) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m3
     (g := 1) (by norm_num) hbases3
-  have hb5 : Reach (callState s 6609 [flag b] m4) (callState s 6610 [flag b] m4) 1 := by
-    opt65_reach [2237]
+  have hb5 : Reach (callState s 6563 [flag b] m4) (callState s 6564 [flag b] m4) 1 := by
+    opt65_reach [2217]
   refine ⟨m4, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩,
     ((((((((hb1.trans hc1).trans hb2).trans hc2).trans hb3).trans hc3).trans hb4).trans hc4).trans
       hb5).mono (by unfold Gas.pCt; omega)⟩

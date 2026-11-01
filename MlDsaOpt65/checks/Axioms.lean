@@ -61,6 +61,10 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.ntt_call
 #print axioms MlDsaOpt65.Proofs.intt_call
 #print axioms MlDsaOpt65.Proofs.pass3_call
+#print axioms MlDsaOpt65.Proofs.pass3x5_call
+#print axioms MlDsaOpt65.Proofs.pass3x6_call
+#print axioms MlDsaOpt65.Proofs.pass3x7_call
+#print axioms MlDsaOpt65.Proofs.pass3x8_call
 #print axioms MlDsaOpt65.Proofs.ginit_call
 #print axioms MlDsaOpt65.Proofs.group_call
 #print axioms MlDsaOpt65.Proofs.mu0_call

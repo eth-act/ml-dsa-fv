@@ -23,7 +23,7 @@ def muLanes (cd : ByteArray) (j x : Nat) : Nat :=
 
 structure MuInv (cd m M : ByteArray) (j : Nat) : Prop where
   rc1 : RC1Table M
-  fr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800)]
+  fr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)]
   ks : ∀ x, x < 25 → word M (KS + 32 * x) = rep (cpl x (muLanes cd j x))
 
 theorem lane_case {W W' x v : Nat} (h1 : W' = W ^^^ rep v) (h2 : W = rep (cpl x 0))
@@ -69,11 +69,11 @@ theorem mu_setup {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata
     split
     · rw [htr x (by omega), le64_muMsgW_lo _ (by omega)]
     · rfl
-  have hfr : FrameExcept m M4 [(KS, KS + 800), (KB, KB + 800)] := by
+  have hfr : FrameExcept m M4 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)] := by
     refine (((fr1.trans fr2).trans fr3).trans fr4).mono ?_
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, FIN]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, KZ, FIN]
   refine ⟨M4, ⟨hrc.frame hfr (by avoids_tac), hfr, fun x hx => ?_⟩, ?_⟩
   · rw [muLanes_zero]
     interval_cases x
@@ -194,11 +194,11 @@ theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
   rw [show L - 136 * j - 136 = L - 136 * (j + 1) by omega,
     show 136 + (7289 + 136 * j) = 7289 + 136 * (j + 1) by ring] at h3
   rw [call_iff] at hc1 hc2
-  have hfr : FrameExcept m M2 [(KS, KS + 800), (KB, KB + 800)] := by
+  have hfr : FrameExcept m M2 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)] := by
     refine ((hI.fr.trans hf1).trans hf2).mono ?_
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, FIN]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, KZ, FIN]
   refine ⟨M2, ⟨(hI.rc1.frame hf1 (by avoids_tac)).frame hf2 (by avoids_tac), hfr, fun x hx => ?_⟩, ?_⟩
   · rw [ha2 x hx, hK1 x hx]
     unfold muLanes
@@ -230,7 +230,7 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     {m M : ByteArray}
     (hI : MuInv s.executionEnv.calldata m M ((muMsgW s.executionEnv.calldata).size / 136)) :
     ∃ M', FinMu M' s.executionEnv.calldata ∧ RC1Table M' ∧
-      FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] ∧
+      FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] ∧
       Reach (callState s 6384 [wd ((muMsgW s.executionEnv.calldata).size -
           136 * ((muMsgW s.executionEnv.calldata).size / 136)),
           wd (7289 + 136 * ((muMsgW s.executionEnv.calldata).size / 136)), flag b] M)
@@ -264,11 +264,11 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     exact hk6 S'' hS'' hK
   obtain ⟨M7, f7, fr7, r7⟩ := mu_copy hs b M6
   rw [call_iff] at hc6
-  have hfr : FrameExcept m M7 [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] := by
+  have hfr : FrameExcept m M7 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] := by
     refine (((hI.fr.trans fr5).trans hf6).trans fr7).mono ?_
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, FIN]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, KZ, FIN]
   refine ⟨M7, fun x hx => ?_, ((hI.rc1.frame fr5 (by avoids_tac)).frame hf6 (by avoids_tac)).frame fr7
     (by avoids_tac), hfr, (((h1.trans r5).trans hc6).trans r7).mono (by omega)⟩
   rw [f7 x hx, hK6 x (by omega), le64_muOf_absorb cd hx]
@@ -286,7 +286,7 @@ theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.call
       Reach (callState s 5593 [flag b] m) (callState s 6591 [flag b] m')
         (Gas.pMu (mlenOf s.executionEnv.calldata)) := by
   -- the invariant from any frame avoiding the Keccak state and `FIN`
-  have inv7 : ∀ M', FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] →
+  have inv7 : ∀ M', FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] →
       FinMu M' s.executionEnv.calldata → RC1Table M' → Inv7 s.executionEnv.calldata M' :=
     fun M' hfr hmu hrc =>
       { rc1 := hrc

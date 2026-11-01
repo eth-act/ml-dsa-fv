@@ -14,7 +14,7 @@ theorem seg_ntt {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv2 cd m) (b 
     (hcd : HDR ≤ cd.size) :
     ∃ m', Inv3 cd m' ∧
       Reach (callState s 3068 [flag b] m) (callState s 3078 [flag b] m') Gas.pNtt := by
-  have hblk : Reach (callState s 3068 [flag b] m) (callState s 16897 [wd ZH, wd 3078, flag b] m) 17 := by
+  have hblk : Reach (callState s 3068 [flag b] m) (callState s 16828 [wd ZH, wd 3078, flag b] m) 17 := by
     opt44_reach [964, 965, 966, 967] with [ZH]
   obtain ⟨m', hpost, hfr, hcall⟩ := ntt_call hs (ret := 3078) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.tbl

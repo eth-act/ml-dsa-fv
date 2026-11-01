@@ -133,27 +133,27 @@ theorem Mi_byte (m : ByteArray) {a : Nat} (h : a < 59904 ∨ 62976 ≤ a) :
 
 theorem pk_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) :
-    Reach (callState s 15808 (wd 4 :: wd 59904 :: wd 43264 :: wd ret :: tail) M)
-      (callState s 15817 (wd 4 :: wd 59904 :: wd 43264 :: wd 51456 :: wd ret :: tail) M) 19 := by
-  opt44_reach [7021, 7022, 7023, 7024, 7025, 7026, 7027]
+    Reach (callState s 15739 (wd 4 :: wd 59904 :: wd 43264 :: wd ret :: tail) M)
+      (callState s 15748 (wd 4 :: wd 59904 :: wd 43264 :: wd 51456 :: wd ret :: tail) M) 19 := by
+  opt44_reach [7010, 7011, 7012, 7013, 7014, 7015, 7016]
 
 set_option maxRecDepth 100000 in
 theorem pk_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)
     (hret : ret < 2 ^ 16) (M : ByteArray) (a b : Nat) :
-    Reach (callState s 16892 (wd 4 :: wd a :: wd b :: wd 51456 :: wd ret :: tail) M)
+    Reach (callState s 16823 (wd 4 :: wd a :: wd b :: wd 51456 :: wd ret :: tail) M)
       (callState s ret tail M) 16 := by
-  opt44_reach [7468, 7469, 7470, 7471, 7472] with [hj]
+  opt44_reach [7457, 7458, 7459, 7460, 7461] with [hj]
 
 theorem pk_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (m : ByteArray) :
-    Reach (callState s 15817 (wd 4 :: wd 59904 :: wd 43264 :: wd 51456 :: wd ret :: tail) m)
-      (callState s 16892 (wd 4 :: wd (96 + (59904 + 96 * 7)) :: wd (1024 + (43264 + 1024 * 7)) :: wd 51456 ::
+    Reach (callState s 15748 (wd 4 :: wd 59904 :: wd 43264 :: wd 51456 :: wd ret :: tail) m)
+      (callState s 16823 (wd 4 :: wd (96 + (59904 + 96 * 7)) :: wd (1024 + (43264 + 1024 * 7)) :: wd 51456 ::
         wd ret :: tail) (Mi m 8)) (7 * 1384 + 1384) := by
   have hstep : ∀ i, i < 7 → Reach
-      (callState s 15817 (wd 4 :: wd (59904 + 96 * i) :: wd (43264 + 1024 * i) :: wd 51456 :: wd ret :: tail)
+      (callState s 15748 (wd 4 :: wd (59904 + 96 * i) :: wd (43264 + 1024 * i) :: wd 51456 :: wd ret :: tail)
         (Mi m i))
-      (callState s 15817 (wd 4 :: wd (59904 + 96 * (i + 1)) :: wd (43264 + 1024 * (i + 1)) :: wd 51456 ::
+      (callState s 15748 (wd 4 :: wd (59904 + 96 * (i + 1)) :: wd (43264 + 1024 * (i + 1)) :: wd 51456 ::
         wd ret :: tail) (Mi m (i + 1))) 1384 := by
     intro i hi
     have h := pk_iter hs (ret := ret) htail (Mi m i) (43264 + 1024 * i) (59904 + 96 * i)
@@ -161,7 +161,7 @@ theorem pk_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     rw [show 96 + (59904 + 96 * i) = 59904 + 96 * (i + 1) by ring,
       show 1024 + (43264 + 1024 * i) = 43264 + 1024 * (i + 1) by ring] at h
     exact h
-  have hloop := Reach.loop (I := fun i => callState s 15817 (wd 4 :: wd (59904 + 96 * i) ::
+  have hloop := Reach.loop (I := fun i => callState s 15748 (wd 4 :: wd (59904 + 96 * i) ::
     wd (43264 + 1024 * i) :: wd 51456 :: wd ret :: tail) (Mi m i)) 7 hstep
   have hlast := pk_iterx hs (ret := ret) htail (Mi m 7) (43264 + 1024 * 7) (59904 + 96 * 7)
     (by omega) (by omega) (by omega) (by omega) (by omega)

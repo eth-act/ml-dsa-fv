@@ -185,8 +185,8 @@ def analyse():
                                    "tbuild", "csum", "usehint", "pack", "dz", "spr", "ginit",
                                    "absorb17", "trabs", "cext", "fix", "gfix", "group", "sib",
                                    "dhint", "mu0")}
-    const = dict(kf4=40238, kf1=35880, blk=7836, ntt=99705, intt=119593, pass3=17780, pass3m=19318,
-                 pass3k4=25613, tbuild=28511, csum=69861, usehint=64793, pack=11107, dz=46156,
+    const = dict(kf4=40238, kf1=32571, blk=7836, ntt=99705, intt=119593, pass3=17780, pass3m=19318,
+                 pass3k4=25613, tbuild=28511, csum=69861, usehint=56089, pack=11107, dz=46156,
                  spr=120, ginit=754, absorb17=1160)
     B = {}
 

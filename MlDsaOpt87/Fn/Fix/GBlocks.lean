@@ -49,7 +49,7 @@ macro "gx_close" : tactic => `(tactic| (all_goals first | (congr 1; omega) | rfl
 
 
 theorem gx_pre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask : Nat) (hf : gflags M ≠ 0) :
     Reach (callState s 12615 (wd amask :: wd ret :: tail) M)
       (callState s 12813 (wd (gflags M) :: wd 1 :: wd amask :: wd ret :: tail) M) 317 := by
@@ -57,7 +57,7 @@ theorem gx_pre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_fast {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask : Nat) (hf : gflags M = 0) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (callState s 12615 (wd amask :: wd ret :: tail) M)
       (callState s ret (wd 1 :: tail) M) 336 := by
@@ -65,7 +65,7 @@ theorem gx_fast {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_skip0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 1 &&& f / 8388608) % 2 = 0) :
     Reach (callState s 12813 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12842 (wd f :: wd ok :: wd amask :: wd ret :: tail) M) 42 := by
@@ -73,7 +73,7 @@ theorem gx_skip0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_call0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 1 &&& f / 8388608) % 2 = 1) :
     Reach (callState s 12813 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 14410 (wd 0 :: wd 12837 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 58 := by
@@ -81,7 +81,7 @@ theorem gx_call0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_ret0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok r : Nat) (hok : ok < 2) (hr : r < 2) :
     Reach (callState s 12837 (wd r :: wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12842 (wd f :: wd (ok &&& r) :: wd amask :: wd ret :: tail) M) 13 := by
@@ -89,7 +89,7 @@ theorem gx_ret0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_skip1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 2 &&& f / 154742504910672534362390528) % 2 = 0) :
     Reach (callState s 12842 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12874 (wd f :: wd ok :: wd amask :: wd ret :: tail) M) 44 := by
@@ -97,7 +97,7 @@ theorem gx_skip1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_call1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 2 &&& f / 154742504910672534362390528) % 2 = 1) :
     Reach (callState s 12842 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 14410 (wd 64 :: wd 12869 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
@@ -105,7 +105,7 @@ theorem gx_call1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_ret1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok r : Nat) (hok : ok < 2) (hr : r < 2) :
     Reach (callState s 12869 (wd r :: wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12874 (wd f :: wd (ok &&& r) :: wd amask :: wd ret :: tail) M) 13 := by
@@ -113,7 +113,7 @@ theorem gx_ret1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_skip2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 4 &&& f / 2854495385411919762116571938898990272765493248) % 2 = 0) :
     Reach (callState s 12874 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12906 (wd f :: wd ok :: wd amask :: wd ret :: tail) M) 44 := by
@@ -121,7 +121,7 @@ theorem gx_skip2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_call2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 4 &&& f / 2854495385411919762116571938898990272765493248) % 2 = 1) :
     Reach (callState s 12874 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 14410 (wd 128 :: wd 12901 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
@@ -129,7 +129,7 @@ theorem gx_call2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_ret2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok r : Nat) (hok : ok < 2) (hr : r < 2) :
     Reach (callState s 12901 (wd r :: wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12906 (wd f :: wd (ok &&& r) :: wd amask :: wd ret :: tail) M) 13 := by
@@ -137,7 +137,7 @@ theorem gx_ret2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_skip3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 8 &&& f / 52656145834278593348959013841835216159447547700274555627155488768) % 2 = 0) :
     Reach (callState s 12906 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12938 (wd f :: wd ok :: wd amask :: wd ret :: tail) M) 44 := by
@@ -145,7 +145,7 @@ theorem gx_skip3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_call3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 8 &&& f / 52656145834278593348959013841835216159447547700274555627155488768) % 2 = 1) :
     Reach (callState s 12906 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 14410 (wd 192 :: wd 12933 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
@@ -153,7 +153,7 @@ theorem gx_call3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_ret3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok r : Nat) (hok : ok < 2) (hr : r < 2) :
     Reach (callState s 12933 (wd r :: wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s 12938 (wd f :: wd (ok &&& r) :: wd amask :: wd ret :: tail) M) 13 := by
@@ -161,7 +161,7 @@ theorem gx_ret3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   gx_close
 
 theorem gx_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (amask f ok : Nat) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (callState s 12938 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s ret (wd ok :: tail) M) 20 := by

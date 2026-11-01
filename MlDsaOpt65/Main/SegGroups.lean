@@ -1,6 +1,6 @@
 import MlDsaOpt65.Main.S3.Lemmas
 set_option warningAsError true
-/-! # Segments `3565 … 3634` and `5221 … 5236`: the pure ExpandA groups (`group` calls).
+/-! # Segments `3565 … 3634`: the pure ExpandA groups (`group` calls).
 
 Each segment is `PUSH2 ret; PUSH rb; PUSH col; PUSH1 amask; PUSH2 group; JUMP;
 JUMPDEST; AND` (as `MlDsaOpt44/Main/SegGroups.lean`); the accumulator steps,
@@ -167,45 +167,5 @@ theorem seg_g4 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     ZeroOn.frame hI.zIdx hfr (by unfold groupFrame; avoids_tac),
     ZeroOn.frame hI.zAcc1 hfr (by unfold groupFrame; avoids_tac)⟩,
     ((hb1.trans hc).trans hb2).mono (by unfold Gas.pG4; omega)⟩
-
-/-- `5221 … 5236`: `group [3, 4, 1]` (`A[4][4]`, `A[5][4]` into lanes 0, 1 of
-`ACC + 0x2000`; lanes 2, 3 gain inactive-slot candidates `< 2^23` times `ẑ_4`), `AND`;
-`gOk cd 3 4 1 = okCol1 cd 4`. Establishes `Inv5` (`AccAt` from `AccCols0 5` and
-`AccCols1 5`, `SibFresh` from the zero facts). -/
-theorem seg_g9 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
-    (hI : InvMu s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', Inv5 s.executionEnv.calldata m' ∧
-      Reach (callState s 5221 [flag b] m)
-        (callState s 5236 [flag (b && okCol1 s.executionEnv.calldata 4)] m') Gas.pG9 := by
-  have hb1 : Reach (callState s 5221 [flag b] m)
-      (callState s Entry.group [wd 3, wd 4, wd 1, wd 5234, flag b] m) 23 := by
-    unfold Entry.group
-    opt65_reach [1727, 1728, 1729, 1730, 1731, 1732]
-  obtain ⟨m', hpost, hfr, hc⟩ := group_call hs (ret := 5234) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.rc4
-    hI.rho (amask := 3) (col := 4) (rb := 1) (by norm_num) (by norm_num) (by norm_num) hcd
-  have hb2 : Reach (callState s 5234 [flag (gOk s.executionEnv.calldata 3 4 1), flag b] m')
-      (callState s 5236 [flag (b && okCol1 s.executionEnv.calldata 4)] m') 4 := by
-    rw [s3_gOk_g9]
-    opt65_reach [1733, 1734] with [flag, MlDsaOpt44.Proofs.ite01_land]
-  have hzh : ∀ k, k < 5 → ∀ t, t < 256 → zhLane m' k t = zhLane m k t := fun k hk t ht =>
-    zhLane_frame hfr (by unfold groupFrame; avoids_tac) hk ht
-  have hzhat : ZHatAt m' s.executionEnv.calldata := ZHatAt.frame hI.zhat hfr (by unfold groupFrame; avoids_tac)
-  have hacc0 : AccCols0 m' s.executionEnv.calldata 5 := fun hok t ht => by
-    rw [word_frame hfr (lo := ACC) (hi := ACC + 0x2000) (by unfold groupFrame; avoids_tac) (by omega) (by omega),
-      hI.acc0 hok t ht]
-    exact congrArg pack4 (funext fun r =>
-      (s3_accSum_congr 5 (fun k hk => hzh k hk t ht)).symm)
-  have hacc1 : AccCols1 m' s.executionEnv.calldata 5 :=
-    s3_accCols1_step hI.acc1 hI.zhat hzh hpost
-  refine ⟨m', ⟨RC1Table.frame hI.rc1 hfr (by unfold groupFrame; avoids_tac), TblAt.frame hI.tbl hfr (by unfold groupFrame; avoids_tac),
-    HPAt.frame hI.hp hfr (by unfold groupFrame; avoids_tac), s3_accAt hzhat hacc0 hacc1,
-    TrlAt.frame hI.trl hfr (by unfold groupFrame; avoids_tac), MuAt.frame hI.mu hfr (by unfold groupFrame; avoids_tac),
-    CbAt.frame hI.cb hfr (by unfold groupFrame; avoids_tac),
-    ⟨ZeroOn.frame (ZeroOn.mono hI.zCw (le_refl _) (by unfold CW ABUF; omega)) hfr (by unfold groupFrame; avoids_tac),
-      ZeroOn.frame (ZeroOn.mono hI.zIdx (le_refl _) (by unfold IDX ACC; omega)) hfr (by unfold groupFrame; avoids_tac),
-      ZeroOn.frame (ZeroOn.mono hI.zMisc (by unfold NNEG MISC; omega) (by unfold NNEG MISC; omega))
-        hfr (by unfold groupFrame; avoids_tac)⟩⟩,
-    ((hb1.trans hc).trans hb2).mono (by unfold Gas.pG9; omega)⟩
 
 end MlDsaOpt65.Proofs

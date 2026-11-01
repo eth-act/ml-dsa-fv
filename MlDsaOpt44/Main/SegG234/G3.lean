@@ -205,7 +205,7 @@ theorem seg_g3 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     (off := 1224) (sh := 3) (n4 := 3) (lm := 0xffffffffffffffffffffffffffffffffffffffffffffffff0000000000000000) (kp := 0)
     (by norm_num) (by norm_num) (by norm_num) (by norm_num) (by unfold KS; norm_num)
     (by unfold KS; norm_num) (by norm_num)
-  have gpad : Reach (callState s 4292 [flag b] mt) (callState s 21032 [wd 4355, flag b]
+  have gpad : Reach (callState s 4292 [flag b] mt) (callState s 21570 [wd 4355, flag b]
       (MachineState.writeBytes
         (MachineState.writeBytes mt (Data.Bytes.natToBytesPadded ((word mt 352 ^^^ 559240) % 2 ^ 256) 32) 352)
         (Data.Bytes.natToBytesPadded ((word (MachineState.writeBytes mt
@@ -226,7 +226,7 @@ theorem seg_g3 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     ks4_trabs_last hcd' (X3_sized _ 4) hks5 fun x hx => by rw [hwp x hx, trabs_norm hwt x hx]
   have hB5 := (hB5.frame hft (by frame_tac) (by frame_tac)).frame hfp (by frame_tac) (by frame_tac)
   obtain ⟨m6, hks6', hB6, hrc6, hf6, hR6⟩ := kb_round hs (fb := flag b) (stk := [wd 4355, flag b])
-    (m := Mp) (pc0 := 21032) (r1 := 4355) (r2 := 4369) (c1 := 0) (c2 := 21) (b := 4) (by norm_num)
+    (m := Mp) (pc0 := 21570) (r1 := 4355) (r2 := 4369) (c1 := 0) (c2 := 21) (b := 4) (by norm_num)
     (Reach.refl _) (fun _ => by opt44_reach [1386, 1387, 1388, 1389, 1390, 1391] with [FL, ABUF])
     (by simp only [isValidJumpDest_lit]) (by norm_num) (by simp only [isValidJumpDest_lit]) (by norm_num)
     ((hrc5.frame hft (by frame_tac)).frame hfp (by frame_tac)) (Y3_sized _ 4) hksp hB5 (fun k _ => rfl)

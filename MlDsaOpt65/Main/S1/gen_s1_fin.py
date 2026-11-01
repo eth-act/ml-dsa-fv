@@ -211,13 +211,13 @@ set_option linter.unusedVariables false
 /-- After `j` blocks: every well-formed `FIN` content `X` has been absorbed `j` times. -/
 structure FinInv (m M : ByteArray) (j : Nat) : Prop where
   rc1 : RC1Table M
-  fr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800)]
+  fr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)]
   ks : ∀ X : ByteArray, X.size = {XS} → FinAt m X →
     KS1 M (absorbPre 136 ({F2}.pad 136 0x1F X) j)
 
-theorem fin_frame_word {{m M : ByteArray}} (h : FrameExcept m M [(KS, KS + 800), (KB, KB + 800)])
+theorem fin_frame_word {{m M : ByteArray}} (h : FrameExcept m M [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)])
     {{a : Nat}} (ha : FIN ≤ a) (ha' : a + 32 ≤ TOP) : word M a = word m a :=
-  FrameExcept.word h (by simp only [avoids_cons, avoids_nil, and_true, KS, KB, FIN, TOP] at *; omega)
+  FrameExcept.word h (by simp only [avoids_cons, avoids_nil, and_true, KS, KB, KZ, FIN, TOP] at *; omega)
 
 theorem fin_start {{s : State}} (hs : Ctx s) (b : Bool) {{m : ByteArray}} (hrc : RC1Table m) :
     ∃ M, FinInv m M 0 ∧
@@ -227,7 +227,7 @@ theorem fin_start {{s : State}} (hs : Ctx s) (b : Bool) {{m : ByteArray}} (hrc :
   · intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     subst hr
-    simp [KS, KB]
+    simp [KS, KB, KZ]
   · rw [f x hx, absorbPre_zero, laneOf_emptyState]
 
 /-- One absorbing iteration, up to the return of `kf1`. -/
@@ -241,11 +241,11 @@ theorem fin_iter {{s : State}} (hs : Ctx s) (b : Bool) {{m M : ByteArray}} (j : 
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M1
     (RC1Table.frame hI.rc1 fr1 {A})
   rw [call_iff] at hc2
-  have hfr : FrameExcept m M2 [(KS, KS + 800), (KB, KB + 800)] := by
+  have hfr : FrameExcept m M2 [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)] := by
     refine ((hI.fr.trans fr1).trans hf2).mono ?_
     intro r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB]
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [KS, KB, KZ]
   refine ⟨M2, ⟨RC1Table.frame (RC1Table.frame hI.rc1 fr1 {A}) hf2 {A}, hfr, fun X hX hF => ?_⟩,
     (r1.trans hc2).mono (by omega)⟩
   set St := absorbPre 136 ({F2}.pad 136 0x1F X) j
@@ -279,7 +279,7 @@ theorem fin_loop {{s : State}} (hs : Ctx s) (b : Bool) {{m M0 : ByteArray}} (hI0
     if nn == 65:
         src += f'''
 /-- The last block of an {XS}-byte input: what `fin_pad` xors in. -/
-theorem finTail_eq {{m M : ByteArray}} (hfr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800)])
+theorem finTail_eq {{m M : ByteArray}} (hfr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)])
     {{X : ByteArray}} (hX : X.size = {XS}) (hF : FinAt m X) {{x : Nat}} (hx : x < 25) :
     finTail M x = rep (if x < 17 then le64 ({F2}.pad 136 0x1F X) (816 + 8 * x) else 0) := by
   have hl : ∀ x, x < 17 → le64 ({F2}.pad 136 0x1F X) (816 + 8 * x) =
@@ -319,7 +319,7 @@ theorem finTail_eq {{m M : ByteArray}} (hfr : FrameExcept m M [(KS, KS + 800), (
     else:
         src += f'''
 /-- The last block of a {XS}-byte input (pure padding): what `fin_pad` xors in. -/
-theorem finTail_eq {{m M : ByteArray}} (hfr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800)])
+theorem finTail_eq {{m M : ByteArray}} (hfr : FrameExcept m M [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800)])
     {{X : ByteArray}} (hX : X.size = {XS}) (hF : FinAt m X) {{x : Nat}} (hx : x < 25) :
     finTail M x = rep (if x < 17 then le64 ({F2}.pad 136 0x1F X) ({XS} + 8 * x) else 0) := by
   have hl : ∀ x, x < 17 → le64 ({F2}.pad 136 0x1F X) ({XS} + 8 * x) =

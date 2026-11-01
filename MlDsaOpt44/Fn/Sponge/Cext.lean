@@ -75,6 +75,7 @@ theorem cextOut_eq {x : Nat} (hx : x < 25) (u : Nat) :
       Nat.reduceEqDiff, or_false, or_true, false_or, if_true, if_false] <;> omega
 
 set_option maxRecDepth 100000 in
+set_option maxHeartbeats 1000000 in
 theorem cext_body {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (M : ByteArray) {x n sh dst : Nat}
     (hx : x + 1 < n) (hn : n ≤ 25) (hsh : sh < 4) (_hdst : 800 ≤ dst) (hdm : dst + 32 * n ≤ TOP) :
@@ -90,6 +91,7 @@ theorem cext_body {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   exact ⟨rfl, by rw [Nat.add_comm]⟩
 
 set_option maxRecDepth 100000 in
+set_option maxHeartbeats 1000000 in
 theorem cext_last {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (M : ByteArray) {x n sh dst : Nat}
     (hx : x + 1 = n) (hn : n ≤ 25) (hsh : sh < 4) (hdst : 800 ≤ dst) (hdm : dst + 32 * n ≤ TOP) :

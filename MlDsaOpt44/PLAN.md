@@ -1,22 +1,40 @@
-# MlDsaOpt44: proof plan for the parallel phase
+# MlDsaOpt44: proof plan
 
-Target: `MlDsaOpt/44/opt.hex` (22,553 bytes, 11,443 instructions). The final
-theorems `MlDsaOpt44.Proofs.opt_correctInAnyContextWithSchedule`,
-`opt_correctInAnyContext`, `opt_correctWithSchedule` and `opt_correct`
-(`MlDsaOpt44/Main.lean`) are `MlDsa44.Spec` statements with
-`code := MlDsaOpt44.optBytecode` and the schedule `MlDsaOpt44.Proofs.Gas.schedule`.
-They build and depend on `propext`, `Classical.choice`, `Quot.sound` and
-`sorryAx`. Every `sorry` is listed below. Nothing else is open: the
-infrastructure, the short-calldata path, the composition, the gas accounting
-and seven of the thirteen main-flow segments are proved from the contracts.
+## Status (v3, round 3)
+
+Target: `MlDsaOpt/44/opt.hex` (v3: 23,091 bytes, 11,792 instructions, memory
+2097 words; the proved v2 bytes are `MlDsaOpt/44/v2/opt.hex`, git tag
+`opt-v2-proved`). The final theorems `MlDsaOpt44.Proofs.opt_correctInAnyContextWithSchedule`,
+`opt_correctInAnyContext`, `opt_correctWithSchedule`, `opt_correct`
+(`MlDsaOpt44/Main.lean`) are stated with `code := MlDsaOpt44.optBytecode` (the v3
+bytes) and `Gas.schedule`. `checks/Axioms.lean` prints their axioms and lists every
+declaration with a direct `sorry` (`#open_items`).
+
+Retarget v2 → v3 (done):
+
+* generated modules: `python3 scripts/proofgen_artifact.py MlDsaOpt/44/opt.hex MlDsaOpt44 MlDsaOpt44 opt44 2097`;
+* every unchanged proof relocated in place: `python3 scripts/proofgen_port.py --reloc 44 FILES`
+  (index/pc maps from `MlDsaOpt/44/v2/opt.hex` to `opt.hex`, memory size 2065 → 2097;
+  the kernel re-checks everything). Hand fixes: `pc0` of the kf4 entry in
+  `Main/SegG234/G3.lean`, the sizing store in `Main/Init/Blocks.lean`, `Fin` count in
+  `Fn/Group/Common.lean`, heartbeats of `Fn/Sponge/Cext.lean`;
+* `Layout.lean`: new `KZ` (kf1's third buffer, above `TOP`; `TOP` keeps its value);
+* changed code, re-proved: `kf1` (3 rounds per iteration, `Fn/Kf1/`, generator
+  `gen_kf1.py`; contract frame now `[KS, KB, KZ]`, 32,571 gas) and `usehint`
+  (exact multiply-shift, `Fn/Hint/UseHint*.lean`, 56,089 gas).
+
+Open items: **none**. The four final theorems depend only on `propext`,
+`Classical.choice` and `Quot.sound`.
 
 ```sh
 export TMPDIR=$PWD/.lake/tmp
-lake build MlDsaOptCommon MlDsaOpt44          # ~35 s warm, 2.3 GB peak per module
-lake env lean MlDsaOpt44/checks/Axioms.lean         # #print axioms of the four theorems
-python3 scripts/proofgen_check.py 3           # numeric check of contract statements
-python3 scripts/proofgen_gas.py [--analyse|--phases|--schedule]   # budgets
+lake build MlDsaOpt44
+lake env lean MlDsaOpt44/checks/Axioms.lean
+python3 scripts/proofgen_gas.py --schedule   # budgets / schedule
 ```
+
+The sections below are the original (v2) plan; the contract form, recipe and
+pitfalls still apply. Pcs/indices quoted in them are v2.
 
 ## Layout of the development
 

@@ -29,7 +29,7 @@ theorem pro {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length 
 
 theorem bodyB_loop {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xp flp abp ret : Nat) (M : ByteArray)
-    (hflp : flp + 32 ≤ 32 * 2065) (hxp : 96 + xp < 672) :
+    (hflp : flp + 32 ≤ 32 * 2097) (hxp : 96 + xp < 672) :
     Reach (callState s 9972 (wd lf :: wd w2 :: wd w1 :: wd w0 :: wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp ::
         wd ret :: tail) M)
       (callState s 9106 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)
@@ -41,7 +41,7 @@ theorem bodyB_loop {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.
 
 theorem bodyB_exit {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xp flp abp ret : Nat) (M : ByteArray)
-    (hflp : flp + 32 ≤ 32 * 2065) (hxp : 96 + xp = 672) :
+    (hflp : flp + 32 ≤ 32 * 2097) (hxp : 96 + xp = 672) :
     Reach (callState s 9972 (wd lf :: wd w2 :: wd w1 :: wd w0 :: wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp ::
         wd ret :: tail) M)
       (callState s 10002 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)

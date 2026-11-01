@@ -1,9 +1,11 @@
 """Generator for the `kf1` proof files (`MlDsaOpt44/Fn/Kf1/`).
 
 Writes `Tables.lean` (the per-lane shift / chi tables of the word model and its
-lane mirror) and `Blocks*.lean` (one `Reach` lemma per straight-line block of a
-`kf1` loop iteration). Block boundaries and costs come from
-`MlDsaOpt44/listing.tsv`; the chi table is `CHI` of `scripts/opt_keccak.py`.
+lane mirror), `Blocks*.lean` (one `Reach` lemma per straight-line block of a
+`kf1` loop iteration: three rounds `KS → KB → KZ → KS`), `BlocksLoop.lean`
+(entry, loop-back, exit) and `Rounds.lean` (the three rounds composed). Block
+boundaries and costs come from `MlDsaOpt44/listing.tsv` (v3 bytes); the chi
+table is `CHI` of `scripts/opt_keccak.py`.
 
     python3 MlDsaOpt44/Fn/Kf1/gen_kf1.py
 """
@@ -53,16 +55,15 @@ def tables():
     out = [HEADER, "import MlDsaOpt44.Layout\n",
            "/-! Per-lane tables of the `kf1` word model (`Model.lean`) and its lane mirror. -/\n",
            "namespace MlDsaOpt44.Proofs.Kf1\n", "open EvmSemantics\n"]
-    out.append("/-- Rho of source lane `j` as the code does it: one shift by `d = ρ_j` or `ρ_j − 64`\n"
-               "(decaying window). -/")
+    out.append("/-- Rho of source lane `j` as the code does it: one left shift by `ρ_j`\n"
+               "(decaying window, shift offset −1). -/")
     out.append("def shf : Nat → UInt256 → UInt256")
     for j, r in enumerate(ROT):
+        assert r < 63
         if r == 0:
             out.append(f"  | {j}, v => v")
-        elif r <= 32:
-            out.append(f"  | {j}, v => v.shiftLeft (UInt256.ofNat {r})")
         else:
-            out.append(f"  | {j}, v => v.shiftRight (UInt256.ofNat {64 - r})")
+            out.append(f"  | {j}, v => v.shiftLeft (UInt256.ofNat {r})")
     out.append("  | _, v => v\n")
     out.append("/-- Lane-complemented chi, output lane `j = x + 5 y`, from the five `B`s of row `y`. -/")
     out.append("def chiW : Nat → (Nat → UInt256) → UInt256")
@@ -105,18 +106,56 @@ def pc(i):
     return INS[i][0]
 
 
-# kf1 index ranges (entry pc 19645 = index 9329)
-PRO = (9329, 9332)
-TH = {1: (9333, 9429), 2: (9744, 9839)}
-SRC = {1: 0, 2: 1024}
-DST = {1: 1024, 2: 0}
-TAIL = (10306, 10314)
-EXIT = (10306, 10318)
+def op(i):
+    return INS[i][1]
+
+
+# kf1 index ranges (entry pc 19576 = index 9318)
+ENTRY = 9318
+assert pc(ENTRY) == 19576 and op(ENTRY) == "JUMPDEST"
+PRO = (ENTRY, ENTRY + 2)                         # JUMPDEST, PUSH2 RC1, PUSH25 REP
+KZ = 0x10300
+SRC = {1: 0, 2: 1024, 3: KZ}
+DST = {1: 1024, 2: KZ, 3: 0}
+RCADDR = {1: "rp", 2: "(32 + rp)", 3: "(64 + rp)"}
+
+
+def round_ranges():
+    """[(a, b)] of the three rounds: 25 MSTOREs, then 5 POPs (the `D`s)."""
+    out, a = [], PRO[1] + 1
+    for _ in range(3):
+        i, n = a, 0
+        while n < 25:
+            n += op(i) == "MSTORE"
+            i += 1
+        assert all(op(i + k) == "POP" for k in range(5)), i
+        out.append((a, i + 4))
+        a = i + 5
+    return out
+
+
+RND = dict(zip((1, 2, 3), round_ranges()))
+assert op(RND[1][0]) == "JUMPDEST"
+TAIL = (RND[3][1] + 1, RND[3][1] + 9)            # rp += 96, loop test, JUMPI
+EXIT = (TAIL[0], TAIL[1] + 3)                    # ... POP, POP, JUMP
+assert op(TAIL[1]) == "JUMPI" and op(EXIT[1]) == "JUMP"
+
+
+def theta(r):
+    """Theta: up to the XOR of the fifth `SHL 1` (the `D`s)."""
+    a, b = RND[r]
+    sh = [i for i in range(a, b) if op(i) == "PUSH1 0x01" and op(i + 1) == "SHL"]
+    assert len(sh) >= 5 and op(sh[4] + 2) == "XOR"
+    return (a, sh[4] + 2)
+
+
+TH = {r: theta(r) for r in (1, 2, 3)}
 
 
 def rows(r):
-    a, b = (9430, 9743) if r == 1 else (9840, 10305)
-    st = [i for i in range(a, b + 1) if INS[i][1] == "MSTORE"]
+    a, b = TH[r][1] + 1, RND[r][1]
+    st = [i for i in range(a, b + 1) if op(i) == "MSTORE"]
+    assert len(st) == 25
     out = []
     for y in range(5):
         lo = a if y == 0 else st[5 * y - 1] + 1
@@ -129,10 +168,10 @@ def src_lane(y, k):
     return (k + 3 * y) % 5 + 5 * k
 
 
-STK = "REPw :: M64w :: wd rp :: wd ret :: tail"
+STK = "REPw :: wd rp :: wd ret :: tail"
 DSTK = "D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: " + STK
 CTX = ("{s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)\n"
-       "    (hsz : 2065 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)")
+       "    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)")
 
 
 def path(a, b):
@@ -157,17 +196,16 @@ def row_lemma(r, y):
     hs = [f"(h{j} : UInt256.ofNat (word M {SRC[r] + 32 * j}) = A {j})" for j in lanes]
     names = [f"h{j}" for j in lanes]
     if y == 0:
-        rcaddr = "rp" if r == 1 else "(32 + rp)"
-        hs.append(f"(hrc : UInt256.ofNat (word M {rcaddr}) = rc)")
+        hs.append(f"(hrc : UInt256.ofNat (word M {RCADDR[r]}) = rc)")
         names.append("hrc")
     hyp = "\n    ".join(" ".join(hs[i:i + 2]) for i in range(0, len(hs), 2))
     mem = "M"
     for x in range(5):
         j = x + 5 * y
-        v = f"outW A D rc {j}" if r == 1 else f"rerepW (outW A D rc {j})"
+        v = f"rerepW (outW A D rc {j})" if r == 3 else f"outW A D rc {j}"
         mem = f"(mst {mem} {DST[r] + 32 * j} ({v}))"
     post = STK if y == 4 else DSTK
-    extra = ", rerepW" if r == 2 else ""
+    extra = ", rerepW" if r == 3 else ""
     return (f"theorem row{r}_{y} {CTX}\n    (A D : Nat → UInt256) (rc : UInt256)\n    {hyp} :\n"
             f"    Reach (callState s {pc(a)} ({DSTK}) M)\n"
             f"      (callState s {pc(b + 1)} ({post})\n        {mem}) {cost(a, b)} := by\n"
@@ -190,7 +228,7 @@ set_option linter.unusedVariables false
 
 
 def blocks():
-    for r in (1, 2):
+    for r in (1, 2, 3):
         for part, ys in (("a", (0, 1)), ("b", (2, 3, 4))):
             what = "theta, rows 0-1" if part == "a" else "rows 2-4"
             out = [BLK_HEADER.format(hdr=HEADER, r=r, what=what)]
@@ -217,17 +255,17 @@ set_option maxHeartbeats 0
 set_option linter.unusedVariables false
 
 theorem prologue {{s : State}} (hs : Ctx s) {{tail : List UInt256}} (htl : tail.length ≤ 960)
-    (hsz : 2065 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
+    (hsz : 2097 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
     Reach (callState s {pc0} (wd ret :: tail) M)
-      (callState s {pc1} (REPw :: M64w :: wd 2816 :: wd ret :: tail) M) {c0} := by
-  opt44_reach {p0} with [REPw, M64w]
+      (callState s {pc1} (REPw :: wd 2816 :: wd ret :: tail) M) {c0} := by
+  opt44_reach {p0} with [REPw]
 
-theorem loopBack {CTX} (hlt : 64 + rp < 3584) :
+theorem loopBack {CTX} (hlt : 96 + rp < 3584) :
     Reach (callState s {pc2} ({STK}) M)
-      (callState s {pc1} (REPw :: M64w :: wd (64 + rp) :: wd ret :: tail) M) {c1} := by
+      (callState s {pc1} (REPw :: wd (96 + rp) :: wd ret :: tail) M) {c1} := by
   opt44_reach {p1}
 
-theorem loopExit {CTX} (heq : 64 + rp = 3584) (hret : ret < 2 ^ 16)
+theorem loopExit {CTX} (heq : 96 + rp = 3584) (hret : ret < 2 ^ 16)
     (hj : EVM.Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) :
     Reach (callState s {pc2} ({STK}) M) (callState s ret tail M) {c2} := by
   opt44_reach {p2} with [hj]
@@ -237,7 +275,7 @@ end MlDsaOpt44.Proofs.Kf1
 
 
 def loop():
-    txt = LOOP.format(hdr=HEADER, pc0=pc(PRO[0]), pc1=pc(TH[1][0]), pc2=pc(TAIL[0]),
+    txt = LOOP.format(hdr=HEADER, pc0=pc(PRO[0]), pc1=pc(RND[1][0]), pc2=pc(TAIL[0]),
                       c0=cost(*PRO), c1=cost(*TAIL), c2=cost(*EXIT), p0=path(*PRO),
                       p1=path(*TAIL), p2=path(*EXIT), CTX=CTX, STK=STK)
     with open(os.path.join(HERE, "BlocksLoop.lean"), "w") as f:
@@ -245,12 +283,10 @@ def loop():
 
 
 def round_lemma(r):
-    a = TH[r][0]
-    end = rows(r)[4][1] + 1
-    total = cost(TH[r][0], TH[r][1]) + sum(cost(*b) for b in rows(r))
-    src = SRC[r]
-    f = "roundW A rc j" if r == 1 else "rerepW (roundW A rc j)"
-    rcaddr = "rp" if r == 1 else "(32 + rp)"
+    a, b = RND[r]
+    total = cost(a, b)
+    assert total == cost(*TH[r]) + sum(cost(*x) for x in rows(r))
+    f = "rerepW (roundW A rc j)" if r == 3 else "roundW A rc j"
     hA = lambda j: f"(hA {j} (by decide))"
     th = f"(theta{r} (ret := ret) hs htl hsz hrp A " + " ".join(hA(j) for j in range(25)) + ")"
     parts = [th]
@@ -265,20 +301,18 @@ def round_lemma(r):
     for p in parts[1:]:
         chain = f"({chain}.trans\n    {p})"
     return (f"theorem round{r} {CTX}\n    (A : Nat → UInt256)\n"
-            f"    (hA : ∀ j, j < 25 → UInt256.ofNat (word M ({src} + 32 * j)) = A j)\n"
-            f"    (rc : UInt256) (hrc : UInt256.ofNat (word M {rcaddr}) = rc) :\n"
+            f"    (hA : ∀ j, j < 25 → UInt256.ofNat (word M ({SRC[r]} + 32 * j)) = A j)\n"
+            f"    (rc : UInt256) (hrc : UInt256.ofNat (word M {RCADDR[r]}) = rc) :\n"
             f"    Reach (callState s {pc(a)} ({STK}) M)\n"
-            f"      (callState s {pc(end)} ({STK})\n"
+            f"      (callState s {pc(b + 1)} ({STK})\n"
             f"        (storeWords M {DST[r]} (fun j => ({f}).toNat) 25)) {total} := by\n"
             f"  rw [storeWords_25]\n"
             f"  refine Reach.mono {chain} (by norm_num)\n")
 
 
-ROUNDS = """{hdr}import MlDsaOpt44.Fn.Kf1.Blocks1b
-import MlDsaOpt44.Fn.Kf1.Blocks1a
-import MlDsaOpt44.Fn.Kf1.Blocks2a
-import MlDsaOpt44.Fn.Kf1.Blocks2b
-/-! The two rounds of a `kf1` loop iteration as traces (`Blocks*` composed). -/
+ROUNDS = """{hdr}{imports}
+/-! The three rounds of a `kf1` loop iteration as traces (`Blocks*` composed):
+`KS → KB`, `KB → KZ`, `KZ → KS` (re-replicated); {c1} + {c2} + {c3} gas. -/
 
 namespace MlDsaOpt44.Proofs.Kf1
 
@@ -298,6 +332,7 @@ theorem storeWords_25 (M : ByteArray) (b : Nat) (f : Nat → UInt256) :
 
 {r1}
 {r2}
+{r3}
 end MlDsaOpt44.Proofs.Kf1
 """
 
@@ -306,9 +341,17 @@ def rounds_file():
     chain = "M"
     for k in range(25):
         chain = f"mst ({chain}) (b + 32 * {k}) (f {k})"
-    txt = ROUNDS.format(hdr=HEADER, chain=chain, r1=round_lemma(1), r2=round_lemma(2))
+    imports = "\n".join(f"import MlDsaOpt44.Fn.Kf1.Blocks{r}{p}" for r in (1, 2, 3) for p in "ab")
+    txt = ROUNDS.format(hdr=HEADER, imports=imports, chain=chain, r1=round_lemma(1),
+                        r2=round_lemma(2), r3=round_lemma(3),
+                        c1=cost(*RND[1]), c2=cost(*RND[2]), c3=cost(*RND[3]))
     with open(os.path.join(HERE, "Rounds.lean"), "w") as f:
         f.write(txt)
+
+
+def gas():
+    it = sum(cost(*RND[r]) for r in (1, 2, 3))
+    return cost(*PRO), it, cost(*TAIL), cost(*EXIT), cost(*PRO) + 7 * (it + cost(*TAIL)) + it + cost(*EXIT)
 
 
 if __name__ == "__main__":
@@ -316,3 +359,4 @@ if __name__ == "__main__":
     blocks()
     loop()
     rounds_file()
+    print("gas: prologue %d, iteration %d, loop-back %d, exit %d, total %d" % gas())

@@ -30,24 +30,25 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
 
-/-- Flag of ExpandA group `n < 10` (code order): rows `0 … 3` of column `n` for
-`n < 5`, rows 4, 5 of column `n − 5` otherwise. -/
-def gCol (cd : ByteArray) (n : Nat) : Bool := if n < 5 then okCol0 cd n else okCol1 cd (n - 5)
+/-- Flag of ExpandA group `n < 9` (code order): rows `0 … 3` of column `n` for
+`n < 5`, the row-group-1 instances `3 (n − 5) … 3 (n − 5) + 2` for groups 5–7
+and instance 9 for group 8 (`okI`). -/
+def gCol (cd : ByteArray) (n : Nat) : Bool :=
+  if n < 5 then okCol0 cd n
+  else if n < 8 then okI cd (3 * (n - 5)) && okI cd (3 * (n - 5) + 1) && okI cd (3 * (n - 5) + 2)
+  else okI cd 9
 
 /-- The flag on the stack after `n` ExpandA groups. -/
 def gFlags (cd : ByteArray) : Nat → Bool
   | 0 => ok1 cd
   | n + 1 => gFlags cd n && gCol cd n
 
-/-- The flags of the ten ExpandA groups, accumulated in code order, are `okA`. -/
-theorem flags_eq (cd : ByteArray) : gFlags cd 10 = ok2 cd := by
-  simp only [gFlags, gCol, ok2, okA, okCol0, okCol1,
-    show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, show List.range 5 = [0, 1, 2, 3, 4] from rfl, List.all_cons, List.all_nil, Bool.and_true]
-  simp only [show (0 : Nat) < 5 from by decide, show (1 : Nat) < 5 from by decide,
-    show (2 : Nat) < 5 from by decide, show (3 : Nat) < 5 from by decide,
-    show (4 : Nat) < 5 from by decide, show ¬ (5 : Nat) < 5 from by decide,
-    show ¬ (6 : Nat) < 5 from by decide, show ¬ (7 : Nat) < 5 from by decide,
-    show ¬ (8 : Nat) < 5 from by decide, show ¬ (9 : Nat) < 5 from by decide, if_true, if_false]
+/-- The flags of the nine ExpandA groups, accumulated in code order, are `okA`. -/
+theorem flags_eq (cd : ByteArray) : gFlags cd 9 = ok2 cd := by
+  simp only [gFlags, gCol, ok2, okA, okCol0, okI,
+    show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, show List.range 5 = [0, 1, 2, 3, 4] from rfl,
+    List.all_cons, List.all_nil, Bool.and_true, Nat.reduceLT, Nat.reduceSub, Nat.reduceMul,
+    Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, if_true, if_false]
   ac_rfl
 
 /-- The returned bit is the bytecode-flow verdict. -/
@@ -69,7 +70,7 @@ theorem result_bit (cd : ByteArray) (E : Bool) (m : ByteArray) (hI : Inv9 cd m)
 theorem valid_cost (size : Nat) (h : 5261 ≤ size) :
     Gas.pInit + MachineState.memCost memWords + Gas.pZh + Gas.pTbl + Gas.pNtt + Gas.pRho +
         Gas.pG0 + Gas.pG1 + Gas.pG2 + Gas.pG3 + Gas.pG4 + Gas.pG5 + Gas.pG6 + Gas.pG7 + Gas.pG8 +
-        Gas.pG9 + Gas.pMu (size - 5261) + Gas.pSib + Gas.pCt + Gas.pW + Gas.pFin ≤
+        Gas.pMu (size - 5261) + Gas.pSib + Gas.pCt + Gas.pW + Gas.pFin ≤
       Gas.schedule size := by
   unfold Gas.schedule
   rw [if_neg (by omega)]
@@ -99,11 +100,10 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
   obtain ⟨m11, hI11, hR11⟩ := seg_g6 hs hlen1 hI10 (gFlags s₁.executionEnv.calldata 6)
   obtain ⟨m12, hI12, hR12⟩ := seg_g7 hs hlen1 hI11 (gFlags s₁.executionEnv.calldata 7)
   obtain ⟨m13, hI13, hR13⟩ := seg_g8 hs hlen1 hI12 (gFlags s₁.executionEnv.calldata 8)
-  obtain ⟨m14, hI14, hR14⟩ := seg_g9 hs hlen1 hI13 (gFlags s₁.executionEnv.calldata 9)
-  have hR14' : Reach (callState s₁ 5221 [flag (gFlags s₁.executionEnv.calldata 9)] m13)
-      (callState s₁ 5236 [flag (ok2 s₁.executionEnv.calldata)] m14) Gas.pG9 := by
-    rw [← flags_eq]; exact hR14
-  obtain ⟨m15, hI15, hR15⟩ := seg_mu hs hlen1 hI14 (ok2 s₁.executionEnv.calldata)
+  have hR13' : Reach (callState s₁ 4972 [flag (gFlags s₁.executionEnv.calldata 8)] m12)
+      (callState s₁ 5190 [flag (ok2 s₁.executionEnv.calldata)] m13) Gas.pG8 := by
+    rw [← flags_eq]; exact hR13
+  obtain ⟨m15, hI15, hR15⟩ := seg_mu hs hlen1 hI13 (ok2 s₁.executionEnv.calldata)
   obtain ⟨m16, hI16, hR16⟩ := seg_sib hs hI15 (ok2 s₁.executionEnv.calldata)
   obtain ⟨m17, hI17, hR17⟩ := seg_ct hs hlen1 hI16 (ok2 s₁.executionEnv.calldata && okC
     s₁.executionEnv.calldata)
@@ -113,9 +113,8 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
     okC s₁.executionEnv.calldata)
   have hbit : ((ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata) && E) = optAccepts
     s₁.executionEnv.calldata := result_bit _ E m18 hI18 hE
-  have h := ((((((((((((((((((hR0'.trans hR1).trans hR2).trans hR3).trans hR4).trans hR5).trans
-    hR6).trans hR7).trans hR8).trans hR9).trans hR10).trans hR11).trans hR12).trans hR13).trans
-    hR14').trans hR15).trans hR16).trans hR17).trans hR18).trans hR19
+  have h := (((((((((((((((((hR0'.trans hR1).trans hR2).trans hR3).trans hR4).trans hR5).trans
+    hR6).trans hR7).trans hR8).trans hR9).trans hR10).trans hR11).trans hR12).trans hR13').trans hR15).trans hR16).trans hR17).trans hR18).trans hR19
   obtain ⟨g, hg⟩ := h
   refine ⟨_, g, ?_, rfl, ?_, ?_⟩
   · refine hg.trans ?_

@@ -6,7 +6,7 @@ set_option warningAsError true
 
 `PUSH2 5261; CALLDATASIZE; LT; PUSH2 short; JUMPI` → `short: JUMPDEST; PUSH0;
 PUSH0; MSTORE; PUSH1 32; PUSH0; RETURN` (instructions 0–4 and 2683–2689 of
-`listing.tsv`, `RETURN` at pc 7460): the zero word, 37 gas.
+`listing.tsv`, `RETURN` at pc 7414): the zero word, 37 gas.
 -/
 
 namespace MlDsaOpt65.Proofs
@@ -25,9 +25,9 @@ theorem activeWordsAfter_zero (off : Nat) :
 
 theorem short_block {s : State} (h0 : Ctx0 s) (haw : s.activeWords.toNat = 0)
     (hlen : s.executionEnv.calldata.size < 5261) :
-    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2683, 2684, 2685, 2686, 2687, 2688, 2689])
+    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2663, 2664, 2665, 2666, 2667, 2668, 2669])
       (callState s 0 [] .empty) =
-    some { callState s 7460 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
+    some { callState s 7414 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
       halt := .Returned
       hReturn := MachineState.readPadded
         (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) 0 32

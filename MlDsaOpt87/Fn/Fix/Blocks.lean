@@ -73,7 +73,7 @@ macro "fx_close" : tactic => `(tactic| (all_goals first | (congr 1; omega) | (re
 
 
 theorem fx_cand0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14490 flim rp wp fp M)
       (gst s ret tail sh lm nm 14527 flim rp (wp + ab (lv M (32 * 0 + rp) sh) * 32) fp (fw M wp (32 * 0 + rp) sh nm)) 74 := by
@@ -81,7 +81,7 @@ theorem fx_cand0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14527 flim rp wp fp M)
       (gst s ret tail sh lm nm 14567 flim rp (wp + ab (lv M (32 * 1 + rp) sh) * 32) fp (fw M wp (32 * 1 + rp) sh nm)) 80 := by
@@ -89,7 +89,7 @@ theorem fx_cand1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14567 flim rp wp fp M)
       (gst s ret tail sh lm nm 14607 flim rp (wp + ab (lv M (32 * 2 + rp) sh) * 32) fp (fw M wp (32 * 2 + rp) sh nm)) 80 := by
@@ -97,7 +97,7 @@ theorem fx_cand2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14607 flim rp wp fp M)
       (gst s ret tail sh lm nm 14647 flim rp (wp + ab (lv M (32 * 3 + rp) sh) * 32) fp (fw M wp (32 * 3 + rp) sh nm)) 80 := by
@@ -105,7 +105,7 @@ theorem fx_cand3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14647 flim rp wp fp M)
       (gst s ret tail sh lm nm 14687 flim rp (wp + ab (lv M (32 * 4 + rp) sh) * 32) fp (fw M wp (32 * 4 + rp) sh nm)) 80 := by
@@ -113,7 +113,7 @@ theorem fx_cand4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14687 flim rp wp fp M)
       (gst s ret tail sh lm nm 14727 flim rp (wp + ab (lv M (32 * 5 + rp) sh) * 32) fp (fw M wp (32 * 5 + rp) sh nm)) 80 := by
@@ -121,7 +121,7 @@ theorem fx_cand5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14727 flim rp wp fp M)
       (gst s ret tail sh lm nm 14767 flim rp (wp + ab (lv M (32 * 6 + rp) sh) * 32) fp (fw M wp (32 * 6 + rp) sh nm)) 80 := by
@@ -129,7 +129,7 @@ theorem fx_cand6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cand7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14767 flim rp wp fp M)
       (gst s ret tail sh lm nm 14807 flim rp (wp + ab (lv M (32 * 7 + rp) sh) * 32) fp (fw M wp (32 * 7 + rp) sh nm)) 80 := by
@@ -137,7 +137,7 @@ theorem fx_cand7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14817 flim rp wp fp M)
       (gst s ret tail sh lm nm 14832 flim rp wp fp (cw M (32 * 0 + wp) (32 * 0 + rp) lm nm)) 43 := by
@@ -145,7 +145,7 @@ theorem fx_copy0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14832 flim rp wp fp M)
       (gst s ret tail sh lm nm 14852 flim rp wp fp (cw M (32 * 1 + wp) (32 * 1 + rp) lm nm)) 54 := by
@@ -153,7 +153,7 @@ theorem fx_copy1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14852 flim rp wp fp M)
       (gst s ret tail sh lm nm 14872 flim rp wp fp (cw M (32 * 2 + wp) (32 * 2 + rp) lm nm)) 54 := by
@@ -161,7 +161,7 @@ theorem fx_copy2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14872 flim rp wp fp M)
       (gst s ret tail sh lm nm 14892 flim rp wp fp (cw M (32 * 3 + wp) (32 * 3 + rp) lm nm)) 54 := by
@@ -169,7 +169,7 @@ theorem fx_copy3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14892 flim rp wp fp M)
       (gst s ret tail sh lm nm 14912 flim rp wp fp (cw M (32 * 4 + wp) (32 * 4 + rp) lm nm)) 54 := by
@@ -177,7 +177,7 @@ theorem fx_copy4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14912 flim rp wp fp M)
       (gst s ret tail sh lm nm 14932 flim rp wp fp (cw M (32 * 5 + wp) (32 * 5 + rp) lm nm)) 54 := by
@@ -185,7 +185,7 @@ theorem fx_copy5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14932 flim rp wp fp M)
       (gst s ret tail sh lm nm 14952 flim rp wp fp (cw M (32 * 6 + wp) (32 * 6 + rp) lm nm)) 54 := by
@@ -193,7 +193,7 @@ theorem fx_copy6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_copy7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14952 flim rp wp fp M)
       (gst s ret tail sh lm nm 14972 flim rp wp fp (cw M (32 * 7 + wp) (32 * 7 + rp) lm nm)) 54 := by
@@ -201,7 +201,7 @@ theorem fx_copy7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (m : ByteArray) (sh : Nat) (hsh : sh ≤ 192) :
     Reach (callState s 14410 (wd sh :: wd ret :: tail) m)
       (sst s ret tail sh (18446744073709551615 * 2 ^ sh) (2 ^ 256 - 1 - 18446744073709551615 * 2 ^ sh) 31232 m) 19 := by
@@ -210,7 +210,7 @@ theorem fx_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_scan_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm fp : Nat) (hsh : sh ≤ 192) (hfp : fp + 32 ≤ 91680) (hf : word M fp / 2 ^ (23 + sh) % 2 = 0) :
     Reach (sst s ret tail sh lm nm fp M)
       (sst s ret tail sh lm nm (32 + fp) M) 55 := by
@@ -218,7 +218,7 @@ theorem fx_scan_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_scan_hit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm fp : Nat) (hsh : sh ≤ 192) (hfp : fp + 32 ≤ 91680) (hfl : 31232 ≤ fp) (hf : word M fp / 2 ^ (23 + sh) % 2 = 1) :
     Reach (sst s ret tail sh lm nm fp M)
       (gst s ret tail sh lm nm 14467 32352 (20480 + (fp - 31232) * 8) (20480 + (fp - 31232) * 8) fp M) 69 := by
@@ -226,7 +226,7 @@ theorem fx_scan_hit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_gl_ext {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfe : fp = flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
       (gst s ret tail sh lm nm 15003 flim rp wp fp M) 23 := by
@@ -234,7 +234,7 @@ theorem fx_gl_ext {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_gl_flag {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hfe : fp ≠ flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) (hf : word M fp / 2 ^ (23 + sh) % 2 = 1) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
       (gst s ret tail sh lm nm 14490 flim rp wp fp M) 63 := by
@@ -242,7 +242,7 @@ theorem fx_gl_flag {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_gl_clean {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hfe : fp ≠ flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) (hf : word M fp / 2 ^ (23 + sh) % 2 = 0) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
       (gst s ret tail sh lm nm 14817 flim rp wp fp M) 63 := by
@@ -250,7 +250,7 @@ theorem fx_gl_clean {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_ftail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp < 65536) :
     Reach (gst s ret tail sh lm nm 14807 flim rp wp fp M)
       (gst s ret tail sh lm nm 14984 flim (256 + rp) wp fp M) 23 := by
@@ -258,7 +258,7 @@ theorem fx_ftail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_ctail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp < 65536) (hwp : wp < 65536) :
     Reach (gst s ret tail sh lm nm 14972 flim rp wp fp M)
       (gst s ret tail sh lm nm 14984 flim (256 + rp) (256 + wp) fp M) 24 := by
@@ -266,7 +266,7 @@ theorem fx_ctail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfp : fp < 65536) (hw : wp ≤ 28671) :
     Reach (gst s ret tail sh lm nm 14984 flim rp wp fp M)
       (gst s ret tail sh lm nm 14467 flim rp wp (32 + fp) M) 46 := by
@@ -274,7 +274,7 @@ theorem fx_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_done {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfp : fp < 65536) (hw : 28671 < wp) (hwp : wp < 65536) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (gst s ret tail sh lm nm 14984 flim rp wp fp M)
       (callState s ret (wd 1 :: tail) M) 64 := by
@@ -282,7 +282,7 @@ theorem fx_done {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm rp wp fp : Nat) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (gst s ret tail sh lm nm 15003 32576 rp wp fp M)
       (callState s ret (wd 0 :: tail) M) 51 := by
@@ -290,7 +290,7 @@ theorem fx_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_ext_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfl : flim ≠ 32576) (hfl' : flim < 65536) (h6 : word M 4064 ≠ 0) :
     Reach (gst s ret tail sh lm nm 15003 flim rp wp fp M)
       (gst s ret tail sh lm nm 15067 flim rp wp fp M) 42 := by
@@ -298,7 +298,7 @@ theorem fx_ext_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
     Reach (gst s ret tail sh lm nm 15067 flim rp wp fp M)
       (gst s ret tail sh lm nm 14467 32576 rp wp fp M) 17 := by
@@ -306,7 +306,7 @@ theorem fx_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_sq_pre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfl : flim ≠ 32576) (hfl' : flim < 65536) (h6 : word M 4064 = 0) :
     Reach (gst s ret tail sh lm nm 15003 flim rp wp fp M)
       (callState s 15035 (wd 90880 :: wd 0 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 1 32) 4064)) 59 := by
@@ -314,15 +314,15 @@ theorem fx_sq_pre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_sq_kf4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
     Reach (callState s 15036 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
-      (callState s 21922 (wd 15043 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 14 := by
+      (callState s 22461 (wd 15043 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 14 := by
   opt87_reach [6645, 6646, 6647] 
   fx_close
 
 theorem fx_sq_blk {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
     Reach (callState s 15043 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
       (callState s 10772 (wd 32352 :: wd 29440 :: wd 15057 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 21 := by
@@ -330,7 +330,7 @@ theorem fx_sq_blk {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   fx_close
 
 theorem fx_sq_post {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
     Reach (callState s 15057 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
       (callState s 15066 (wd 0 :: wd 90880 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 9 := by

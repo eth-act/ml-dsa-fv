@@ -19,7 +19,7 @@ set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 0 in
 theorem bodyA {s : State} (hs : Ctx s) {rest : List UInt256} (hrest : rest.length ≤ 961)
     (u5 u4 u3 u2 u1 u0 xp flp abp : Nat) (M : ByteArray) (hxp : xp + 96 ≤ 672)
-    (habp : abp + 256 ≤ 32 * 2065) :
+    (habp : abp + 256 ≤ 32 * 2097) :
     Reach (callState s 9106 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp :: rest) M)
       (callState s 9972
         (wd (lfv (unz u0 u1 u2 u3 u4 u5 (word M xp)) (unz u0 u1 u2 u3 u4 u5 (word M (32 + xp)))

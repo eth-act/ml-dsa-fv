@@ -20,7 +20,7 @@ open MlDsa44
 macro "avoids_tac" : tactic => `(tactic| (
   simp only [MlDsaOptCommon.avoids_cons, MlDsaOptCommon.avoids_nil, and_true,
     KS, KB, RC4, RC1, MISC, NNEG, CNT, HAVE6, TBL, CW, ABUF, FL, ZH, BASES, IDX, ACC, HP, FIN,
-    RHO1, CB, TRL, MU, BK, TT, SP, TOP]
+    RHO1, CB, TRL, MU, BK, TT, SP, TOP, KZ]
   omega))
 
 theorem word_frame {m m' : ByteArray} {rs : List (Nat × Nat)} (h : FrameExcept m m' rs)

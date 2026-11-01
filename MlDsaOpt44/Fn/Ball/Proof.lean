@@ -540,7 +540,7 @@ theorem ballFold_stop (bs : ByteArray) (k : Nat) (hk : 256 ≤ (ballFold bs k).2
 def pot (p i : Nat) : Nat := 125 * (272 - p) + 329 * (256 - i) + 43
 
 theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat)
     (hjd : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
     (m bs : ByteArray) (hcb : ∀ x, x < 34 → word m (CB + 32 * x) = le64 bs (8 * x)) :
     ∀ n k M, n = 264 - k → k ≤ 264 → (ballFold bs k).2 < 256 →
@@ -684,7 +684,7 @@ theorem sib_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
       Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.sib, Stack.leaf] at this; omega
-  have hsized : 2065 ≤ s.activeWords.toNat := hs.sized
+  have hsized : 2097 ≤ s.activeWords.toNat := hs.sized
   have h0 : SInv m m (MlDsa44.Proofs.Sampling.ballFold bs 0).1
       (MlDsa44.Proofs.Sampling.ballFold bs 0).2 := by
     rw [MlDsa44.Proofs.Sampling.ballFold_zero]; exact sinv_init m hz

@@ -55,7 +55,7 @@ abbrev headSt (s : State) (ret : Nat) (tail : List UInt256) (p i sg : Nat) (M : 
   callState s 7310 (wd p :: wd i :: wd sg :: wd ret :: tail) M
 
 theorem sib_reject {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (p i sg : Nat) (hp : p < 272)
     (j : Nat) (hj : 255 &&& word M (63488 + p / 8 * 32) / 2 ^ (p % 8 * 8) = j)
     (hji : i < j) (hj' : j < 256) (hi : i < 256) :
@@ -73,7 +73,7 @@ abbrev memA (M : ByteArray) (i j nn sg code : Nat) : ByteArray :=
     (Data.Bytes.natToBytesPadded code 32) (12288 + j * 32)
 
 theorem sib_accA0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (p i signs : Nat) (hp : p < 272) (hi : i < 256)
     (j : Nat) (hj : 255 &&& word M (63488 + p / 8 * 32) / 2 ^ (p % 8 * 8) = j) (hji : j ≤ i)
     (sg : Nat) (hsg : 1 &&& signs = sg) (hsg1 : sg ≤ 1)
@@ -88,7 +88,7 @@ theorem sib_accA0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt44_reach [2766, 2767, 2768, 2769, 2770, 2771, 2772, 2773, 2774, 2775, 2776, 2777, 2778, 2779, 2780, 2781, 2782, 2783, 2784, 2785, 2786, 2787, 2788, 2789, 2790, 2791, 2792, 2793, 2794, 2795, 2796, 2797, 2798, 2799, 2800, 2801, 2802, 2803, 2804, 2805, 2806, 2807, 2808, 2809, 2810, 2811, 2812, 2813, 2814, 2815, 2816, 2817, 2818, 2819, 2820, 2821, 2822, 2823, 2824, 2825, 2826, 2827, 2828, 2829, 2830, 2831, 2832, 2833, 2834, 2835, 2836, 2837, 2838, 2839] with [land_seven, seven_land, hj, h1, hsg, hnn, hcode, hk, word_div_248, word_mstore_disjoint]
 
 theorem sib_accA1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (p i signs : Nat) (hp : p < 272) (hi : i < 256)
     (j : Nat) (hj : 255 &&& word M (63488 + p / 8 * 32) / 2 ^ (p % 8 * 8) = j) (hji : j ≤ i)
     (sg : Nat) (hsg : 1 &&& signs = sg) (hsg1 : sg ≤ 1)
@@ -116,7 +116,7 @@ abbrev memC (M : ByteArray) (j sg cnt : Nat) : ByteArray :=
     (Data.Bytes.natToBytesPadded (4064 + j * 8 - sg * 2048) 32) (40928 + (1 + cnt) * 32)
 
 theorem sib_accB {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (p1 i signs j sg k : Nat) (hi : i < 256) (hji : j ≤ i) (hk1 : k < 256)
     (bv : Nat) (hbv : word M (40928 + k * 32) = bv) (hbv' : bv < 2 ^ 200) :
     Reach (callState s 7416 (wd k :: wd sg :: wd j :: wd p1 :: wd i :: wd signs :: wd ret :: tail) M)
@@ -125,7 +125,7 @@ theorem sib_accB {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt44_reach [2840, 2841, 2842, 2843, 2844, 2845, 2846, 2847, 2848, 2849, 2850, 2851, 2852, 2853, 2854, 2855, 2856, 2857, 2858, 2859] with [hbv]
 
 theorem sib_accC {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (p1 i signs j sg k : Nat) (hi : i + 1 < 256) (hj : j < 256) (hsg1 : sg ≤ 1) (hsigns : signs < 2 ^ 256)
     (cnt : Nat) (hcnt : word M 4032 = cnt) (hcnt' : cnt < 255) :
     Reach (callState s 7442 (wd k :: wd sg :: wd j :: wd p1 :: wd i :: wd signs :: wd ret :: tail) M)
@@ -134,7 +134,7 @@ theorem sib_accC {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt44_reach [2860, 2861, 2862, 2863, 2864, 2865, 2866, 2867, 2868, 2869, 2870, 2871, 2872, 2873, 2874, 2875, 2876, 2877, 2878, 2879, 2880, 2881, 2882, 2883, 2884, 2885, 2886, 2887, 2888, 2889, 2890, 2891, 2892, 2893, 2894, 2895, 2896, 2897, 2898, 2899, 2900, 2901, 2902, 2903, 2904] with [hcnt, h1]
 
 theorem sib_accD {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray)
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray)
     (hjd : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
     (p1 i signs j sg k : Nat) (hi : i + 1 = 256) (hj : j < 256) (hsg1 : sg ≤ 1) (hsigns : signs < 2 ^ 256)
     (cnt : Nat) (hcnt : word M 4032 = cnt) (hcnt' : cnt < 255) :
@@ -150,7 +150,7 @@ theorem sib_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt44_reach [2766, 2767, 2768, 2769, 2770, 2771, 2916, 2917, 2918, 2919, 2920, 2921, 2922] with [hjd]
 
 theorem sib_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsized : 2065 ≤ s.activeWords.toNat) (M : ByteArray) :
+    (htail : tail.length ≤ 960) (hsized : 2097 ≤ s.activeWords.toNat) (M : ByteArray) :
     Reach (callState s 7301 (wd ret :: tail) M) (headSt s ret tail 8 217 (word M 63488) M) 13 := by
   opt44_reach [2761, 2762, 2763, 2764, 2765]
 

@@ -5,7 +5,7 @@ Proved in `Fn/Ball/{Blocks,Proof}.lean` (`sib_call_proof`). The code is the ML-D
 `τ = 49` (loop start `i = 256 − τ = 207`) and the ML-DSA-65 `CB`/`BASES`/`IDX`
 addresses: it scans bytes `8 … 271` of the 272-byte stream `H(c̃)` (34 lanes in `CB`,
 squeezed from SIMD slot 2 of group 5 by `cext`) as FIPS 204 Algorithm 29 with the
-Appendix C limit. Call site: `sib []` at the start of segment sib (pc 6545). `Blocks` is ported
+Appendix C limit. Call site: `sib []` at the start of segment sib (pc 6499). `Blocks` is ported
 from `MlDsaOpt44/Fn/Ball/Blocks.lean`; `Proof` is the 44 proof over the parametric scan
 `MlDsaOptCommon.BallScan`. -/
 

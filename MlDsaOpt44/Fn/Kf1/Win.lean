@@ -5,12 +5,12 @@ import MlDsaOpt44.Fn.Kf1.Model
 `WinU lo hi w u`: the word `w` agrees with the replicated lane `rep u` on the
 bit window `[lo, hi)` (bit `i` of `w` is bit `i mod 64` of `u`). Bitwise
 operations keep windows, a left shift by `d` is a rotation by `d` on the window
-shifted up by `d`, a right shift by `d` a rotation by `64 − d` on the window
-shifted down (the decaying windows of `scripts/opt_keccak.py`).
+shifted up by `d` (the decaying windows of `scripts/opt_keccak.py`).
 
-`win_round`: one round of the word model on words valid on `[l, h)` computes
-the lane mirror `roundL` on `[l + 29, h − 28)`; two rounds from full windows
-leave `[58, 200) ⊇ [64, 128)`, which `rerep_toNat` re-replicates.
+`win_round`: one round of the word model on words valid on `[l, 256)` computes
+the lane mirror `roundL` on `[l + 63, 256)` (theta's `SHL 1`, then rho by a left
+shift of at most 62); three rounds from full windows leave `[189, 256) ⊇
+[192, 256)` (`decay_windows(3, -1)`), which `rerep_toNat` re-replicates.
 -/
 
 namespace MlDsaOpt44.Proofs.Kf1
@@ -91,14 +91,6 @@ theorem WinU.shl {l h : Nat} {a : UInt256} {u : UInt64} (d : Nat) (hd : d < 64)
   simp only [h3, decide_true, Bool.true_and, show d ≤ i by omega]
   congr 1; omega
 
-theorem WinU.shr {l h : Nat} {a : UInt256} {u : UInt64} (d : Nat) (hd0 : 0 < d) (hd : d < 64)
-    (hh : h ≤ 256) (ha : WinU l h a u) :
-    WinU (l - d) (h - d) (a.shiftRight (UInt256.ofNat d)) (rotl64 u (64 - d)) := by
-  intro i h1 h2 h3
-  rw [EvmProof.Word.shiftRight_toNat _ (by omega), Nat.testBit_shiftRight,
-    rotl64_testBit u (by omega) (Nat.mod_lt i (by decide)), ha (d + i) (by omega) (by omega) (by omega)]
-  congr 1; omega
-
 /-! ## The round -/
 
 theorem win_C {l h : Nat} {A : Nat → UInt256} {s : Nat → UInt64}
@@ -123,50 +115,45 @@ theorem win_D {l h : Nat} {C : Nat → UInt256} {Cl : Nat → UInt64}
   · exact (m 2 (by decide)).xor (win_sh1 (hC 4 (by decide)))
   · exact (win_sh1 (hC 0 (by decide))).xor (m 3 (by decide))
 
-theorem win_shl {l h : Nat} {a : UInt256} {u : UInt64} (d : Nat) (hd : d ≤ 28)
-    (ha : WinU (l + 1) h a u) :
-    WinU (l + 29) (h - 28) (a.shiftLeft (UInt256.ofNat d)) (rotl64 u d) :=
+theorem win_shl {l : Nat} {a : UInt256} {u : UInt64} (d : Nat) (hd : d ≤ 62)
+    (ha : WinU (l + 1) 256 a u) :
+    WinU (l + 63) 256 (a.shiftLeft (UInt256.ofNat d)) (rotl64 u d) :=
   (ha.shl d (by omega)).mono (by omega) (by omega)
 
-theorem win_shr {l h : Nat} {a : UInt256} {u : UInt64} (d : Nat) (hd0 : 0 < d) (hd : d ≤ 28)
-    (hh : h ≤ 256) (ha : WinU (l + 1) h a u) :
-    WinU (l + 29) (h - 28) (a.shiftRight (UInt256.ofNat d)) (rotl64 u (64 - d)) :=
-  (ha.shr d hd0 (by omega) hh).mono (by omega) (by omega)
-
-theorem win_shf {l h : Nat} {a : UInt256} {u : UInt64} (hh : h ≤ 256) (ha : WinU (l + 1) h a u)
+theorem win_shf {l : Nat} {a : UInt256} {u : UInt64} (ha : WinU (l + 1) 256 a u)
     {j : Nat} (hj : j < 25) :
-    WinU (l + 29) (h - 28) (shf j a) (rotl64 u rotOff[j]!) := by
+    WinU (l + 63) 256 (shf j a) (rotl64 u rotOff[j]!) := by
   interval_cases j
-  · rw [show rotOff[0]! = 0 from rfl, rotl64_zero]; exact ha.mono (by omega) (by omega)
+  · rw [show rotOff[0]! = 0 from rfl, rotl64_zero]; exact ha.mono (by omega) le_rfl
   · exact win_shl 1 (by decide) ha
-  · exact win_shr 2 (by decide) (by decide) hh ha
+  · exact win_shl 62 (by decide) ha
   · exact win_shl 28 (by decide) ha
   · exact win_shl 27 (by decide) ha
-  · exact win_shr 28 (by decide) (by decide) hh ha
-  · exact win_shr 20 (by decide) (by decide) hh ha
+  · exact win_shl 36 (by decide) ha
+  · exact win_shl 44 (by decide) ha
   · exact win_shl 6 (by decide) ha
-  · exact win_shr 9 (by decide) (by decide) hh ha
+  · exact win_shl 55 (by decide) ha
   · exact win_shl 20 (by decide) ha
   · exact win_shl 3 (by decide) ha
   · exact win_shl 10 (by decide) ha
-  · exact win_shr 21 (by decide) (by decide) hh ha
+  · exact win_shl 43 (by decide) ha
   · exact win_shl 25 (by decide) ha
-  · exact win_shr 25 (by decide) (by decide) hh ha
-  · exact win_shr 23 (by decide) (by decide) hh ha
-  · exact win_shr 19 (by decide) (by decide) hh ha
+  · exact win_shl 39 (by decide) ha
+  · exact win_shl 41 (by decide) ha
+  · exact win_shl 45 (by decide) ha
   · exact win_shl 15 (by decide) ha
   · exact win_shl 21 (by decide) ha
   · exact win_shl 8 (by decide) ha
   · exact win_shl 18 (by decide) ha
   · exact win_shl 2 (by decide) ha
-  · exact win_shr 3 (by decide) (by decide) hh ha
-  · exact win_shr 8 (by decide) (by decide) hh ha
+  · exact win_shl 61 (by decide) ha
+  · exact win_shl 56 (by decide) ha
   · exact win_shl 14 (by decide) ha
 
-theorem win_B {l h : Nat} (hh : h ≤ 256) {A D : Nat → UInt256} {s Dl : Nat → UInt64}
-    (hA : ∀ j, j < 25 → WinU l h (A j) (s j)) (hD : ∀ x, x < 5 → WinU (l + 1) h (D x) (Dl x))
-    {j : Nat} (hj : j < 25) : WinU (l + 29) (h - 28) (Bw A D j) (BL s Dl j) :=
-  win_shf hh ((hD _ (Nat.mod_lt j (by decide))).xor ((hA j hj).mono (by omega) le_rfl)) hj
+theorem win_B {l : Nat} {A D : Nat → UInt256} {s Dl : Nat → UInt64}
+    (hA : ∀ j, j < 25 → WinU l 256 (A j) (s j)) (hD : ∀ x, x < 5 → WinU (l + 1) 256 (D x) (Dl x))
+    {j : Nat} (hj : j < 25) : WinU (l + 63) 256 (Bw A D j) (BL s Dl j) :=
+  win_shf ((hD _ (Nat.mod_lt j (by decide))).xor ((hA j hj).mono (by omega) le_rfl)) hj
 
 theorem win_chi {l h : Nat} {B : Nat → UInt256} {Bl : Nat → UInt64}
     (hB : ∀ k, k < 5 → WinU l h (B k) (Bl k)) {j : Nat} (hj : j < 25) :
@@ -185,18 +172,18 @@ theorem srcLane_lt {y k : Nat} (hk : k < 5) : srcLane y k < 25 := by
   unfold srcLane; have := Nat.mod_lt (k + 3 * y) (show 5 > 0 by decide); omega
 
 /-- One round of the word model computes the lane mirror on the shrunken window. -/
-theorem win_round {l h : Nat} (hh : h ≤ 256) {A : Nat → UInt256} {s : Nat → UInt64}
-    (hA : ∀ j, j < 25 → WinU l h (A j) (s j)) {rc : UInt256} {rcl : UInt64}
+theorem win_round {l : Nat} {A : Nat → UInt256} {s : Nat → UInt64}
+    (hA : ∀ j, j < 25 → WinU l 256 (A j) (s j)) {rc : UInt256} {rcl : UInt64}
     (hrc : WinU 0 256 rc rcl) {j : Nat} (hj : j < 25) :
-    WinU (l + 29) (h - 28) (roundW A rc j) (roundL s rcl j) := by
-  have hD : ∀ x, x < 5 → WinU (l + 1) h (Dw (Cw A) x) (DL (CL s) x) := fun x hx =>
+    WinU (l + 63) 256 (roundW A rc j) (roundL s rcl j) := by
+  have hD : ∀ x, x < 5 → WinU (l + 1) 256 (Dw (Cw A) x) (DL (CL s) x) := fun x hx =>
     win_D (fun x hx => win_C hA hx) hx
-  have hchi : ∀ y, WinU (l + 29) (h - 28) (chiW j fun k => Bw A (Dw (Cw A)) (srcLane y k))
+  have hchi : ∀ y, WinU (l + 63) 256 (chiW j fun k => Bw A (Dw (Cw A)) (srcLane y k))
       (chiL j fun k => BL s (DL (CL s)) (srcLane y k)) := fun y =>
-    win_chi (fun k hk => win_B hh hA hD (srcLane_lt hk)) hj
+    win_chi (fun k hk => win_B hA hD (srcLane_lt hk)) hj
   unfold roundW roundL outW outL
   split
-  · subst j; exact (hrc.mono (by omega) (by omega)).xor (hchi 0)
+  · subst j; exact (hrc.mono (by omega) le_rfl).xor (hchi 0)
   · exact hchi _
 
 /-! ## Replication -/
@@ -229,24 +216,22 @@ theorem win_rep (u : UInt64) : WinU 0 256 (UInt256.ofNat (rep u.toNat)) u := by
   rw [EvmProof.Word.word_toNat_ofNat, Nat.mod_eq_of_lt (rep_lt u.toNat_lt),
     testBit_rep u.toNat_lt h3]
 
-theorem rerep_toNat {l h : Nat} {o : UInt256} {u : UInt64} (hw : WinU l h o u) (hl : l ≤ 64)
-    (hh : 128 ≤ h) : (rerepW o).toNat = rep u.toNat := by
+theorem rerep_toNat {l : Nat} {o : UInt256} {u : UInt64} (hw : WinU l 256 o u) (hl : l ≤ 192) :
+    (rerepW o).toNat = rep u.toNat := by
   have hu := u.toNat_lt
-  have hx : 18446744073709551615 &&& o.toNat >>> 64 = u.toNat := by
+  have ho : o.toNat < 2 ^ 256 := o.val.isLt
+  have hx : o.toNat >>> 192 = u.toNat := by
     apply Nat.eq_of_testBit_eq
     intro i
-    rw [Nat.testBit_and, show (18446744073709551615 : Nat) = 2 ^ 64 - 1 from rfl,
-      Nat.testBit_two_pow_sub_one, Nat.testBit_shiftRight]
+    rw [Nat.testBit_shiftRight]
     by_cases hi : i < 64
-    · rw [hw (64 + i) (by omega) (by omega) (by omega)]
-      simp only [hi, decide_true, Bool.true_and]
+    · rw [hw (192 + i) (by omega) (by omega) (by omega)]
       congr 1; omega
-    · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega)))]
-      simp [hi]
-  unfold rerepW REPw M64w
-  rw [EvmProof.Word.word_toNat_mul, EvmProof.Word.word_toNat_land,
-    EvmProof.Word.shiftRight_toNat _ (by decide), EvmProof.Word.word_toNat_ofNat,
-    EvmProof.Word.word_toNat_ofNat, Nat.mod_eq_of_lt (by decide : (18446744073709551615 : Nat) < 2 ^ 256),
+    · rw [Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega))),
+        Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le ho (Nat.pow_le_pow_right (by decide) (by omega)))]
+  unfold rerepW REPw
+  rw [EvmProof.Word.word_toNat_mul, EvmProof.Word.shiftRight_toNat _ (by decide),
+    EvmProof.Word.word_toNat_ofNat,
     Nat.mod_eq_of_lt (by decide : (6277101735386680764176071790128604879584176795969512275969 : Nat) < 2 ^ 256),
     hx, ← rep_eq]
   exact Nat.mod_eq_of_lt (rep_lt hu)

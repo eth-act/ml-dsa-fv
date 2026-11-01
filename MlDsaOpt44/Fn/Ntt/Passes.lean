@@ -58,12 +58,12 @@ theorem fA_pass (M0 : ByteArray)
       (fun k => fwdL (h k) 3)) :
     ∃ M', (H → PassInv M' 32768 (fun t => t % 32 < 32) (Bf 0) (Bf 3) (fun k => fwdL (h k) 0)
       (fun k => fwdL (h k) 3)) ∧ FrameExcept M0 M' [(32768, 32768 + 8192)] ∧
-      Reach (callState s 16961 (UInt256.ofNat 32768 :: UInt256.ofNat 33792 :: cC2 :: cM ::
+      Reach (callState s 16892 (UInt256.ofNat 32768 :: UInt256.ofNat 33792 :: cC2 :: cM ::
           UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M0)
-        (callState s 17458 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
+        (callState s 17389 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
           UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M') 34346 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun c M => callState s 16961 (UInt256.ofNat (32768 + 32 * c) :: UInt256.ofNat (33792) :: cC2 ::
+    (S := fun c M => callState s 16892 (UInt256.ofNat (32768 + 32 * c) :: UInt256.ofNat (33792) :: cC2 ::
       cM :: UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M)
     (Q := fun c M => (H → PassInv M 32768 (fun t => t % 32 < c) (Bf 0) (Bf 3) (fun k => fwdL (h k) 0)
       (fun k => fwdL (h k) 3)) ∧ FrameExcept M0 M [(32768, 32768 + 8192)])
@@ -82,12 +82,12 @@ theorem fB_pass (M0 : ByteArray) (htbl : TblAt M0)
       (fun k => fwdL (h k) 3) (fun k => fwdL (h k) 6)) :
     ∃ M', (H → PassInv M' 32768 (fun t => 4 * (t / 32) + t % 4 < 32) (Bf 3) (Bf 6)
       (fun k => fwdL (h k) 3) (fun k => fwdL (h k) 6)) ∧ FrameExcept M0 M' [(32768, 32768 + 8192)] ∧
-      Reach (callState s 17458 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
+      Reach (callState s 17389 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
           UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M0)
-        (callState s 17976 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
+        (callState s 17907 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
           UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M') 37354 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun n M => callState s 17458 (UInt256.ofNat (32768 + 1024 * (n / 4) + 32 * (n % 4)) ::
+    (S := fun n M => callState s 17389 (UInt256.ofNat (32768 + 1024 * (n / 4) + 32 * (n % 4)) ::
       UInt256.ofNat (4096 + 224 * (n / 4)) :: cC2 :: cM :: UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M)
     (Q := fun n M => (H → PassInv M 32768 (fun t => 4 * (t / 32) + t % 4 < n) (Bf 3) (Bf 6)
       (fun k => fwdL (h k) 3) (fun k => fwdL (h k) 6)) ∧ FrameExcept M0 M [(32768, 32768 + 8192)])
@@ -113,11 +113,11 @@ theorem fC_pass (M0 : ByteArray) (htbl : TblAt M0)
       (fun k => fwdL (h k) 6) (fun k => fwdL (h k) 8)) :
     ∃ M', (H → PassInv M' 32768 (fun t => t / 4 < 64) (Bf 6) (Bf 8)
       (fun k => fwdL (h k) 6) (fun k => fwdL (h k) 8)) ∧ FrameExcept M0 M' [(32768, 32768 + 8192)] ∧
-      Reach (callState s 17976 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
+      Reach (callState s 17907 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
           UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M0)
         (callState s ret tail M') 27986 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun n M => callState s 17976 (UInt256.ofNat (32768 + 128 * n) ::
+    (S := fun n M => callState s 17907 (UInt256.ofNat (32768 + 128 * n) ::
       UInt256.ofNat (5888 + 96 * n) :: cC2 :: cM :: UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) M)
     (Q := fun n M => (H → PassInv M 32768 (fun t => t / 4 < n) (Bf 6) (Bf 8)
       (fun k => fwdL (h k) 6) (fun k => fwdL (h k) 8)) ∧ FrameExcept M0 M [(32768, 32768 + 8192)])
@@ -138,12 +138,12 @@ theorem iC_pass (M0 : ByteArray) (htbl : TblAt M0)
       (fun k => invL (scaleR h k) 2)) :
     ∃ M', (H → PassInv M' 43264 (fun t => t / 4 < 64) (2 ^ 58) (Bi 2) h
       (fun k => invL (scaleR h k) 2)) ∧ FrameExcept M0 M' [(43264, 43264 + 8192)] ∧
-      Reach (callState s 18228 (UInt256.ofNat 43264 :: UInt256.ofNat 11936 :: cCI :: cM ::
+      Reach (callState s 18159 (UInt256.ofNat 43264 :: UInt256.ofNat 11936 :: cCI :: cM ::
           UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M0)
-        (callState s 18502 (UInt256.ofNat 43264 :: UInt256.ofNat 5664 :: cCI :: cM ::
+        (callState s 18433 (UInt256.ofNat 43264 :: UInt256.ofNat 5664 :: cCI :: cM ::
           UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M') 39370 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun n M => callState s 18228 (UInt256.ofNat (43264 + 128 * n) ::
+    (S := fun n M => callState s 18159 (UInt256.ofNat (43264 + 128 * n) ::
       UInt256.ofNat (11936 - 96 * n) :: cCI :: cM :: UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M)
     (Q := fun n M => (H → PassInv M 43264 (fun t => t / 4 < n) (2 ^ 58) (Bi 2) h
       (fun k => invL (scaleR h k) 2)) ∧ FrameExcept M0 M [(43264, 43264 + 8192)])
@@ -166,12 +166,12 @@ theorem iB_pass (M0 : ByteArray) (htbl : TblAt M0)
     ∃ M', (H → PassInv M' 43264 (fun t => 4 * (t / 32) + t % 4 < 32) (Bi 2) (Bi 5)
       (fun k => invL (scaleR h k) 2) (fun k => invL (scaleR h k) 5)) ∧
       FrameExcept M0 M' [(43264, 43264 + 8192)] ∧
-      Reach (callState s 18502 (UInt256.ofNat 43264 :: UInt256.ofNat 5664 :: cCI :: cM ::
+      Reach (callState s 18433 (UInt256.ofNat 43264 :: UInt256.ofNat 5664 :: cCI :: cM ::
           UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M0)
-        (callState s 19036 (UInt256.ofNat 43264 :: UInt256.ofNat 44288 :: cCI :: cM ::
+        (callState s 18967 (UInt256.ofNat 43264 :: UInt256.ofNat 44288 :: cCI :: cM ::
           UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M') 38560 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun n M => callState s 18502 (UInt256.ofNat (43264 + 1024 * (n / 4) + 32 * (n % 4)) ::
+    (S := fun n M => callState s 18433 (UInt256.ofNat (43264 + 1024 * (n / 4) + 32 * (n % 4)) ::
       UInt256.ofNat (5664 - 224 * (n / 4)) :: cCI :: cM :: UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M)
     (Q := fun n M => (H → PassInv M 43264 (fun t => 4 * (t / 32) + t % 4 < n) (Bi 2) (Bi 5)
       (fun k => invL (scaleR h k) 2) (fun k => invL (scaleR h k) 5)) ∧
@@ -198,11 +198,11 @@ theorem iA_pass (M0 : ByteArray)
       (fun k t => Sc * invL (scaleR h k) 8 t)) :
     ∃ M', (H → PassInv M' 43264 (fun t => t % 32 < 32) (Bi 5) Bu (fun k => invL (scaleR h k) 5)
       (fun k t => Sc * invL (scaleR h k) 8 t)) ∧ FrameExcept M0 M' [(43264, 43264 + 8192)] ∧
-      Reach (callState s 19036 (UInt256.ofNat 43264 :: UInt256.ofNat 44288 :: cCI :: cM ::
+      Reach (callState s 18967 (UInt256.ofNat 43264 :: UInt256.ofNat 44288 :: cCI :: cM ::
           UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M0)
         (callState s ret tail M') 41650 := by
   obtain ⟨M1, ⟨hP1, hF1⟩, hR1⟩ := reach_iterF
-    (S := fun c M => callState s 19036 (UInt256.ofNat (43264 + 32 * c) :: UInt256.ofNat (44288) :: cCI ::
+    (S := fun c M => callState s 18967 (UInt256.ofNat (43264 + 32 * c) :: UInt256.ofNat (44288) :: cCI ::
       cM :: UInt256.ofNat 43264 :: UInt256.ofNat ret :: tail) M)
     (Q := fun c M => (H → PassInv M 43264 (fun t => t % 32 < c) (Bi 5) Bu (fun k => invL (scaleR h k) 5)
       (fun k t => Sc * invL (scaleR h k) 8 t)) ∧ FrameExcept M0 M [(43264, 43264 + 8192)])

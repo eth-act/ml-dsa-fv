@@ -140,10 +140,10 @@ theorem fsN_le (sl rp : Nat) (p : ByteArray × Nat) : ∀ n, (fsN sl rp p n).2 �
     simp only [fsN, fs]; omega
 
 theorem flagged_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2833 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
+    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
     (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 90656) (hwp : wp + 256 ≤ 90656) :
-    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13647 flim rp wp fp M)
-      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13964 flim rp (fsN sl rp (M, wp) 8).2 fp
+    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14018 flim rp wp fp M)
+      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14335 flim rp (fsN sl rp (M, wp) 8).2 fp
         (fsN sl rp (M, wp) 8).1) 634 := by
   have hsh : 64 * sl ≤ 192 := by omega
   have b := fun i => fsN_le sl rp (M, wp) i
@@ -205,10 +205,10 @@ def cwN (sl rp wp : Nat) (M : ByteArray) : Nat → ByteArray
   | n + 1 => cw (cwN sl rp wp M n) (32 * n + wp) (32 * n + rp) (lmask sl) (nmask sl)
 
 theorem clean_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2833 ≤ s.activeWords.toNat) {sl : Nat}
+    (htail : tail.length ≤ 960) (hsz : 2865 ≤ s.activeWords.toNat) {sl : Nat}
     (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 90656) (hwp : wp + 256 ≤ 90656) :
-    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13974 flim rp wp fp M)
-      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14129 flim rp wp fp (cwN sl rp wp M 8)) 421 := by
+    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14345 flim rp wp fp M)
+      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14500 flim rp wp fp (cwN sl rp wp M 8)) 421 := by
   have h0 := fx_copy0 (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
   have h1 := fx_copy1 (ret := ret) hs htail hsz (cwN sl rp wp M 1) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
   have h2 := fx_copy2 (ret := ret) hs htail hsz (cwN sl rp wp M 2) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp

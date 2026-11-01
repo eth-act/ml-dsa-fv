@@ -17,7 +17,7 @@ namespace MlDsaOpt87.Proofs.Gas
 /-! ## Constant-cost subroutines -/
 
 def kf4 : Nat := 40238
-def kf1 : Nat := 35880
+def kf1 : Nat := 32571
 def blk : Nat := 7836
 def ntt : Nat := 99705
 def intt : Nat := 119593
@@ -26,7 +26,7 @@ def pass3m : Nat := 19318
 def pass3k14 : Nat := 29453
 def tbuild : Nat := 28511
 def csum : Nat := 94053
-def usehint : Nat := 56857
+def usehint : Nat := 48153
 def dz : Nat := 46156
 def spr : Nat := 120
 def ginit : Nat := 677
@@ -57,11 +57,11 @@ def gfix (n : Nat) : Nat := gfix0 + n * fixNo + (fixSq - fixNo)
 /-- `group`: glue 470, `ginit`, five `kf4` + `blk`, `gfix 4`, `pass3`. -/
 def group : Nat := 470 + ginit + 5 * (kf4 + blk) + gfix 4 + pass3
 
-/-- `sib`: prologue 36733 (zeroing, absorbing `c̃`, the first `kf1`); 265 loop
-visits (positions `8 … 271` and the exit visit), at most `τ = 60` accepted ones
-(487 each), the others rejected (158 each); the second `H(c̃)` block squeezed
-once at position 136 (36015 including `kf1`). -/
-def sib : Nat := 36733 + 205 * 158 + 60 * 487 + 36015
+/-- `sib`: prologue 853 + `kf1` (zeroing, absorbing `c̃`, the first `kf1`); 265
+loop visits (positions `8 … 271` and the exit visit), at most `τ = 60`
+accepted ones (487 each), the others rejected (158 each); the second `H(c̃)`
+block squeezed once at position 136 (135 + `kf1`). -/
+def sib : Nat := (853 + kf1) + 205 * 158 + 60 * 487 + (135 + kf1)
 
 /-- `dhint`: fixed part 604 plus at most `ω + k + 1 = 84` loop visits of at
 most 161 each (75 hint indices, 8 row exits, the trailing scan exit). -/

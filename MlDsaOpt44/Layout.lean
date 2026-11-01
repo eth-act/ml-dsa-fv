@@ -7,8 +7,8 @@ set_option warningAsError true
 Shared vocabulary for every proof about `MlDsaOpt/44/opt.hex`.
 
 * **Memory map**: `MlDsaOpt/44/layout.txt` (generator `Layout` class in
-  `scripts/gen_opt.py`). Memory is sized once at entry to `memWords = 2065`
-  words (`MSTORE` at `0x10200`) and never grows.
+  `scripts/gen_opt.py`). Memory is sized once at entry to `memWords = 2097`
+  words (`MSTORE` at `0x10600`) and never grows.
 * **Calling convention** (hand-written, `Gen.call`): the caller pushes the
   return address, then the arguments in order (last argument on top), and
   jumps to the entry `JUMPDEST`. The callee consumes its arguments and returns
@@ -69,8 +69,12 @@ def BK : Nat := 0xff00
 def TT : Nat := 0x5000
 /-- `2^13 S'(t) + n_neg(t)`, row-packed (overlay). -/
 def SP : Nat := 0x6800
-/-- One past the highest byte; the entry store at `TOP − 32` sizes memory. -/
+/-- One past the highest byte of the regions the main flow reads or keeps
+(`MISC … BK`). Only `kf1`'s third buffer `KZ` lies above; the entry store at
+`KZ + 800 − 32 = 0x10600` sizes memory. -/
 def TOP : Nat := 0x10220
+/-- `kf1`'s third state buffer (scratch, clobbered by every `kf1` call). -/
+def KZ : Nat := 0x10300
 
 /-! ## Calldata offsets -/
 
@@ -105,11 +109,11 @@ def group : Nat := 13659
 def tbuild : Nat := 13924
 def csum : Nat := 14732
 def usehint : Nat := 15457
-def pack : Nat := 15808
-def ntt : Nat := 16897
-def intt : Nat := 18164
-def kf1 : Nat := 19645
-def kf4 : Nat := 21032
+def pack : Nat := 15739
+def ntt : Nat := 16828
+def intt : Nat := 18095
+def kf1 : Nat := 19576
+def kf4 : Nat := 21570
 end Entry
 
 /-! ## Stack budgets

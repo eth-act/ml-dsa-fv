@@ -133,7 +133,7 @@ theorem fsN_le (sl rp : Nat) (p : ByteArray × Nat) : ∀ n, (fsN sl rp p n).2 �
     simp only [fsN, fs]; omega
 
 theorem flagged_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2065 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
+    (htail : tail.length ≤ 960) (hsz : 2097 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
     (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 66080) (hwp : wp + 256 ≤ 66080) :
     Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13052 flim rp wp fp M)
       (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13369 flim rp (fsN sl rp (M, wp) 8).2 fp
@@ -198,7 +198,7 @@ def cwN (sl rp wp : Nat) (M : ByteArray) : Nat → ByteArray
   | n + 1 => cw (cwN sl rp wp M n) (32 * n + wp) (32 * n + rp) (lmask sl) (nmask sl)
 
 theorem clean_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2065 ≤ s.activeWords.toNat) {sl : Nat}
+    (htail : tail.length ≤ 960) (hsz : 2097 ≤ s.activeWords.toNat) {sl : Nat}
     (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 66080) (hwp : wp + 256 ≤ 66080) :
     Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13379 flim rp wp fp M)
       (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13534 flim rp wp fp (cwN sl rp wp M 8)) 421 := by

@@ -36,7 +36,7 @@ theorem seg_w {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.si
     (hI : Inv8 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv9 s.executionEnv.calldata m' ∧
       Reach (callState s 5963 [flag b] m) (callState s 6001 [flag b] m') Gas.pW := by
-  have hb1 : Reach (callState s 5963 [flag b] m) (callState s 18164 [wd ACC, wd 5973, flag b] m) 17 := by
+  have hb1 : Reach (callState s 5963 [flag b] m) (callState s 18095 [wd ACC, wd 5973, flag b] m) 17 := by
     opt44_reach [2002, 2003, 2004, 2005] with [ACC]
   obtain ⟨m1, hintt, hfr1, hc1⟩ := intt_call hs (ret := 5973) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.tbl
@@ -45,7 +45,7 @@ theorem seg_w {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.si
   obtain ⟨m2, huh, hfr2, hc2⟩ := usehint_call hs (ret := 5984) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
   have hb3 : Reach (callState s 5984 [flag b] m2)
-      (callState s 15808 [wd 4, wd (FIN + 256), wd ACC, wd 6000, flag b] m2) 24 := by
+      (callState s 15739 [wd 4, wd (FIN + 256), wd ACC, wd 6000, flag b] m2) 24 := by
     opt44_reach [2011, 2012, 2013, 2014, 2015, 2016, 2017] with [ACC, FIN]
   obtain ⟨m3, hpk, hfr3, hc3⟩ := pack_call hs (ret := 6000) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m2

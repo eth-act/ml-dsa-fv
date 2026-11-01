@@ -6,9 +6,12 @@ import MlDsa.Spec.Fips204
 
 Shared by `MlDsaOpt65` and `MlDsaOpt87` (the two artifacts emit identical `usehint` and
 `pack` code). `uhW w s h` is the word the `usehint` loop body stores, in the shape the
-block tactic produces; `uhW_lanes` evaluates it lane-wise on in-range words and
+block tactic produces; `uhW_pack` evaluates it lane-wise on in-range words and
 `uhLane_spec` identifies a lane with FIPS 204 `UseHint` (any parameter set with
-`γ2 = 261888`); `uhW_lt16` bounds every lane by `16` unconditionally (final `AND 15`).
+`γ2 = 261888`): `D = ((r + γ2 − 1) · 16793617) >> 42 = 2 r1 + [r0 > 0]` (`lD_eq`) and the
+lane `(D >> 1) + 16 − h + 2 (h & D)` equals the v2 form `16 − h + 2 (h & [r0 > 0]) + r1`
+(`lv_eq`), the corner `r = q − 1` folded into `mod 16`. `uhW_lt16` bounds every lane by `16`
+unconditionally (final `AND 15`).
 For `pack`: `pkX M wp k` is the `OR` of the first `k` coefficient words shifted by `4i`,
 `pkX_eq` its lane-wise value, and `le64_sbp15_testBit` the bits of a `SimpleBitPack(w, 15)`
 stream lane.
@@ -35,53 +38,50 @@ def uhQ (x : UInt256) : UInt256 :=
 
 def uhR (x : UInt256) : UInt256 := x - UInt256.ofNat 8380417 * uhQ x
 
-def uhR1 (r : UInt256) : UInt256 :=
-  (UInt256.ofNat 395457409329360888143092522778102107413803138146079273386047).land
-    ((UInt256.ofNat 8396809 *
+/-- `D = ((r + γ2 − 1) · 16793617) >> 42` (7 bits per lane): `2 r1 + [r0 > 0]`. -/
+def uhD (r : UInt256) : UInt256 :=
+  (UInt256.ofNat 797191920394108457050361117346332819707190453088128059048063).land
+    ((UInt256.ofNat 16793617 *
       (UInt256.ofNat 1643891342175211665287778912901409946099661308566067661416693503 + r)).shiftRight
       (UInt256.ofNat 42))
 
-def uhPos (r : UInt256) : UInt256 :=
-  (UInt256.ofNat 6277101735386680764176071790128604879584176795969512275969).land
-    ((UInt256.ofNat 103668387772178504264977711189449281640128303811248777268142276863 +
-      (UInt256.ofNat 1643897619276947051968543088973200074704540892742863630928969472 + r -
-        UInt256.ofNat 523776 * uhR1 r)).shiftRight (UInt256.ofNat 24))
-
-def uhV (r : UInt256) (h : Nat) : UInt256 :=
-  UInt256.ofNat 100433627766186892226817148642057678073346828735512196415504 - UInt256.ofNat h +
-      ((UInt256.ofNat h).land (uhPos r)).shiftLeft (UInt256.ofNat 1) + uhR1 r
+/-- `(D >> 1) + 16 − h + 2 (h & D)`. -/
+def uhV (d : UInt256) (h : Nat) : UInt256 :=
+  (UInt256.ofNat 395457409329360888143092522778102107413803138146079273386047).land
+      (d.shiftRight (UInt256.ofNat 1)) +
+    (UInt256.ofNat 100433627766186892226817148642057678073346828735512196415504 - UInt256.ofNat h +
+      ((UInt256.ofNat h).land d + (UInt256.ofNat h).land d))
 
 def uhF (v : UInt256) : UInt256 :=
   (UInt256.ofNat 94156526030800211462641076851929073193762651939542684139535).land v
 
 /-- The word stored for `W` (at `p`), `S` (at `p − 0x4900`) and `H` (at `p + 0x4000`). -/
-def uhW (w s h : Nat) : UInt256 := uhF (uhV (uhR (uhX w s)) h)
+def uhW (w s h : Nat) : UInt256 := uhF (uhV (uhD (uhR (uhX w s))) h)
 
 /-! ## `usehint`: lane functions -/
 
-open MlDsaOpt44.Proofs.UH (lx lr lr_eq)
+open MlDsaOpt44.Proofs.UH (lx lr lr_eq land_bit)
 
-def lr1 (r : Nat) : Nat := 8396809 * (261887 + r) / 2 ^ 42 % 2 ^ 6
-def lpos (r : Nat) : Nat := (16515327 + (261888 + r - 523776 * lr1 r)) / 2 ^ 24 % 2 ^ 1
-def lv (r c : Nat) : Nat := 16 - c + 2 ^ 1 * (c &&& lpos r) + lr1 r
+def lD (r : Nat) : Nat := 16793617 * (261887 + r) / 2 ^ 42 % 2 ^ 7
+def lv (d c : Nat) : Nat := d / 2 ^ 1 % 2 ^ 6 + (16 - c + ((c &&& d) + (c &&& d)))
 
 /-- One lane of `uhW`. -/
-def uhLane (a b c : Nat) : Nat := 15 &&& lv (lr (lx a b)) c
+def uhLane (a b c : Nat) : Nat := 15 &&& lv (lD (lr (lx a b))) c
 
-theorem div_g {y : Nat} (hy : y < 8642304) : 8396809 * y / 2 ^ 42 % 2 ^ 6 = y / 523776 := by
-  have h : 8396809 * y / 2 ^ 42 = y / 523776 := by omega
-  rw [h]; omega
+/-- The exact quotient: `D = ⌊(r + γ2 − 1) / γ2⌋ = 2 r1 + [r0 > 0]`. -/
+theorem lD_eq {r : Nat} (hr : r < 8380417) : lD r = (261887 + r) / 261888 := by
+  have h : 16793617 * (261887 + r) / 2 ^ 42 = (261887 + r) / 261888 := by omega
+  unfold lD; rw [h]; omega
 
-theorem lr1_eq {r : Nat} (hr : r < 8380417) : lr1 r = (261887 + r) / 523776 := by
-  unfold lr1; rw [div_g (by omega)]
+/-- `lv` is the v2 form `16 − h + 2 (h & [r0 > 0]) + r1`. -/
+theorem lv_eq {r c : Nat} (hr : r < 8380417) (hc : c ≤ 1) :
+    lv (lD r) c = 16 - c + 2 * (c &&& (if 523776 * ((261887 + r) / 523776) < r then 1 else 0)) +
+      (261887 + r) / 523776 := by
+  unfold lv; rw [lD_eq hr, land_bit hc, land_bit hc]
+  split_ifs <;> omega
 
-theorem lpos_eq {r : Nat} (hr : r < 8380417) :
-    lpos r = if 523776 * ((261887 + r) / 523776) < r then 1 else 0 := by
-  unfold lpos; rw [lr1_eq hr]; split_ifs <;> omega
-
-theorem lv_le {r c : Nat} (hr : r < 8380417) (hc : c ≤ 1) : lv r c ≤ 34 := by
-  have h1 : c &&& lpos r ≤ c := Nat.and_le_left
-  unfold lv; rw [lr1_eq hr]; omega
+theorem lv_le {r c : Nat} (hr : r < 8380417) (hc : c ≤ 1) : lv (lD r) c ≤ 34 := by
+  rw [lv_eq hr hc, land_bit hc]; split_ifs <;> omega
 
 theorem and15 (v : Nat) : 15 &&& v = v % 16 := by
   rw [Nat.and_comm, show (15 : Nat) = 2 ^ 4 - 1 by norm_num, Nat.and_two_pow_sub_one_eq_mod]
@@ -116,8 +116,7 @@ theorem uhLane_spec (Q : Params) (hQ : Q.gamma2 = 261888) {a b c : Nat} (ha : a 
     rw [← hmod]
     unfold Fips204.useHint Fips204.decompose
     rw [Int.emod_emod]
-  rw [e, ← useHint_lane Q hQ _ _ hr hc, Int.toNat_natCast, uhLane, and15]
-  unfold lv; rw [lpos_eq hr, lr1_eq hr]; norm_num
+  rw [e, ← useHint_lane Q hQ _ _ hr hc, Int.toNat_natCast, uhLane, and15, lv_eq hr hc]
 
 /-! ## `usehint`: word level -/
 
@@ -147,44 +146,31 @@ theorem uhW_pack {a b c : Nat → Nat} (ha : ∀ r, r < 4 → a r < 2 ^ 27) (hb 
     rfl
   have hr : ∀ r, r < 4 → lr (lx (a r) (b r)) < 8380417 := fun r hr => by
     rw [lr_eq (hx31 r hr)]; exact Nat.mod_lt _ (by omega)
-  -- r1
-  have hR1 : uhR1 (UInt256.ofNat (pack4 fun r => lr (lx (a r) (b r)))) =
-      UInt256.ofNat (pack4 fun r => lr1 (lr (lx (a r) (b r)))) := by
-    unfold uhR1
+  -- D
+  have hD : uhD (UInt256.ofNat (pack4 fun r => lr (lx (a r) (b r)))) =
+      UInt256.ofNat (pack4 fun r => lD (lr (lx (a r) (b r)))) := by
+    unfold uhD
     rw [show (1643891342175211665287778912901409946099661308566067661416693503 : Nat) =
       pack4 fun _ => 261887 by unfold pack4; norm_num, u_add, u_mul,
-      u_shr_and (j := 6) (fun r hr' => by have := hr r hr'; show _ < _; omega) (by norm_num)
+      u_shr_and (j := 7) (fun r hr' => by have := hr r hr'; show _ < _; omega) (by norm_num)
         (by norm_num) (by unfold pack4; norm_num)]
     rfl
-  -- pos
-  have hP : uhPos (UInt256.ofNat (pack4 fun r => lr (lx (a r) (b r)))) =
-      UInt256.ofNat (pack4 fun r => lpos (lr (lx (a r) (b r)))) := by
-    unfold uhPos
-    rw [hR1, show (1643897619276947051968543088973200074704540892742863630928969472 : Nat) =
-      pack4 fun _ => 261888 by unfold pack4; norm_num, u_add, u_mul,
-      u_sub (fun r hr' => by have := hr r hr'; show _ < _; omega)
-        (fun r hr' => by
-          have := hr r hr'; show _ ≤ _; rw [lr1_eq this]; omega),
-      show (103668387772178504264977711189449281640128303811248777268142276863 : Nat) =
-        pack4 fun _ => 16515327 by unfold pack4; norm_num, u_add,
-      u_shr_and (j := 1) (fun r hr' => by have := hr r hr'; show _ < _; omega) (by norm_num)
-        (by norm_num) (by unfold pack4; norm_num)]
-    rfl
+  have hd : Lanes fun r => lD (lr (lx (a r) (b r))) := fun r _ =>
+    Nat.lt_of_lt_of_le (Nat.mod_lt _ (by norm_num)) (by norm_num)
   -- v
-  have hV : uhV (UInt256.ofNat (pack4 fun r => lr (lx (a r) (b r)))) (pack4 c) =
-      UInt256.ofNat (pack4 fun r => lv (lr (lx (a r) (b r))) (c r)) := by
+  have hV : uhV (UInt256.ofNat (pack4 fun r => lD (lr (lx (a r) (b r))))) (pack4 c) =
+      UInt256.ofNat (pack4 fun r => lv (lD (lr (lx (a r) (b r)))) (c r)) := by
     unfold uhV
-    have hpl : Lanes fun r => lpos (lr (lx (a r) (b r))) := fun r _ =>
-      Nat.lt_of_lt_of_le (Nat.mod_lt _ (by norm_num)) (by norm_num)
-    rw [hP, hR1, show (100433627766186892226817148642057678073346828735512196415504 : Nat) =
-      pack4 fun _ => 16 by unfold pack4; norm_num,
+    rw [u_shr_and (j := 6) hd (by norm_num) (by norm_num) (by unfold pack4; norm_num),
+      show (100433627766186892226817148642057678073346828735512196415504 : Nat) =
+        pack4 fun _ => 16 by unfold pack4; norm_num,
       u_sub (fun r _ => by show _ < _; omega) (fun r hr' => by have := hc r hr'; show _ ≤ _; omega),
-      u_and (fun r hr' => by have := hc r hr'; show _ < _; omega) hpl, u_shl _ (by norm_num),
-      u_add, u_add]
+      u_and (fun r hr' => by have := hc r hr'; show _ < _; omega) hd, u_add, u_add, u_add]
     rfl
-  have hv : ∀ r, r < 4 → lv (lr (lx (a r) (b r))) (c r) ≤ 34 := fun r hr' => lv_le (hr r hr') (hc r hr')
+  have hv : ∀ r, r < 4 → lv (lD (lr (lx (a r) (b r)))) (c r) ≤ 34 := fun r hr' =>
+    lv_le (hr r hr') (hc r hr')
   unfold uhW
-  rw [hX, hR, hV]
+  rw [hX, hR, hD, hV]
   unfold uhF
   rw [show (94156526030800211462641076851929073193762651939542684139535 : Nat) =
       pack4 fun _ => 15 by unfold pack4; norm_num,
@@ -207,7 +193,7 @@ theorem uhW_spec (Q : Params) (hQ : Q.gamma2 = 261888) {w s h : Nat} (hw : w < 2
 /-- Every lane of the stored word is below `16` (final `AND 15`). -/
 theorem uhW_lt16 (w s h : Nat) {r : Nat} (hr : r < 4) : lane (uhW w s h).toNat r < 16 := by
   unfold uhW uhF
-  generalize uhV (uhR (uhX w s)) h = v
+  generalize uhV (uhD (uhR (uhX w s))) h = v
   rw [← ofNat_toNat v, ← pk_lanes (MlDsaOpt44.Proofs.PK.u_toNat_lt v), show
       (94156526030800211462641076851929073193762651939542684139535 : Nat) =
       pack4 fun _ => 15 by unfold pack4; norm_num,

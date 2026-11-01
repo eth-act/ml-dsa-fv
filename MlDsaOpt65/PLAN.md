@@ -1,8 +1,42 @@
-# MlDsaOpt65 / MlDsaOpt87: proof plan for the parallel phase
+# MlDsaOpt65 / MlDsaOpt87: proof plan
 
-One plan for both artifacts (`MlDsaOpt87/PLAN.md` points here): every work
-package below closes the same contract, lemma or segment for ML-DSA-65 *and*
-ML-DSA-87.
+One plan for both artifacts (`MlDsaOpt87/PLAN.md` points here).
+
+## Status (v3, round 3)
+
+Targets: v3 `MlDsaOpt/65/opt.hex` (23,422 bytes, 11,980 instructions, 2865
+memory words) and `MlDsaOpt/87/opt.hex` (23,982 bytes, 12,299 instructions,
+2897 words); v2 bytes in `MlDsaOpt/NN/v2/`, proofs at git tag `opt-v2-proved`.
+
+Retarget v2 → v3:
+
+* generated modules: `proofgen_artifact.py MlDsaOpt/NN/opt.hex MlDsaOptNN MlDsaOptNN optNN <2865 | 2897>`;
+* relocation in place: `proofgen_port.py --reloc 87 FILES` (87: only the regions
+  after `usehint` move) and `proofgen_port.py --reloc 65 --all-jd --pc-lines
+  "gst |pc := |pc' := |rpc := |RowBlocks|finalState|RETURN" FILES` (65: `expand_a`
+  changed, mapped on its common prefix/suffix, so everything after it moves; `--all-jd`
+  also relocates moved JUMPDEST pcs in custom predicates, `--pc-lines` every moved pc
+  on matching lines; data collisions found and reverted by hand: `7168 + pj` in
+  `Fn/Ntt*/{Fwd,Inv}A`, `Gas.pack 4 = 9251`). Review the `CHECK`/`RELOC` output;
+* `KZ` per set in `Layout.lean`; `kf1_call` frame is `[KS, KB, KZ]` (consumers in
+  `Main/Mu`, `Main/S1/Fin`, 87 `Fn/Ball` carry the extra range);
+* re-proved: `kf1` (port of the new 44 proof: `proofgen_port.py NN` now maps memory
+  size 2097 and KZ addresses itself), `usehint` (`Fn/Hint/G5UseHint`, `G5Pure`),
+  65 `pass3x5 … pass3x8` (`Fn/Pass3x.lean`, new);
+* 65 ExpandA groups 5–8 (v3 schedule: three row-group-1 instances per group with
+  the `tr` rider in g5–g7, `TRL` in g7, c̃ stream and μ in g8, no g9): new
+  invariants `okI`, `okIUpTo`, `AccInst1`, `InvR`/`InvT`/`InvTr` (`Main/Inv.lean`),
+  bridge `s3_accCols1_of_inst` (`Main/S3/Lemmas.lean`), segments `seg_g5 … seg_g8`
+  (`Main/SegG{5,6,7,8}.lean`, boundaries 3634 / 4033 / 4468 / 4972 / 5190, budgets
+  `Gas.pG5 … pG8` in `Main/Base.lean`), flags in `Main/Valid.lean` (`gCol`,
+  `flags_eq : gFlags cd 9 = ok2 cd`).
+
+Open items: **none**. The four final theorems of both sets depend only on `propext`,
+`Classical.choice` and `Quot.sound` (`checks/Axioms.lean`: no direct `sorry`). The v3
+group proofs are `Main/SegG{5,6,7,8}.lean` with helpers `Main/S4/{Round,Math}.lean`.
+The 87 `sib_call` frame now includes `(KZ, KZ + 800)`.
+
+The sections below are the original (v2) plan (pcs/indices are v2).
 
 Targets: `MlDsaOpt/65/opt.hex` (22,512 bytes, 11,461 instructions) and
 `MlDsaOpt/87/opt.hex` (23,443 bytes, 11,950 instructions). The final theorems

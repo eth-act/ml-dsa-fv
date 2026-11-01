@@ -85,7 +85,7 @@ open MlDsaOpt{nn}.Proofs.Infra
 
 def gen_tac(nn):
     shared = 'KS KB RC4 RC1 MISC NNEG CNT HAVE6 TBL CW ABUF FL ZH TT'.split()
-    own = 'ZH2 BASES IDX ACC HP FIN RHO1 CB TRL MU BK SP TOP'.split()
+    own = 'ZH2 BASES IDX ACC HP FIN RHO1 CB TRL MU BK SP TOP KZ'.split()
     names = ', '.join([f'MlDsaOpt44.Proofs.{c}' for c in shared] + [f'MlDsaOpt{nn}.Proofs.{c}' for c in own])
     return f'''import MlDsaOpt{nn}.Main.Base
 set_option warningAsError true

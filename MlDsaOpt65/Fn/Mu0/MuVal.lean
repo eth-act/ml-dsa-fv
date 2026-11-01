@@ -2,7 +2,7 @@ import MlDsaOpt44.Fn.Sponge.Lanes
 import MlDsaOpt65.Fn.Mu0.MuMath
 import MlDsaOpt65.Layout
 import MlDsaOpt65.Budget
-/- Ported from `MlDsaOpt44/Fn/Sponge/MuVal.lean` by `scripts/proofgen_port.py 65` --sub 3732=5261 --sub 3730=5259 --sub 3731=5260 --sub 3666=5195 --sub 64768=89344 --sub 64800=89376 --sub 64832=89408 --sub 64864=89440 --sub 64896=89472 --sub 64928=89504 --sub 64960=89536 --sub 64992=89568 --sub 12633=13221 --sub 12653=13242 --sub 12675=13265 --sub 12697=13288 --sub 12719=13311 --sub 12741=13334 --sub 12763=13357 --sub 12785=13380 --sub 12844=13439 --sub 12870=13465 --sub 12905=13500 --path Fn/Sponge/=Fn/Mu0/; hand adjustments are marked `-- port:`. -/
+/- Ported from `MlDsaOpt44/Fn/Sponge/MuVal.lean` by `scripts/proofgen_port.py 65` --sub 3732=5261 --sub 3730=5259 --sub 3731=5260 --sub 3666=5195 --sub 64768=89344 --sub 64800=89376 --sub 64832=89408 --sub 64864=89440 --sub 64896=89472 --sub 64928=89504 --sub 64960=89536 --sub 64992=89568 --sub 12633=13592 --sub 12653=13613 --sub 12675=13636 --sub 12697=13659 --sub 12719=13682 --sub 12741=13705 --sub 12763=13728 --sub 12785=13751 --sub 12844=13810 --sub 12870=13836 --sub 12905=13871 --path Fn/Sponge/=Fn/Mu0/; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
 set_option linter.unusedSimpArgs false

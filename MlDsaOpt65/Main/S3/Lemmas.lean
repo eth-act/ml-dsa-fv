@@ -5,8 +5,8 @@ set_option warningAsError true
 /-!
 # Pure lemmas of the ExpandA group segments (ML-DSA-65, WP S3)
 
-Accumulator steps for `group [15, s, 0]` (`AccCols0`) and `group [3, 4, 1]`
-(`AccCols1`), the flags of the two call shapes, and `AccAt` / `SibFresh` at the
+Accumulator steps for `group [15, s, 0]` (`AccCols0`), the flag of that call
+shape, the row-group-1 instances in column form (`AccCols1`), and `AccAt` / `SibFresh` at the
 end of the ExpandA phase (`Inv5`). Mirrors `MlDsaOpt44/Main/SegGroups.lean` and
 `MlDsaOpt44/Main/SegG234/Proof.lean` (`accAt_of`) with the two row groups.
 -/
@@ -54,13 +54,6 @@ theorem s3_gOk_g0 (cd : ByteArray) (s : Nat) : gOk cd 15 s 0 = okCol0 cd s := by
     show Nat.testBit 15 2 = true by decide, show Nat.testBit 15 3 = true by decide,
     Bool.not_true, Bool.false_or, Bool.and_true, Nat.mul_zero, Nat.zero_add, Bool.and_assoc]
 
-theorem s3_gOk_g9 (cd : ByteArray) : gOk cd 3 4 1 = okCol1 cd 4 := by
-  simp only [gOk, okCol1, show List.range 4 = [0, 1, 2, 3] from rfl, List.all_cons, List.all_nil,
-    show Nat.testBit 3 0 = true by decide, show Nat.testBit 3 1 = true by decide,
-    show Nat.testBit 3 2 = false by decide, show Nat.testBit 3 3 = false by decide,
-    Bool.not_true, Bool.not_false, Bool.false_or, Bool.true_or, Bool.and_true, Nat.mul_one,
-    Nat.add_zero]
-
 theorem s3_okUpTo0_get {cd : ByteArray} :
     ∀ {n : Nat}, okUpTo0 cd n = true → ∀ s, s < n → ∀ r, r < 4 → (aOf cd r s).isSome = true
   | 0, _, s, hs, _, _ => absurd hs (Nat.not_lt_zero _)
@@ -74,19 +67,6 @@ theorem s3_okUpTo0_get {cd : ByteArray} :
       · exact h2.1.1.1
       · exact h2.1.1.2
       · exact h2.1.2
-      · exact h2.2
-
-theorem s3_okUpTo1_get {cd : ByteArray} :
-    ∀ {n : Nat}, okUpTo1 cd n = true → ∀ s, s < n → ∀ j, j < 2 → (aOf cd (4 + j) s).isSome = true
-  | 0, _, s, hs, _, _ => absurd hs (Nat.not_lt_zero _)
-  | n + 1, h, s, hs, j, hj => by
-    simp only [okUpTo1, Bool.and_eq_true] at h
-    rcases Nat.lt_succ_iff_lt_or_eq.mp hs with hs | rfl
-    · exact s3_okUpTo1_get h.1 s hs j hj
-    · have h2 := h.2
-      simp only [okCol1, Bool.and_eq_true] at h2
-      interval_cases j
-      · exact h2.1
       · exact h2.2
 
 theorem s3_okA_get {cd : ByteArray} (h : okA cd = true) {r s : Nat} (hr : r < 6) (hs : s < 5) :
@@ -191,71 +171,23 @@ theorem s3_accCols0_step {cd m m' : ByteArray} {n : Nat} (hn : n < 5)
   exact congrArg pack4
     (funext fun r => (s3_accSum_congr (n + 1) (fun k hk => hzh k (by omega) t ht)).symm)
 
-/-- `group [3, 4, 1]`: column `4` of rows `4, 5` added to lanes 0, 1 of `ACC + 0x2000`;
-lanes 2, 3 gain a 23-bit candidate times `ẑ_4`. -/
-theorem s3_accCols1_step {cd m m' : ByteArray}
-    (hacc : AccCols1 m cd 4) (hz : ZHatAt m cd)
-    (hzh : ∀ k, k < 5 → ∀ t, t < 256 → zhLane m' k t = zhLane m k t)
-    (hpost : gOk cd 3 4 1 = true → ∃ junk : Nat → Nat → Nat, (∀ r t, junk r t < 2 ^ 23) ∧
-        ∀ t, t < 256 → word m' (ACC + 8192 * 1 + 32 * t) =
-          (word m (ACC + 8192 * 1 + 32 * t) +
-            pack4 (fun r => if (3 : Nat).testBit r then
-                ((aD cd (4 * 1 + r) 4)[t]!).toNat else junk r t) *
-              lane (word m (ZH + 8192 * (4 / 4) + 32 * t)) (4 % 4)) % 2 ^ 256) :
-    AccCols1 m' cd 5 := by
-  intro hok t ht
-  have hok' : okUpTo1 cd 4 = true ∧ okCol1 cd 4 = true := by
-    rw [← Bool.and_eq_true]; exact hok
-  obtain ⟨junk, hj, hw⟩ := hpost (by rw [s3_gOk_g9]; exact hok'.2)
-  have hA := s3_okUpTo1_get hok
-  have hz4 : lane (word m (ZH + 8192 * (4 / 4) + 32 * t)) (4 % 4) = zhLane m 4 t := rfl
-  have hw := hw t ht
-  rw [hz4] at hw
-  simp only [Nat.mul_one] at hw
-  have hW := s3_pack4_lane (word_lt m (ACC + 0x2000 + 32 * t))
-  obtain ⟨hl01, hl23⟩ := hacc hok'.1 t ht
-  have hzl := (hz 4 (by omega) t ht).1
-  -- the added lanes
-  set X : Nat → Nat := fun r => if (3 : Nat).testBit r then ((aD cd (4 + r) 4)[t]!).toNat
-    else junk r t with hX
-  have hXlt : ∀ r, r < 4 → X r < 2 ^ 23 := fun r hr => by
-    simp only [hX]
-    split
-    · interval_cases r
-      · exact s3_aD_lt (hA 4 (by omega) 0 (by omega)) ht
-      · exact s3_aD_lt (hA 4 (by omega) 1 (by omega)) ht
-      · exact absurd ‹_› (by decide)
-      · exact absurd ‹_› (by decide)
-    · exact hj r t
-  have hLle : ∀ j, j < 4 → lane (word m (ACC + 0x2000 + 32 * t)) j ≤ 4 * 2 ^ 51 := fun j hj' => by
-    by_cases h2 : j < 2
-    · rw [hl01 j h2]
-      exact s3_accSum_le ht (fun k hk => (hz k hk t ht).1) 4 (by omega)
-        (fun s hs => hA s (by omega) j h2)
-    · exact hl23 j (by omega) hj'
-  have hvlt : ∀ r, r < 4 →
-      lane (word m (ACC + 0x2000 + 32 * t)) r + X r * zhLane m 4 t < 2 ^ 64 := fun r hr => by
-    have h1 := hLle r hr
-    have h2 : X r * zhLane m 4 t < 2 ^ 23 * 2 ^ 28 := Nat.mul_lt_mul'' (hXlt r hr) hzl
-    omega
-  have hw' : word m' (ACC + 0x2000 + 32 * t) =
-      pack4 fun r => lane (word m (ACC + 0x2000 + 32 * t)) r + X r * zhLane m 4 t := by
-    rw [hw]
-    conv => lhs; rw [← hW]
-    rw [MlDsaOpt44.Proofs.pack4_add_mul, Nat.mod_eq_of_lt (MlDsaOpt44.Proofs.pack4_lt hvlt)]
-  rw [hw']
-  refine ⟨fun j hj2 => ?_, fun j hj2 hj4 => ?_⟩
-  · rw [MlDsaOpt44.Proofs.lane_pack4 hvlt (by omega), hl01 j hj2,
-      s3_accSum_congr 5 (fun k hk => hzh k hk t ht)]
-    have hb : (3 : Nat).testBit j = true := by interval_cases j <;> decide
-    simp only [hX, hb, if_true]
-    rfl
-  · rw [MlDsaOpt44.Proofs.lane_pack4 hvlt hj4]
-    have h1 := hl23 j hj2 hj4
-    have h2 : X j * zhLane m 4 t < 2 ^ 23 * 2 ^ 28 := Nat.mul_lt_mul'' (hXlt j hj4) hzl
-    omega
-
 /-! ## End of ExpandA -/
+
+theorem s3_okIUpTo10 (cd : ByteArray) : okIUpTo cd 10 = okUpTo1 cd 5 := by
+  simp only [okIUpTo, okUpTo1, okI, okCol1, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd]
+  ac_rfl
+
+/-- The ten row-group-1 instances of groups 5–8 give the column form `AccCols1 5`. -/
+theorem s3_accCols1_of_inst {cd m : ByteArray} (h : AccInst1 m cd 10) : AccCols1 m cd 5 := by
+  intro hok t ht
+  obtain ⟨h0, h1, h2, h3⟩ := h (by rw [s3_okIUpTo10]; exact hok) t ht
+  refine ⟨fun j hj => ?_, fun j hj2 hj4 => ?_⟩
+  · interval_cases j
+    · simpa using h0
+    · simpa using h1
+  · interval_cases j
+    · simp [h2]
+    · simp [h3]
 
 theorem s3_accAt {cd m : ByteArray} (hz : ZHatAt m cd) (h0 : AccCols0 m cd 5)
     (h1 : AccCols1 m cd 5) : AccAt m cd := by
