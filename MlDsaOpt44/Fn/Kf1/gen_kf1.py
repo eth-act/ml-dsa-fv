@@ -187,7 +187,7 @@ def theta_lemma(r):
     return (f"theorem theta{r} {CTX}\n    (A : Nat → UInt256)\n    {hyp} :\n"
             f"    Reach (callState s {pc(a)} ({STK}) M)\n"
             f"      (callState s {pc(b + 1)} ({D} :: {STK}) M) {cost(a, b)} := by\n"
-            f"  opt44_reach {path(a, b)}\n    with [{names}, Dw, Cw, sh1]\n")
+            f"  opt44_rreach {path(a, b)}\n    with [{names}, Dw, Cw, sh1]\n")
 
 
 def row_lemma(r, y):
@@ -209,10 +209,11 @@ def row_lemma(r, y):
     return (f"theorem row{r}_{y} {CTX}\n    (A D : Nat → UInt256) (rc : UInt256)\n    {hyp} :\n"
             f"    Reach (callState s {pc(a)} ({DSTK}) M)\n"
             f"      (callState s {pc(b + 1)} ({post})\n        {mem}) {cost(a, b)} := by\n"
-            f"  opt44_reach {path(a, b)}\n    with [{', '.join(names)}, mst, outW, chiW, Bw, shf, srcLane{extra}]\n")
+            f"  {'opt44_rreach' if y < 2 else 'opt44_reach'} {path(a, b)}\n    with [{', '.join(names)}, mst, outW, chiW, Bw, shf, srcLane{extra}]\n")
 
 
 BLK_HEADER = """{hdr}import MlDsaOpt44.Fn.Kf1.Model
+{reflect_import}\
 /-! Straight-line blocks of round {r} of a `kf1` loop iteration ({what}). -/
 
 namespace MlDsaOpt44.Proofs.Kf1
@@ -231,7 +232,8 @@ def blocks():
     for r in (1, 2, 3):
         for part, ys in (("a", (0, 1)), ("b", (2, 3, 4))):
             what = "theta, rows 0-1" if part == "a" else "rows 2-4"
-            out = [BLK_HEADER.format(hdr=HEADER, r=r, what=what)]
+            out = [BLK_HEADER.format(hdr=HEADER, r=r, what=what,
+                reflect_import="import MlDsaOpt44.Infra.Reflect\n" if part == "a" else "")]
             if part == "a":
                 out.append(theta_lemma(r))
             for y in ys:
