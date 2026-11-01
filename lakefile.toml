@@ -1,6 +1,6 @@
 name = "mldsa44"
 version = "0.1.0"
-defaultTargets = ["EvmProof", "MlDsa44", "MlDsa", "MlDsa65", "MlDsa87"]
+defaultTargets = ["EvmProof", "MlDsa44", "MlDsa", "MlDsa65", "MlDsa87", "MlDsaOptCommon", "MlDsaOpt44"]
 
 # Pins follow powdr-labs/eip8200-challenges@c165c97 so the vendored
 # `EvmProof` infrastructure builds unchanged against the same semantics.
@@ -60,3 +60,11 @@ name = "MlDsa87"
 [[lean_exe]]
 name = "mldsatool"
 root = "MlDsaTool"
+
+# Proofs about the gas-optimised hand-written bytecodes (MlDsaOpt/): the
+# artifact-independent infrastructure, and the ML-DSA-44 artifact.
+[[lean_lib]]
+name = "MlDsaOptCommon"
+
+[[lean_lib]]
+name = "MlDsaOpt44"

@@ -1,0 +1,60 @@
+import MlDsaOpt44.Fn.Ball
+/-!
+# Sparse `c · t1` in the normal domain: `tbuild`, `csum` (WP10)
+
+`tbuild [TT, 32, ret]` writes the window table of the four `t1` rows: 768
+16-bit fields per row, interleaved by row (field `(e, r)` big-endian at byte
+`TT + 6142 − 8e − 2r`): `e < 256` and `e ≥ 512` hold `1023 − t1_r[e mod 256]`,
+`256 ≤ e < 512` hold `t1_r[e − 256]`.
+
+`csum [SP, TT, ret]` sums, for every `t`, the window entries
+`e = t + 256 − p (+ 256 if c_p = −1)` over the nonzero positions `p` of `c`
+(one unaligned `MLOAD` reads 4 coefficients × 4 rows), transposes, and stores
+`2^13 S'_r(t) + n_neg(t)` per lane. Since `2^13 · 1023 = q − 1`, this is
+`≡ 2^13 (c · t1_r)(t) (mod q)` (pure lemma `Math.csum_congr`).
+-/
+
+namespace MlDsaOpt44.Proofs
+
+open EvmSemantics
+open EvmSemantics.EVM
+open MlDsaOptCommon
+open MlDsa44
+
+/-- Window table entry `e < 768` of row `r`. -/
+def tEntry (cd : ByteArray) (r e : Nat) : Nat :=
+  if 256 ≤ e ∧ e < 512 then t1v cd r (e - 256) else 1023 - t1v cd r (e % 256)
+
+/-- The table `tbuild` writes at `tt`. -/
+def TTable (m : ByteArray) (tt : Nat) (cd : ByteArray) : Prop :=
+  ∀ e, e < 768 → ∀ r, r < 4 → be16 m (tt + 6142 - 8 * e - 2 * r) = tEntry cd r e
+
+/-- **tbuild**: `[TT, 32, ret]`. -/
+theorem tbuild_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.tbuild ret tail) (m : ByteArray) (hcd : HDR ≤ s.executionEnv.calldata.size) :
+    ∃ m', TTable m' TT s.executionEnv.calldata ∧
+      FrameExcept m m' [(TT, TT + 6144)] ∧
+      Call s Entry.tbuild [wd TT, wd 32] ret tail m [] m' Gas.tbuild := by
+  sorry
+
+/-- `S'_r(t)`: the window sum of row `r` at `t`. -/
+def sPrime (c : Fips204.Poly) (cd : ByteArray) (r t : Nat) : Nat :=
+  ((List.range 256).map fun p =>
+    if c[p]! = 0 then 0 else tEntry cd r (t + 256 - p + if c[p]! = -1 then 256 else 0)).sum
+
+/-- `n_neg(t)`: negative contributions to `(c · t1)(t)`. -/
+def nNeg (c : Fips204.Poly) (t : Nat) : Nat :=
+  ((List.range 256).filter fun p => (p ≤ t ∧ c[p]! = -1) ∨ (t < p ∧ c[p]! = 1)).length
+
+/-- **csum**: `[SP, TT, ret]`. -/
+theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.csum ret tail) (m : ByteArray) :
+    ∃ m', (∀ c : Fips204.Poly, c.size = 256 → (∀ t, t < 256 → c[t]! = 0 ∨ c[t]! = 1 ∨ c[t]! = -1) →
+        CRep m c → TTable m TT s.executionEnv.calldata →
+        ∀ t, t < 256 → word m' (SP + 32 * t) =
+          pack4 fun r => 2 ^ 13 * sPrime c s.executionEnv.calldata r t + nNeg c t) ∧
+      FrameExcept m m' [(SP, SP + 8192)] ∧
+      Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum := by
+  sorry
+
+end MlDsaOpt44.Proofs
