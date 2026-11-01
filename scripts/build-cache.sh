@@ -22,7 +22,7 @@ cd "$(dirname "$0")/.."
 REPO=${BUILD_CACHE_REPO:-${GITHUB_REPOSITORY:-eth-act/ml-dsa-fv}}
 TAG=build-cache
 URL=${BUILD_CACHE_URL:-https://github.com/$REPO/releases/download/$TAG}
-PART_SIZE=1900m   # release assets are limited to 2 GiB
+PART_SIZE=256m   # several parts download in parallel (one stream gets ~47 MB/s)
 MARKER=.lake/build-cache-restored
 
 # Everything a build writes, minus Mathlib's .oleans and scratch space.
