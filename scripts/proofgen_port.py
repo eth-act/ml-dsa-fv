@@ -206,7 +206,7 @@ def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_l
             return L + str(idx[n]) + R
         return m.group(1) + re.sub(r"\d+", one, m.group(2)) + "]"
 
-    out = re.sub(rf"((?:opt{nn}_reach|locatedPath|blockCostEval|reach_block(?:_pot)?\s+\S+)\s*\[)([^\]]*)\]",
+    out = re.sub(rf"((?:opt{nn}_r?reach|locatedPath|blockCostEval|reach_block(?:_pot)?\s+\S+)\s*\[)([^\]]*)\]",
                  map_list, src)
 
     def map_mcopy(m):
@@ -248,7 +248,7 @@ def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_l
     moved = {n for n, v in pcm.items() if v != n}
     lines = out.split("\n")
     for k, l in enumerate(lines):
-        if f"opt{nn}_reach" in l or "locatedPath" in l:
+        if re.search(rf"opt{nn}_r?reach", l) or "locatedPath" in l:
             continue
         bare = re.sub(f"{L}[^{R}]*{R}", "", l)
         for m in re.finditer(r"(?<![\w.])(\d{4,5})(?![\w.])", bare):
@@ -332,7 +332,7 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
             return str(idx[n])
         return m.group(1) + re.sub(r"\d+", one, body) + "]"
 
-    out = re.sub(r"((?:opt44_reach|locatedPath|blockCostEval)\s*\[)([^\]]*)\]", map_list, src)
+    out = re.sub(r"((?:opt44_r?reach|locatedPath|blockCostEval)\s*\[)([^\]]*)\]", map_list, src)
     out = re.sub(r"(reach_mcopy\s+\S+\s+)(\d+)",
                  lambda m: m.group(1) + str(idx[int(m.group(2))]), out)
 
@@ -384,7 +384,7 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
         if m:
             mod = m.group(1)
             path = mod.replace(".", "/") + ".lean"
-            if path in ported or mod in ("MlDsaOpt44.Layout", "MlDsaOpt44.Budget", "MlDsaOpt44.Infra"):
+            if path in ported or mod in ("MlDsaOpt44.Layout", "MlDsaOpt44.Budget", "MlDsaOpt44.Infra", "MlDsaOpt44.Infra.Reflect"):
                 l = l.replace("MlDsaOpt44", f"MlDsaOpt{nn}", 1)
             res.append(l)
             continue
@@ -431,7 +431,7 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
     out = "\n".join(res)
     # report remaining numbers that look like 44 pcs
     for k, l in enumerate(out.split("\n")):
-        if "opt" + str(nn) + "_reach" in l or "locatedPath" in l:
+        if re.search(rf"opt{nn}_r?reach", l) or "locatedPath" in l:
             continue
         for m in re.finditer(r"\b(\d{4,5})\b", l):
             n = int(m.group(1))
@@ -443,6 +443,25 @@ def port_text(src, nn, idx, pcm, subs, ported, report, fname):
 def main(argv):
     if not argv:
         raise SystemExit(__doc__)
+    if argv == ["--reflect-selected"]:
+        # Preserve the ports' hand adjustments; change measured proofs only.
+        for nn in (44, 65, 87):
+            for relative, names in (("Fn/Blk/BodyA.lean", {"bodyA"}),
+                                    ("Fn/Sponge/Trabs.lean", {"trabs_mid"})):
+                path = os.path.join(ROOT, f"MlDsaOpt{nn}", relative)
+                text = open(path).read()
+                chunks = re.split(r"(?=theorem \w+)", text)
+                for i, chunk in enumerate(chunks):
+                    match = re.match(r"theorem (\w+)", chunk)
+                    if match and match[1] in names:
+                        chunks[i] = chunk.replace(f"opt{nn}_reach", f"opt{nn}_rreach")
+                text = "".join(chunks)
+                imp = f"import MlDsaOpt{nn}.Infra.Reflect\n"
+                if imp not in text:
+                    text = imp + text
+                with open(path, "w") as f:
+                    f.write(text)
+        return
     if argv[0] == "--reloc":
         nn = int(argv[1])
         rest = argv[2:]
