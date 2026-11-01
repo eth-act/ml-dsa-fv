@@ -1,6 +1,7 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Fn.Csum.Defs
 import MlDsaOpt87.Math.G4.Csum
+import MlDsaOpt65.Math.G5.Hint
 import MlDsaOpt44.Math
 import MlDsa.Bridge44
 /-!
@@ -68,14 +69,14 @@ theorem hintBitUnpack_range (y : ByteArray) (h : Array Fips204.Poly)
     (0 : Int) ≤ h[r]![t]! ∧ h[r]![t]! ≤ 1 := by
   sorry
 
-/-- `UseHint` only sees its argument modulo `q`. Template: `Facts.useHint_emod`. -/
+/-- `UseHint` only sees its argument modulo `q` (`MlDsaOpt65/Math/G5/Hint.lean`). -/
 theorem useHint_emod (h r : Int) :
-    Fips204.useHint P h (r % (Fips204.q : Int)) = Fips204.useHint P h r := by
-  sorry
+    Fips204.useHint P h (r % (Fips204.q : Int)) = Fips204.useHint P h r :=
+  MlDsaOpt65.Proofs.G5.useHint_emod P h r
 
-/-- `UseHint` outputs `r1 ∈ [0, m)`, `m = (q − 1)/(2γ2) = 16`. Template: `Facts.useHint_range`. -/
-theorem useHint_range (h r : Int) : 0 ≤ Fips204.useHint P h r ∧ Fips204.useHint P h r < 16 := by
-  sorry
+/-- `UseHint` outputs `r1 ∈ [0, m)`, `m = (q − 1)/(2γ2) = 16` (`MlDsaOpt65/Math/G5/Hint.lean`). -/
+theorem useHint_range (h r : Int) : 0 ≤ Fips204.useHint P h r ∧ Fips204.useHint P h r < 16 :=
+  MlDsaOpt65.Proofs.G5.useHint_range P rfl h r
 
 set_option linter.unusedVariables false in
 /-- The windowed-sum identity behind `csum` (row group `g`, `t1` offset
@@ -97,16 +98,26 @@ theorem csum_lt (cd : ByteArray) (hcd : HDR ≤ cd.size) (c : Fips204.Poly)
     2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t < 2 ^ 29 :=
   G4.csum_lt_main cd c hc _ r t
 
+theorem G5_muOf_size (cd : ByteArray) : (muOf cd).size = 64 := MlDsaOpt44.Proofs.Facts.H_size _ _
+
 /-- The 136 stream lanes of `μ ‖ w1Encode(w1)` (1088 bytes): lanes `0 … 7` are μ. -/
 theorem finBytes_le64_mu (cd : ByteArray) {x : Nat} (hx : x < 8) :
     le64 (finBytes cd) (8 * x) = le64 (muOf cd) (8 * x) := by
-  sorry
+  unfold MlDsaOpt44.Proofs.le64 finBytes
+  refine congrArg List.sum (List.map_congr_left fun i hi => ?_)
+  rw [List.mem_range] at hi
+  rw [MlDsaOpt44.Proofs.SpecFacts.byteAt_app_lt (by rw [G5_muOf_size]; omega)]
 
 /-- Lane `8 + 16 r + j` of `μ ‖ w1Encode(w1)` is lane `j` of row `r`'s 128-byte
-`SimpleBitPack(w1_r, 15)`. Template: `SpecFacts.finBytes_le64_w1`. -/
+`SimpleBitPack(w1_r, 15)` (`MlDsaOpt65.Proofs.G5.byteAt_w1Encode`). -/
 theorem finBytes_le64_w1 (cd : ByteArray) {r j : Nat} (hr : r < 8) (hj : j < 16) :
     le64 (finBytes cd) (8 * (8 + 16 * r + j)) =
       le64 (Fips204.simpleBitPack (w1Of cd)[r]! 15) (8 * j) := by
-  sorry
+  unfold MlDsaOpt44.Proofs.le64 finBytes
+  refine congrArg List.sum (List.map_congr_left fun i hi => ?_)
+  rw [List.mem_range] at hi
+  rw [MlDsaOpt44.Proofs.SpecFacts.byteAt_app_ge (by rw [G5_muOf_size]; omega), G5_muOf_size,
+    show 8 * (8 + 16 * r + j) + i - 64 = 128 * r + (8 * j + i) by omega,
+    MlDsaOpt65.Proofs.G5.byteAt_w1Encode P rfl _ (hr : r < P.k) (by omega)]
 
 end MlDsaOpt87.Proofs

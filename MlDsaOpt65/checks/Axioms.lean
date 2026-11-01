@@ -66,3 +66,9 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.csum_call
 #print axioms MlDsaOpt65.Proofs.csum_congr
 #print axioms MlDsaOpt65.Proofs.csum_lt
+#print axioms MlDsaOpt65.Proofs.usehint_call
+#print axioms MlDsaOpt65.Proofs.pack_call
+#print axioms MlDsaOpt65.Proofs.useHint_emod
+#print axioms MlDsaOpt65.Proofs.useHint_range
+#print axioms MlDsaOpt65.Proofs.finBytes_le64_mu
+#print axioms MlDsaOpt65.Proofs.finBytes_le64_w1

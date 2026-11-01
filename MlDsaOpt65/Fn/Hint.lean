@@ -1,11 +1,14 @@
 import MlDsaOpt65.Layout
 import MlDsaOpt65.Budget
+import MlDsaOpt65.Fn.Hint.G5UseHint
+import MlDsaOpt65.Fn.Hint.G5Pack
 /-!
 # `usehint`, `pack` (ML-DSA-65)
 
-Open contracts (statements only); the proofs mirror `MlDsaOpt44/Fn/Hint.lean` and
-`MlDsaOpt44/Fn/Hint/*` (`UseHint`, `UseHintRun`, `Pack*`), with the ML-DSA-65
-parameters and the row-group pointers as parameters.
+Proved in `Fn/Hint/G5UseHint.lean` and `Fn/Hint/G5Pack.lean` (+ `G5PackBlocks`); the pure part
+(stored words, lane semantics, `SimpleBitPack(·, 15)` bits) is `Fn/Hint/G5Pure.lean`, shared
+with ML-DSA-87. They follow `MlDsaOpt44/Fn/Hint/*` with the ML-DSA-65 parameters and the
+row-group pointers as parameters.
 
 * `usehint [ACC + 0x2000 g, ret]`: for the 256 row-packed words `W` at `ACC_g`, lane-wise
   `W := UseHint(HP_g, (W − SP_g) mod q)` (`HP_g = ACC_g + 0x4000`, `SP_g = ACC_g − 0x4900`),
@@ -40,8 +43,8 @@ theorem usehint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
               lane (word m (SP + 0x2000 * g + 32 * t)) r)).toNat) ∧
       (∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r < 16) ∧
       FrameExcept m m' [(ACC + 0x2000 * g, ACC + 0x2000 * g + 8192)] ∧
-      Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint := by
-  sorry
+      Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint :=
+  G5UH.usehint_main hs hr m hg
 
 /-- **pack**: `[nr, FIN + 256 + 2048 g, ACC + 0x2000 g, ret]`, `g < 2`, `nr ∈ {2, 4}`.
 Row `r < nr` of row group `g` (lane `r` of `ACC_g`) is 4-bit packed; its stream lane
@@ -54,7 +57,7 @@ theorem pack_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           rep (le64 (Fips204.simpleBitPack (lanesPoly m (ACC + 0x2000 * g) r) 15) (8 * j))) ∧
       FrameExcept m m' [(FIN + 256 + 2048 * g, FIN + 256 + 2048 * g + 512 * nr)] ∧
       Call s Entry.pack [wd nr, wd (FIN + 256 + 2048 * g), wd (ACC + 0x2000 * g)] ret tail m []
-        m' (Gas.pack nr) := by
-  sorry
+        m' (Gas.pack nr) :=
+  G5PK.pack_main hs hr m hg hnr
 
 end MlDsaOpt65.Proofs

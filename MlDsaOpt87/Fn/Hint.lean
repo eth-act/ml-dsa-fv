@@ -1,10 +1,13 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
+import MlDsaOpt87.Fn.Hint.G5UseHint
+import MlDsaOpt87.Fn.Hint.G5Pack
 /-!
 # `usehint`, `pack` (ML-DSA-87)
 
-Open contracts (statements only); the proofs mirror `MlDsaOpt44/Fn/Hint.lean` and
-`MlDsaOpt44/Fn/Hint/*` (`UseHint`, `UseHintRun`, `Pack*`), with the ML-DSA-87
+Proved in `Fn/Hint/G5UseHint.lean` and `Fn/Hint/G5Pack.lean` (+ `G5PackBlocks`; the code is
+the ML-DSA-65 code relocated, the pack proof covers `nr ∈ {2, 4}`); the pure part is
+`MlDsaOpt65/Fn/Hint/G5Pure.lean`. They follow `MlDsaOpt44/Fn/Hint/*` with the ML-DSA-87
 parameters and the row-group pointers as parameters.
 
 * `usehint [ACC + 0x2000 g, ret]`: for the 256 row-packed words `W` at `ACC_g`, lane-wise
@@ -40,8 +43,8 @@ theorem usehint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
               lane (word m (SP + 0x2000 * g + 32 * t)) r)).toNat) ∧
       (∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r < 16) ∧
       FrameExcept m m' [(ACC + 0x2000 * g, ACC + 0x2000 * g + 8192)] ∧
-      Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint := by
-  sorry
+      Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint :=
+  G5UH.usehint_main hs hr m hg
 
 /-- **pack**: `[4, FIN + 256 + 2048 g, ACC + 0x2000 g, ret]`, `g < 2`.
 Row `r < 4` of row group `g` (lane `r` of `ACC_g`) is 4-bit packed; its stream lane
@@ -53,7 +56,7 @@ theorem pack_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           rep (le64 (Fips204.simpleBitPack (lanesPoly m (ACC + 0x2000 * g) r) 15) (8 * j))) ∧
       FrameExcept m m' [(FIN + 256 + 2048 * g, FIN + 256 + 2048 * g + 2048)] ∧
       Call s Entry.pack [wd 4, wd (FIN + 256 + 2048 * g), wd (ACC + 0x2000 * g)] ret tail m []
-        m' (Gas.pack 4) := by
-  sorry
+        m' (Gas.pack 4) :=
+  G5PK.pack_main hs hr m hg (Or.inr rfl)
 
 end MlDsaOpt87.Proofs
