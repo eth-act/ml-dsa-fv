@@ -1,4 +1,6 @@
 import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Fn.Ntt
+import MlDsaOpt44.Fn.Hint
 set_option warningAsError true
 /-!
 # Segment `5963 … 6001`: `intt`, `usehint`, `pack`

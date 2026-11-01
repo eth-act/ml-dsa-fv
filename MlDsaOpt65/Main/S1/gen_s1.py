@@ -205,7 +205,7 @@ def gen_tbl(nn):
     p0, p1, IA, IB = cf['tbl']
     i0 = X.idx[p0]
     assert X.idx[p1] - i0 == 744
-    src = header(nn, [f'MlDsaOpt{nn}.Main.S1.Tac', 'MlDsaOpt44.Main.Tbl.Blocks'],
+    src = header(nn, [f'MlDsaOpt{nn}.Main.S1.Tac', 'MlDsaOpt44.Main.Tbl.Defs'],
                  f'# Segment `{p0} … {p1}`: the 248 NTT zeta records (straight line).\n\n'
                  'Eight blocks of 31 `PUSH3 v; PUSH2 TBL + 32 i; MSTORE` records; the chunks\n'
                  '(`tblChunk`, `tblMem`) and the record values are the ML-DSA-44 ones.')

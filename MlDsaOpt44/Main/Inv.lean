@@ -1,8 +1,6 @@
-import MlDsaOpt44.Fn.Group
-import MlDsaOpt44.Fn.Ntt
-import MlDsaOpt44.Fn.Decode
-import MlDsaOpt44.Fn.Ct
-import MlDsaOpt44.Fn.Hint
+import MlDsaOpt44.Fn.Group.Defs
+import MlDsaOpt44.Fn.Ball.Defs
+import MlDsaOpt44.Fn.Ct.Defs
 set_option warningAsError true
 /-!
 # Main-flow invariants

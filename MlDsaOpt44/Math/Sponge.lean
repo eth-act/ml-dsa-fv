@@ -1,4 +1,4 @@
-import MlDsaOpt44.Fn.Fix
+import MlDsaOpt44.Fn.Fix.Defs
 import MlDsaOpt44.Math.SpongeSeed
 set_option warningAsError true
 /-!

@@ -1,6 +1,7 @@
 import MlDsaOpt44.Main.Base
 import MlDsaOpt44.Math.Bswap
 import MlDsaOpt44.Math.SpongeBits
+import MlDsaOpt44.Fn.Sponge
 set_option warningAsError true
 /-! # Segment `3078 … 3439`: `RHO1` (spread ρ and c̃ lanes, eight `spr` calls).
 

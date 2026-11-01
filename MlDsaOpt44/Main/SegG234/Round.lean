@@ -1,6 +1,10 @@
 import MlDsaOpt44.Main.Base
 import MlDsaOpt44.Math.Sponge
 import MlDsaOpt44.Math.SpongeG234
+import MlDsaOpt44.Fn.Keccak
+import MlDsaOpt44.Fn.Blk
+import MlDsaOpt44.Fn.Fix
+import MlDsaOpt44.Fn.Sponge
 set_option warningAsError true
 /-!
 # Building blocks of the mixed SIMD groups (`seg_g234`)

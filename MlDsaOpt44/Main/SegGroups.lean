@@ -1,4 +1,5 @@
 import MlDsaOpt44.Main.Base
+import MlDsaOpt44.Fn.Group
 set_option warningAsError true
 /-! # Segment `3439 … 3466`: the two pure ExpandA groups (`group`, columns 0 and 1). -/
 

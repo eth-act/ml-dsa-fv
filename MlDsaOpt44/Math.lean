@@ -1,4 +1,4 @@
-import MlDsaOpt44.Fn.Ct
+import MlDsaOpt44.Fn.Ct.Defs
 import MlDsaOpt44.Math.SpecFacts
 /-!
 # Pure lemmas used by the main-flow segments
