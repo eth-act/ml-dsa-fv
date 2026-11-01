@@ -447,13 +447,15 @@ def main(argv):
         # Preserve the ports' hand adjustments; change measured proofs only.
         for nn in (44, 65, 87):
             for relative, names in (("Fn/Blk/BodyA.lean", {"bodyA"}),
-                                    ("Fn/Sponge/Trabs.lean", {"trabs_mid"})):
+                                    ("Fn/Sponge/Trabs.lean", {"trabs_mid"}),
+                                    ("Fn/Kf4/Blocks1.lean", None),
+                                    ("Fn/Kf4/Blocks2.lean", None)):
                 path = os.path.join(ROOT, f"MlDsaOpt{nn}", relative)
                 text = open(path).read()
                 chunks = re.split(r"(?=theorem \w+)", text)
                 for i, chunk in enumerate(chunks):
                     match = re.match(r"theorem (\w+)", chunk)
-                    if match and match[1] in names:
+                    if match and (match[1] in names if names is not None else match[1].startswith(("r1_", "r2_"))):
                         chunks[i] = chunk.replace(f"opt{nn}_reach", f"opt{nn}_rreach")
                 text = "".join(chunks)
                 imp = f"import MlDsaOpt{nn}.Infra.Reflect\n"
