@@ -86,7 +86,14 @@ GENERATORS = (
        ("mldsa44tool artifact", [TOOL, "artifact", "MlDsa44/Reference/reference.yul"],
         "MlDsa44/Proofs/Artifact.lean"),
        ("mldsa44tool layout", [TOOL, "layout", "MlDsa44/Reference/reference.yul"], "docs/reference.layout"),
-       ("gen_keccak.py", ["python3", "MlDsa44/Proofs/Fn/Keccak/gen_keccak.py"], None)]
+       ("gen_keccak.py", ["python3", "MlDsa44/Proofs/Fn/Keccak/gen_keccak.py"], None),
+       ("gen_kf1.py", ["python3", "MlDsaOpt44/Fn/Kf1/gen_kf1.py"], None),
+       ("Csum gen_blocks.py 87", ["python3", "MlDsaOpt65/Fn/Csum/gen_blocks.py", "87"], None),
+       ("Ginit gen_lanes.py 87", ["python3", "MlDsaOpt65/Fn/Ginit/gen_lanes.py", "87"],
+        "MlDsaOpt87/Fn/Ginit/Lanes.lean")]
+# Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,
+# gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65,
+# Ginit gen_lanes.py 65.
 )
 PORT_HEADER = re.compile(r"/- Ported from `([^`\s]+)` by `scripts/proofgen_port.py (\d+)`([^;\n]*);")
 # Lean files outside every lean_lib that must still compile (rule 4).
@@ -288,7 +295,7 @@ def restore() -> None:
     git("clean", "-fdq", "-e", ".lake", cwd=WT)
 
 
-def generator_checks(env, logf) -> list[str]:
+def generator_checks(env, logf, ports: bool = True) -> list[str]:
     lines = []
     for name, cmd, out in GENERATORS:
         p = run(cmd, cwd=WT, env=env, check=False)
@@ -304,6 +311,8 @@ def generator_checks(env, logf) -> list[str]:
             f.write(f"\n$ {' '.join(cmd)}\n".encode() + (p.stderr or b"")[-4000:])
         restore()
         lines.append(f"K\tgen {esc(name)}\t{res}\t{esc(detail)}")
+    if not ports:
+        return lines
     # proofgen_port.py: every file with a `Ported from` header, re-ported from its source
     # with the arguments the header records (sources of the same set ported together).
     ports = {}

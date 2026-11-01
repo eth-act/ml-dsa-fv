@@ -27,7 +27,7 @@ about 12 min to build from scratch, 2.5 min to extract, 12 min to replay
 generators; a second revision rebuilds and replays only what changed. To skip
 the first build, copy a checkout's `.lake/build` into `.lake/gate/wt/.lake/`.
 
-Regression tests: `python3 scripts/gate/test_gate.py` (36 tests, about a
+Regression tests: `python3 scripts/gate/test_gate.py` (37 tests, about a
 minute; they build small Lean fixtures under /tmp).
 
 ## What fails the gate
@@ -115,7 +115,7 @@ i.e. one a person wrote) come and go with the way proofs are written; they are
 not compared by name, but their meaning enters every closure hash
 that mentions them and their axioms are audited like everything else.
 
-### Generators (checked-in output reproduced exactly on master `959ed80`)
+### Generators (checked-in output reproduced exactly on master `3b6af1b`)
 
 | generator | output |
 |---|---|
@@ -125,11 +125,20 @@ that mentions them and their axioms are audited like everything else.
 | `mldsa44tool compile` (44, 65, 87) | `MlDsa{44,65,87}/Reference/reference.hex` |
 | `mldsa44tool bytes`, `artifact`, `layout` | `MlDsa44/Reference/Bytes.lean`, `MlDsa44/Proofs/Artifact.lean`, `docs/reference.layout` |
 | `gen_keccak.py` | `MlDsa44/Proofs/Fn/Keccak/{Rows,Blocks1,Blocks2,RoundSpec}.lean` |
+| `MlDsaOpt44/Fn/Kf1/gen_kf1.py` | `MlDsaOpt44/Fn/Kf1/{Tables,Blocks*,BlocksLoop,Rounds}.lean` |
+| `MlDsaOpt65/Fn/Csum/gen_blocks.py 87` | `MlDsaOpt87/Fn/Csum/Blocks.lean` |
+| `MlDsaOpt65/Fn/Ginit/gen_lanes.py 87` (stdout) | `MlDsaOpt87/Fn/Ginit/Lanes.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 29 ported files (28 carry hand adjustments
 marked `-- port:`; `MlDsaOpt87/Fn/TBuild/Blocks.lean` says it was
-"generalised as the 65 file"); `docs/reference.listing` (no generator in the tree);
+"generalised as the 65 file"); `docs/reference.listing` (no generator in the tree); the v2-era proof
+generators, which crash on the v3 listing or emit v2 constants (their files were
+since relocated by `proofgen_port.py --reloc` or edited): `MlDsaOpt44/Fn/Kf4/gen_kf4.py`,
+`MlDsaOpt44/Fn/Ntt/gen_ntt.py`, `MlDsaOpt44/Fn/Group/gen_p3.py` (also emits only
+part of its file), `MlDsaOpt44/Main/Wp11Gen/gen_{init,tbl,rho,mu,muproof,fin}.py`,
+`MlDsaOpt65/Main/S1/gen_s1.py`, `MlDsaOpt65/Fn/Csum/gen_blocks.py 65`,
+`MlDsaOpt65/Fn/Ginit/gen_lanes.py 65`;
 `vectors/` and `foundry/fixtures/` (random keys, the ACVP file and external
 oracles are not in the tree).
 

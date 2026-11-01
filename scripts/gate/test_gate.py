@@ -389,6 +389,46 @@ set_option debug.skipKernelTC true in
         self.assertIn("FAIL kernel replay", text)
 
 
+class RepoGenerators(unittest.TestCase):
+    """The generators the gate runs reproduce this checkout, and a hand edit of their
+    output is caught (Python only; runs each generator in a throwaway worktree)."""
+
+    # generator -> one of the files it writes
+    OUTPUTS = {"gen_kf1.py": "MlDsaOpt44/Fn/Kf1/Blocks1a.lean",
+               "Csum gen_blocks.py 87": "MlDsaOpt87/Fn/Csum/Blocks.lean",
+               "Ginit gen_lanes.py 87": "MlDsaOpt87/Fn/Ginit/Lanes.lean"}
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="gate-gens-"))
+        self.wt = self.tmp / "wt"
+        subprocess.run(["git", "worktree", "add", "-q", "--detach", str(self.wt), "HEAD"], cwd=gate.ROOT,
+                       check=True, capture_output=True)
+        self.saved = (gate.WT, gate.GENERATORS)
+        gate.WT = self.wt
+        gate.GENERATORS = [g for g in self.saved[1] if g[0] in self.OUTPUTS]
+        self.assertEqual(len(gate.GENERATORS), len(self.OUTPUTS))
+
+    def tearDown(self):
+        gate.WT, gate.GENERATORS = self.saved
+        subprocess.run(["git", "worktree", "remove", "--force", str(self.wt)], cwd=gate.ROOT, capture_output=True)
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def verdicts(self):
+        out = gate.generator_checks(gate.lean_env(), self.tmp / "log.txt", ports=False)
+        return {l.split("\t")[1][len("gen "):]: l.split("\t")[2] for l in out}
+
+    def test_reproduce_and_hand_edits_fail(self):
+        self.assertEqual(set(self.verdicts().values()), {"ok"})
+        for name, path in self.OUTPUTS.items():
+            f = self.wt / path
+            orig = f.read_text()
+            f.write_text(orig.replace("theorem", "theorem  ", 1))
+            g = ["git", "-c", "user.email=t@t", "-c", "user.name=t", "-c", "commit.gpgsign=false"]
+            subprocess.run(g + ["commit", "-qam", "hand edit"], cwd=self.wt, check=True, capture_output=True)
+            self.assertEqual(self.verdicts()[name], "fail", name)
+            subprocess.run(["git", "reset", "-q", "--hard", "HEAD~1"], cwd=self.wt, check=True)
+
+
 def lines(consts=(), checks=(), extra=()):
     out = ["R\tlabel\tx", "R\tgate\tk", "R\ttoolchain\tt", "R\tlean\tg", "R\tmanifest\tm",
            "K\tkernel replay\tok\t-",
