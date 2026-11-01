@@ -1,6 +1,7 @@
 import MlDsa44.Proofs.Infra.Code
 import MlDsa44.Proofs.Infra.Word
 import MlDsa44.Proofs.Infra.Memory
+import MlDsaOptCommon.Chunk
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
 /-!
@@ -14,7 +15,10 @@ before the next fold step is visited, so the term never contains the
 unfolded remainder of the path (the quadratic blow-up of unfolding
 `runLocatedBlock` directly).
 
-The tactic `evm_block [extra lemmas]` packages the whole recipe.
+The tactic `evm_block [extra lemmas]` packages the whole recipe. It runs the
+path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
+one `simp` over a long path makes a proof whose kernel check grows much faster
+than the path.
 -/
 
 namespace MlDsa44.Proofs.Infra
@@ -128,7 +132,8 @@ macro_rules
   | `(tactic| evm_block [$extra,*]) => `(tactic| (
       rw [MlDsa44.Proofs.Infra.runLocatedBlock_eq_foldl _ _
         (by first | assumption | simp (disch := assumption) only [MlDsa44.Proofs.callState, MlDsa44.Proofs.Ctx.running])]
-      simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
+      try rw [MlDsa44.Proofs.Artifact.locatedPath]
+      foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
           (disch := first | assumption | omega) only
         [MlDsa44.Proofs.Artifact.locatedPath, List.map_cons, List.map_nil, List.foldl_cons,
          List.foldl_nil, MlDsa44.Proofs.Infra.stepL_located, MlDsa44.Proofs.Infra.stepL_none,
