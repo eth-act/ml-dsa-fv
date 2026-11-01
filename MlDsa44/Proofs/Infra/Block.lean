@@ -18,7 +18,9 @@ unfolded remainder of the path (the quadratic blow-up of unfolding
 The tactic `evm_block [extra lemmas]` packages the whole recipe. It runs the
 path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
 one `simp` over a long path makes a proof whose kernel check grows much faster
-than the path.
+than the path. The `halt = .Running` premise is closed by
+`with_reducible assumption` or `simp` (plain `assumption` unfolded the state
+against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`).
 -/
 
 namespace MlDsa44.Proofs.Infra
@@ -131,7 +133,7 @@ macro_rules
   | `(tactic| evm_block) => `(tactic| evm_block [])
   | `(tactic| evm_block [$extra,*]) => `(tactic| (
       rw [MlDsa44.Proofs.Infra.runLocatedBlock_eq_foldl _ _
-        (by first | assumption | simp (disch := assumption) only [MlDsa44.Proofs.callState, MlDsa44.Proofs.Ctx.running])]
+        (by first | with_reducible assumption | simp (disch := assumption) only [MlDsa44.Proofs.callState, MlDsa44.Proofs.Ctx.running])]
       try rw [MlDsa44.Proofs.Artifact.locatedPath]
       foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
           (disch := first | assumption | omega) only

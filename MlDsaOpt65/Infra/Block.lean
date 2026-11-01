@@ -17,7 +17,9 @@ next fold step is visited.
 The tactic `opt65_block [extra lemmas]` packages the whole recipe. It runs the
 path in pieces of 32 instructions (`foldl_chunks`, `MlDsaOptCommon.Chunk`):
 one `simp` over a long path makes a proof whose kernel check grows much faster
-than the path.
+than the path. The `halt = .Running` premise is closed by
+`with_reducible assumption` or `simp` (plain `assumption` unfolded the state
+against every hypothesis: about 30 s of `MlDsaOpt44.Fn.Fix.Blocks`).
 -/
 
 namespace MlDsaOpt65.Proofs.Infra
@@ -125,7 +127,7 @@ macro_rules
   | `(tactic| opt65_block) => `(tactic| opt65_block [])
   | `(tactic| opt65_block [$extra,*]) => `(tactic| (
       rw [MlDsaOpt65.Proofs.Infra.runLocatedBlock_eq_foldl _ _
-        (by first | assumption | simp (disch := assumption) only [MlDsaOptCommon.callState, MlDsaOpt65.Proofs.Ctx.running])]
+        (by first | with_reducible assumption | simp (disch := assumption) only [MlDsaOptCommon.callState, MlDsaOpt65.Proofs.Ctx.running])]
       try rw [MlDsaOpt65.Proofs.Artifact.locatedPath]
       foldl_chunks 32 => simp (config := { maxSteps := 4000000, maxDischargeDepth := 1 })
           (disch := first | assumption | omega) only
