@@ -1,6 +1,7 @@
 import MlDsaOpt87.Main.Base
 import MlDsaOpt87.Fn.Ball
 import MlDsaOpt44.Math
+import MlDsaOpt87.Main.S1.Tac
 set_option warningAsError true
 /-! # Segment `1126 … 1135`: `sib` (SampleInBall with its own `kf1` sponge), `AND`.
 
@@ -35,10 +36,10 @@ theorem seg_sib {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
   obtain ⟨m', hpost, hbases, hfr, hcall⟩ := sib_call hs (ret := 1133) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m
     hI.rc1 hcd hfresh
-  refine ⟨m', ⟨RC4Table.frame hI.rc4 hfr (by avoids_tac), RC1Table.frame hI.rc1 hfr (by avoids_tac),
-    ZAt.frame hI.z hfr (by avoids_tac), HPAt.frame hI.hp hfr (by avoids_tac), ⟨?_, hbases⟩,
+  refine ⟨m', ⟨RC4Table.frame hI.rc4 hfr (by s1_avoids87), RC1Table.frame hI.rc1 hfr (by s1_avoids87),
+    ZAt.frame hI.z hfr (by s1_avoids87), HPAt.frame hI.hp hfr (by s1_avoids87), ⟨?_, hbases⟩,
     ZeroOn.frame (ZeroOn.mono hI.zHigh (by unfold BASES ACC; omega) (le_refl _)) hfr
-      (by avoids_tac)⟩,
+      (by s1_avoids87)⟩,
     ((hblk.trans hcall).trans (S2.and_flags_block hs _ b)).mono (by unfold Gas.pSib; omega)⟩
   intro hc
   unfold okC at hc
