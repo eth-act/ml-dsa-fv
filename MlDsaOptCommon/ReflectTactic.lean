@@ -32,7 +32,8 @@ def reflectInstr (e : Expr) (pc next : Nat) : MetaM Expr := do
   if let some (_, b) := bin.find? (·.1 == name) then return mkApp (mkConst ``Op.bin) (mkConst b)
   if name == "ISZERO" then return mkApp (mkConst ``Op.un) (mkConst ``Un.iszero)
   if name == "NOT" then return mkApp (mkConst ``Op.un) (mkConst ``Un.not)
-  for (s, n) in [("POP", ``Op.pop), ("MLOAD", ``Op.load), ("MSTORE", ``Op.store), ("JUMPDEST", ``Op.dest)] do
+  for (s, n) in [("POP", ``Op.pop), ("MLOAD", ``Op.load), ("MSTORE", ``Op.store),
+      ("JUMPDEST", ``Op.dest), ("CALLDATALOAD", ``Op.calldata)] do
     if s == name then return mkConst n
   throwError "reflection: unsupported opcode {name}"
 
@@ -71,12 +72,11 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
     let path ← zetaReduce (← instantiateMVars (pathApp.getArg! 0))
     let some (_, indices) := path.listLit? | throwError "reflection: expected literal path {path}"
     let initial := lhs.getArg! 3
-    unless initial.isAppOfArity ``callState 4 do throwError "reflection: expected callState"
+    unless initial.getAppNumArgs == 4 && initial.getAppFn.constName!.getString! == "callState" do
+      throwError "reflection: expected callState"
     let base := initial.getArg! 0
     let pc := initial.getArg! 1
     let mem := initial.getArg! 3
-    let (rho, terms, tail) ← reifyStack (initial.getArg! 2)
-    let config := mkApp2 (mkConst ``Config.mk) terms (mkConst ``Mem.initial)
     let (instructions, pcs) ← tables
     let finalState := rhs.getArg! 1
     let finalPC := finalState.getArg! 1
@@ -85,11 +85,20 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
       let i := indices[k]!
       let some n ← getFinValue? i | throwError "reflection: nonliteral index"
       let some instr := instructions[n.2.val]? | throwError "reflection: index out of range"
+      if k + 1 == indices.length && (← getNatValue? finalPC).isNone &&
+          (instr.isAppOfArity ``Instr.op 1 &&
+            ["JUMP", "JUMPI"].contains (instr.getArg! 0).getAppArgs.back!.getAppFn.constName!.getString!) then
+        throwError "reflection: symbolic final jump target"
       let next ← if k + 1 < indices.length then do
           let some j ← getFinValue? indices[k+1]! | throwError "reflection: nonliteral index"
           pure pcs[j.2.val]!
         else pure ((← getNatValue? finalPC).getD (pcs[n.2.val]! + 1))
       ops := (← reflectInstr instr pcs[n.2.val]! next) :: ops
+    let (vars, terms, tail) ← reifyStack (initial.getArg! 2)
+    let shared ← mkAppM ``State.toSharedState #[base]
+    let calldata ← mkAppM ``ExecutionEnv.calldata #[← mkAppM ``SharedState.executionEnv #[shared]]
+    let rho := mkApp2 (mkConst ``Env.mk) vars calldata
+    let config := mkApp2 (mkConst ``Config.mk) terms (mkConst ``Mem.initial)
     let program ← mkListLit (mkConst ``Op) ops.reverse
     trace[opt.reflect] "decoded {indices.length} instructions"
     let result ← reduce (mkApp2 (mkConst ``run) program config)
@@ -99,30 +108,26 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
     let proof := mkAppN (mkConst sound) #[program, path, config, r, rho, mem, tail, base, pc, cert]
     let mut proof := proof
     let mut goals : List MVarId := []
-    for _ in [:5] do
+    for _ in [:6] do
       let ty ← whnf (← inferType proof)
-      trace[opt.reflect] "adding obligation"
       let h ← mkFreshExprSyntheticOpaqueMVar ty.bindingDomain!
       proof := mkApp proof h
       goals := goals ++ [h.mvarId!]
     let some (_, _, middle) := (← inferType proof).eq? | throwError "reflection: invalid soundness result"
     let bridge ← mkFreshExprSyntheticOpaqueMVar (← mkEq middle rhs)
-    trace[opt.reflect] "adding bridge"
     let full ← mkEqTrans proof bridge
     -- The kernel checks the input denotation conversion. Meta-level default
     -- transparency can unfold the whole located bytecode before the state.
     withTransparency .all (g.assign full)
-    trace[opt.reflect] "assigned proof"
     replaceMainGoal (goals ++ [bridge.mvarId!])
-    trace[opt.reflect] "replaced goals"
     evalTactic finish
     trace[opt.reflect] "reflected {indices.length} instructions"
 
 def reflectBlock (tables : MetaM (Array Expr × Array Nat)) (sound : Name)
     (finish : Syntax) : TacticM Unit := do
-  try reflectBlockImpl tables sound finish
+  try withOptions (fun o => o.set `maxRecDepth (10000 : Nat)) (reflectBlockImpl tables sound finish)
   catch e =>
-    trace[opt.reflect] "fallback: {e.toMessageData}; goals {← getGoals}"
+    trace[opt.reflect] "fallback: {e.toMessageData}"
     throw e
 
 end MlDsaOptCommon.Reflect

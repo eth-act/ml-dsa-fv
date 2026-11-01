@@ -47,6 +47,10 @@ def Un.instr : Un → Instr
   | .iszero => .op .ISZERO
   | .not => .op .NOT
 
+structure Env where
+  vars : Nat → UInt256
+  calldata : ByteArray
+
 mutual
 inductive Term where
   | var (n : Nat)
@@ -54,6 +58,7 @@ inductive Term where
   | bin (b : Bin) (a c : Term)
   | un (u : Un) (a : Term)
   | load (m : Mem) (a : Term)
+  | calldata (a : Term)
   deriving DecidableEq
 inductive Mem where
   | initial
@@ -61,13 +66,14 @@ inductive Mem where
   deriving DecidableEq
 end
 mutual
-def Term.eval (ρ : Nat → UInt256) (M : ByteArray) : Term → UInt256
-  | .var n => ρ n
+def Term.eval (ρ : Env) (M : ByteArray) : Term → UInt256
+  | .var n => ρ.vars n
   | .lit n => wd n
   | .bin b a c => b.eval (a.eval ρ M) (c.eval ρ M)
   | .un u a => u.eval (a.eval ρ M)
   | .load m a => MachineState.readWord (m.eval ρ M) (a.eval ρ M).toNat
-def Mem.eval (ρ : Nat → UInt256) (M : ByteArray) : Mem → ByteArray
+  | .calldata a => MachineState.readWord ρ.calldata (a.eval ρ M).toNat
+def Mem.eval (ρ : Env) (M : ByteArray) : Mem → ByteArray
   | .initial => M
   | .store m a v => MachineState.writeBytes (m.eval ρ M)
       (Data.Bytes.natToBytesPadded (v.eval ρ M).toNat 32) (a.eval ρ M).toNat
@@ -82,7 +88,7 @@ inductive Op where
   | pop
   | jump (target : Nat)
   | jumpi (target : Nat) (taken : Bool)
-  | load | store | dest
+  | load | store | dest | calldata
   deriving DecidableEq
 def Op.instr : Op → Instr
   | .push w n => .push w (wd n)
@@ -96,6 +102,7 @@ def Op.instr : Op → Instr
   | .load => .op .MLOAD
   | .store => .op .MSTORE
   | .dest => .op .JUMPDEST
+  | .calldata => .op .CALLDATALOAD
 def Op.width : Op → Nat
   | .push w _ => w.val + 1
   | _ => 1
@@ -112,7 +119,7 @@ inductive Condition where
   | branch (a : Term) (taken : Bool)
   deriving DecidableEq
 
-def Condition.Holds (ρ : Nat → UInt256) (M code : ByteArray) : Condition → Prop
+def Condition.Holds (ρ : Env) (M code : ByteArray) : Condition → Prop
   | .target a n => a.eval ρ M = wd n ∧ Decode.isValidJumpDest code (a.eval ρ M).toNat = true
   | .branch a b => UInt256.isTrue (a.eval ρ M) = b
 
@@ -132,6 +139,7 @@ def step (o : Op) (c : Config) : Option Config :=
   | .jump _, _ :: xs => some ⟨xs, c.mem⟩
   | .jumpi _ _, _ :: _ :: xs => some ⟨xs, c.mem⟩
   | .load, a :: xs => some ⟨.load c.mem a :: xs, c.mem⟩
+  | .calldata, a :: xs => some ⟨.calldata a :: xs, c.mem⟩
   | .store, a :: v :: xs => some ⟨xs, .store c.mem a v⟩
   | .dest, xs => some ⟨xs, c.mem⟩
   | _, _ => none
@@ -148,9 +156,9 @@ def conditions (o : Op) (c : Config) : List Condition :=
   | .jumpi _ false, _ :: b :: _ => [.branch b false]
   | _, _ => []
 
-def stack (ρ : Nat → UInt256) (M : ByteArray) (tail : List UInt256) (xs : List Term) :=
+def stack (ρ : Env) (M : ByteArray) (tail : List UInt256) (xs : List Term) :=
   xs.map (Term.eval ρ M) ++ tail
-def denote (ρ : Nat → UInt256) (M : ByteArray) (tail : List UInt256)
+def denote (ρ : Env) (M : ByteArray) (tail : List UInt256)
     (s : State) (pc : Nat) (c : Config) :=
   callState s pc (stack ρ M tail c.stack) (c.mem.eval ρ M)
 
@@ -169,8 +177,8 @@ theorem exchange_map_append {α β : Type} (f : α → β) (xs ys : List α)
   simp [List.exchange, ea, eb, List.map_set, List.set_append_left,
     hi, hj, List.length_set]
 
-theorem step_sound (o : Op) (c d : Config) (ρ : Nat → UInt256) (M : ByteArray)
-    (tail : List UInt256) (s : State) (pc : Nat)
+theorem step_sound (o : Op) (c d : Config) (ρ : Env) (M : ByteArray)
+    (tail : List UInt256) (s : State) (pc : Nat) (hdata : ρ.calldata = s.executionEnv.calldata)
     (h : step o c = some d) (hlen : c.stack.length + tail.length < 1024)
     (hm : ∀ a ∈ accesses o c, (a.eval ρ M).toNat + 32 ≤ 32 * s.activeWords.toNat)
     (hj : ∀ a ∈ conditions o c, a.Holds ρ M s.executionEnv.code) :
@@ -178,6 +186,16 @@ theorem step_sound (o : Op) (c d : Config) (ρ : Nat → UInt256) (M : ByteArray
       some (denote ρ M tail s (o.next pc) d) := by
   rcases c with ⟨xs, m⟩
   cases o with
+  | calldata =>
+    cases xs with
+    | nil => simp [step] at h
+    | cons a xs =>
+      simp only [step, Option.some.injEq] at h
+      subst d
+      have hc : xs.length + tail.length < 1023 := by
+        simp only [List.length_cons] at hlen; omega
+      simp [Op.instr, Op.next, Op.width, runInstr, denote, callState, stack, Term.eval, hc,
+        hdata, EvmProof.Word.succ_ofNat_mod]
   | jump target =>
     cases xs with
     | nil => simp [step] at h
@@ -325,8 +343,8 @@ theorem located_sound {α : Type} (pcAt : α → Nat) (instrAt : α → Instr)
     (hstep : ∀ i st, st.halt = .Running → st.pc.toNat = pcAt i →
       stepL (some st) i = runInstr (instrAt i) st)
     (os : List Op) (path : List α)
-    (c : Config) (r : Result) (ρ : Nat → UInt256) (M : ByteArray) (tail : List UInt256)
-    (s : State) (pc : Nat) (hrunning : s.halt = .Running)
+    (c : Config) (r : Result) (ρ : Env) (M : ByteArray) (tail : List UInt256)
+    (s : State) (pc : Nat) (hdata : ρ.calldata = s.executionEnv.calldata) (hrunning : s.halt = .Running)
     (h : run os c = some r) (hlen : r.peak + tail.length < 1024)
     (hm : ∀ a ∈ r.reads, (a.eval ρ M).toNat + 32 ≤ 32 * s.activeWords.toNat)
     (hj : ∀ a ∈ r.guards, a.Holds ρ M s.executionEnv.code)
@@ -356,7 +374,7 @@ theorem located_sound {α : Type} (pcAt : α → Nat) (instrAt : α → Instr)
           some (denote ρ M tail s (o.next pc) d) := by
         rw [hstep i (denote ρ M tail s pc c) hrunning
           (by change (UInt256.ofNat pc).toNat = pcAt i; rw [hi]; exact toNat_ofNat_of_lt hpc), hop]
-        exact step_sound o c d ρ M tail s pc hd hc (fun a ha => hm a (List.mem_append_left _ ha))
+        exact step_sound o c d ρ M tail s pc hdata hd hc (fun a ha => hm a (List.mem_append_left _ ha))
           (fun a ha => hj a (List.mem_append_left _ ha))
       change path.foldl stepL
         (stepL (some (denote ρ M tail s pc c)) i) = _

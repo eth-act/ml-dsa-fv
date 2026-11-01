@@ -949,22 +949,23 @@ namespace @P@.Infra
 open EvmSemantics EvmSemantics.EVM EvmProof.Stepper MlDsaOptCommon
 open @P@.Artifact
 theorem reflect_sound (os : List Reflect.Op) (path : List (Fin @N@))
-    (c : Reflect.Config) (r : Reflect.Result) (ρ : Nat → UInt256) (M : ByteArray)
+    (c : Reflect.Config) (r : Reflect.Result) (env : Reflect.Env) (M : ByteArray)
     (tail : List UInt256) (s : State) (pc : Nat)
     (h : Reflect.run os c = some r) (hrunning : s.halt = .Running)
     (hlen : r.peak + tail.length < 1024)
-    (hm : ∀ a ∈ r.reads, (a.eval ρ M).toNat + 32 ≤ 32 * s.activeWords.toNat)
-    (hj : ∀ a ∈ r.guards, a.Holds ρ M s.executionEnv.code)
+    (hm : ∀ a ∈ r.reads, (a.eval env M).toNat + 32 ≤ 32 * s.activeWords.toNat)
+    (hj : ∀ a ∈ r.guards, a.Holds env M s.executionEnv.code)
     (ha : Reflect.Aligned (fun i : Fin @N@ => pcAt i.val)
-      (fun i : Fin @N@ => instrAt i.val) path os pc) :
-    runLocatedBlock (locatedPath path) (Reflect.denote ρ M tail s pc c) =
-      some (Reflect.denote ρ M tail s (Reflect.endPC os pc) r.config) := by
-  rw [runLocatedBlock_eq_foldl _ _ (show (Reflect.denote ρ M tail s pc c).halt = .Running from hrunning)]
+      (fun i : Fin @N@ => instrAt i.val) path os pc)
+    (hdata : env.calldata = s.executionEnv.calldata) :
+    runLocatedBlock (locatedPath path) (Reflect.denote env M tail s pc c) =
+      some (Reflect.denote env M tail s (Reflect.endPC os pc) r.config) := by
+  rw [runLocatedBlock_eq_foldl _ _ (show (Reflect.denote env M tail s pc c).halt = .Running from hrunning)]
   simp only [locatedPath, List.foldl_map]
   apply Reflect.located_sound (fun i : Fin @N@ => pcAt i.val)
     (fun i : Fin @N@ => instrAt i.val) (fun acc i => stepL acc (located i))
     (fun i st hh hp => by rw [stepL_located, hh, guardHalt_running, hp, if_pos rfl])
-    os path c r ρ M tail s pc hrunning h hlen hm hj ha
+    os path c r env M tail s pc hdata hrunning h hlen hm hj ha
 end @P@.Infra
 
 open Lean Elab Tactic in
@@ -994,8 +995,11 @@ macro_rules
               List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
               List.cons_append, List.nil_append, List.length_cons, List.length_nil,
               List.getD_cons_zero, List.getD_cons_succ, List.mem_cons, List.not_mem_nil,
+              ↓reduceIte, if_pos, if_neg, Nat.reduceMod, ne_eq, not_false_eq_true,
+              Bool.true_eq, Bool.false_eq, decide_eq_true_eq, decide_eq_false_iff_not,
+              not_true_eq_false, decide_true, decide_false,
               or_false, forall_eq_or_imp, forall_eq, forall_const, false_implies,
-              and_true, true_and, eq_self_iff_true,
+              and_true, true_and, eq_self_iff_true, eq_iff_iff, iff_true, iff_false,
               Nat.reduceAdd, Nat.reduceMul, Nat.reducePow, Nat.reduceLT, Nat.reduceEqDiff,
               MlDsaOptCommon.wd, EvmProof.Word.literal_eq_ofNat,
               MlDsaOptCommon.callState, MlDsaOptCommon.ofNat_land,
