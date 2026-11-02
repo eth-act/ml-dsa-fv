@@ -23,51 +23,34 @@ namespace Gas
 /-- `0 … 992`: size check, the sizing store and the `RC4` / `RC1` tables
 (static cost; memory expansion to `memWords` is added by the trace). -/
 def pInit : Nat := 658
-/-- `992 … 1126`: `dz` twice (the second flag word masked to lanes 0–2), the
-norm-flag check, `dhint`, `AND`. -/
-def pZh : Nat := 89 + 2 * dz + dhint
-/-- `1126 … 1135`: `sib` (its own `kf1` sponge for `H(c̃)`), `AND`. -/
-def pSib : Nat := 18 + sib
-/-- `1135 … 3118`: the 248 NTT zeta records. -/
+/-- `992 … 1117`: `dz` twice (the second flag word masked to lanes 0–2), the
+norm-flag check (v4: no `dhint`, no `sib` here). -/
+def pZ : Nat := 71 + 2 * dz
+/-- `1117 … 3100`: the 248 NTT zeta records. -/
 def pTbl : Nat := 2232
-/-- `3118 … 3140`: `ntt(ZH)`, `ntt(ZH2)`. -/
+/-- `3100 … 3122`: `ntt(ZH)`, `ntt(ZH2)`, the return `JUMPDEST`. -/
 def pNtt : Nat := 36 + 2 * ntt
-/-- `3140 … 3389`: `RHO1` (4 `spr` calls). -/
+/-- `3122 … 3371`: `RHO1` (4 `spr` calls). -/
 def pRho : Nat := 275 + 4 * spr
-/-- `3389 … 3530`: the ten pure ExpandA groups `[15, col, rb]` (glue 25–27). -/
-def pG0 : Nat := 25 + group
-def pG1 : Nat := 26 + group
-def pG2 : Nat := 26 + group
-def pG3 : Nat := 26 + group
-def pG4 : Nat := 26 + group
-def pG5 : Nat := 26 + group
-def pG6 : Nat := 26 + group
-def pG7 : Nat := 26 + group
-def pG8 : Nat := 27 + group
-def pG9 : Nat := 27 + group
-/-- `3530 … 3963`, `3963 … 4430`, `4430 … 4898`: the mixed groups 10–12 (rows
-4–6, `tr` rider in slot 3): `ginit`, five `trabs 5` + `kf4` + `blk`, `gfix` on 3
-slots, `pass3m`. -/
-def pG10 : Nat := 405 + ginit + 5 * trabs 5 + 5 * (kf4 + blk) + gfix 3 + pass3m
-def pG11 : Nat := 406 + ginit + 5 * trabs 5 + 5 * (kf4 + blk) + gfix 3 + pass3m
-def pG12 : Nat := 407 + ginit + 5 * trabs 5 + 5 * (kf4 + blk) + gfix 3 + pass3m
-/-- `4898 … 5435`: mixed group 13 (last `tr` block `trabs 1` with padding,
-`cext 8` into `TRL`). -/
-def pG13 : Nat :=
-  467 + ginit + 4 * trabs 5 + trabs 1 + 5 * (kf4 + blk) + cext 8 + gfix 3 + pass3m
-/-- `5435 … 5593`: the Kronecker group 14 (row 7, columns 3–6): `ginit`, five
-`kf4` + `blk`, `gfix` on 4 slots, `pass3k14`. -/
-def pG14 : Nat := 249 + ginit + 5 * (kf4 + blk) + gfix 4 + pass3k14
-/-- `5593 … 6591`: μ = `H(tr ‖ 0 ‖ 0 ‖ M)` by `kf1` (`hash_mu`): setup 982, one
+/-- `3371 … 5551`: ExpandA, all fifteen groups (copies of `ABUF` to the side
+buffers `CW`, `HP`, `HP + 0x2000`, `ACC + 0x2000`; the fused passes `pass3f4`,
+`pass3f6`, `pass3f10`, `pass3f14`; the `tr` rider of groups 10–13, `TRL`).
+Longest static path (`scripts/proofgen_gas_param.py`). -/
+def pExp : Nat := 6090544
+/-- `5551 … 5665`: zero the side buffers in `CW`, `HP`, `HP + 0x2000`, `dhint`, `AND`. -/
+def pZd : Nat := 2448 + dhint
+/-- `5665 … 6663`: μ = `H(tr ‖ 0 ‖ 0 ‖ M)` by `kf1` (`hash_mu`): setup 982, one
 loop visit (`kf1` + `absorb17` + 88) per 136 bytes of `tr ‖ 0 ‖ 0 ‖ M` plus one
-(the exit visit), the padding and final permutation (`kf1` + 202). -/
+(the exit visit), the padding and final permutation (`kf1` + 202); μ to `FIN`. -/
 def pMu (mlen : Nat) : Nat :=
   982 + ((66 + mlen) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
-/-- `6591 … 6646`: `tbuild`, `csum` per row group. -/
+/-- `6663 … 6672`: `sib` (its own `kf1` sponge for `H(c̃)`), `AND`. -/
+def pSib : Nat := 18 + sib
+/-- `6672 … 6727`: `tbuild`, `csum` per row group. -/
 def pCt : Nat := 84 + 2 * (tbuild + csum)
-/-- `6646 … 6724`: `intt`, `usehint`, `pack 4` per row group. -/
+/-- `6727 … 6805`: `intt`, `usehint`, `pack 4` per row group. -/
 def pW : Nat := 120 + 2 * (intt + usehint + pack 4)
-/-- `6724 …`: the final hash (eight absorbing `kf1` visits of the 17-lane
+/-- `6805 …`: the final hash (eight absorbing `kf1` visits of the 17-lane
 loop over the 136 `FIN` lanes, then the padding block), the 64-byte c̃
 comparison, `mstore(0, ok)`, `return(0, 32)`. -/
 def pFin : Nat := 220 + 8 * (kf1 + 495) + (kf1 + 479)

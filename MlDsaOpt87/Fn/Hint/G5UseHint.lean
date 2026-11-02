@@ -25,41 +25,41 @@ section
 variable {s : State} {ret : Nat} {tail : List UInt256}
 
 theorem uh_entry (hs : Ctx s) (htail : tail.length ≤ 960) (M : ByteArray) (B : Nat) :
-    Reach (callState s 17065 (wd B :: wd ret :: tail) M)
-      (callState s 17072 (wd B :: wd (8192 + B) :: wd ret :: tail) M) 13 := by
-  opt87_reach [7706, 7707, 7708, 7709, 7710]
+    Reach (callState s 17092 (wd B :: wd ret :: tail) M)
+      (callState s 17099 (wd B :: wd (8192 + B) :: wd ret :: tail) M) 13 := by
+  opt87_reach [7826, 7827, 7828, 7829, 7830]
 
 theorem uh_body (hs : Ctx s) (htail : tail.length ≤ 960) (M : ByteArray) (p e : Nat) (hp : 18688 ≤ p)
     (hpe : p + 32 < e) (he : e + 16384 ≤ 90656) :
-    Reach (callState s 17072 (wd p :: wd e :: wd ret :: tail) M)
-      (callState s 17072 (wd (32 + p) :: wd e :: wd ret :: tail)
+    Reach (callState s 17099 (wd p :: wd e :: wd ret :: tail) M)
+      (callState s 17099 (wd (32 + p) :: wd e :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           (uhW (word M p) (word M (p - 18688)) (word M (16384 + p))).toNat 32) p)) 188 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt87_reach [7711, 7712, 7713, 7714, 7715, 7716, 7717, 7718, 7719, 7720, 7721, 7722, 7723, 7724, 7725, 7726, 7727, 7728, 7729, 7730, 7731, 7732, 7733, 7734, 7735, 7736, 7737, 7738, 7739, 7740, 7741, 7742, 7743, 7744, 7745, 7746, 7747, 7748, 7749, 7750, 7751, 7752, 7753, 7754, 7755, 7756, 7757, 7758, 7759, 7760, 7761, 7762, 7763, 7764, 7765, 7766, 7767, 7768, 7769]
+  opt87_reach [7831, 7834, 7713, 7836, 7837, 7716, 7717, 7718, 7838, 7720, 7839, 7840, 7841, 7842, 7843, 7844, 7845, 7728, 7729, 7846, 7847, 7732, 7733, 7734, 7849, 7736, 7851, 7738, 7739, 7852, 7853, 7854, 7855, 7856, 7857, 7858, 7859, 7860, 7861, 7862, 7863, 7864, 7865, 7866, 7867, 7756, 7869, 7870, 7871, 7872, 7873, 7874, 7875, 7876, 7877, 7878, 7879, 7880, 7881]
     with [uhW, uhF, uhV, uhD, uhR, uhQ, uhX]
 
 theorem uh_last (hs : Ctx s) (htail : tail.length ≤ 960) (M : ByteArray) (p e : Nat) (hp : 18688 ≤ p)
     (hpe : p + 32 = e) (he : e + 16384 ≤ 90656) :
-    Reach (callState s 17072 (wd p :: wd e :: wd ret :: tail) M)
-      (callState s 17333 (wd (32 + p) :: wd e :: wd ret :: tail)
+    Reach (callState s 17099 (wd p :: wd e :: wd ret :: tail) M)
+      (callState s 17270 (wd (32 + p) :: wd e :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           (uhW (word M p) (word M (p - 18688)) (word M (16384 + p))).toNat 32) p)) 188 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
   subst hpe
-  opt87_reach [7711, 7712, 7713, 7714, 7715, 7716, 7717, 7718, 7719, 7720, 7721, 7722, 7723, 7724, 7725, 7726, 7727, 7728, 7729, 7730, 7731, 7732, 7733, 7734, 7735, 7736, 7737, 7738, 7739, 7740, 7741, 7742, 7743, 7744, 7745, 7746, 7747, 7748, 7749, 7750, 7751, 7752, 7753, 7754, 7755, 7756, 7757, 7758, 7759, 7760, 7761, 7762, 7763, 7764, 7765, 7766, 7767, 7768, 7769]
+  opt87_reach [7831, 7834, 7713, 7836, 7837, 7716, 7717, 7718, 7838, 7720, 7839, 7840, 7841, 7842, 7843, 7844, 7845, 7728, 7729, 7846, 7847, 7732, 7733, 7734, 7849, 7736, 7851, 7738, 7739, 7852, 7853, 7854, 7855, 7856, 7857, 7858, 7859, 7860, 7861, 7862, 7863, 7864, 7865, 7866, 7867, 7756, 7869, 7870, 7871, 7872, 7873, 7874, 7875, 7876, 7877, 7878, 7879, 7880, 7881]
     with [uhW, uhF, uhV, uhD, uhR, uhQ, uhX]
 
 set_option maxRecDepth 100000 in
 theorem uh_ret (hs : Ctx s) (htail : tail.length ≤ 960)
     (hj : Decode.isValidJumpDest optBytecode ret = true) (hret : ret < 2 ^ 16) (M : ByteArray)
     (a b : Nat) :
-    Reach (callState s 17333 (wd a :: wd b :: wd ret :: tail) M) (callState s ret tail M) 12 := by
-  opt87_reach [7770, 7771, 7772] with [hj]
+    Reach (callState s 17270 (wd a :: wd b :: wd ret :: tail) M) (callState s ret tail M) 12 := by
+  opt87_reach [7882, 7883, 7884] with [hj]
 
 end
 
@@ -86,8 +86,8 @@ theorem Mj_succ (M : ByteArray) (B j : Nat) :
 theorem uh_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) {B : Nat} (hB : 18688 + 32 ≤ B)
     (hBe : B + 8192 + 16384 ≤ 90656) (j : Nat) (hj : j + 1 < 256) :
-    Reach (callState s 17072 (wd (B + 32 * j) :: wd (8192 + B) :: wd ret :: tail) (Mj M B j))
-      (callState s 17072 (wd (B + 32 * (j + 1)) :: wd (8192 + B) :: wd ret :: tail) (Mj M B (j + 1)))
+    Reach (callState s 17099 (wd (B + 32 * j) :: wd (8192 + B) :: wd ret :: tail) (Mj M B j))
+      (callState s 17099 (wd (B + 32 * (j + 1)) :: wd (8192 + B) :: wd ret :: tail) (Mj M B (j + 1)))
       188 := by
   have hb := uh_body hs (ret := ret) htail (Mj M B j) (B + 32 * j) (8192 + B) (by omega) (by omega)
     (by omega)
@@ -99,10 +99,10 @@ theorem uh_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
 theorem uh_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.usehint ret tail) (m : ByteArray) {B : Nat} (hB : 18688 + 32 ≤ B)
     (hBe : B + 8192 + 16384 ≤ 90656) :
-    Reach (callState s 17065 (wd B :: wd ret :: tail) m) (callState s ret tail (Mj m B 256)) 48153 := by
+    Reach (callState s 17092 (wd B :: wd ret :: tail) m) (callState s ret tail (Mj m B 256)) 48153 := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.usehint, Stack.leaf] at this; omega
-  have hloop := Reach.loop (I := fun j => callState s 17072
+  have hloop := Reach.loop (I := fun j => callState s 17099
     (wd (B + 32 * j) :: wd (8192 + B) :: wd ret :: tail) (Mj m B j)) 255
     (fun j hj => uh_step hs htail m hB hBe j (by omega))
   have hent := uh_entry hs (ret := ret) htail m B
@@ -111,8 +111,8 @@ theorem uh_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   rw [Mj_reads m (a := B + 32 * 255) (by omega), Mj_reads m (a := B + 32 * 255 - 18688) (by omega),
     Mj_reads m (a := 16384 + (B + 32 * 255)) (by omega)] at hlast
   have hfin := uh_ret hs htail hr.jumpdest hr.small (Mj m B 256) (32 + (B + 32 * 255)) (8192 + B)
-  have hlast' : Reach (callState s 17072 (wd (B + 32 * 255) :: wd (8192 + B) :: wd ret :: tail)
-      (Mj m B 255)) (callState s 17333 (wd (32 + (B + 32 * 255)) :: wd (8192 + B) :: wd ret :: tail)
+  have hlast' : Reach (callState s 17099 (wd (B + 32 * 255) :: wd (8192 + B) :: wd ret :: tail)
+      (Mj m B 255)) (callState s 17270 (wd (32 + (B + 32 * 255)) :: wd (8192 + B) :: wd ret :: tail)
       (Mj m B 256)) 188 := hlast.of_eq rfl (by rw [show Mj m B 256 = Mj m B (255 + 1) from rfl, Mj_succ m B 255]; rfl)
   have hall := ((hent.trans (hloop.of_eq (by simp [Mj, storeWords]) rfl)).trans hlast').trans hfin
   exact hall.mono (by norm_num)

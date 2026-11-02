@@ -40,13 +40,13 @@ theorem muLanes_zero (cd : ByteArray) (x : Nat) :
   rw [absorbPre_zero, laneOf_emptyState, Nat.zero_xor, Nat.mul_zero, Nat.zero_add]
 
 set_option maxHeartbeats 2000000 in
-/-- The setup (`5593 … 6384`) leaves the raw lanes of block 0. -/
+/-- The setup (`5665 … 6456`) leaves the raw lanes of block 0. -/
 theorem mu_setup {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) (b : Bool)
     {m : ByteArray} (htr : ∀ x, x < 8 → word m (TRL + 32 * x) = le64 (trOf s.executionEnv.calldata) (8 * x))
     (hrc : RC1Table m) :
     ∃ M, MuInv s.executionEnv.calldata m M 0 ∧
-      Reach (callState s 5593 [flag b] m)
-        (callState s 6384 [wd (66 + (s.executionEnv.calldata.size - 7219)), wd 7289, flag b] M) 982 := by
+      Reach (callState s 5665 [flag b] m)
+        (callState s 6456 [wd (66 + (s.executionEnv.calldata.size - 7219)), wd 7289, flag b] M) 982 := by
   have hfit : s.executionEnv.calldata.size < 18446744073709551616 := hs.calldataFits
   have hl : 7219 ≤ s.executionEnv.calldata.size := hcd
   obtain ⟨M1, f1, fr1, r1⟩ := mu_L1 hs b m (fun x hx => by rw [htr x hx]; exact le64_lt _ _)
@@ -162,8 +162,8 @@ theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     {m M : ByteArray} (j : Nat) (hj : 136 * (j + 1) ≤ (muMsgW s.executionEnv.calldata).size)
     (hI : MuInv s.executionEnv.calldata m M j) :
     ∃ M', MuInv s.executionEnv.calldata m M' (j + 1) ∧
-      Reach (callState s 6384 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j), wd (7289 + 136 * j), flag b] M)
-        (callState s 6384 [wd ((muMsgW s.executionEnv.calldata).size - 136 * (j + 1)),
+      Reach (callState s 6456 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j), wd (7289 + 136 * j), flag b] M)
+        (callState s 6456 [wd ((muMsgW s.executionEnv.calldata).size - 136 * (j + 1)),
           wd (7289 + 136 * (j + 1)), flag b] M') (Gas.kf1 + Gas.absorb17 + 88) := by
   have hfit : s.executionEnv.calldata.size < 18446744073709551616 := hs.calldataFits
   have hL := muMsgW_size s.executionEnv.calldata hcd
@@ -180,13 +180,13 @@ theorem mu_iter {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
         Fips202.pad 136 0x1F (muMsgW s.executionEnv.calldata) from rfl, le64_pad_full _ (by omega),
         show j * 136 + 8 * x = 136 * j + 8 * x by ring]
     · rw [if_neg (by omega), if_neg h, Nat.xor_zero]
-  obtain ⟨M1, hk1, hf1, hc1⟩ := kf1_call hs (ret := 6400)
+  obtain ⟨M1, hk1, hf1, hc1⟩ := kf1_call hs (ret := 6472)
     (tail := [wd (L - 136 * j), wd (7289 + 136 * j), flag b])
     (retOK_mu (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M hI.rc1
   have hK1 : KS1 M1 (absorbPre 136 (muPad s.executionEnv.calldata) (j + 1)) := by
     rw [absorbPre_succ]; exact hk1 S' hS' hK
   have h2 := mu_loop2 hs b M1 (len := L - 136 * j) (off := 7289 + 136 * j)
-  obtain ⟨M2, ha2, hf2, hc2⟩ := absorb17_call hs (ret := 6410)
+  obtain ⟨M2, ha2, hf2, hc2⟩ := absorb17_call hs (ret := 6482)
     (tail := [wd (7289 + 136 * j), wd (L - 136 * j), flag b])
     (retOK_mu (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M1
     (off := 7289 + 136 * j) (by omega)
@@ -213,8 +213,8 @@ theorem mu_loop {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     {m M0 : ByteArray} (hI0 : MuInv s.executionEnv.calldata m M0 0) :
     ∀ j, 136 * j ≤ (muMsgW s.executionEnv.calldata).size →
       ∃ M, MuInv s.executionEnv.calldata m M j ∧
-        Reach (callState s 6384 [wd (muMsgW s.executionEnv.calldata).size, wd 7289, flag b] M0)
-          (callState s 6384 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j),
+        Reach (callState s 6456 [wd (muMsgW s.executionEnv.calldata).size, wd 7289, flag b] M0)
+          (callState s 6456 [wd ((muMsgW s.executionEnv.calldata).size - 136 * j),
             wd (7289 + 136 * j), flag b] M) (j * (Gas.kf1 + Gas.absorb17 + 88))
   | 0, _ => ⟨M0, hI0, by simpa using Reach.refl _⟩
   | j + 1, hj => by
@@ -231,10 +231,10 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     (hI : MuInv s.executionEnv.calldata m M ((muMsgW s.executionEnv.calldata).size / 136)) :
     ∃ M', FinMu M' s.executionEnv.calldata ∧ RC1Table M' ∧
       FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] ∧
-      Reach (callState s 6384 [wd ((muMsgW s.executionEnv.calldata).size -
+      Reach (callState s 6456 [wd ((muMsgW s.executionEnv.calldata).size -
           136 * ((muMsgW s.executionEnv.calldata).size / 136)),
           wd (7289 + 136 * ((muMsgW s.executionEnv.calldata).size / 136)), flag b] M)
-        (callState s 6591 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
+        (callState s 6663 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
   set cd := s.executionEnv.calldata with hcdef
   set L := (muMsgW cd).size
   set n := L / 136
@@ -253,7 +253,7 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
         Fips202.pad 136 0x1F (muMsgW cd) from rfl, le64_pad_last _ h, Nat.xor_assoc,
         show 136 * n = L / 136 * 136 by ring]
     · rw [if_neg (by omega), if_neg h, Nat.xor_zero, padLane_hi hr' (by omega), Nat.xor_zero]
-  obtain ⟨M6, hk6, hf6, hc6⟩ := kf1_call hs (ret := 6525) (tail := [flag b])
+  obtain ⟨M6, hk6, hf6, hc6⟩ := kf1_call hs (ret := 6597) (tail := [flag b])
     (retOK_mu (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M5
     ((hI.rc1).frame fr5 (by avoids_tac))
   have hP : (muPad cd).size = (n + 1) * 136 := by
@@ -281,19 +281,20 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     rw [if_neg (by interval_cases x <;> simp_all [complemented])]
 
 theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
-    {m : ByteArray} (hI : Inv6 s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', Inv7 s.executionEnv.calldata m' ∧
-      Reach (callState s 5593 [flag b] m) (callState s 6591 [flag b] m')
+    {m : ByteArray} (hI : InvH s.executionEnv.calldata m) (b : Bool) :
+    ∃ m', Inv6 s.executionEnv.calldata m' ∧
+      Reach (callState s 5665 [flag b] m) (callState s 6663 [flag b] m')
         (Gas.pMu (mlenOf s.executionEnv.calldata)) := by
   -- the invariant from any frame avoiding the Keccak state and `FIN`
-  have inv7 : ∀ M', FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] →
-      FinMu M' s.executionEnv.calldata → RC1Table M' → Inv7 s.executionEnv.calldata M' :=
+  have inv6 : ∀ M', FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (FIN, FIN + 256)] →
+      FinMu M' s.executionEnv.calldata → RC1Table M' → Inv6 s.executionEnv.calldata M' :=
     fun M' hfr hmu hrc =>
       { rc1 := hrc
         tbl := hI.tbl.frame hfr (by avoids_tac)
         hp := hI.hp.frame hfr (by avoids_tac)
         acc := hI.acc.frame hfr (by avoids_tac)
-        c := hI.c.frame hfr (by avoids_tac) (by avoids_tac) (by avoids_tac)
+        fresh := ⟨ZeroOn.frame hI.zCw hfr (by avoids_tac), ZeroOn.frame hI.zIdx hfr (by avoids_tac),
+          ZeroOn.frame hI.zNeg hfr (by avoids_tac)⟩
         fmu := hmu }
   obtain ⟨M0, hI0, r1⟩ := mu_setup hs hcd b hI.trl hI.rc1
   have hL := muMsgW_size s.executionEnv.calldata hcd
@@ -301,7 +302,7 @@ theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.call
   obtain ⟨M, hIn, r2⟩ := mu_loop hs hcd b hI0 ((muMsgW s.executionEnv.calldata).size / 136)
     (Nat.mul_div_le _ _)
   obtain ⟨M', hmu, hrc, hfr, r3⟩ := mu_finish hs b hIn
-  refine ⟨M', inv7 M' hfr hmu hrc, ((r1.trans r2).trans r3).mono ?_⟩
+  refine ⟨M', inv6 M' hfr hmu hrc, ((r1.trans r2).trans r3).mono ?_⟩
   unfold Gas.pMu
   rw [hL]
   unfold mlenOf HDR

@@ -1,31 +1,21 @@
 import MlDsaOpt87.Fn.Group.Defs
 import MlDsaOpt87.Fn.Ginit.Call
-import MlDsaOpt87.Fn.Group.Pass3
-import MlDsaOpt87.Fn.Group.Pass3m
-import MlDsaOpt87.Fn.Group.Seed
-import MlDsaOpt87.Fn.Group.Squeeze
-import MlDsaOpt87.Fn.Group.Main
+import MlDsaOpt87.Fn.Fix
+import MlDsaOpt87.Fn.Keccak
+import MlDsaOpt87.Fn.Blk
 /-!
-# Fused ExpandA · ẑ: `pass3`, `ginit`, `group` (ML-DSA-87, WP6)
-
-`pass3 [64 k, zh, acc]` accumulates `acc[t] += ABUF[t] · lane k of zh[t]`
-lane-wise (one `MUL` per word); ML-DSA-87 calls it only from `group`
-(`zh = ZH + 0x2000 (col / 4)`, `acc = ACC + 0x2000 rb`). `pass3m [lm, 64 k, zh, acc]`
-masks the candidate words by `lm` first; the main flow calls it for the mixed
-groups 10–13 with `[lm, 64 k, ZH or ZH2, 0xe900]`. Both contracts are exact word
-equations; the lane reading is a pure lemma. Proofs: `Fn/Group/Pass3.lean`,
-`Fn/Group/Pass3m.lean` (ported from ML-DSA-44, pointers generalised).
-
-`ginit` (`Fn/Ginit/Call.lean`) builds the kf4 state of a SIMD group;
-`ginitWord`, `Rho1At`, `gOk`, `groupFrame` are in `Fn/Group/Defs.lean`.
+# ExpandA groups and the fused accumulation (ML-DSA-87, v4)
 
 `group [amask, col, rb, ret] ↦ [ok]` is one pure ExpandA SIMD group: column
-`col`, slot `r` the row `4 rb + r` when bit `r` of `amask` is set (row `4 rb`
-otherwise): `ginit`, five `kf4` + `blk`, `gfix amask`, `pass3`. ML-DSA-87 calls
-it with `[15, col, 0]`, `col < 7`, and `[15, col, 1]`, `col < 3`. Proof:
-`Fn/Group/Seed.lean` (`gL4_eq`, `ginit_group`, `aI_aSeed`), `Fn/Group/Squeeze.lean`
-(`squeezes`), `Fn/Group/{Prologue,Blocks}.lean` (glue blocks) and
-`Fn/Group/Main.lean` (`GroupP.g1_group_reach`).
+`col`, slot `r` the row `4 rb + r` when bit `r` of `amask` is set: `ginit`, five
+`kf4` with `blk` (`blkh` for the last block), `gfix amask`. v4: the group's
+fixed-up candidates are left in `ABUF[0, 256)`; the main flow copies them to a
+side buffer, and the fused passes `pass3f*` (generator `gen_pass3f`,
+`plan_accumulation`) store or add every product of a batch into one
+accumulator table, reading and writing each word once.
+
+`ginit` (`Fn/Ginit/Call.lean`); `ginitWord`, `Rho1At`, `gOk`, `groupFrame`,
+`zl` are in `Fn/Group/Defs.lean`.
 -/
 
 namespace MlDsaOpt87.Proofs
@@ -36,53 +26,82 @@ open EvmSemantics
 open EvmSemantics.EVM
 open MlDsaOptCommon
 
-/-- **pass3**: `[64 k, zh, acc, ret]`; `acc[t] += ABUF[t] · lane k of zh[t]`.
-`zh` lies below `ACC` (ẑ: `ZH`, `ZH2`), `acc` inside the accumulators. -/
-theorem pass3_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.pass3 ret tail) (m : ByteArray) {k zh acc : Nat} (hk : k < 4)
-    (hzh : zh + 8192 ≤ ACC) (hacc : ACC ≤ acc) (hacc' : acc + 8192 ≤ HP) :
-    ∃ m', (∀ t, t < 256 → word m' (acc + 32 * t) =
-        (word m (acc + 32 * t) + word m (ABUF + 32 * t) * lane (word m (zh + 32 * t)) k) % 2 ^ 256) ∧
-      FrameExcept m m' [(acc, acc + 8192)] ∧
-      Call s Entry.pass3 [wd (64 * k), wd zh, wd acc] ret tail m [] m' Gas.pass3 :=
-  GroupP.pass3_reach hs hr m hk hzh hacc hacc'
-
-/-- **pass3m**: `[lm, 64 k, zh, acc, ret]`; as `pass3` with the candidate words
-masked by `lm` (the lanes of active slots). -/
-theorem pass3m_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.pass3m ret tail) (m : ByteArray) {k lm zh acc : Nat} (hk : k < 4)
-    (hlm : lm < 2 ^ 256) (hzh : zh + 8192 ≤ ACC) (hacc : ACC ≤ acc) (hacc' : acc + 8192 ≤ HP) :
-    ∃ m', (∀ t, t < 256 → word m' (acc + 32 * t) =
-        (word m (acc + 32 * t) + (word m (ABUF + 32 * t) &&& lm) * lane (word m (zh + 32 * t)) k) %
-          2 ^ 256) ∧
-      FrameExcept m m' [(acc, acc + 8192)] ∧
-      Call s Entry.pass3m [wd lm, wd (64 * k), wd zh, wd acc] ret tail m [] m' Gas.pass3m :=
-  GroupP.pass3m_reach hs hr m hk hlm hzh hacc hacc'
-
-/-- **group**: `[amask, col, rb, ret] ↦ [ok]`; `ok = gOk` (every active
-slot's `A[4 rb + r][col]` exists), and then every word of the row-group-`rb`
-accumulators gains `(A[4 rb + r][col][t])_r · ẑ_col[t]`, `ẑ_col` lane `col % 4`
-of `ZH + 0x2000 (col / 4)`; inactive lanes (`amask` bit clear) carry some value
-below `2^23` (a raw `blk` candidate: `gfix` leaves them alone). Writes only
-`groupFrame rb`; gas `Gas.group`. Proof (`GroupP.g1_group_reach`, port of
-`MlDsaOpt44/Fn/Group/Main.lean`): `gB amask col rb`, the prologue's lane 4 `GroupP.gL4` (`gL4_eq`), seeds
-`seedState 168 (aSeed cd (gRow amask rb k) col)` (`ginit_group`, `aI_aSeed`),
-`squeezes`, `gfix_call` (incl. its kept-inactive-lanes conjunct), `pass3_reach`
-at `zh = ZH + 8192 (col / 4)`, `acc = ACC + 8192 rb`. -/
+/-- **group**: `[amask, col, rb, ret] ↦ [ok]`; `ok` iff the active slots' rows
+of column `col` exist, and then lane `r` of `ABUF[t]` is `A[4 rb + r][col][t]`
+for the active slots `r` (other lanes hold values below `2^23`). -/
 theorem group_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) (m : ByteArray) (hrc : RC4Table m)
     (hrho : Rho1At m s.executionEnv.calldata) {amask col rb : Nat} (hamask : amask < 16)
     (hcol : col < 8) (hrb : rb < 2) (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', (gOk s.executionEnv.calldata amask col rb = true →
         ∃ junk : Nat → Nat → Nat, (∀ r t, junk r t < 2 ^ 23) ∧
-        ∀ t, t < 256 → word m' (ACC + 8192 * rb + 32 * t) =
-          (word m (ACC + 8192 * rb + 32 * t) +
-            pack4 (fun r => if amask.testBit r then
-                ((aD s.executionEnv.calldata (4 * rb + r) col)[t]!).toNat else junk r t) *
-              lane (word m (ZH + 8192 * (col / 4) + 32 * t)) (col % 4)) % 2 ^ 256) ∧
+        ∀ t, t < 256 → word m' (ABUF + 32 * t) =
+          pack4 (fun r => if amask.testBit r then
+            ((aD s.executionEnv.calldata (4 * rb + r) col)[t]!).toNat else junk r t)) ∧
       FrameExcept m m' (groupFrame rb) ∧
       Call s Entry.group [wd amask, wd col, wd rb] ret tail m
         [flag (gOk s.executionEnv.calldata amask col rb)] m' Gas.group :=
-  GroupP.g1_group_reach hs hr m hrc hrho hamask hcol hrb hcd
+  sorry
+
+/-- A fused pass's frame and call, given the word it stores at `acc[t]`. -/
+def FusedPass (s : State) (entry ret : Nat) (tail : List UInt256) (m : ByteArray) (acc gas : Nat)
+    (W : ByteArray → Nat → Nat) : Prop :=
+  ∃ m', (∀ t, t < 256 → word m' (acc + 32 * t) = W m t) ∧
+    FrameExcept m m' [(acc, acc + 8192)] ∧ Call s entry [] ret tail m [] m' gas
+
+/-- `x · ẑ_j` of buffer word `t` (lane-wise product, one `MUL`). -/
+def bz (m : ByteArray) (b j t : Nat) : Nat := word m (b + 32 * t) * zl m j t
+
+/-- As `bz` with the buffer word masked by `msk` and shifted left by `64 d`. -/
+def bzl (m : ByteArray) (b msk d j t : Nat) : Nat :=
+  (word m (b + 32 * t) &&& msk) * 2 ^ (64 * d) % 2 ^ 256 * zl m j t
+
+/-- As `bz` with the buffer word masked by `msk` and shifted right by `64 d`. -/
+def bzr (m : ByteArray) (b msk d j t : Nat) : Nat :=
+  (word m (b + 32 * t) &&& msk) / 2 ^ (64 * d) * zl m j t
+
+/-- `pass3f4`: row group 0, columns 0 … 4 (stores). -/
+def p3f4Word (m : ByteArray) (t : Nat) : Nat :=
+  (bz m CW 0 t + bz m HP 1 t + bz m (HP + 8192) 2 t + bz m (ACC + 8192) 3 t + bz m ABUF 4 t) % 2 ^ 256
+
+/-- `pass3f6`: row group 0, columns 5, 6 (adds). -/
+def p3f6Word (m : ByteArray) (t : Nat) : Nat :=
+  (word m (ACC + 32 * t) + bz m CW 5 t + bz m ABUF 6 t) % 2 ^ 256
+
+/-- `pass3f10`: row group 1, columns 0 … 2 and column 3 rows 4 … 6 (stores). -/
+def p3f10Word (m : ByteArray) (t : Nat) : Nat :=
+  (bz m CW 0 t + bz m HP 1 t + bz m (HP + 8192) 2 t + bzl m ABUF (2 ^ 192 - 1) 0 3 t) % 2 ^ 256
+
+/-- The Kronecker term of `pass3f14`: lane 3 of `ABUF[t] · (ẑ_3, ẑ_4, ẑ_5, ẑ_6)`. -/
+def kron14 (m : ByteArray) (t : Nat) : Nat :=
+  word m (ABUF + 32 * t) *
+      (word m (ZH + 32 * t) / 2 ^ 192 ||| word m (ZH + 8192 + 32 * t) * 2 ^ 64 % 2 ^ 256) % 2 ^ 256 &&&
+    (M64 * 2 ^ 192)
+
+/-- `pass3f14`: row group 1, columns 4 … 6 rows 4 … 6, and row 7 columns 3 … 6
+(adds). -/
+def p3f14Word (m : ByteArray) (t : Nat) : Nat :=
+  (word m (ACC + 8192 + 32 * t) + bzl m CW (2 ^ 192 - 1) 0 4 t + bzl m HP (2 ^ 192 - 1) 0 5 t +
+    bzl m (HP + 8192) (2 ^ 192 - 1) 0 6 t + kron14 m t) % 2 ^ 256
+
+theorem pass3f4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
+    FusedPass s Entry.pass3f4 ret tail m ACC Gas.pass3f4 p3f4Word :=
+  sorry
+
+theorem pass3f6_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
+    FusedPass s Entry.pass3f6 ret tail m ACC Gas.pass3f6 p3f6Word :=
+  sorry
+
+theorem pass3f10_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
+    FusedPass s Entry.pass3f10 ret tail m (ACC + 8192) Gas.pass3f10 p3f10Word :=
+  sorry
+
+theorem pass3f14_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
+    FusedPass s Entry.pass3f14 ret tail m (ACC + 8192) Gas.pass3f14 p3f14Word :=
+  sorry
 
 end MlDsaOpt87.Proofs
