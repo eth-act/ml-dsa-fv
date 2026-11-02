@@ -207,18 +207,77 @@ theorem sprNet_lt (v : Nat) : sprNet v < 2 ^ 256 := by
   unfold sprNet sstage
   exact Nat.lt_of_le_of_lt Nat.and_le_left (by norm_num)
 
-set_option maxRecDepth 20000 in
-set_option maxHeartbeats 0 in
+/-! ## Shift-and-mask networks on symbolic bits
+
+A network value is described bit by bit: bit `j` is the OR of the input bits listed
+in `s j`. The stage functions below compute these lists, so a network's bit layout
+is checked by evaluating the lists for `j < 256` (`decide +kernel`) instead of
+case-splitting on `j` and simplifying every bit. -/
+
+/-- Input `v` with only bits `j < n` possibly set. -/
+def symLow (n j : Nat) : List Nat := if j < n then [j] else []
+
+/-- `M &&& y`. -/
+def symMask (M : Nat) (s : Nat → List Nat) (j : Nat) : List Nat :=
+  if M.testBit j then s j else []
+
+/-- `sstage k M y = M &&& (y * 2 ^ k ||| y)`. -/
+def symStage (k M : Nat) (s : Nat → List Nat) (j : Nat) : List Nat :=
+  if M.testBit j then (if k ≤ j then s (j - k) else []) ++ s j else []
+
+/-- `M &&& (y % 2 ^ 256 / 2 ^ k ||| y)` (the `cext` stage). -/
+def symCStage (k M : Nat) (s : Nat → List Nat) (j : Nat) : List Nat :=
+  if M.testBit j then (if j + k < 256 then s (j + k) else []) ++ s j else []
+
+theorem symLow_ok {v n : Nat} (hv : v < 2 ^ n) (j : Nat) :
+    v.testBit j = (symLow n j).any v.testBit := by
+  unfold symLow
+  by_cases hj : j < n
+  · simp [hj]
+  · simp only [hj, if_false, List.any_nil]
+    exact Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hv (Nat.pow_le_pow_right (by omega) (by omega)))
+
+theorem symMask_ok {v y : Nat} {s : Nat → List Nat} (M : Nat)
+    (h : ∀ j, y.testBit j = (s j).any v.testBit) (j : Nat) :
+    (M &&& y).testBit j = (symMask M s j).any v.testBit := by
+  unfold symMask
+  rw [Nat.testBit_and]
+  by_cases hM : M.testBit j <;> simp [hM, h]
+
+theorem symStage_ok {v y : Nat} {s : Nat → List Nat} (k M : Nat)
+    (h : ∀ j, y.testBit j = (s j).any v.testBit) (j : Nat) :
+    (sstage k M y).testBit j = (symStage k M s j).any v.testBit := by
+  unfold sstage symStage
+  rw [Nat.testBit_and, Nat.testBit_or, Nat.testBit_mul_two_pow]
+  by_cases hM : M.testBit j <;> by_cases hk : k ≤ j <;> simp [hM, hk, h, List.any_append]
+
+theorem symCStage_ok {v y : Nat} {s : Nat → List Nat} (k M : Nat)
+    (h : ∀ j, y.testBit j = (s j).any v.testBit) (j : Nat) :
+    (M &&& (y % 2 ^ 256 / 2 ^ k ||| y)).testBit j = (symCStage k M s j).any v.testBit := by
+  unfold symCStage
+  rw [Nat.testBit_and, Nat.testBit_or, Nat.testBit_div_two_pow, Nat.testBit_mod_two_pow]
+  by_cases hM : M.testBit j <;> by_cases hk : j + k < 256 <;>
+    simp [hM, hk, h, List.any_append]
+
+/-- `sprNet` on symbolic bits. -/
+def sprSym : Nat → List Nat :=
+  symStage 3 0x1111111111111111111111111111111111111111111111111111111111111111
+    (symStage 6 0x0303030303030303030303030303030303030303030303030303030303030303
+      (symStage 12 0x0f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f
+        (symStage 24 0xff000000ff000000ff000000ff000000ff000000ff000000ff000000ff
+          (symStage 48 0xffff000000000000ffff000000000000ffff000000000000ffff
+            (symStage 96 0xffffffff000000000000000000000000ffffffff (symLow 64))))))
+
+theorem sprSym_eq : ∀ j, j < 256 → sprSym j = if j % 4 = 0 then [j / 4] else [] := by
+  decide +kernel
+
 theorem sprNet_eq {v : Nat} (hv : v < 2 ^ 64) : sprNet v = spread v := by
-  have hb : ∀ i, 64 ≤ i → v.testBit i = false := fun i hi =>
-    Nat.testBit_lt_two_pow (Nat.lt_of_lt_of_le hv (Nat.pow_le_pow_right (by omega) hi))
+  have hs : ∀ j, (sprNet v).testBit j = (sprSym j).any v.testBit :=
+    symStage_ok _ _ (symStage_ok _ _ (symStage_ok _ _ (symStage_ok _ _ (symStage_ok _ _
+      (symStage_ok _ _ (symLow_ok hv))))))
   apply eq_of_testBit_lt (n := 256) (sprNet_lt v) (spread_lt v)
   intro j hj
-  rw [testBit_spread]
-  interval_cases j <;>
-    simp (disch := omega) only [sprNet, sstage, Nat.testBit_and, Nat.testBit_or, Nat.testBit_mul_two_pow,
-      testBit_lit, Bool.false_and, Bool.true_and, Bool.and_false, Bool.and_true, Bool.false_or,
-      Bool.or_false, Nat.reduceMod, Nat.reduceDiv, Nat.reduceSub, Nat.reduceLeDiff, decide_true,
-      decide_false, Nat.reduceLT, Nat.reduceEqDiff, hb, Bool.or_self]
+  rw [testBit_spread, hs, sprSym_eq j hj]
+  by_cases h4 : j % 4 = 0 <;> simp [h4, show j / 4 < 64 by omega]
 
 end MlDsaOpt44.Proofs.WP4

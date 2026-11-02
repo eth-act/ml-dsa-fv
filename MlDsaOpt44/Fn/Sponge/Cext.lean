@@ -32,28 +32,37 @@ def cextOut (x u : Nat) : Nat :=
   (18446744073709551615 * (1 &&& 1184006 / 2 ^ x) ^^^ compNet u) % 2 ^ 256
 
 theorem spread_M64 : spread M64 = 0x1111111111111111111111111111111111111111111111111111111111111111 := by
-  apply eq_of_testBit_lt (n := 256) (spread_lt _) (by norm_num)
-  intro j hj
-  rw [testBit_spread]
-  simp only [M64]
-  interval_cases j <;> simp only [testBit_lit, Nat.reduceMod, Nat.reduceDiv, Nat.reducePow,
-    Nat.reduceSub, Nat.reduceLT, Nat.reduceEqDiff, decide_true, decide_false, Bool.true_and,
-    Bool.false_and, Bool.and_true]
+  decide +kernel
 
 theorem compNet_lt (u : Nat) : compNet u < 2 ^ 64 := by
   unfold compNet cstage
   exact Nat.lt_of_le_of_lt Nat.and_le_left (by norm_num)
 
-set_option maxRecDepth 20000 in
+/-- `compNet` on symbolic bits. -/
+def compSym : Nat → List Nat :=
+  symCStage 96 0xffffffffffffffff
+    (symCStage 48 0xffffffff000000000000000000000000ffffffff
+      (symCStage 24 0xffff000000000000ffff000000000000ffff000000000000ffff
+        (symCStage 12 0xff000000ff000000ff000000ff000000ff000000ff000000ff000000ff
+          (symCStage 6 0x0f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f
+            (symCStage 3 0x0303030303030303030303030303030303030303030303030303030303030303
+              (symMask 0x1111111111111111111111111111111111111111111111111111111111111111
+                fun j => [j]))))))
+
+theorem compSym_eq : ∀ j, j < 64 → compSym j = [4 * j] ∧
+    (0x1111111111111111111111111111111111111111111111111111111111111111 : Nat).testBit (4 * j) =
+      true := by
+  decide +kernel
+
 theorem compNet_eq (u : Nat) : compNet u = compress (u &&& spread M64) := by
+  have hs : ∀ j, (compNet u).testBit j = (compSym j).any u.testBit :=
+    symCStage_ok _ _ (symCStage_ok _ _ (symCStage_ok _ _ (symCStage_ok _ _ (symCStage_ok _ _
+      (symCStage_ok _ _ (symMask_ok _ fun j => by simp))))))
   apply eq_of_testBit_lt (n := 64) (compNet_lt u) (compress_lt _)
   intro j hj
-  rw [testBit_compress, Nat.testBit_and, spread_M64]
-  interval_cases j <;>
-    simp only [compNet, cstage, Nat.testBit_and, Nat.testBit_or, Nat.testBit_div_two_pow,
-      Nat.testBit_mod_two_pow, testBit_lit, Bool.false_and, Bool.true_and, Bool.and_false,
-      Bool.and_true, Bool.false_or, Bool.or_false, Nat.reduceAdd, Nat.reduceMul, Nat.reduceLT,
-      decide_true, decide_false, Bool.or_self]
+  obtain ⟨h1, h2⟩ := compSym_eq j hj
+  rw [testBit_compress, Nat.testBit_and, spread_M64, hs, h1, h2]
+  simp [hj]
 
 theorem xor_M64 {c : Nat} (hc : c < 2 ^ 64) : 18446744073709551615 ^^^ c = 2 ^ 64 - 1 - c := by
   apply eq_of_testBit_lt (n := 64) (Nat.xor_lt_two_pow (by norm_num) hc) (by omega)
