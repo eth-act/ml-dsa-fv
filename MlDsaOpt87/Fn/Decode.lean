@@ -1,5 +1,4 @@
 import MlDsaOpt87.Fn.Decode.Defs
-import MlDsaOpt87.Fn.Decode.ZLoop
 import MlDsaOpt87.Fn.Decode.ZSpec
 import MlDsaOpt87.Fn.Decode.HintMain
 /-!
@@ -24,7 +23,7 @@ open MlDsa
 /-- **dz**: `[ZH + 0x2000 g, Z0 + 2560 g, ret] ↦ [f]`, `g < 2`. Decodes the four
 20-bit packed polynomials `4g … 4g + 3` of the z stream (for `g = 1` lanes 0–2 are
 `z_4, z_5, z_6`; lane 3 holds `zLane` of the bytes behind `z_6` (hint bytes, message, zero
-past the end of the calldata)) into lane-packed words, `lane j of ZH_g[t] = γ1 + q − raw = zLane`, and
+past the end of the calldata)) into lane-packed words, `lane j of ZH_g[t] = γ1 + 9q − raw = zLane (v4)`, and
 returns the OR of the SIMD flag words: the lane-`j` flag bits `zFlagBit j` of `f` are
 clear iff every field of polynomial `4g + j` is in `(β, 2γ1 − β)`.
 Mirror `MlDsaOpt44/Fn/Decode/ZLoop.lean` (`DecodeZ.dz_main`), generic in the base. -/
@@ -36,7 +35,7 @@ theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         pack4 fun j => zLane s.executionEnv.calldata (4 * g + j) t) ∧
       FrameExcept m m' [(ZH + 0x2000 * g, ZH + 0x2000 * g + 8192)] ∧
       Call s Entry.dz [wd (ZH + 0x2000 * g), wd (Z0 + 2560 * g)] ret tail m [wd f] m' Gas.dz :=
-  DecodeZ.dz_main hs hr m hg
+  sorry
 
 /-- Pure (open): the norm check of `z ∈ R^ℓ` is the conjunction of the per-polynomial
 field checks of the first `ℓ = 7` polynomials of the stream. Together with `dz_call`

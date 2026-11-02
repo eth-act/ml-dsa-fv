@@ -35,128 +35,128 @@ include hs htail
 /-! ## Forward -/
 
 theorem f_pro :
-    Reach (callState s 17719 (UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem)
-      (callState s 17783 (UInt256.ofNat 32768 :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 17656 (UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem)
+      (callState s 17692 (UInt256.ofNat 32768 :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem) 19 := by
-  opt87_reach [7969, 7970, 7971, 7972, 7973, 7974, 7975]
+  opt87_reach [8081, 8082, 7971, 7972, 8084, 8085, 7975]
 
 theorem fA_cont (pj : Nat) (hpj : 32 + pj < 33792) :
-    Reach (callState s 18264 (UInt256.ofNat pj :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18141 (UInt256.ofNat pj :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 17783 (UInt256.ofNat (32 + pj) :: UInt256.ofNat 33792 :: cC2 :: cM ::
+      (callState s 17692 (UInt256.ofNat (32 + pj) :: UInt256.ofNat 33792 :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 28 := by
-  opt87_reach [8301, 8302, 8303, 8304, 8305, 8306, 8307]
+  opt87_reach [8376, 8377, 8378, 8379, 8380, 8381, 8382]
 
 theorem fA_exit (pj : Nat) (hpj : 32 + pj = 33792) :
-    Reach (callState s 18264 (UInt256.ofNat pj :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18141 (UInt256.ofNat pj :: UInt256.ofNat 33792 :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 18280 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
+      (callState s 18157 (UInt256.ofNat 32768 :: UInt256.ofNat 4096 :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 38 := by
-  opt87_reach [8301, 8302, 8303, 8304, 8305, 8306, 8307, 8308, 8309, 8310, 8311]
+  opt87_reach [8376, 8377, 8378, 8379, 8380, 8381, 8382, 8383, 8384, 8385, 8311]
 
 theorem fB_ci (pj zb : Nat) (hpj : pj < 70000) (hm : (32 + pj) % 128 ≠ 0) :
-    Reach (callState s 18763 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18616 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 18280 (UInt256.ofNat (32 + pj) :: UInt256.ofNat zb :: cC2 :: cM ::
+      (callState s 18157 (UInt256.ofNat (32 + pj) :: UInt256.ofNat zb :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 28 := by
-  opt87_reach [8665, 8666, 8667, 8668, 8669, 8670, 8671] with [land127]
+  opt87_reach [8716, 8717, 8718, 8719, 8720, 8721, 8722] with [land127]
 
 theorem fB_co (pj zb : Nat) (hpj : pj < 70000) (hzb : zb < 70000) (hm : (32 + pj) % 128 = 0)
     (hz : 224 + zb < 5888) :
-    Reach (callState s 18763 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18616 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 18280 (UInt256.ofNat (896 + (32 + pj)) :: UInt256.ofNat (224 + zb) :: cC2 :: cM ::
+      (callState s 18157 (UInt256.ofNat (896 + (32 + pj)) :: UInt256.ofNat (224 + zb) :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 68 := by
-  opt87_reach [8665, 8666, 8667, 8668, 8669, 8670, 8671, 8672, 8673, 8674, 8675, 8676, 8677, 8678,
-    8679, 8680, 8681, 8682] with [land127]
+  opt87_reach [8716, 8717, 8718, 8719, 8720, 8721, 8722, 8723, 8724, 8725, 8726, 8727, 8728, 8729,
+    8730, 8731, 8732, 8733] with [land127]
 
 theorem fB_ex (pj zb : Nat) (hpj : pj < 70000) (hzb : zb < 70000) (hm : (32 + pj) % 128 = 0)
     (hz : 224 + zb = 5888) :
-    Reach (callState s 18763 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18616 (UInt256.ofNat pj :: UInt256.ofNat zb :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 18798 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
+      (callState s 18651 (UInt256.ofNat 32768 :: UInt256.ofNat 5888 :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 78 := by
-  opt87_reach [8665, 8666, 8667, 8668, 8669, 8670, 8671, 8672, 8673, 8674, 8675, 8676, 8677, 8678,
-    8679, 8680, 8681, 8682, 8683, 8684, 8685, 8686] with [land127]
+  opt87_reach [8716, 8717, 8718, 8719, 8720, 8721, 8722, 8723, 8724, 8725, 8726, 8727, 8728, 8729,
+    8730, 8731, 8732, 8733, 8734, 8735, 8736, 8686] with [land127]
 
 theorem fC_cont (pj zc : Nat) (hpj : pj < 70000) (hz : 96 + zc < 12032) :
-    Reach (callState s 18963 (UInt256.ofNat pj :: UInt256.ofNat zc :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18808 (UInt256.ofNat pj :: UInt256.ofNat zc :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 18798 (UInt256.ofNat (128 + pj) :: UInt256.ofNat (96 + zc) :: cC2 :: cM ::
+      (callState s 18651 (UInt256.ofNat (128 + pj) :: UInt256.ofNat (96 + zc) :: cC2 :: cM ::
         UInt256.ofNat 32768 :: UInt256.ofNat ret :: tail) mem) 40 := by
-  opt87_reach [8812, 8813, 8814, 8815, 8816, 8817, 8818, 8819, 8820, 8821, 8822]
+  opt87_reach [8855, 8856, 8857, 8858, 8859, 8860, 8861, 8862, 8863, 8864, 8865]
 
 theorem fC_exit (pj zc : Nat) (hpj : pj < 70000) (hz : 96 + zc = 12032)
     (hj : Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 2 ^ 16) :
-    Reach (callState s 18963 (UInt256.ofNat pj :: UInt256.ofNat zc :: cC2 :: cM :: UInt256.ofNat 32768 ::
+    Reach (callState s 18808 (UInt256.ofNat pj :: UInt256.ofNat zc :: cC2 :: cM :: UInt256.ofNat 32768 ::
         UInt256.ofNat ret :: tail) mem)
       (callState s ret tail mem) 58 := by
-  opt87_reach [8812, 8813, 8814, 8815, 8816, 8817, 8818, 8819, 8820, 8821, 8822, 8823, 8824, 8825,
-    8826, 8827, 8828] with [hj]
+  opt87_reach [8855, 8856, 8857, 8858, 8859, 8860, 8861, 8862, 8863, 8864, 8865, 8866, 8867, 8868,
+    8869, 8827, 8870] with [hj]
 
 /-! ## Inverse -/
 
 theorem i_pro :
-    Reach (callState s 18986 (UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem)
-      (callState s 19050 (UInt256.ofNat 51456 :: UInt256.ofNat 11936 :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 18830 (UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem)
+      (callState s 18894 (UInt256.ofNat 51456 :: UInt256.ofNat 11936 :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem) 13 := by
-  opt87_reach [8829, 8830, 8831, 8832, 8833]
+  opt87_reach [8871, 8872, 8873, 8874, 8875]
 
 theorem iC_cont (pj zc : Nat) (hpj : pj < 70000) (hzc : zc < 70000) (h96 : 96 ≤ zc)
     (hz : 5888 ≤ zc - 96) :
-    Reach (callState s 19299 (UInt256.ofNat pj :: UInt256.ofNat zc :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 19139 (UInt256.ofNat pj :: UInt256.ofNat zc :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19050 (UInt256.ofNat (128 + pj) :: UInt256.ofNat (zc - 96) :: cCI :: cM ::
+      (callState s 18894 (UInt256.ofNat (128 + pj) :: UInt256.ofNat (zc - 96) :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 46 := by
-  opt87_reach [9011, 9012, 9013, 9014, 9015, 9016, 9017, 9018, 9019, 9020, 9021, 9022, 9023]
+  opt87_reach [9049, 9050, 9051, 9052, 9053, 9054, 9055, 9056, 9057, 9058, 9059, 9060, 9061]
 
 theorem iC_exit (pj zc : Nat) (hpj : pj < 70000) (hzc : zc < 70000) (h96 : 96 ≤ zc)
     (hz : zc - 96 < 5888) :
-    Reach (callState s 19299 (UInt256.ofNat pj :: UInt256.ofNat zc :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 19139 (UInt256.ofNat pj :: UInt256.ofNat zc :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19324 (UInt256.ofNat 51456 :: UInt256.ofNat 5664 :: cCI :: cM ::
+      (callState s 19164 (UInt256.ofNat 51456 :: UInt256.ofNat 5664 :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 56 := by
-  opt87_reach [9011, 9012, 9013, 9014, 9015, 9016, 9017, 9018, 9019, 9020, 9021, 9022, 9023, 9024,
-    9025, 9026, 9027]
+  opt87_reach [9049, 9050, 9051, 9052, 9053, 9054, 9055, 9056, 9057, 9058, 9059, 9060, 9061, 9062,
+    9063, 9064, 9065]
 
 theorem iB_ci (pj zb : Nat) (hpj : pj < 70000) (hm : (32 + pj) % 128 ≠ 0) :
-    Reach (callState s 19819 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 19647 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19324 (UInt256.ofNat (32 + pj) :: UInt256.ofNat zb :: cCI :: cM ::
+      (callState s 19164 (UInt256.ofNat (32 + pj) :: UInt256.ofNat zb :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 28 := by
-  opt87_reach [9393, 9394, 9395, 9396, 9397, 9398, 9399] with [land127]
+  opt87_reach [9419, 9420, 9421, 9422, 9423, 9424, 9425] with [land127]
 
 theorem iB_co (pj zb : Nat) (hpj : pj < 70000) (hzb : zb < 70000) (h224 : 224 ≤ zb)
     (hm : (32 + pj) % 128 = 0) (hz : 4096 ≤ zb - 224) :
-    Reach (callState s 19819 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 19647 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19324 (UInt256.ofNat (896 + (32 + pj)) :: UInt256.ofNat (zb - 224) :: cCI :: cM ::
+      (callState s 19164 (UInt256.ofNat (896 + (32 + pj)) :: UInt256.ofNat (zb - 224) :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 74 := by
-  opt87_reach [9393, 9394, 9395, 9396, 9397, 9398, 9399, 9400, 9401, 9402, 9403, 9404, 9405, 9406,
-    9407, 9408, 9409, 9410, 9411, 9412] with [land127]
+  opt87_reach [9419, 9420, 9421, 9422, 9423, 9424, 9425, 9426, 9427, 9428, 9429, 9430, 9431, 9432,
+    9433, 9434, 9435, 9436, 9437, 9438] with [land127]
 
 theorem iB_ex (pj zb : Nat) (hpj : pj < 70000) (hzb : zb < 70000) (h224 : 224 ≤ zb)
     (hm : (32 + pj) % 128 = 0) (hz : zb - 224 < 4096) :
-    Reach (callState s 19819 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 19647 (UInt256.ofNat pj :: UInt256.ofNat zb :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19858 (UInt256.ofNat 51456 :: UInt256.ofNat 52480 :: cCI :: cM ::
+      (callState s 19686 (UInt256.ofNat 51456 :: UInt256.ofNat 52480 :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 90 := by
-  opt87_reach [9393, 9394, 9395, 9396, 9397, 9398, 9399, 9400, 9401, 9402, 9403, 9404, 9405, 9406,
-    9407, 9408, 9409, 9410, 9411, 9412, 9413, 9414, 9415, 9416, 9417, 9418] with [land127]
+  opt87_reach [9419, 9420, 9421, 9422, 9423, 9424, 9425, 9426, 9427, 9428, 9429, 9430, 9431, 9432,
+    9433, 9434, 9435, 9436, 9437, 9438, 9439, 9440, 9441, 9442, 9443, 9444] with [land127]
 
 theorem iA_cont (pj : Nat) (hpj : 32 + pj < 52480) :
-    Reach (callState s 20451 (UInt256.ofNat pj :: UInt256.ofNat 52480 :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 20267 (UInt256.ofNat pj :: UInt256.ofNat 52480 :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
-      (callState s 19858 (UInt256.ofNat (32 + pj) :: UInt256.ofNat 52480 :: cCI :: cM ::
+      (callState s 19686 (UInt256.ofNat (32 + pj) :: UInt256.ofNat 52480 :: cCI :: cM ::
         UInt256.ofNat 51456 :: UInt256.ofNat ret :: tail) mem) 28 := by
-  opt87_reach [9812, 9813, 9814, 9815, 9816, 9817, 9818]
+  opt87_reach [9826, 9827, 9828, 9829, 9830, 9831, 9832]
 
 theorem iA_exit (pj : Nat) (hpj : 32 + pj = 52480)
     (hj : Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 2 ^ 16) :
-    Reach (callState s 20451 (UInt256.ofNat pj :: UInt256.ofNat 52480 :: cCI :: cM :: UInt256.ofNat 51456 ::
+    Reach (callState s 20267 (UInt256.ofNat pj :: UInt256.ofNat 52480 :: cCI :: cM :: UInt256.ofNat 51456 ::
         UInt256.ofNat ret :: tail) mem)
       (callState s ret tail mem) 46 := by
-  opt87_reach [9812, 9813, 9814, 9815, 9816, 9817, 9818, 9819, 9820, 9821, 9822, 9823, 9824] with [hj]
+  opt87_reach [9826, 9827, 9828, 9829, 9830, 9831, 9832, 9833, 9834, 9835, 9836, 9837, 9838] with [hj]
 
 end
 

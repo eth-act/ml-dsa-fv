@@ -25,7 +25,7 @@ section
 variable {s : State} {ret : Nat} {tail : List UInt256}
 
 theorem uh_entry (hs : Ctx s) (htail : tail.length ≤ 960) (M : ByteArray) (B : Nat) :
-    Reach (callState s 16505 (wd B :: wd ret :: tail) M)
+    Reach (callState s 16276 (wd B :: wd ret :: tail) M)
       (callState s 16512 (wd B :: wd (8192 + B) :: wd ret :: tail) M) 13 := by
   opt65_reach [7387, 7388, 7389, 7390, 7391]
 
@@ -99,7 +99,7 @@ theorem uh_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
 theorem uh_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.usehint ret tail) (m : ByteArray) {B : Nat} (hB : 18688 + 32 ≤ B)
     (hBe : B + 8192 + 16384 ≤ 90656) :
-    Reach (callState s 16505 (wd B :: wd ret :: tail) m) (callState s ret tail (Mj m B 256)) 48153 := by
+    Reach (callState s 16276 (wd B :: wd ret :: tail) m) (callState s ret tail (Mj m B 256)) 48153 := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.usehint, Stack.leaf] at this; omega
   have hloop := Reach.loop (I := fun j => callState s 16512

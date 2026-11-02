@@ -672,7 +672,7 @@ theorem sib_visit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   · subst h136
     obtain ⟨M2, h2, f2, r2⟩ := sib_rpre hs htail M i sg
     have hK2 : KS1 M2 (permN 1 (S0 cd)) := ks1_of_flip hK h2
-    obtain ⟨M3, h3, f3, c3⟩ := kf1_call hs (ret := 8722)
+    obtain ⟨M3, h3, f3, c3⟩ := kf1_call hs (ret := 8805)
       (tail := [wd 136, wd i, wd sg, wd ret] ++ tail)
       (hr.callee (by simp [Stack.sib, Stack.kf1, Stack.leaf]) (by simp only [isValidJumpDest_lit])
         (by norm_num)) M2
@@ -819,7 +819,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       obtain ⟨hkf, hcntB, hinv'⟩ := sinv_accept (nn := negCount c)
         (code := if sg = 1 then 1 else 2 ^ 256 - 1) hinv1 hsz hi1 hlt hacc hhigh hsg1 rfl rfl
       have hAB : Reach (nokSt s ret tail (8 + k) i (le64 (cStream cd) 0 / 2 ^ (i - 196)) M1)
-          (callState s 8879 (wd (byteAt M1 (IDX + j)) :: wd sg :: wd j :: wd (8 + k + 1) :: wd i ::
+          (callState s 9177 (wd (byteAt M1 (IDX + j)) :: wd sg :: wd j :: wd (8 + k + 1) :: wd i ::
             wd (le64 (cStream cd) 0 / 2 ^ (i - 196)) :: wd ret :: tail)
             (sibMB M1 c i j (negCount c) sg (if sg = 1 then 1 else 2 ^ 256 - 1))) 286 := by
         by_cases hk0 : byteAt M1 (IDX + j) = 0
@@ -945,7 +945,7 @@ theorem sib_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
   have hrc4 : RC1Table M4 := fun a ha => by
     rw [f4.word (hav a ha), f3.word (hav a ha), f2.word (hav a ha), f1.word (hav a ha)]
     exact hrc a ha
-  obtain ⟨M5, h5, f5, c5⟩ := kf1_call hs (ret := 8615) (tail := [wd ret] ++ tail)
+  obtain ⟨M5, h5, f5, c5⟩ := kf1_call hs (ret := 8696) (tail := [wd ret] ++ tail)
     (hr.callee (by simp [Stack.sib, Stack.kf1, Stack.leaf]) (by simp only [isValidJumpDest_lit])
       (by norm_num)) M4 hrc4
   rw [call_iff] at c5

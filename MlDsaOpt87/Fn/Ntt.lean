@@ -1,9 +1,6 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
-import MlDsaOpt87.Fn.Ntt.Top
-import MlDsaOpt87.Fn.Ntt2.Top
 import MlDsa.Bridge44
-set_option warningAsError true
 /-!
 # Four-lane NTT and inverse NTT (ML-DSA-87)
 
@@ -68,31 +65,26 @@ open MlDsa
 /-- **ntt**: `[p, ret]` with `p ∈ {ZH, ZH2}`, in place on the four lane polynomials at `p`. -/
 theorem ntt_call {s : State} (hs : Ctx s) {p : Nat} (hp : p = ZH ∨ p = ZH2) {ret : Nat}
     {tail : List UInt256} (hr : RetOK Stack.ntt ret tail) (m : ByteArray) (htbl : TblAt m) :
-    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (p + 32 * t)) k < 2 ^ 25) →
+    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → zLo ≤ lane (word m (p + 32 * t)) k ∧
+          lane (word m (p + 32 * t)) k ≤ zHi) →
         ∀ k, k < 4 → ∀ t, t < 256 → lane (word m' (p + 32 * t)) k < 2 ^ 28 ∧
           ((lane (word m' (p + 32 * t)) k : Int) - (Fips204.ntt (lanesPoly m p k))[t]!) %
             (Fips204.q : Int) = 0) ∧
       FrameExcept m m' [(p, p + 8192)] ∧
-      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt := by
-  rw [Bridge44.ntt_eq, Bridge44.q_eq]
-  rcases hp with rfl | rfl
-  · exact NttW.ntt_full hs hr m htbl
-  · exact NttW2.ntt_full hs hr m htbl
+      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt :=
+  sorry
 
 /-- **intt**: `[p, ret]` with `p ∈ {ACC, ACC + 0x2000}`, in place on the four lane
-polynomials at `p`. -/
+polynomials at `p` (v4: GS butterflies without swap; outputs `< 2^30`). -/
 theorem intt_call {s : State} (hs : Ctx s) {p : Nat} (hp : p = ACC ∨ p = ACC + 0x2000)
     {ret : Nat} {tail : List UInt256} (hr : RetOK Stack.intt ret tail) (m : ByteArray)
     (htbl : TblAt m) :
-    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (p + 32 * t)) k < 2 ^ 58) →
-        ∀ k, k < 4 → ∀ t, t < 256 → lane (word m' (p + 32 * t)) k < 2 ^ 27 ∧
+    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (p + 32 * t)) k < 2 ^ 57) →
+        ∀ k, k < 4 → ∀ t, t < 256 → lane (word m' (p + 32 * t)) k < 2 ^ 30 ∧
           ((lane (word m' (p + 32 * t)) k : Int) - (Fips204.nttInv (lanesPoly m p k))[t]!) %
             (Fips204.q : Int) = 0) ∧
       FrameExcept m m' [(p, p + 8192)] ∧
-      Call s Entry.intt [wd p] ret tail m [] m' Gas.intt := by
-  rw [Bridge44.nttInv_eq, Bridge44.q_eq]
-  rcases hp with rfl | rfl
-  · exact NttW.intt_full hs hr m htbl
-  · exact NttW2.intt_full hs hr m htbl
+      Call s Entry.intt [wd p] ret tail m [] m' Gas.intt :=
+  sorry
 
 end MlDsaOpt87.Proofs

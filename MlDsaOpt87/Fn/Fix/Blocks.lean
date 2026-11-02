@@ -46,7 +46,7 @@ abbrev gst (s : State) (ret : Nat) (tail : List UInt256) (sh lm nm pc flim rp wp
 /-- Scan layout. -/
 abbrev sst (s : State) (ret : Nat) (tail : List UInt256) (sh lm nm fp : Nat) (M : ByteArray) :
     State :=
-  callState s 14427 (wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M
+  callState s 14701 (wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M
 
 /-- Lane read by the flagged path. -/
 def lv (M : ByteArray) (a sh : Nat) : Nat := word M a / 2 ^ sh % 18446744073709551616
@@ -77,7 +77,7 @@ theorem fx_cand0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hrp : rp + 256 ≤ 91680) (hwp : wp + 32 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14490 flim rp wp fp M)
       (gst s ret tail sh lm nm 14527 flim rp (wp + ab (lv M (32 * 0 + rp) sh) * 32) fp (fw M wp (32 * 0 + rp) sh nm)) 74 := by
-  opt87_reach [6247, 6248, 6249, 6250, 6251, 6252, 6253, 6254, 6255, 6256, 6257, 6258, 6259, 6260, 6261, 6262, 6263, 6264, 6265, 6266, 6267, 6268, 6269, 6270, 6271] with [m64_land, lv, fw, ab, Nat.zero_add]
+  opt87_reach [6247, 6248, 6249, 6250, 6251, 6252, 6451, 6254, 6255, 6256, 6257, 6258, 6259, 6260, 6261, 6262, 6263, 6264, 6265, 6266, 6267, 6268, 6269, 6270, 6271] with [m64_land, lv, fw, ab, Nat.zero_add]
   fx_close
 
 theorem fx_cand1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -141,7 +141,7 @@ theorem fx_copy0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14817 flim rp wp fp M)
       (gst s ret tail sh lm nm 14832 flim rp wp fp (cw M (32 * 0 + wp) (32 * 0 + rp) lm nm)) 43 := by
-  opt87_reach [6467, 6468, 6469, 6470, 6471, 6472, 6473, 6474, 6475, 6476, 6477, 6478, 6479, 6480, 6481] with [cw, Nat.zero_add]
+  opt87_reach [6467, 6468, 6469, 6470, 6471, 6472, 6452, 6453, 6454, 6455, 6477, 6478, 6460, 6461, 6462] with [cw, Nat.zero_add]
   fx_close
 
 theorem fx_copy1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -149,7 +149,7 @@ theorem fx_copy1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14832 flim rp wp fp M)
       (gst s ret tail sh lm nm 14852 flim rp wp fp (cw M (32 * 1 + wp) (32 * 1 + rp) lm nm)) 54 := by
-  opt87_reach [6482, 6483, 6484, 6485, 6486, 6487, 6488, 6489, 6490, 6491, 6492, 6493, 6494, 6495, 6496, 6497, 6498, 6499] with [cw]
+  opt87_reach [6482, 6483, 6484, 6485, 6486, 6487, 6488, 6464, 6465, 6466, 6467, 6468, 6469, 6495, 6496, 6476, 6477, 6478] with [cw]
   fx_close
 
 theorem fx_copy2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -157,7 +157,7 @@ theorem fx_copy2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14852 flim rp wp fp M)
       (gst s ret tail sh lm nm 14872 flim rp wp fp (cw M (32 * 2 + wp) (32 * 2 + rp) lm nm)) 54 := by
-  opt87_reach [6500, 6501, 6502, 6503, 6504, 6505, 6506, 6507, 6508, 6509, 6510, 6511, 6512, 6513, 6514, 6515, 6516, 6517] with [cw]
+  opt87_reach [6500, 6501, 6502, 6503, 6504, 6505, 6506, 6480, 6481, 6482, 6483, 6484, 6485, 6513, 6514, 6492, 6493, 6494] with [cw]
   fx_close
 
 theorem fx_copy3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -165,7 +165,7 @@ theorem fx_copy3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14872 flim rp wp fp M)
       (gst s ret tail sh lm nm 14892 flim rp wp fp (cw M (32 * 3 + wp) (32 * 3 + rp) lm nm)) 54 := by
-  opt87_reach [6518, 6519, 6520, 6521, 6522, 6523, 6524, 6525, 6526, 6527, 6528, 6529, 6530, 6531, 6532, 6533, 6534, 6535] with [cw]
+  opt87_reach [6518, 6519, 6520, 6521, 6522, 6523, 6524, 6496, 6497, 6498, 6499, 6500, 6501, 6531, 6532, 6508, 6509, 6510] with [cw]
   fx_close
 
 theorem fx_copy4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -173,7 +173,7 @@ theorem fx_copy4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14892 flim rp wp fp M)
       (gst s ret tail sh lm nm 14912 flim rp wp fp (cw M (32 * 4 + wp) (32 * 4 + rp) lm nm)) 54 := by
-  opt87_reach [6536, 6537, 6538, 6539, 6540, 6541, 6542, 6543, 6544, 6545, 6546, 6547, 6548, 6549, 6550, 6551, 6552, 6553] with [cw]
+  opt87_reach [6536, 6537, 6538, 6539, 6540, 6541, 6542, 6512, 6513, 6514, 6515, 6516, 6517, 6549, 6550, 6524, 6525, 6526] with [cw]
   fx_close
 
 theorem fx_copy5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -181,7 +181,7 @@ theorem fx_copy5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14912 flim rp wp fp M)
       (gst s ret tail sh lm nm 14932 flim rp wp fp (cw M (32 * 5 + wp) (32 * 5 + rp) lm nm)) 54 := by
-  opt87_reach [6554, 6555, 6556, 6557, 6558, 6559, 6560, 6561, 6562, 6563, 6564, 6565, 6566, 6567, 6568, 6569, 6570, 6571] with [cw]
+  opt87_reach [6554, 6555, 6556, 6557, 6558, 6559, 6560, 6528, 6529, 6530, 6531, 6532, 6533, 6567, 6568, 6540, 6541, 6542] with [cw]
   fx_close
 
 theorem fx_copy6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -189,7 +189,7 @@ theorem fx_copy6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14932 flim rp wp fp M)
       (gst s ret tail sh lm nm 14952 flim rp wp fp (cw M (32 * 6 + wp) (32 * 6 + rp) lm nm)) 54 := by
-  opt87_reach [6572, 6573, 6574, 6575, 6576, 6577, 6578, 6579, 6580, 6581, 6582, 6583, 6584, 6585, 6586, 6587, 6588, 6589] with [cw]
+  opt87_reach [6572, 6573, 6574, 6575, 6576, 6577, 6578, 6544, 6545, 6546, 6547, 6548, 6549, 6585, 6586, 6556, 6557, 6558] with [cw]
   fx_close
 
 theorem fx_copy7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -197,16 +197,16 @@ theorem fx_copy7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp + 256 ≤ 91680) (hwp : wp + 256 ≤ 91680) :
     Reach (gst s ret tail sh lm nm 14952 flim rp wp fp M)
       (gst s ret tail sh lm nm 14972 flim rp wp fp (cw M (32 * 7 + wp) (32 * 7 + rp) lm nm)) 54 := by
-  opt87_reach [6590, 6591, 6592, 6593, 6594, 6595, 6596, 6597, 6598, 6599, 6600, 6601, 6602, 6603, 6604, 6605, 6606, 6607] with [cw]
+  opt87_reach [6590, 6591, 6592, 6593, 6594, 6595, 6596, 6560, 6561, 6562, 6563, 6564, 6565, 6603, 6604, 6572, 6573, 6574] with [cw]
   fx_close
 
 theorem fx_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (m : ByteArray) (sh : Nat) (hsh : sh ≤ 192) :
-    Reach (callState s 14410 (wd sh :: wd ret :: tail) m)
+    Reach (callState s 14669 (wd sh :: wd ret :: tail) m)
       (sst s ret tail sh (18446744073709551615 * 2 ^ sh) (2 ^ 256 - 1 - 18446744073709551615 * 2 ^ sh) 31232 m) 19 := by
   have hlm := lm_lt sh hsh
-  opt87_reach [6197, 6198, 6199, 6200, 6201, 6202, 6203] 
+  opt87_reach [6409, 6410, 6411, 6412, 6413, 6414, 6422] 
   fx_close
 
 theorem fx_scan_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -214,7 +214,7 @@ theorem fx_scan_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm fp : Nat) (hsh : sh ≤ 192) (hfp : fp + 32 ≤ 91680) (hf : word M fp / 2 ^ (23 + sh) % 2 = 0) :
     Reach (sst s ret tail sh lm nm fp M)
       (sst s ret tail sh lm nm (32 + fp) M) 55 := by
-  opt87_reach [6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213, 6214, 6215, 6216, 6217, 6218] with [one_land, mod2_mod, hf]
+  opt87_reach [6423, 6424, 6429, 6207, 6208, 6209, 6210, 6211, 6431, 6432, 6433, 6215, 6435, 6436, 6437] with [one_land, mod2_mod, hf]
   fx_close
 
 theorem fx_scan_hit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -222,15 +222,15 @@ theorem fx_scan_hit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm fp : Nat) (hsh : sh ≤ 192) (hfp : fp + 32 ≤ 91680) (hfl : 31232 ≤ fp) (hf : word M fp / 2 ^ (23 + sh) % 2 = 1) :
     Reach (sst s ret tail sh lm nm fp M)
       (gst s ret tail sh lm nm 14467 32352 (20480 + (fp - 31232) * 8) (20480 + (fp - 31232) * 8) fp M) 69 := by
-  opt87_reach [6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213, 6214, 6219, 6220, 6221, 6222, 6223, 6224, 6225, 6226, 6227, 6228, 6229] with [one_land, mod2_mod, hf]
+  opt87_reach [6423, 6424, 6429, 6207, 6208, 6209, 6210, 6211, 6431, 6432, 6433, 6438, 6439, 6221, 6222, 6223, 6442, 6225, 6444, 6445, 6228, 6229] with [one_land, mod2_mod, hf]
   fx_close
 
 theorem fx_gl_ext {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfe : fp = flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
-      (gst s ret tail sh lm nm 15003 flim rp wp fp M) 23 := by
-  opt87_reach [6230, 6231, 6232, 6233, 6234, 6235] 
+      (gst s ret tail sh lm nm 14918 flim rp wp fp M) 23 := by
+  opt87_reach [6230, 6231, 6232, 6233, 6449, 6450] 
   fx_close
 
 theorem fx_gl_flag {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -238,7 +238,7 @@ theorem fx_gl_flag {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hfe : fp ≠ flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) (hf : word M fp / 2 ^ (23 + sh) % 2 = 1) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
       (gst s ret tail sh lm nm 14490 flim rp wp fp M) 63 := by
-  opt87_reach [6230, 6231, 6232, 6233, 6234, 6235, 6236, 6237, 6238, 6239, 6240, 6241, 6242, 6243, 6244, 6245, 6246] with [one_land, mod2_mod, hf]
+  opt87_reach [6230, 6231, 6232, 6233, 6449, 6450, 6236, 6237, 6238, 6239, 6240, 6241, 6242, 6243, 6244, 6245, 6246] with [one_land, mod2_mod, hf]
   fx_close
 
 theorem fx_gl_clean {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -246,7 +246,7 @@ theorem fx_gl_clean {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hsh : sh ≤ 192) (hfe : fp ≠ flim) (hfp : fp + 32 ≤ 91680) (hfl : flim < 65536) (hf : word M fp / 2 ^ (23 + sh) % 2 = 0) :
     Reach (gst s ret tail sh lm nm 14467 flim rp wp fp M)
       (gst s ret tail sh lm nm 14817 flim rp wp fp M) 63 := by
-  opt87_reach [6230, 6231, 6232, 6233, 6234, 6235, 6236, 6237, 6238, 6239, 6240, 6241, 6242, 6243, 6244, 6245, 6246] with [one_land, mod2_mod, hf]
+  opt87_reach [6230, 6231, 6232, 6233, 6449, 6450, 6236, 6237, 6238, 6239, 6240, 6241, 6242, 6243, 6244, 6245, 6246] with [one_land, mod2_mod, hf]
   fx_close
 
 theorem fx_ftail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -262,7 +262,7 @@ theorem fx_ctail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hrp : rp < 65536) (hwp : wp < 65536) :
     Reach (gst s ret tail sh lm nm 14972 flim rp wp fp M)
       (gst s ret tail sh lm nm 14984 flim (256 + rp) (256 + wp) fp M) 24 := by
-  opt87_reach [6608, 6609, 6610, 6611, 6612, 6613, 6614, 6615] 
+  opt87_reach [6608, 6575, 6576, 6611, 6578, 6579, 6580, 6581] 
   fx_close
 
 theorem fx_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -270,7 +270,7 @@ theorem fx_next {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfp : fp < 65536) (hw : wp ≤ 28671) :
     Reach (gst s ret tail sh lm nm 14984 flim rp wp fp M)
       (gst s ret tail sh lm nm 14467 flim rp wp (32 + fp) M) 46 := by
-  opt87_reach [6616, 6617, 6618, 6619, 6620, 6621, 6622, 6623, 6624, 6625, 6626, 6627] 
+  opt87_reach [6616, 6617, 6618, 6619, 6620, 6582, 6585, 6593, 6594, 6595, 6596, 6597] 
   fx_close
 
 theorem fx_done {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -278,63 +278,63 @@ theorem fx_done {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfp : fp < 65536) (hw : 28671 < wp) (hwp : wp < 65536) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (gst s ret tail sh lm nm 14984 flim rp wp fp M)
       (callState s ret (wd 1 :: tail) M) 64 := by
-  opt87_reach [6616, 6617, 6618, 6619, 6620, 6621, 6622, 6623, 6624, 6625, 6664, 6665, 6666, 6667, 6668, 6669, 6670, 6671, 6672, 6673, 6674] with [hj]
+  opt87_reach [6616, 6617, 6618, 6619, 6620, 6582, 6585, 6593, 6594, 6595, 6789, 6791, 6792, 6793, 6794, 6795, 6796, 6797, 6798, 6799, 6800] with [hj]
   fx_close
 
 theorem fx_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm rp wp fp : Nat) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
-    Reach (gst s ret tail sh lm nm 15003 32576 rp wp fp M)
+    Reach (gst s ret tail sh lm nm 14918 32576 rp wp fp M)
       (callState s ret (wd 0 :: tail) M) 51 := by
-  opt87_reach [6628, 6629, 6630, 6631, 6632, 6633, 6675, 6676, 6677, 6678, 6679, 6680, 6681, 6682, 6683, 6684, 6685] with [hj]
+  opt87_reach [6598, 6629, 6753, 6754, 6755, 6756, 6801, 6802, 6803, 6804, 6805, 6806, 6807, 6808, 6810, 6811, 6812] with [hj]
   fx_close
 
 theorem fx_ext_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfl : flim ≠ 32576) (hfl' : flim < 65536) (h6 : word M 4064 ≠ 0) :
-    Reach (gst s ret tail sh lm nm 15003 flim rp wp fp M)
-      (gst s ret tail sh lm nm 15067 flim rp wp fp M) 42 := by
-  opt87_reach [6628, 6629, 6630, 6631, 6632, 6633, 6634, 6635, 6636, 6637] with [h6]
+    Reach (gst s ret tail sh lm nm 14918 flim rp wp fp M)
+      (gst s ret tail sh lm nm 15152 flim rp wp fp M) 42 := by
+  opt87_reach [6598, 6629, 6753, 6754, 6755, 6756, 6757, 6758, 6759, 6760] with [h6]
   fx_close
 
 theorem fx_cont {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
-    Reach (gst s ret tail sh lm nm 15067 flim rp wp fp M)
+    Reach (gst s ret tail sh lm nm 15152 flim rp wp fp M)
       (gst s ret tail sh lm nm 14467 32576 rp wp fp M) 17 := by
-  opt87_reach [6659, 6660, 6661, 6662, 6663] 
+  opt87_reach [6782, 6784, 6785, 6787, 6788] 
   fx_close
 
 theorem fx_sq_pre {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) (hfl : flim ≠ 32576) (hfl' : flim < 65536) (h6 : word M 4064 = 0) :
-    Reach (gst s ret tail sh lm nm 15003 flim rp wp fp M)
-      (callState s 15035 (wd 90880 :: wd 0 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 1 32) 4064)) 59 := by
-  opt87_reach [6628, 6629, 6630, 6631, 6632, 6633, 6634, 6635, 6636, 6637, 6638, 6639, 6640, 6641, 6642, 6643] with [h6]
+    Reach (gst s ret tail sh lm nm 14918 flim rp wp fp M)
+      (callState s 15120 (wd 90880 :: wd 0 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 1 32) 4064)) 59 := by
+  opt87_reach [6598, 6629, 6753, 6754, 6755, 6756, 6757, 6758, 6759, 6760, 6761, 6762, 6763, 6764, 6765, 6766] with [h6]
   fx_close
 
 theorem fx_sq_kf4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
-    Reach (callState s 15036 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
-      (callState s 22461 (wd 15043 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 14 := by
-  opt87_reach [6645, 6646, 6647] 
+    Reach (callState s 15121 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
+      (callState s 22277 (wd 15128 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 14 := by
+  opt87_reach [6768, 6769, 6770] 
   fx_close
 
 theorem fx_sq_blk {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
-    Reach (callState s 15043 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
-      (callState s 10772 (wd 32352 :: wd 29440 :: wd 15057 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 21 := by
-  opt87_reach [6648, 6649, 6650, 6651, 6652, 6653] 
+    Reach (callState s 15128 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
+      (callState s 10997 (wd 32352 :: wd 29440 :: wd 15142 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 21 := by
+  opt87_reach [6771, 6772, 6773, 6774, 6775, 6776] 
   fx_close
 
 theorem fx_sq_post {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
     (M : ByteArray) (sh lm nm flim rp wp fp : Nat) :
-    Reach (callState s 15057 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
-      (callState s 15066 (wd 0 :: wd 90880 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 9 := by
-  opt87_reach [6654, 6655, 6656, 6657] 
+    Reach (callState s 15142 (wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M)
+      (callState s 15151 (wd 0 :: wd 90880 :: wd 800 :: wd flim :: wd rp :: wd wp :: wd fp :: wd nm :: wd lm :: wd sh :: wd ret :: tail) M) 9 := by
+  opt87_reach [6777, 6778, 6779, 6780] 
   fx_close
 
 end MlDsaOpt87.Proofs.Fix

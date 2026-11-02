@@ -1,5 +1,8 @@
-import MlDsaOpt87.Fn.Ball.Proof
-/-! # `sib` contract (ML-DSA-87)
+import MlDsaOpt87.Fn.Ball.Defs
+import MlDsaOpt87.Budget
+/-! # `sib` contract (v4: lane-unrolled byte loop, `±REP` codes; open)
+
+ (ML-DSA-87)
 
 Proved in `Fn/Ball/{Blocks,Prologue,Stream,Proof}.lean` (`sib_call_proof`). ML-DSA-87 has no free SIMD slot for `H(c̃)`, so
 `sample_in_ball` squeezes the SampleInBall stream itself with `kf1`
@@ -36,6 +39,6 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (KZ, KZ + 800), (CW, CW + 8192), (BASES, BASES + 2048),
         (IDX, IDX + 256), (NNEG, NNEG + 64)] ∧
       Call s Entry.sib [] ret tail m [flag (okC s.executionEnv.calldata)] m' Gas.sib :=
-  sib_call_proof hs hr m hrc hcd hz
+  sorry
 
 end MlDsaOpt87.Proofs

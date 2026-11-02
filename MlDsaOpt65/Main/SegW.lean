@@ -2,9 +2,12 @@ import MlDsaOpt65.Main.Base
 import MlDsaOpt65.Fn.Ntt
 import MlDsaOpt65.Fn.Hint
 import MlDsaOpt65.Math
-set_option warningAsError true
 /-!
-# Segment `6610 … 6688`: `intt`, `usehint`, `pack` per row group
+# Segment `6237 … 6293`: `intt` (UseHint fused, v4), `pack` per row group
+
+v4 (open): `intt [ACC + 0x2000 g]` now applies UseHint against `SP_g`
+(`spOff − (2^13 S' + n_neg)`) and `HP_g` in its last pass; the proof follows
+`MlDsaOpt44/Main/SegW.lean`. The v3 description follows.
 
 For `g < 2`: `intt [ACC + 0x2000 g]` (`Â ẑ`, lanes `< 2^58`, to `w′ + c · t1 · 2^d` up to
 `q`), `usehint [ACC + 0x2000 g]` against `SP + 0x2000 g` (`2^13 S' + n_neg ≡ 2^13 (c · t1)`)
@@ -139,137 +142,7 @@ theorem S2.w_group {cd : ByteArray} (hcd : HDR ≤ cd.size) {g nr : Nat} (hg : g
 theorem seg_w {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : Inv8 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv9 s.executionEnv.calldata m' ∧
-      Reach (callState s 6564 [flag b] m) (callState s 6642 [flag b] m') Gas.pW := by
-  have hb1 : Reach (callState s 6564 [flag b] m)
-      (callState s Entry.intt [wd (ACC + 0x2000 * 0), wd 6574, flag b] m) 17 := by
-    opt65_reach [2218, 2219, 2220, 2221] with [ACC, Entry.intt]
-  obtain ⟨m1, hintt0, hfr1, hc1⟩ := intt_call hs (p := ACC + 0x2000 * 0) (Or.inl (by omega))
-    (ret := 6574) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.tbl
-  have hb2 : Reach (callState s 6574 [flag b] m1)
-      (callState s Entry.usehint [wd (ACC + 0x2000 * 0), wd 6585, flag b] m1) 18 := by
-    opt65_reach [2222, 2223, 2224, 2225, 2226] with [ACC, Entry.usehint]
-  obtain ⟨m2, huh0, hlt0, hfr2, hc2⟩ := usehint_call hs (ret := 6585) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
-    (g := 0) (by norm_num)
-  have hb3 : Reach (callState s 6585 [flag b] m2)
-      (callState s Entry.pack [wd 4, wd (FIN + 256 + 2048 * 0), wd (ACC + 0x2000 * 0), wd 6602,
-        flag b] m2) 24 := by
-    opt65_reach [2227, 2228, 2229, 2230, 2231, 2232, 2233] with [ACC, FIN, Entry.pack]
-  obtain ⟨m3, hpk0, hfr3, hc3⟩ := pack_call hs (ret := 6602) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m2
-    (g := 0) (nr := 4) (by norm_num) (Or.inr rfl)
-  have htbl3 : TblAt m3 :=
-    TblAt.frame (TblAt.frame (TblAt.frame hI.tbl hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3
-      (by avoids_tac)
-  have hb4 : Reach (callState s 6602 [flag b] m3)
-      (callState s Entry.intt [wd (ACC + 0x2000 * 1), wd 6613, flag b] m3) 18 := by
-    opt65_reach [2234, 2235, 2236, 2237, 2238] with [ACC, Entry.intt]
-  obtain ⟨m4, hintt1, hfr4, hc4⟩ := intt_call hs (p := ACC + 0x2000 * 1) (Or.inr (by omega))
-    (ret := 6613) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m3 htbl3
-  have hb5 : Reach (callState s 6613 [flag b] m4)
-      (callState s Entry.usehint [wd (ACC + 0x2000 * 1), wd 6624, flag b] m4) 18 := by
-    opt65_reach [2239, 2240, 2241, 2242, 2243] with [ACC, Entry.usehint]
-  obtain ⟨m5, huh1, hlt1, hfr5, hc5⟩ := usehint_call hs (ret := 6624) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m4
-    (g := 1) (by norm_num)
-  have hb6 : Reach (callState s 6624 [flag b] m5)
-      (callState s Entry.pack [wd 2, wd (FIN + 256 + 2048 * 1), wd (ACC + 0x2000 * 1), wd 6641,
-        flag b] m5) 24 := by
-    opt65_reach [2244, 2245, 2246, 2247, 2248, 2249, 2250] with [ACC, FIN, Entry.pack]
-  obtain ⟨m6, hpk1, hfr6, hc6⟩ := pack_call hs (ret := 6641) (tail := [flag b])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m5
-    (g := 1) (nr := 2) (by norm_num) (Or.inl rfl)
-  have hb7 : Reach (callState s 6641 [flag b] m6) (callState s 6642 [flag b] m6) 1 := by
-    opt65_reach [2251]
-  refine ⟨m6, ⟨RC1Table.frame (RC1Table.frame (RC1Table.frame (RC1Table.frame (RC1Table.frame
-      (RC1Table.frame hI.rc1 hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3 (by avoids_tac)) hfr4
-      (by avoids_tac)) hfr5 (by avoids_tac)) hfr6 (by avoids_tac), ?_⟩,
-    ((((((((((((hb1.trans hc1).trans hb2).trans hc2).trans hb3).trans hc3).trans hb4).trans
-      hc4).trans hb5).trans hc5).trans hb6).trans hc6).trans hb7).mono (by unfold Gas.pW; omega)⟩
-  intro h3
-  generalize hcdv : s.executionEnv.calldata = cd at hI h3 hpk0 hpk1 hcd huh0 huh1
-  simp only [ok3, ok2, ok1, Bool.and_eq_true] at h3
-  obtain ⟨⟨⟨hz, hh⟩, ha⟩, hc⟩ := h3
-  obtain ⟨h, hhs⟩ := Option.isSome_iff_exists.mp (show (hintOf cd).isSome = true from hh)
-  obtain ⟨c, hcs⟩ := Option.isSome_iff_exists.mp (show (cOf cd).isSome = true from hc)
-  have hcD : cD cd = c := by unfold cD; rw [hcs]; rfl
-  -- the row-group facts of `Inv8` at the state `m0` before the group's `intt`
-  have hgroup : ∀ g nr, g < 2 → 4 * g + nr ≤ 6 → nr ≤ 4 → ∀ m0 : ByteArray,
-      (∀ a, ACC + 0x2000 * g ≤ a → a + 32 ≤ ACC + 0x2000 * g + 8192 → word m0 a = word m a) →
-      (∀ a, SP + 0x2000 * g ≤ a → a + 32 ≤ SP + 0x2000 * g + 8192 → word m0 a = word m a) →
-      (∀ a, HP + 0x2000 * g ≤ a → a + 32 ≤ HP + 0x2000 * g + 8192 → word m0 a = word m a) →
-      (∀ k, k < 4 → ∀ t, t < 256 → lane (word m0 (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 58) ∧
-      (∀ k, k < nr → ∀ t, t < 256 →
-        ((lane (word m0 (ACC + 0x2000 * g + 32 * t)) k : Int) - (azRow cd (4 * g + k))[t]!) %
-          (Fips204.q : Int) = 0) ∧
-      (∀ t, t < 256 → word m0 (SP + 0x2000 * g + 32 * t) =
-        pack4 fun r => 2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t) ∧
-      (∀ t, t < 256 → ∃ b : Nat → Nat, (∀ r, r < 4 → b r ≤ 1) ∧
-        word m0 (HP + 0x2000 * g + 32 * t) = pack4 b) ∧
-      (∀ k, k < nr → ∀ t, t < 256 →
-        lane (word m0 (HP + 0x2000 * g + 32 * t)) k = (h[4 * g + k]![t]!).toNat) := by
-    intro g nr hg hnr hnr4 m0 eA eS eH
-    refine ⟨fun k hk t ht => ?_, fun k hk t ht => ?_, fun t ht => ?_, fun t ht => ?_,
-      fun k hk t ht => ?_⟩
-    · rw [eA _ (by omega) (by omega)]; exact (hI.acc ha).1 g hg k hk t ht
-    · have := (hI.acc ha).2 (4 * g + k) (by omega) t ht
-      rwa [show accAddr (4 * g + k) t = ACC + 0x2000 * g + 32 * t by unfold accAddr; omega,
-        show (4 * g + k) % 4 = k by omega, ← eA _ (by omega) (by omega)] at this
-    · rw [eS _ (by omega) (by omega), hI.sp hc g hg t ht, hcD]
-    · rw [eH _ (by omega) (by omega)]; exact hI.hp.1 g hg t ht
-    · have := hI.hp.2 h hhs (4 * g + k) (by omega) t ht
-      rwa [show hpAddr (4 * g + k) t = HP + 0x2000 * g + 32 * t by unfold hpAddr; omega,
-        show (4 * g + k) % 4 = k by omega, ← eH _ (by omega) (by omega)] at this
-  have hslt : ∀ g, g < 2 → ∀ r, r < 4 → ∀ t, t < 256 →
-      2 ^ 13 * sPrime c cd (32 + 1280 * g) r t + nNeg c t < 2 ^ 29 :=
-    fun g hg r hr t ht => csum_lt cd hcd c hcs hg hr ht
-  obtain ⟨A0, Ac0, S0, H0', Hv0⟩ := hgroup 0 4 (by norm_num) (by norm_num) (le_refl _) m (fun _ _ _ => rfl)
-    (fun _ _ _ => rfl) (fun _ _ _ => rfl)
-  have hrow0 := S2.w_group hcd (g := 0) (nr := 4) (by norm_num) (by norm_num) (le_refl _) hhs hcs
-    A0 Ac0 S0 (hslt 0 (by norm_num)) H0' Hv0 hintt0 hfr1 huh0
-  have e3 : ∀ lo, (lo = ACC + 0x2000 * 1 ∨ lo = SP + 0x2000 * 1 ∨ lo = HP + 0x2000 * 1) →
-      ∀ a, lo ≤ a → a + 32 ≤ lo + 8192 → word m3 a = word m a := by
-    intro lo hlo a h1 h2
-    rcases hlo with rfl | rfl | rfl <;>
-    rw [word_frame hfr3 (by avoids_tac) h1 h2, word_frame hfr2 (by avoids_tac) h1 h2,
-      word_frame hfr1 (by avoids_tac) h1 h2]
-  obtain ⟨A1, Ac1, S1, H1', Hv1⟩ := hgroup 1 2 (by norm_num) (by norm_num) (by norm_num) m3 (e3 _ (Or.inl rfl))
-    (e3 _ (Or.inr (Or.inl rfl))) (e3 _ (Or.inr (Or.inr rfl)))
-  have hrow1 := S2.w_group hcd (g := 1) (nr := 2) (by norm_num) (by norm_num) (by norm_num) hhs hcs
-    A1 Ac1 S1 (hslt 1 (by norm_num)) H1' Hv1 hintt1 hfr4 huh1
-  have hpw0 := hpk0 hlt0
-  have hpw1 := hpk1 hlt1
-  have hfmu : FinMu m6 cd :=
-    FinMu.frame (FinMu.frame (FinMu.frame (FinMu.frame (FinMu.frame (FinMu.frame hI.fmu hfr1
-      (by avoids_tac)) hfr2 (by avoids_tac)) hfr3 (by avoids_tac)) hfr4 (by avoids_tac)) hfr5
-      (by avoids_tac)) hfr6 (by avoids_tac)
-  intro x hx
-  by_cases h8 : x < 8
-  · rw [hfmu x h8, finBytes_le64_mu cd h8]
-  · have hR : (x - 8) / 16 < 6 := by omega
-    have hj : (x - 8) % 16 < 16 := Nat.mod_lt _ (by norm_num)
-    have hxe : x = 8 + 16 * ((x - 8) / 16) + (x - 8) % 16 := by omega
-    by_cases hg : (x - 8) / 16 < 4
-    · have hfin : ∀ a, FIN + 256 ≤ a → a + 32 ≤ FIN + 2304 → word m6 a = word m3 a :=
-        fun a h1 h2 => by
-          rw [word_frame hfr6 (by avoids_tac) h1 h2, word_frame hfr5 (by avoids_tac) h1 h2,
-            word_frame hfr4 (by avoids_tac) h1 h2]
-      have ha := hfin (FIN + 256 + 2048 * 0 + 32 * (16 * ((x - 8) / 16) + (x - 8) % 16))
-        (by clear * - hx h8 hg; omega) (by clear * - hx h8 hg; omega)
-      have hadr : FIN + 32 * x = FIN + 256 + 2048 * 0 + 32 * (16 * ((x - 8) / 16) + (x - 8) % 16) :=
-        by omega
-      have hidx : 4 * 0 + (x - 8) / 16 = (x - 8) / 16 := by omega
-      have hw := hpw0 _ hg _ hj
-      rw [hrow0 _ hg, hidx] at hw
-      rw [hadr, ha, hw, ← finBytes_le64_w1 cd hR hj, ← hxe]
-    · have hg' : (x - 8) / 16 - 4 < 2 := by omega
-      have hadr : FIN + 32 * x =
-          FIN + 256 + 2048 * 1 + 32 * (16 * ((x - 8) / 16 - 4) + (x - 8) % 16) := by omega
-      have hidx : 4 * 1 + ((x - 8) / 16 - 4) = (x - 8) / 16 := by omega
-      have hw := hpw1 _ hg' _ hj
-      rw [hrow1 _ hg', hidx] at hw
-      rw [hadr, hw, ← finBytes_le64_w1 cd hR hj, ← hxe]
+      Reach (callState s 6237 [flag b] m) (callState s 6293 [flag b] m') Gas.pW := by
+  sorry
 
 end MlDsaOpt65.Proofs

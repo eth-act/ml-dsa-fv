@@ -76,8 +76,8 @@ theorem g1_init {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hrho : Rho1At m s.executionEnv.calldata) {amask col rb : Nat} (ha : amask < 16)
     (hcol : col < 8) (hrb : rb < 2) (h32 : 32 ≤ s.executionEnv.calldata.size) :
     ∃ m2, SqInv m m2 (g1I s.executionEnv.calldata amask col rb) 0 ∧
-      Reach (callState s 14627 (gB amask col rb ret tail) m)
-        (callState s 14730 (gB amask col rb ret tail) m2) (179 + Gas.ginit) := by
+      Reach (callState s 14460 (gB amask col rb ret tail) m)
+        (callState s 14563 (gB amask col rb ret tail) m2) (179 + Gas.ginit) := by
   have htail : tail.length ≤ 768 := by
     have := hr.depth
     have e : Stack.group = 256 := by decide
@@ -87,7 +87,7 @@ theorem g1_init {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have h61 : word (MachineState.writeBytes m (Data.Bytes.natToBytesPadded 0 32) HAVE6) HAVE6 = 0 :=
     word_mstore m HAVE6 0 (by norm_num)
   obtain ⟨m2, hks2, hf2, hc2⟩ := MlDsaOpt65.Proofs.ginit_call hs (hr.callee (B' := Stack.ginit)
-    (ret' := 14730) (extra := [wd amask, wd col, wd rb, wd ret])
+    (ret' := 14563) (extra := [wd amask, wd col, wd rb, wd ret])
     (by simp only [List.length_cons, List.length_nil]; decide) (by simp only [isValidJumpDest_lit])
     (by norm_num))
     (MachineState.writeBytes m (Data.Bytes.natToBytesPadded 0 32) HAVE6) (keep := 0) (amult := 15)
@@ -135,7 +135,7 @@ theorem g1_group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     (fun b hb => (hblk7 b hb).1) (fun b hb => (hblk7 b hb).2) h67
   -- `gfix amask`
   obtain ⟨m8, hpost8, -, hkeep8, hf8, hc8⟩ := MlDsaOpt65.Proofs.gfix_call hs
-    (hr.callee (B' := Stack.gfix) (ret' := 14849) (extra := [wd amask, wd col, wd rb, wd ret])
+    (hr.callee (B' := Stack.gfix) (ret' := 14682) (extra := [wd amask, wd col, wd rb, wd ret])
       (by simp only [List.length_cons, List.length_nil]; decide) (by simp only [isValidJumpDest_lit])
       (by norm_num)) m7 hrc7 ha 4 (g1_popcnt ha)
     (fun k => permN 5 (g1I s.executionEnv.calldata amask col rb k)) (fun k hk => permN_size (hI k hk) 5)
@@ -176,7 +176,7 @@ theorem g1_group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     rw [hpost9 t ht, FrameExcept.word hfr8 (a := ACC + 8192 * rb + 32 * t) (by grp_avoids),
       FrameExcept.word hfr8 (a := ZH + 8192 * (col / 4) + 32 * t) (by grp_avoids), hW]
   · rw [call_iff, Entry.group]
-    have hfin := reach_ret hs 6574 m9 (pc := 14891)
+    have hfin := reach_ret hs 6635 m9 (pc := 14690)
       (tail := flag (gOk s.executionEnv.calldata amask col rb) :: tail)
       (by decide +kernel) (by simp only [finVal_lit, instrAt_lit]) (by simp only [finVal_lit, pcAt_lit])
       (by norm_num) hr.jumpdest hret (by simp only [List.length_cons]; omega)

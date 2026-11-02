@@ -12,34 +12,34 @@ open EvmSemantics.EVM
 open YulEvmCompiler
 open MlDsaOpt65.Proofs.Artifact
 
-theorem tables_ok20 : checkAll instrTree pcTree 8000 17728 instructions20 = true := by
+theorem tables_ok20 : checkAll instrTree pcTree 8000 17209 instructions20 = true := by
   decide +kernel
 
-theorem size_instructions20 : (instructions20.map isz).sum = 553 := by
+theorem size_instructions20 : (instructions20.map isz).sum = 559 := by
   decide +kernel
 
-theorem tables_ok21 : checkAll instrTree pcTree 8400 18281 instructions21 = true := by
+theorem tables_ok21 : checkAll instrTree pcTree 8400 17768 instructions21 = true := by
   decide +kernel
 
-theorem size_instructions21 : (instructions21.map isz).sum = 605 := by
+theorem size_instructions21 : (instructions21.map isz).sum = 614 := by
   decide +kernel
 
-theorem tables_ok22 : checkAll instrTree pcTree 8800 18886 instructions22 = true := by
+theorem tables_ok22 : checkAll instrTree pcTree 8800 18382 instructions22 = true := by
   decide +kernel
 
-theorem size_instructions22 : (instructions22.map isz).sum = 559 := by
+theorem size_instructions22 : (instructions22.map isz).sum = 572 := by
   decide +kernel
 
-theorem tables_ok23 : checkAll instrTree pcTree 9200 19445 instructions23 = true := by
+theorem tables_ok23 : checkAll instrTree pcTree 9200 18954 instructions23 = true := by
   decide +kernel
 
-theorem size_instructions23 : (instructions23.map isz).sum = 628 := by
+theorem size_instructions23 : (instructions23.map isz).sum = 1127 := by
   decide +kernel
 
-theorem tables_ok24 : checkAll instrTree pcTree 9600 20073 instructions24 = true := by
+theorem tables_ok24 : checkAll instrTree pcTree 9600 20081 instructions24 = true := by
   decide +kernel
 
-theorem size_instructions24 : (instructions24.map isz).sum = 568 := by
+theorem size_instructions24 : (instructions24.map isz).sum = 860 := by
   decide +kernel
 
 end MlDsaOpt65.Proofs.Infra

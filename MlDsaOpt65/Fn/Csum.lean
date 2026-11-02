@@ -1,4 +1,5 @@
-import MlDsaOpt65.Fn.Csum.Main
+import MlDsaOpt65.Fn.Csum.Defs
+import MlDsaOpt65.Budget
 /-!
 # Sparse `c · t1` in the normal domain: `csum` (ML-DSA-65)
 
@@ -23,7 +24,7 @@ open MlDsa
 
 /-- **csum**: `[SP + 0x2000 g, TT + 0x1800 g, ret]`, `g < 2`. For every `c ∈ {0, ±1}^256`
 represented by `sib` (`CRep`) and every t1 offset `off` of the table at `TT + 0x1800 g`,
-lane `r` of `SP_g[t]` is `2^13 S'_r(t) + n_neg(t)`. -/
+lane `r` of `SP_g[t]` is `spOff − (2^13 S'_r(t) + n_neg(t))` (v4). -/
 theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.csum ret tail) (m : ByteArray) {g : Nat} (hg : g < 2)
     (hb : ∀ i, i < P.tau → word m (BASES + 32 * i) ≤ 6112) :
@@ -31,9 +32,9 @@ theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (∀ t, t < 256 → c[t]! = 0 ∨ c[t]! = 1 ∨ c[t]! = -1) →
         CRep m c → TTable m (TT + 0x1800 * g) off s.executionEnv.calldata →
         ∀ t, t < 256 → word m' (SP + 0x2000 * g + 32 * t) =
-          pack4 fun r => 2 ^ 13 * sPrime c s.executionEnv.calldata off r t + nNeg c t) ∧
+          pack4 fun r => spOff - (2 ^ 13 * sPrime c s.executionEnv.calldata off r t + nNeg c t)) ∧
       FrameExcept m m' [(SP + 0x2000 * g, SP + 0x2000 * g + 8192)] ∧
-      Call s Entry.csum [wd (SP + 0x2000 * g), wd (TT + 0x1800 * g)] ret tail m [] m' Gas.csum := by
-  exact G4.csum_main hs hr m hg hb
+      Call s Entry.csum [wd (SP + 0x2000 * g), wd (TT + 0x1800 * g)] ret tail m [] m' Gas.csum :=
+  sorry
 
 end MlDsaOpt65.Proofs
