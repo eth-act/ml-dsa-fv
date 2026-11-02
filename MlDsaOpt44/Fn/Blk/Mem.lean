@@ -132,27 +132,33 @@ theorem flip6_frame {m Mf : ByteArray} {rs : List (Nat × Nat)} (hrs : Avoids rs
     hF.word (hrs.mono (by omega) ha)
   have h640 : word (flipW (flipW (flipW (flipW (flipW Mf 32) 64) 256) 384) 544) 640 =
       2 ^ 256 - 1 - word m 640 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     simp (disch := omega) only [word_flipW, if_neg]
     rw [hw 640 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   have h544 : word (flipW (flipW (flipW (flipW Mf 32) 64) 256) 384) 544 =
       2 ^ 256 - 1 - word m 544 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     simp (disch := omega) only [word_flipW, if_neg]
     rw [hw 544 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   have h384 : word (flipW (flipW (flipW Mf 32) 64) 256) 384 = 2 ^ 256 - 1 - word m 384 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     simp (disch := omega) only [word_flipW, if_neg]
     rw [hw 384 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   have h256 : word (flipW (flipW Mf 32) 64) 256 = 2 ^ 256 - 1 - word m 256 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     simp (disch := omega) only [word_flipW, if_neg]
     rw [hw 256 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   have h64 : word (flipW Mf 32) 64 = 2 ^ 256 - 1 - word m 64 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     simp (disch := omega) only [word_flipW, if_neg]
     rw [hw 64 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   have h32 : word Mf 32 = 2 ^ 256 - 1 - word m 32 := by
+    clear * - hw  -- omega would case-split on the earlier `h*`
     rw [hw 32 (by omega)]
     simp (disch := omega) only [flip6, word_flipW, if_pos, if_neg, if_true]
   simp only [flip6]
