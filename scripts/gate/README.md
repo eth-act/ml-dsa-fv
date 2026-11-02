@@ -136,11 +136,10 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOpt44/Fn/Kf1/gen_kf1.py` | `MlDsaOpt44/Fn/Kf1/{Tables,Blocks*,BlocksLoop,Rounds}.lean` |
 | `MlDsaOpt65/Fn/Csum/gen_blocks.py 87` | `MlDsaOpt87/Fn/Csum/Blocks.lean` |
 | `MlDsaOpt65/Fn/Ginit/gen_lanes.py 87`, `65` (stdout) | `MlDsaOpt87/Fn/Ginit/Lanes.lean`, `MlDsaOpt65/Fn/Ginit/Lanes.lean` |
-| `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
+| `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 46 of the 69 ported files of `MlDsaOpt65/87` |
 
-Not reproducible: the other 29 ported files (28 carry hand adjustments
-marked `-- port:`; `MlDsaOpt87/Fn/TBuild/Blocks.lean` says it was
-"generalised as the 65 file"); `docs/reference.listing` (no generator in the tree); the v2-era proof
+Not reproducible: the other 23 ported files (all carry hand adjustments
+marked `-- port:`); `docs/reference.listing` (no generator in the tree); the v2-era proof
 generators, which crash on the v3 listing or emit v2 constants (their files were
 since relocated by `proofgen_port.py --reloc` or edited): `MlDsaOpt44/Fn/Kf4/gen_kf4.py`,
 `MlDsaOpt44/Fn/Ntt/gen_ntt.py`, `MlDsaOpt44/Fn/Group/gen_p3.py` (also emits only
