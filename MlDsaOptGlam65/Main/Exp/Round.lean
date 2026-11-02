@@ -291,7 +291,7 @@ theorem absorb_round {s : State} (hs : Ctx s) (hcd : CTOFF ≤ s.executionEnv.ca
     (by rw [xorBlock_size]; exact hS sh hsh)
   have hab := hbuf.lo1; have hfl := hbuf.lo2
   simp only [KS] at hab hfl
-  obtain ⟨m2, hks2, hB2, hrc2, hf2, hc2⟩ := kb_round hs htl hb hbuf (g1 m1) g2 hj1 hr1 hj2 hr2
+  obtain ⟨m2, hks2, hB2, hrc2, hf2, hc2⟩ := kb_round hs htl (by omega) hbuf (g1 m1) g2 hj1 hr1 hj2 hr2
     (RC4Table.frame hrc hf1 (by simp only [avoids_cons, avoids_nil, and_true, RC4]; omega)) hS1 hks1
     (hB.frame hf1 (by simp only [avoids_cons, avoids_nil, and_true]; omega)
       (by simp only [avoids_cons, avoids_nil, and_true]; omega)) hSt
