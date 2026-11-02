@@ -32,8 +32,7 @@ variable {s : State} {ret : Nat} {tail : List UInt256} {T E : Nat}
 theorem tb_pro (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) {off : Nat} :
     Reach (callState s 15364 (wd T :: wd off :: wd ret :: tail) M)
       (callState s 15377 (wd (T + 4064) :: wd T :: wd off :: wd (T + 2208) :: wd ret :: tail) M) 25 := by
-  opt87_reach [6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836]
-  exact ⟨by rw [Nat.add_comm], by rw [Nat.add_comm]⟩  -- port: symbolic `T`
+  opt87_reach [6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836] with [Nat.add_comm _ T]  -- port: symbolic `T`
 
 theorem tb_l0 (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) {pa off : Nat}
     (hoff : off < 2 ^ 64) :
