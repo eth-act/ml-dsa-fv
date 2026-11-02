@@ -91,6 +91,16 @@ theorem flag_P {cd : ByteArray} (hcd : 32 ≤ cd.size) :
     IP, okP, if_true, if_false, show (3 : Nat) ≠ 2 by decide, sA, GroupP.aI_aSeed hcd,
     Bool.not_false, Bool.not_true, Bool.true_or, Bool.false_or, Bool.true_and, Bool.and_true]
 
+theorem G5In.frame {cd m m' : ByteArray} {rs : List (Nat × Nat)} (h : G5In cd m) (hf : FrameExcept m m' rs)
+    (aT : Avoids rs TBL (TBL + 7936)) (aZ : Avoids rs ZH (ZH + 16384)) (aR : Avoids rs RHO1 (RHO1 + 320))
+    (aC : Avoids rs CW (CW + 8192)) (aH : Avoids rs HP (HP + 16384)) (aN : Avoids rs NNEG (NNEG + 64))
+    (aB : Avoids rs BASES (BASES + 2048)) (aI : Avoids rs IDX (IDX + 256))
+    (aA : Avoids rs (ACC + 8192) (ACC + 8192 + 8192)) (aS : Avoids rs SB (SB + 8192)) : G5In cd m' :=
+  ⟨⟨trivial, trivial, h.tbl.frame hf aT, h.zhat.frame hf (aZ.mono le_rfl (by unfold ZH; omega)),
+    h.rho.frame hf aR, h.c0.frame hf aC, h.c1.frame hf (aH.mono le_rfl (by omega)),
+    h.c2.frame hf (aH.mono (by omega) (by omega)), h.zNeg.frame hf aN, h.zBases.frame hf aB,
+    h.zIdx.frame hf aI⟩, h.r4.frame hf aA, h.r5.frame hf aS⟩
+
 /-- What the window's second half needs (pc 4400). -/
 structure WinMid (cd m : ByteArray) : Prop where
   g5 : G5In cd m
