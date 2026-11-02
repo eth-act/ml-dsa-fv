@@ -8,7 +8,7 @@ import MlDsaOpt44.Fn.Blk.Defs
 # `blk`, `blkh`, `blkt`: proofs (WP3, v4)
 
 The three entries push the lane range `[xp, xe)` (`blkt` also its `abp`, `flp`)
-and run one shared body from pc 9030: un-complement the rate lanes of `KS` in
+and run one shared body: un-complement the rate lanes of `KS` in
 place (restored at the end), de-interleave 3 words at a time with 6 delta
 swaps (bit `4b + k` ↦ `64k + b`) and write, per 8 candidates, 8 row-packed
 candidate words at `abp` (lane = slot) and one rejection-flag word at `flp`.
