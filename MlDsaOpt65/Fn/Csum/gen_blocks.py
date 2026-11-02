@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Generate `MlDsaOptNN/Fn/Csum/Blocks.lean` (NN = 65 or 87): the straight-line
-block lemmas of `csum` (WP G4).
+block lemmas of `csum` (v4) and their composition into one loop iteration.
 
     python3 MlDsaOpt65/Fn/Csum/gen_blocks.py 65
     python3 MlDsaOpt65/Fn/Csum/gen_blocks.py 87
 
-The loop body is the 44 body (`MlDsaOpt44/Fn/Ct/CsumBlocks.lean`) with τ loads
-instead of 39; the transpose and emit blocks are byte-identical, so their value
-shapes are the 44 definitions `cs4o0`, `cs5g`, `cs5w0..3`. Pcs and listing indices
-are read from `MlDsaOptNN/listing.tsv`.
+The code is the ML-DSA-44 v4 `csum` (`MlDsaOpt44/Fn/Ct/Csum4Blocks.lean`) with
+τ loads instead of 39, the ML-DSA-NN `BASES` and the count constant `K` of
+`spOff`: the 11 first window bases are read once at entry and kept on the stack,
+the running count is replicated and pre-negated. The transpose and emit blocks
+are byte-identical, so their value shapes are the 44 definitions `CS4.c4T`,
+`CS4.c4g1..4`, `CS4.c4w0..3`. Pcs and listing indices are read from
+`MlDsaOptNN/listing.tsv`; the instruction shapes are asserted below.
 """
 import os
 import sys
@@ -20,9 +23,15 @@ LISTING = os.path.join(ROOT, f'MlDsaOpt{NN}', 'listing.tsv')
 OUT = os.path.join(ROOT, f'MlDsaOpt{NN}', 'Fn', 'Csum', 'Blocks.lean')
 
 TAU = {'65': 49, '87': 60}[NN]
-ENTRY_PC = {'65': 15329, '87': 16172}[NN]
+ENTRY_PC = {'65': 15499, '87': 16227}[NN]
+# loads per block: the first has the 11 stack bases + 5 `PUSH2` loads
 CHUNKS = {'65': [16, 16, 17], '87': [16, 16, 16, 12]}[NN]
+NST = 11
 BASES = 0xc000
+REP = sum(1 << (64 * r) for r in range(4))
+SPOFF = 128 * 8380417 + 261888 - 1
+K = SPOFF * REP
+MASK = sum(((1 << 16) - 1) << (64 * r + 13) for r in range(4))
 
 rows = []
 with open(LISTING) as f:
@@ -35,35 +44,46 @@ pc_of_idx = {i: pc for i, pc, _ in rows}
 ins_of_idx = {i: ins for i, _, ins in rows}
 
 E = idx_of_pc[ENTRY_PC]
-L = E + 7
-assert ins_of_idx[E] == 'JUMPDEST' and ins_of_idx[L] == 'JUMPDEST'
-assert ins_of_idx[E + 3] == f'PUSH1 {TAU:#04x}', ins_of_idx[E + 3]
+L = E + 1 + 2 * NST + 11
+ENTRY = ['JUMPDEST'] + sum(([f'PUSH2 {BASES + 32 * i:#06x}', 'MLOAD'] for i in range(NST)), []) + [
+    'DUP12', 'PUSH2 0x0fa0', 'MLOAD', f'PUSH1 {TAU:#04x}', 'SUB', f'PUSH25 {REP:#052x}', 'MUL',
+    f'PUSH28 {K:#058x}', 'SUB', 'PUSH2 0x3000', 'DUP16']
+assert [ins_of_idx[i] for i in range(E, L)] == ENTRY, [ins_of_idx[i] for i in range(E, L)]
+assert ins_of_idx[L] == 'JUMPDEST'
 
-# load chunks
-blocks = []  # (lo, hi) inclusive-exclusive index ranges
+# load blocks
+blocks = []  # (lo, hi) index ranges
 lo = L
-first = True
-for n in CHUNKS:
-    size = (1 + 5 + 6 * (n - 1)) if first else 6 * n
+loads = []  # expected instructions of the loads
+for k, n in enumerate(CHUNKS):
+    if k == 0:
+        size = 1 + 4 + 5 * (NST - 1) + 6 * (n - NST)
+    else:
+        size = 6 * n
     blocks.append((lo, lo + size))
     lo += size
-    first = False
+exp = ['JUMPDEST', 'DUP15', 'DUP2', 'ADD', 'MLOAD']
+for i in range(1, NST):
+    exp += [f'DUP{16 - i}', 'DUP3', 'ADD', 'MLOAD', 'ADD']
+for m in range(NST, TAU):
+    exp += [f'PUSH2 {BASES + 32 * m:#06x}', 'MLOAD', 'DUP3', 'ADD', 'MLOAD', 'ADD']
+assert [ins_of_idx[i] for i in range(L, lo)] == exp
 TP = (lo, lo + 24)
-EM = (lo + 24, lo + 24 + 103)
-X = (EM[1], EM[1] + 6)
+EM = (TP[1], TP[1] + 89)
+X = (EM[1], EM[1] + 18)
 assert ins_of_idx[EM[1] - 1] == 'JUMPI', ins_of_idx[EM[1] - 1]
-assert ins_of_idx[X[1] - 1] == 'JUMP'
+assert [ins_of_idx[i] for i in range(*X)] == ['POP'] * 17 + ['JUMP']
 assert sum(CHUNKS) == TAU
-
-# check every load reads the expected BASES slot
-k = 0
-for (a, b) in blocks:
-    for i in range(a, b):
-        ins = ins_of_idx[i]
-        if ins.startswith('PUSH2'):
-            assert int(ins.split()[1], 16) == BASES + 32 * k, (i, ins, k)
-            k += 1
-assert k == TAU
+# transpose and emits: the ML-DSA-44 v4 code
+SH = [('SHL', 13), ('SHR', 3), ('SHR', 19), ('SHR', 35)]
+em = []
+for j, (op, sh) in enumerate(SH):
+    em += ['DUP3'] + ([f'PUSH1 {32 * j:#04x}', 'ADD'] if j else []) + ['MLOAD', 'DUP5', 'SUB', 'SWAP4', 'POP',
+           'DUP1', f'PUSH1 {sh:#04x}', op, f'PUSH28 {MASK:#058x}', 'AND', 'DUP5', 'SUB', 'DUP6'] + \
+          ([f'PUSH1 {32 * j:#04x}', 'ADD'] if j else []) + ['MSTORE']
+em += ['POP', 'SWAP1', 'PUSH1 0x80', 'ADD', 'SWAP1', 'SWAP3', 'PUSH1 0x80', 'ADD', 'SWAP3', 'PUSH1 0x20',
+       'SWAP1', 'SUB', 'DUP2', 'PUSH2 0x5000', 'GT', f'PUSH2 {pc_of_idx[L]:#06x}', 'JUMPI']
+assert [ins_of_idx[i] for i in range(*EM)] == em, [ins_of_idx[i] for i in range(*EM)]
 
 
 def pc(i):
@@ -78,24 +98,44 @@ def load(m):
     return f'(UInt256.ofNat (word M (bu + word M ({BASES + 32 * m}))))'
 
 
+def sload(i):
+    return f'(UInt256.ofNat (word M (bu + b{i})))'
+
+
+def cost(a, b):
+    c = 0
+    for i in range(a, b):
+        ins = ins_of_idx[i].split()[0]
+        c += {'JUMPDEST': 1, 'JUMPI': 10, 'JUMP': 8, 'MUL': 5, 'POP': 2}.get(ins, 3)
+    return c
+
+
+BS = ' '.join(f'b{i}' for i in range(NST))
+BSTK = ' :: '.join(f'wd b{i}' for i in reversed(range(NST)))
+M0STK = ' :: '.join(f'wd (word m0 {BASES + 32 * i})' for i in reversed(range(NST)))
+MSTK = ' :: '.join(f'wd (word M {BASES + 32 * i})' for i in reversed(range(NST)))
+M0B = ' '.join(f'(word m0 {BASES + 32 * i})' for i in range(NST))
+
 out = []
 w = out.append
-w(f'''import MlDsaOpt44.Fn.Ct.CsumBlocks
+w(f'''import MlDsaOpt44.Fn.Ct.Csum4Blocks
 import MlDsaOpt{NN}.Layout
 import MlDsaOpt{NN}.Budget
+import MlDsaOpt{NN}.Infra.Reflect
 set_option warningAsError true
 set_option maxHeartbeats 0
 /-!
-# `csum` (WP G4): generated block lemmas of the loop body (ML-DSA-{NN})
+# `csum` (v4): generated block lemmas of the loop body (ML-DSA-{NN})
 
 Generated by `python3 MlDsaOpt65/Fn/Csum/gen_blocks.py {NN}`; do not edit.
 
-Loop head `{pc(L)}`, stack `[bu, cw, g, sp, T, ret]` (`bu = T − 32 u`, `cw = CW + 128 u`,
-`sp = SP_g + 128 u`, `g` the running `n_neg`, `T` the table pointer). {len(CHUNKS)} load-and-add
-blocks over the τ = {TAU} `BASES` entries (chunks {CHUNKS}; the `MLOAD` addresses need
-`BASES[m] ≤ 6112`), the 16-bit transpose and the four emits with the loop test. The
-transpose and emit blocks are the ML-DSA-44 code, so their values are the 44 definitions
-`CS.cs4o0`, `CS.cs5g`, `CS.cs5w0..3`.
+Loop head `{pc(L)}`, stack `[bu, cw, g, sp, b10, …, b0, S, T, ret]` (`bu = T − 32 u`,
+`cw = CW + 128 u`, `sp = S + 128 u`, `g` the replicated, pre-negated running count,
+`b_i = BASES[i]` read once at entry). {len(CHUNKS)} load-and-add blocks over the τ = {TAU}
+`BASES` entries (chunks {CHUNKS}, the first 11 from the stack; the `MLOAD` addresses need
+`BASES[m] ≤ 6112`), the 16-bit transpose and the four code subtractions and emits with the
+loop test. The transpose and emit blocks are the ML-DSA-44 v4 code, so their values are the
+44 definitions `CS4.c4T`, `CS4.c4g1..4`, `CS4.c4w0..3`.
 -/
 
 set_option linter.unusedVariables false
@@ -107,20 +147,25 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsaOpt{NN}.Proofs
 open MlDsaOpt{NN}.Proofs.Infra
-open MlDsaOpt44.Proofs.CS (cs4o0 cs5g cs5w0 cs5w1 cs5w2 cs5w3)
+open MlDsaOpt44.Proofs.CS4 (c4T c4g1 c4g2 c4g3 c4g4 c4w0 c4w1 c4w2 c4w3)
+
+/-- The count word at entry: `K − REP · (τ − NNEG)`, `K = spOff · REP`. -/
+def cse (M : ByteArray) : UInt256 :=
+  UInt256.ofNat {K} - UInt256.ofNat {REP} * (UInt256.ofNat {TAU} - UInt256.ofNat (word M 4000))
 ''')
 
 m0 = 0
-for k, ((a, b), n) in enumerate(zip(blocks, CHUNKS)):
-    ms = list(range(m0, m0 + n))
+for k, n in enumerate(CHUNKS):
     if k == 0:
-        term = load(ms[0])
-        for m in ms[1:]:
+        term = sload(0)
+        for i in range(1, NST):
+            term = f'({sload(i)} + {term})'
+        for m in range(NST, n):
             term = f'({load(m)} + {term})'
-        w(f'def ld{k} (M : ByteArray) (bu : Nat) : UInt256 :=\n  {term}\n')
+        w(f'def ld0 (M : ByteArray) (bu {BS} : Nat) : UInt256 :=\n  {term}\n')
     else:
         term = 'x0'
-        for m in ms:
+        for m in range(m0, m0 + n):
             term = f'({load(m)} + {term})'
         w(f'def ld{k} (M : ByteArray) (bu : Nat) (x0 : UInt256) : UInt256 :=\n  {term}\n')
     m0 += n
@@ -128,31 +173,33 @@ for k, ((a, b), n) in enumerate(zip(blocks, CHUNKS)):
 HYP = ('(hbu1 : 32 ≤ bu) (hbu : bu ≤ 26624) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480)\n'
        '    (hsp : 32768 ≤ sp) (hsp2 : sp + 128 ≤ 49152)\n'
        f'    (hB : ∀ m, m < {TAU} → word M ({BASES} + 32 * m) ≤ 6112)')
-STK = 'wd bu :: wd cw :: g :: wd sp :: wd T :: wd ret :: tail'
+HYPA = 'hbu1 hbu hcw hcw2 hsp hsp2 hB'
+STK = f'wd bu :: wd cw :: g :: wd sp :: {BSTK} :: rest'
 PRE = ('  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small\n'
        '  have hsz := hs.sized\n'
        '  simp only [memWords] at hsz\n')
-
-
-def cost(a, b):
-    c = 0
-    for i in range(a, b):
-        ins = ins_of_idx[i].split()[0]
-        c += {'JUMPDEST': 1, 'JUMPI': 10, 'JUMP': 8, 'MUL': 5, 'MSTORE': 3,
-              'MLOAD': 3, 'POP': 2}.get(ins, 3)
-    return c
-
+HEAD = '{s : State} (hs : Ctx s) {rest : List UInt256} (hrest : rest.length ≤ 963)'
+BIMP = f'{{{BS} : Nat}}'
 
 m0 = 0
 for k, ((a, b), n) in enumerate(zip(blocks, CHUNKS)):
+    lo_m = NST if k == 0 else m0
     hb = ''.join(
         f'  have hb{BASES + 32 * m} : word M {BASES + 32 * m} ≤ 6112 := by simpa using hB {m} (by norm_num)\n'
-        for m in range(m0, m0 + n))
-    xin = '' if k == 0 else ' (x0 : UInt256)'
-    top_in = '' if k == 0 else 'x0 :: '
-    val = f'ld{k} M bu' + ('' if k == 0 else ' x0')
-    w(f'''theorem cs_b{k} {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UInt256}}
-    (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp T : Nat) (g : UInt256){xin}
+        for m in range(lo_m, m0 + n))
+    if k == 0:
+        xin = ''
+        bh = ' '.join(f'(hb{i} : b{i} ≤ 6112)' for i in range(NST))
+        bh = f'\n    {bh}'
+        top_in = ''
+        val = f'ld0 M bu {BS}'
+    else:
+        xin = ' (x0 : UInt256)'
+        bh = ''
+        top_in = 'x0 :: '
+        val = f'ld{k} M bu x0'
+    w(f'''theorem cs_b{k} {HEAD}
+    (M : ByteArray) (bu cw sp : Nat) (g : UInt256){xin} {BIMP}{bh}
     {HYP} :
     Reach (callState s {pc(a)} ({top_in}{STK}) M)
       (callState s {pc(b)} ({val} :: {STK}) M) {cost(a, b)} := by
@@ -160,48 +207,85 @@ for k, ((a, b), n) in enumerate(zip(blocks, CHUNKS)):
 ''')
     m0 += n
 
-w(f'''theorem cs_tp {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UInt256}}
-    (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp T : Nat) (g : UInt256) (x0 : UInt256) :
+w(f'''theorem cs_tp {HEAD}
+    (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256) {BIMP} :
     Reach (callState s {pc(TP[0])} (x0 :: {STK}) M)
-      (callState s {pc(TP[1])} (cs4o0 M bu cw sp g x0 :: {STK}) M) {cost(*TP)} := by
-{PRE}  opt{NN}_reach {idxs(*TP)} with [cs4o0, word_mstore_disjoint]
+      (callState s {pc(TP[1])} (c4T M bu cw sp g x0 :: {STK}) M) {cost(*TP)} := by
+{PRE}  opt{NN}_reach {idxs(*TP)} with [c4T, word_mstore_disjoint]
 ''')
 
 MEM = ('(MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes '
-       '(MachineState.writeBytes M (Data.Bytes.natToBytesPadded (cs5w0 M bu cw sp g x0).toNat 32) (sp)) '
-       '(Data.Bytes.natToBytesPadded (cs5w1 M bu cw sp g x0).toNat 32) (32 + sp)) '
-       '(Data.Bytes.natToBytesPadded (cs5w2 M bu cw sp g x0).toNat 32) (64 + sp)) '
-       '(Data.Bytes.natToBytesPadded (cs5w3 M bu cw sp g x0).toNat 32) (96 + sp))')
-OSTK = 'wd (bu - 32) :: wd (128 + cw) :: cs5g M bu cw sp g x0 :: wd (128 + sp) :: wd T :: wd ret :: tail'
+       '(MachineState.writeBytes M (Data.Bytes.natToBytesPadded (c4w0 M cw g x0).toNat 32) (sp)) '
+       '(Data.Bytes.natToBytesPadded (c4w1 M cw g x0).toNat 32) (32 + sp)) '
+       '(Data.Bytes.natToBytesPadded (c4w2 M cw g x0).toNat 32) (64 + sp)) '
+       '(Data.Bytes.natToBytesPadded (c4w3 M cw g x0).toNat 32) (96 + sp))')
+OSTK = f'wd (bu - 32) :: wd (128 + cw) :: c4g4 M cw g :: wd (128 + sp) :: {BSTK} :: rest'
 for name, target, hlt in (('cs_em', pc(L), 'cw + 128 < 20480'), ('cs_emx', pc(X[0]), 'cw + 128 = 20480')):
-    w(f'''theorem {name} {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UInt256}}
-    (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp T : Nat) (g : UInt256) (x0 : UInt256)
+    w(f'''theorem {name} {HEAD}
+    (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256) {BIMP}
     {HYP}
     (hlt : {hlt}) :
     Reach (callState s {pc(EM[0])} (x0 :: {STK}) M)
       (callState s {target} ({OSTK}) {MEM}) {cost(*EM)} := by
-{PRE}  opt{NN}_reach {idxs(*EM)} with [cs5w0, cs5w1, cs5w2, cs5w3, cs5g, word_mstore_disjoint]
+{PRE}  opt{NN}_reach {idxs(*EM)} with [c4g1, c4g2, c4g3, c4g4, c4w0, c4w1, c4w2, c4w3, word_mstore_disjoint]
 ''')
 
-w(f'''theorem cs_entry {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UInt256}}
-    (htail : tail.length ≤ 960) (M : ByteArray) (sp T : Nat) :
-    Reach (callState s {pc(E)} (wd sp :: wd T :: wd ret :: tail) M)
-      (callState s {pc(L)} (wd T :: wd 12288 :: (UInt256.ofNat {TAU} - UInt256.ofNat (word M 4000)) ::
-        wd sp :: wd T :: wd ret :: tail) M) {cost(E, L)} := by
-{PRE}  opt{NN}_reach {idxs(E, L)}
+w(f'''theorem cs_entry {HEAD} (M : ByteArray) (sp tt : Nat) :
+    Reach (callState s {pc(E)} (wd sp :: wd tt :: rest) M)
+      (callState s {pc(L)} (wd tt :: wd 12288 :: cse M :: wd sp :: {MSTK} :: wd sp :: wd tt :: rest) M)
+      {cost(E, L)} := by
+{PRE}  opt{NN}_reach {idxs(E, L)} with [cse]
 
-set_option maxRecDepth 100000 in
 theorem cs_exit {{s : State}} (hs : Ctx s) {{ret : Nat}} {{tail : List UInt256}}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)
-    (hret : ret < 2 ^ 16) (M : ByteArray) (a b c T : Nat) (g : UInt256) :
-    Reach (callState s {pc(X[0])} (wd a :: wd b :: g :: wd c :: wd T :: wd ret :: tail) M)
+    (hret : ret < 2 ^ 16) (M : ByteArray) (a b c d e : Nat) (g : UInt256) {BIMP} :
+    Reach (callState s {pc(X[0])} (wd a :: wd b :: g :: wd c :: {BSTK} :: wd d :: wd e :: wd ret :: tail) M)
       (callState s ret tail M) {cost(*X)} := by
   opt{NN}_reach {idxs(*X)} with [hj]
-
-end MlDsaOpt{NN}.Proofs.G4
 ''')
+
+# one iteration
+sw = f'ld0 M bu {M0B}'
+for k in range(1, len(CHUNKS)):
+    sw = f'ld{k} M bu ({sw})'
+ITC = sum(cost(a, b) for a, b in blocks) + cost(*TP) + cost(*EM)
+w(f'''/-! ## One iteration (start memory `M`, bases read from `m0` at entry) -/
+
+/-- The window sum (all τ loads). -/
+def sW (m0 M : ByteArray) (bu : Nat) : UInt256 :=
+  {sw}
+/-- The transposed window sum. -/
+def sT (m0 M : ByteArray) (bu cw sp : Nat) (g : UInt256) : UInt256 := c4T M bu cw sp g (sW m0 M bu)
+
+/-- Memory after one iteration. -/
+def csMem (m0 M : ByteArray) (bu cw sp : Nat) (g : UInt256) : ByteArray :=
+  MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes M
+    (Data.Bytes.natToBytesPadded (c4w0 M cw g (sT m0 M bu cw sp g)).toNat 32) sp)
+    (Data.Bytes.natToBytesPadded (c4w1 M cw g (sT m0 M bu cw sp g)).toNat 32) (32 + sp))
+    (Data.Bytes.natToBytesPadded (c4w2 M cw g (sT m0 M bu cw sp g)).toNat 32) (64 + sp))
+    (Data.Bytes.natToBytesPadded (c4w3 M cw g (sT m0 M bu cw sp g)).toNat 32) (96 + sp)
+''')
+BLE = ' '.join(f'(hb0 {i} (by norm_num))' for i in range(NST))
+for name, target, hlt, em in (('cs_iter', pc(L), 'cw + 128 < 20480', 'cs_em'),
+                             ('cs_iterx', pc(X[0]), 'cw + 128 = 20480', 'cs_emx')):
+    chain = f'(cs_b0 hs hrest M bu cw sp g {BLE} {HYPA})'
+    for k in range(1, len(CHUNKS)):
+        chain = f'({chain}.trans\n    (cs_b{k} hs hrest M bu cw sp g _ {HYPA}))'
+    chain = f'({chain}.trans\n    (cs_tp hs hrest M bu cw sp g _))'
+    chain = f'{chain}.trans\n    ({em} hs hrest M bu cw sp g _ {HYPA} hlt)'
+    w(f'''theorem {name} {HEAD}
+    (m0 M : ByteArray) (bu cw sp : Nat) (g : UInt256)
+    {HYP}
+    (hb0 : ∀ i, i < {NST} → word m0 ({BASES} + 32 * i) ≤ 6112) (hlt : {hlt}) :
+    Reach (callState s {pc(L)} (wd bu :: wd cw :: g :: wd sp :: {M0STK} :: rest) M)
+      (callState s {target} (wd (bu - 32) :: wd (128 + cw) :: c4g4 M cw g :: wd (128 + sp) :: {M0STK} :: rest)
+        (csMem m0 M bu cw sp g)) {ITC} :=
+  {chain}
+''')
+
+w(f'end MlDsaOpt{NN}.Proofs.G4\n')
 
 with open(OUT, 'w') as f:
     f.write('\n'.join(out))
-print(OUT, 'iter cost', sum(cost(a, b) for a, b in blocks) + cost(*TP) + cost(*EM),
-      'entry', cost(E, L), 'exit', cost(*X))
+print(OUT, 'iter cost', ITC, 'entry', cost(E, L), 'exit', cost(*X),
+      'total', cost(E, L) + 64 * ITC + cost(*X), 'loop pc', pc(L), 'exit pc', pc(X[0]))
