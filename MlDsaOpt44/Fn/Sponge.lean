@@ -2,6 +2,9 @@ import MlDsaOpt44.Fn.Sponge.Ginit
 import MlDsaOpt44.Fn.Sponge.Cext
 import MlDsaOpt44.Fn.Sponge.Absorb
 import MlDsaOpt44.Fn.Sponge.Spr
+import MlDsaOpt44.Fn.Sponge.Kmove
+import MlDsaOpt44.Fn.Sponge.Lmerge
+import MlDsaOpt44.Fn.Sponge.Mub0
 /-!
 # Sponge glue: `spr`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`, `kmove`, `lmerge` (WP4)
 
@@ -96,7 +99,7 @@ theorem mub0_call {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
       Reach (callState s Entry.mub0 (wd sh :: wd rs :: wd rl :: tail) m)
         (if mlenOf s.executionEnv.calldata ≤ 69 then callState s rs (wd rl :: tail) m'
           else callState s rl tail m') Gas.mub0 :=
-  sorry
+  WP4.mub0_call_aux hs hrl hrs m hsh hcd trabs_call
 
 /-- **kmove**: `[keep, msk, sr, sl, src, ret]`; for every lane `x < 25`,
 `KS[x] := (((src[x] << sl) >> sr) & msk) | (KS[x] & keep)` (moves states
@@ -109,7 +112,7 @@ theorem kmove_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (word m (src + 32 * x) * 2 ^ sl % 2 ^ 256 / 2 ^ sr &&& msk) ||| (word m (KS + 32 * x) &&& keep)) ∧
       FrameExcept m m' [(KS, KS + 800)] ∧
       Call s Entry.kmove [wd keep, wd msk, wd sr, wd sl, wd src] ret tail m [] m' Gas.kmove :=
-  sorry
+  WP4.kmove_call_aux hs hr m hsrc hsrc' hsl hsr hmsk hkeep
 
 /-- **lmerge**: `[a, a + 32 n, sl, b − a, ma, dst − a, ret]` (offsets mod
 `2^256`), `n = 11 k`; for `w < n`, `dst[w] := the lanes `ma` of `a[w]`, the
@@ -125,6 +128,6 @@ theorem lmerge_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' [(dst, dst + 352 * k)] ∧
       Call s Entry.lmerge [wd a, wd (a + 352 * k), wd sl, wd ((b + 2 ^ 256 - a) % 2 ^ 256), wd ma,
         wd ((dst + 2 ^ 256 - a) % 2 ^ 256)] ret tail m [] m' (Gas.lmerge k) :=
-  sorry
+  WP4.lmerge_call_aux hs hr m hk hdst ha hb hda hdb hma hsl
 
 end MlDsaOpt44.Proofs
