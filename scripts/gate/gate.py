@@ -108,6 +108,7 @@ GENERATORS = (
        for d, k in (("Kf4", "gen_kf4.py"), ("Kf1", "gen_kf1.py")) for n in (44, 65, 87)]
     + [("glam port 44", ["python3", "MlDsaOptGlam44/port.py"], None),
        ("glam port 65", ["python3", "MlDsaOptGlam65/port.py"], None),
+       ("glam port 87", ["python3", "MlDsaOptGlam87/port.py"], None),
        ("glam blk gen.py", ["python3", "MlDsaOptGlam44/Fn/Blk/gen.py"], None),
        ("glam gen_nttg.py", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py"], None),
        ("glam blk gen.py 65", ["python3", "MlDsaOptGlam44/Fn/Blk/gen.py", "65"], None),
@@ -116,7 +117,9 @@ GENERATORS = (
        ("glam gen_nttg.py 87", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py", "87"], None),
        ("glam ball gen_blocks.py", ["python3", "MlDsaOptGlam44/Fn/Ball/gen_blocks.py"], None),
        ("glam gen_csum.py", ["python3", "MlDsaOptGlam44/Fn/Ct/gen_csum.py"], None),
-       ("glam gen_dz.py", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py"], None)]
+       ("glam gen_dz.py", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py"], None),
+       ("glam gen_dz.py 65", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py", "65"], None),
+       ("glam gen_dz.py 87", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py", "87"], None)]
     + [(f"glam alt gen.py {g}", ["python3", "MlDsaOptGlam44/Main/Alt/gen.py", str(g)],
         f"MlDsaOptGlam44/Main/Alt/Grp{f}.lean") for g, f in ((0, "A"), (1, "B"))]
 # Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,

@@ -1,6 +1,7 @@
 import MlDsaOpt65.Fn.Decode.Defs
 import MlDsaOpt65.Fn.Decode.ZSpec
 import MlDsaOptGlam65.Fn.Decode.HintMain
+import MlDsaOptGlam65.Fn.Decode.Z4GLoop
 import MlDsaOptGlam65.Layout
 import MlDsaOptGlam65.Budget
 /- Ported from `MlDsaOpt65/Fn/Decode.lean` by `scripts/proofgen_port.py --glam 65`; hand adjustments are marked `-- glam:`. -/
@@ -40,8 +41,8 @@ theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ t, t < 256 → word m' (ZH + 0x2000 * g + 32 * t) =
         pack4 fun j => zLane s.executionEnv.calldata (4 * g + j) t) ∧
       FrameExcept m m' [(ZH + 0x2000 * g, ZH + 0x2000 * g + 8192)] ∧
-      Call s Entry.dz [wd (ZH + 0x2000 * g), wd (Z0 + 2560 * g)] ret tail m [wd f] m' Gas.dz := by
-  sorry  -- glam: open item (package dz/csum)
+      Call s Entry.dz [wd (ZH + 0x2000 * g), wd (Z0 + 2560 * g)] ret tail m [wd f] m' Gas.dz :=
+  DecodeZ.dz_main hs hr m hg
 
 /-- Pure (open): the norm check of `z ∈ R^ℓ` is the conjunction of the per-polynomial
 field checks of the first `ℓ = 5` polynomials of the stream. Together with `dz_call`

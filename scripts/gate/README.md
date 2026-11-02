@@ -141,7 +141,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOpt65/Fn/Ginit/gen_lanes.py 87`, `65` (stdout) | `MlDsaOpt87/Fn/Ginit/Lanes.lean`, `MlDsaOpt65/Fn/Ginit/Lanes.lean` |
 | `proofgen_artifact_glam.py MlDsaOpt/NN/glam/opt.hex MlDsaOptGlamNN MlDsaOptGlamNN glamNN M` (M = 2616, 3384, 2897) | `MlDsaOptGlamNN/{Bytecode,Artifact,Infra,Infra/*}.lean`, `listing.tsv` |
 | `MlDsaOptGlam44/Fn/Kf4/gen_kf4.py NN`, `MlDsaOptGlam44/Fn/Kf1/gen_kf1.py NN` (44, 65, 87) | `MlDsaOptGlamNN/Fn/{Kf4,Kf1}/*.lean` (`Model`, `Algebra` for 44 only) |
-| `MlDsaOptGlam{44,65}/port.py` (`proofgen_port.py --glam NN` and its recorded adjustments) | the ported files of `MlDsaOptGlam{44,65}/` |
+| `MlDsaOptGlam{44,65,87}/port.py` (`proofgen_port.py --glam NN` and its recorded adjustments) | the ported files of `MlDsaOptGlam{44,65,87}/` |
 | `MlDsaOptGlam44/Fn/Blk/gen.py` | `MlDsaOptGlam44/Fn/Blk/{Iters,Proof}.lean` |
 | `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py` | `MlDsaOptGlam44/Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}.lean` |
 | `MlDsaOptGlam44/Fn/Blk/gen.py NN` (65, 87) | `MlDsaOptGlamNN/Fn/Blk/{Iters,Glue,Proof}.lean` |
@@ -149,6 +149,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam44/Fn/Ball/gen_blocks.py` | `MlDsaOptGlam44/Fn/Ball/Blocks.lean` |
 | `MlDsaOptGlam44/Fn/Ct/gen_csum.py` | `MlDsaOptGlam44/Fn/Ct/{Csum4Blocks,Csum4Iter}.lean` |
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py` | `MlDsaOptGlam44/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
+| `MlDsaOptGlam44/Fn/Decode/gen_dz.py 65`, `87` (`gen_dz_nn.py`) | `MlDsaOptGlamNN/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `MlDsaOptGlam44/Main/Alt/gen.py {0,1}` | stdout = `MlDsaOptGlam44/Main/Alt/Grp{A,B}.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 46 of the 69 ported files of `MlDsaOpt65/87` |
 
