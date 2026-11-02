@@ -3,6 +3,7 @@ import MlDsaOpt65.Fn.Ginit.Call
 import MlDsaOpt65.Fn.Fix
 import MlDsaOpt65.Fn.Keccak
 import MlDsaOpt65.Fn.Blk
+import MlDsaOpt65.Fn.GroupV4.Main
 /-!
 # ExpandA groups and the fused accumulation (ML-DSA-65, v4)
 
@@ -41,7 +42,7 @@ theorem group_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' (groupFrame rb) ∧
       Call s Entry.group [wd amask, wd col, wd rb] ret tail m
         [flag (gOk s.executionEnv.calldata amask col rb)] m' Gas.group :=
-  sorry
+  group_call_aux hs hr m hrc hrho hamask hcol hrb hcd
 
 /-- A fused pass's frame and call, given the word it stores at `acc[t]`. -/
 def FusedPass (s : State) (entry ret : Nat) (tail : List UInt256) (m : ByteArray) (acc gas : Nat)
