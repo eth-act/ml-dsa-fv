@@ -1,6 +1,7 @@
 import MlDsaOptGlam65.Layout
 import MlDsaOptGlam65.Budget
 import MlDsa.Bridge44
+import MlDsaOptGlam65.Fn.Ntt.Top
 import MlDsaOptGlam65.Fn.Ntt.InvTop
 /- Ported from `MlDsaOpt65/Fn/Ntt.lean` by `scripts/proofgen_port.py --glam 65`; hand adjustments are marked `-- glam:`. -/
 set_option maxHeartbeats 0  -- glam: re-elaboration headroom
@@ -44,8 +45,8 @@ theorem ntt_call {s : State} (hs : Ctx s) {p : Nat} (hp : p = ZH ∨ p = ZH2) {r
           ((lane (word m' (p + 32 * t)) k : Int) - (Fips204.ntt (lanesPoly m p k))[t]!) %
             (Fips204.q : Int) = 0) ∧
       FrameExcept m m' [(p, p + 8192)] ∧
-      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt := by
-  sorry  -- glam: open item (package 1)
+      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt :=
+  NttG.ntt_g hs hp hr m htbl
 
 /-- **intt**: `[ACC + 0x2000 g, ret]`, `g < 2`, in place on the four lane
 polynomials of row group `g`, with UseHint fused into the last pass (v4): lane

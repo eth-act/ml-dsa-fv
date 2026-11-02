@@ -25,9 +25,9 @@ open MlDsaOpt44.Proofs.Blk
 structure GGeo (abp flp j0 N : Nat) : Prop where
   hN : N ≤ 7
   ha : 800 ≤ 256 * j0 + abp
-  ha' : 256 * N + abp ≤ 83712
+  ha' : 256 * N + abp ≤ 16777216
   hf : 800 ≤ 32 * j0 + flp
-  hf' : 32 * N + flp ≤ 83712
+  hf' : 32 * N + flp ≤ 16777216
   hd : 256 * N + abp ≤ 32 * j0 + flp ∨ 32 * N + flp ≤ 256 * j0 + abp
 
 /-- Memory after the iterations `j0 … n − 1`. -/
