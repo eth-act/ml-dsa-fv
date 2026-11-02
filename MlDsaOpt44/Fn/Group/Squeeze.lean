@@ -65,9 +65,9 @@ theorem squeeze_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {col b : Nat} (hb : b < 5) {m M : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M I b)
     (hK : Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
+      (callState s 22529 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
     (hL : ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
-      (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
+      (callState s 9030 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
         gB col ret tail) M) 21)
     (hjK : Decode.isValidJumpDest optBytecode (13770 + 22 * b) = true)
     (hjL : Decode.isValidJumpDest optBytecode (13784 + 22 * b) = true) :
@@ -108,14 +108,14 @@ theorem squeezes {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {col : Nat} {m M0 : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M0 I 0)
     (hK : ∀ b, b < 5 → ∀ M, Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
+      (callState s 22529 (wd (13770 + 22 * b) :: gB col ret tail) M) 15)
     (hL : ∀ b, b < 5 → ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
-      (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
+      (callState s 9030 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
         gB col ret tail) M) 21)
     (hjK : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (13770 + 22 * b) = true)
     (hjL : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (13784 + 22 * b) = true) :
     ∀ n, n ≤ 5 → ∃ M', SqInv m M' I n ∧
-      Reach (callState s 13762 (gB col ret tail) M0)
+      Reach (callState s 13826 (gB col ret tail) M0)
         (callState s (13762 + 22 * n) (gB col ret tail) M') (n * (36 + Gas.kf4 + Gas.blk))
   | 0, _ => ⟨M0, hinv, (Reach.refl _).of_eq rfl rfl⟩
   | n + 1, hn => by

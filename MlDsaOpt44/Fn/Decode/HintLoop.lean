@@ -241,8 +241,8 @@ theorem row_step {r lit pcH pcI pcN : Nat} (B : RowBlocks s ret tail r lit pcH p
 theorem tscan (hs : Ctx s) (htl : tail.length ≤ 960) (hcd : HDR ≤ s.executionEnv.calldata.size)
     (M : ByteArray) {a : Nat} (g : Bool) :
     ∀ k, a + k ≤ 80 →
-      Reach (callState s 7970 (wd a :: flag g :: wd ret :: tail) M)
-        (callState s 7970 (wd (a + k) ::
+      Reach (callState s 8180 (wd a :: flag g :: wd ret :: tail) M)
+        (callState s 8180 (wd (a + k) ::
           flag (g && (List.range' a k).all (fun idx => yv s.executionEnv.calldata idx == 0)) ::
           wd ret :: tail) M) (85 * k)
   | 0, _ => (Reach.refl _).of_eq rfl (by simp)

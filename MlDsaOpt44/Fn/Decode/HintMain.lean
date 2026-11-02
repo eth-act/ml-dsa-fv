@@ -31,21 +31,21 @@ theorem dhint_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz : memWords ≤ s.activeWords.toNat := hs.sized
   have hmem : 59648 ≤ 32 * s.activeWords.toNat := by simp only [memWords] at hsz; omega
-  have B0 : RowBlocks s ret tail 0 1 7534 7561 7631 :=
+  have B0 : RowBlocks s ret tail 0 1 7744 7771 7841 :=
     ⟨fun M G _ _ h1 h2 h3 => h0_hok hs htl M G (by simpa using h1) h2 h3,
      fun M G _ _ h1 h2 h3 h4 => h0_hbad hs htl M G h1 (by simpa using h2) h3 h4,
      fun M G _ _ h1 => h0_iexit hs htl M G h1,
      fun M G _ _ _ h1 h2 h3 h4 => h0_ifirst hs htl M G h1 h2 h3 h4 haw hmem,
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 => h0_iok hs htl M G h1 h2 h3 h4 h5 h6 h7 haw hmem,
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 h8 => h0_ibad hs htl M G h1 h2 h3 h4 h5 h6 h7 h8 haw hmem⟩
-  have B1 : RowBlocks s ret tail 1 18446744073709551616 7631 7658 7736 :=
+  have B1 : RowBlocks s ret tail 1 18446744073709551616 7841 7868 7946 :=
     ⟨fun M G _ _ h1 h2 h3 => h1_hok hs htl M G (by simpa using h1) h2 h3,
      fun M G _ _ h1 h2 h3 h4 => h1_hbad hs htl M G h1 (by simpa using h2) h3 h4,
      fun M G _ _ h1 => h1_iexit hs htl M G h1,
      fun M G _ _ _ h1 h2 h3 h4 => h1_ifirst hs htl M G h1 h2 h3 h4 haw hmem,
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 => h1_iok hs htl M G h1 h2 h3 h4 h5 h6 h7 haw hmem,
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 h8 => h1_ibad hs htl M G h1 h2 h3 h4 h5 h6 h7 h8 haw hmem⟩
-  have B2 : RowBlocks s ret tail 2 340282366920938463463374607431768211456 7736 7763 7849 :=
+  have B2 : RowBlocks s ret tail 2 340282366920938463463374607431768211456 7946 7973 8059 :=
     ⟨fun M G _ _ h1 h2 h3 => h2_hok hs htl M G (by simpa using h1) h2 h3,
      fun M G _ _ h1 h2 h3 h4 => h2_hbad hs htl M G h1 (by simpa using h2) h3 h4,
      fun M G _ _ h1 => h2_iexit hs htl M G h1,
@@ -53,7 +53,7 @@ theorem dhint_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 => h2_iok hs htl M G h1 h2 h3 h4 h5 h6 h7 haw hmem,
      fun M G _ _ _ _ _ h1 h2 h3 h4 h5 h6 h7 h8 => h2_ibad hs htl M G h1 h2 h3 h4 h5 h6 h7 h8 haw hmem⟩
   have B3 : RowBlocks s ret tail 3 6277101735386680763835789423207666416102355444464034512896
-      7849 7876 7970 :=
+      8059 8086 8180 :=
     ⟨fun M G _ _ h1 h2 h3 => h3_hok hs htl M G (by simpa using h1) h2 h3,
      fun M G _ _ h1 h2 h3 h4 => h3_hbad hs htl M G h1 (by simpa using h2) h3 h4,
      fun M G _ _ h1 => h3_iexit hs htl M G h1,

@@ -66,12 +66,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11084 (wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 0))
-      (callState s 11107 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 1)) 57 := by
+    Reach (callState s 10911 (wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 0))
+      (callState s 10934 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 1)) 57 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4697, 4698, 4699, 4700, 4701, 4702, 4703, 4704, 4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712, 4713, 4714, 4715] (by decide +kernel) ?_
+  refine reach_block hs [4562, 4563, 4564, 4565, 4566, 4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 0]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -80,12 +80,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11107 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 1))
-      (callState s 11131 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 2)) 58 := by
+    Reach (callState s 10934 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 1))
+      (callState s 10958 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 2)) 58 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4716, 4717, 4718, 4719, 4720, 4721, 4722, 4723, 4724, 4725, 4726, 4727, 4728, 4729, 4730, 4731, 4732, 4733] (by decide +kernel) ?_
+  refine reach_block hs [4581, 4582, 4583, 4584, 4585, 4586, 4587, 4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 1]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -94,12 +94,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11131 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 2))
-      (callState s 11155 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 3)) 58 := by
+    Reach (callState s 10958 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 2))
+      (callState s 10982 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 3)) 58 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4734, 4735, 4736, 4737, 4738, 4739, 4740, 4741, 4742, 4743, 4744, 4745, 4746, 4747, 4748, 4749, 4750, 4751] (by decide +kernel) ?_
+  refine reach_block hs [4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608, 4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 2]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -108,12 +108,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11155 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 3))
-      (callState s 11177 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 4)) 52 := by
+    Reach (callState s 10982 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 3))
+      (callState s 11004 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 4)) 52 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4752, 4753, 4754, 4755, 4756, 4757, 4758, 4759, 4760, 4761, 4762, 4763, 4764, 4765, 4766, 4767] (by decide +kernel) ?_
+  refine reach_block hs [4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629, 4630, 4631, 4632] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 3]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -122,12 +122,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11177 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 4))
-      (callState s 11187 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 5)) 24 := by
+    Reach (callState s 11004 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 4))
+      (callState s 11014 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 5)) 24 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4768, 4769, 4770, 4771, 4772, 4773, 4774, 4775] (by decide +kernel) ?_
+  refine reach_block hs [4633, 4634, 4635, 4636, 4637, 4638, 4639, 4640] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 4]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -136,12 +136,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11187 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 5))
-      (callState s 11197 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 6)) 23 := by
+    Reach (callState s 11014 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 5))
+      (callState s 11024 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 6)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4776, 4777, 4778, 4779, 4780, 4781, 4782, 4783] (by decide +kernel) ?_
+  refine reach_block hs [4641, 4642, 4643, 4644, 4645, 4646, 4647, 4648] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 5]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -150,12 +150,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11197 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 6))
-      (callState s 11207 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 7)) 23 := by
+    Reach (callState s 11024 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 6))
+      (callState s 11034 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 7)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4784, 4785, 4786, 4787, 4788, 4789, 4790, 4791] (by decide +kernel) ?_
+  refine reach_block hs [4649, 4650, 4651, 4652, 4653, 4654, 4655, 4656] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 6]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -164,12 +164,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11207 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 7))
-      (callState s 11217 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 8)) 23 := by
+    Reach (callState s 11034 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 7))
+      (callState s 11044 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 8)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4792, 4793, 4794, 4795, 4796, 4797, 4798, 4799] (by decide +kernel) ?_
+  refine reach_block hs [4657, 4658, 4659, 4660, 4661, 4662, 4663, 4664] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 7]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -178,12 +178,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane8 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11217 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 8))
-      (callState s 11229 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 9)) 24 := by
+    Reach (callState s 11044 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 8))
+      (callState s 11056 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 9)) 24 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807] (by decide +kernel) ?_
+  refine reach_block hs [4665, 4666, 4667, 4668, 4669, 4670, 4671, 4672] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 8]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -192,12 +192,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane9 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11229 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 9))
-      (callState s 11241 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 10)) 23 := by
+    Reach (callState s 11056 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 9))
+      (callState s 11068 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 10)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4808, 4809, 4810, 4811, 4812, 4813, 4814, 4815] (by decide +kernel) ?_
+  refine reach_block hs [4673, 4674, 4675, 4676, 4677, 4678, 4679, 4680] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 9]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -206,12 +206,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane10 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11241 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 10))
-      (callState s 11253 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 11)) 23 := by
+    Reach (callState s 11068 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 10))
+      (callState s 11080 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 11)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4816, 4817, 4818, 4819, 4820, 4821, 4822, 4823] (by decide +kernel) ?_
+  refine reach_block hs [4681, 4682, 4683, 4684, 4685, 4686, 4687, 4688] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 10]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -220,12 +220,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane11 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11253 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 11))
-      (callState s 11265 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 12)) 23 := by
+    Reach (callState s 11080 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 11))
+      (callState s 11092 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 12)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4824, 4825, 4826, 4827, 4828, 4829, 4830, 4831] (by decide +kernel) ?_
+  refine reach_block hs [4689, 4690, 4691, 4692, 4693, 4694, 4695, 4696] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 11]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -234,12 +234,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane12 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11265 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 12))
-      (callState s 11277 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 13)) 24 := by
+    Reach (callState s 11092 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 12))
+      (callState s 11104 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 13)) 24 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4832, 4833, 4834, 4835, 4836, 4837, 4838, 4839] (by decide +kernel) ?_
+  refine reach_block hs [4697, 4698, 4699, 4700, 4701, 4702, 4703, 4704] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 12]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -248,12 +248,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane13 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11277 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 13))
-      (callState s 11289 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 14)) 23 := by
+    Reach (callState s 11104 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 13))
+      (callState s 11116 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 14)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4840, 4841, 4842, 4843, 4844, 4845, 4846, 4847] (by decide +kernel) ?_
+  refine reach_block hs [4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 13]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -262,12 +262,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane14 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11289 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 14))
-      (callState s 11301 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 15)) 23 := by
+    Reach (callState s 11116 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 14))
+      (callState s 11128 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 15)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4848, 4849, 4850, 4851, 4852, 4853, 4854, 4855] (by decide +kernel) ?_
+  refine reach_block hs [4713, 4714, 4715, 4716, 4717, 4718, 4719, 4720] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 14]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -276,12 +276,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane15 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11301 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 15))
-      (callState s 11313 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 16)) 23 := by
+    Reach (callState s 11128 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 15))
+      (callState s 11140 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 16)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4856, 4857, 4858, 4859, 4860, 4861, 4862, 4863] (by decide +kernel) ?_
+  refine reach_block hs [4721, 4722, 4723, 4724, 4725, 4726, 4727, 4728] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 15]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -290,12 +290,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane16 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11313 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 16))
-      (callState s 11359 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 17)) 32 := by
+    Reach (callState s 11140 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 16))
+      (callState s 11186 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 17)) 32 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4864, 4865, 4866, 4867, 4868, 4869, 4870, 4871, 4872, 4873] (by decide +kernel) ?_
+  refine reach_block hs [4729, 4730, 4731, 4732, 4733, 4734, 4735, 4736, 4737, 4738] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 16]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -304,12 +304,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane17 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11359 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 17))
-      (callState s 11371 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 18)) 24 := by
+    Reach (callState s 11186 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 17))
+      (callState s 11198 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 18)) 24 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4874, 4875, 4876, 4877, 4878, 4879, 4880, 4881] (by decide +kernel) ?_
+  refine reach_block hs [4739, 4740, 4741, 4742, 4743, 4744, 4745, 4746] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 17]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -318,12 +318,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane18 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11371 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 18))
-      (callState s 11383 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 19)) 23 := by
+    Reach (callState s 11198 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 18))
+      (callState s 11210 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 19)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4882, 4883, 4884, 4885, 4886, 4887, 4888, 4889] (by decide +kernel) ?_
+  refine reach_block hs [4747, 4748, 4749, 4750, 4751, 4752, 4753, 4754] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 18]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -332,12 +332,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane19 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11383 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 19))
-      (callState s 11395 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 20)) 23 := by
+    Reach (callState s 11210 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 19))
+      (callState s 11222 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 20)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4890, 4891, 4892, 4893, 4894, 4895, 4896, 4897] (by decide +kernel) ?_
+  refine reach_block hs [4755, 4756, 4757, 4758, 4759, 4760, 4761, 4762] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 19]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -346,12 +346,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane20 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11395 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 20))
-      (callState s 11443 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 21)) 38 := by
+    Reach (callState s 11222 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 20))
+      (callState s 11270 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 21)) 38 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4898, 4899, 4900, 4901, 4902, 4903, 4904, 4905, 4906, 4907, 4908, 4909] (by decide +kernel) ?_
+  refine reach_block hs [4763, 4764, 4765, 4766, 4767, 4768, 4769, 4770, 4771, 4772, 4773, 4774] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 20]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -360,12 +360,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane21 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11443 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 21))
-      (callState s 11455 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 22)) 23 := by
+    Reach (callState s 11270 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 21))
+      (callState s 11282 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 22)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4910, 4911, 4912, 4913, 4914, 4915, 4916, 4917] (by decide +kernel) ?_
+  refine reach_block hs [4775, 4776, 4777, 4778, 4779, 4780, 4781, 4782] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 21]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -374,12 +374,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane22 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11455 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 22))
-      (callState s 11467 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 23)) 23 := by
+    Reach (callState s 11282 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 22))
+      (callState s 11294 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 23)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4918, 4919, 4920, 4921, 4922, 4923, 4924, 4925] (by decide +kernel) ?_
+  refine reach_block hs [4783, 4784, 4785, 4786, 4787, 4788, 4789, 4790] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 22]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -388,12 +388,12 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane23 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11467 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 23))
-      (callState s 11479 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 24)) 23 := by
+    Reach (callState s 11294 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 23))
+      (callState s 11306 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 24)) 23 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4926, 4927, 4928, 4929, 4930, 4931, 4932, 4933] (by decide +kernel) ?_
+  refine reach_block hs [4791, 4792, 4793, 4794, 4795, 4796, 4797, 4798] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 23]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -402,14 +402,14 @@ set_option maxRecDepth 100000 in
 theorem ginit_lane24 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (hl : l4 < 2 ^ 256) :
-    Reach (callState s 11479 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 24))
+    Reach (callState s 11306 (wd (2 ^ 256 - 1 - keep) :: wd l4 :: wd cmult :: wd amult :: wd keep :: wd ret :: tail) (storeWords m 0 (ginitWord m keep amult cmult l4) 24))
       (callState s ret tail (storeWords m 0 (ginitWord m keep amult cmult l4) 25)) 41 := by
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
   have hret := hr.small
   have hj := hr.jumpdest
-  refine reach_block hs [4934, 4935, 4936, 4937, 4938, 4939, 4940, 4941, 4942, 4943, 4944, 4945, 4946, 4947] (by decide +kernel) ?_
+  refine reach_block hs [4799, 4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810, 4811, 4812] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 24]
   opt44_block [word_storeWords_out, hj]
   refine wb_congr ?_ (by norm_num); ginit_value

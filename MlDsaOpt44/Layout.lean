@@ -7,8 +7,8 @@ set_option warningAsError true
 Shared vocabulary for every proof about `MlDsaOpt/44/opt.hex`.
 
 * **Memory map**: `MlDsaOpt/44/layout.txt` (generator `Layout` class in
-  `scripts/gen_opt.py`). Memory is sized once at entry to `memWords = 2097`
-  words (`MSTORE` at `0x10600`) and never grows.
+  `scripts/gen_opt.py`). Memory is sized once at entry to `memWords = 2616`
+  words (`MSTORE` at `0x146e0`, the last word of `SB`) and never grows.
 * **Calling convention** (hand-written, `Gen.call`): the caller pushes the
   return address, then the arguments in order (last argument on top), and
   jumps to the entry `JUMPDEST`. The callee consumes its arguments and returns
@@ -69,12 +69,23 @@ def BK : Nat := 0xff00
 def TT : Nat := 0x5000
 /-- `2^13 S'(t) + n_neg(t)`, row-packed (overlay). -/
 def SP : Nat := 0x6800
-/-- One past the highest byte of the regions the main flow reads or keeps
-(`MISC … BK`). Only `kf1`'s third buffer `KZ` lies above; the entry store at
-`KZ + 800 − 32 = 0x10600` sizes memory. -/
+/-- One past the highest byte of the regions `MISC … BK`. Above lie `kf1`'s
+third buffer `KZ` and the side buffers `SB`; the entry store at
+`SB + 16384 − 32 = 0x146e0` sizes memory. -/
 def TOP : Nat := 0x10220
 /-- `kf1`'s third state buffer (scratch, clobbered by every `kf1` call). -/
 def KZ : Nat := 0x10300
+/-- Two 8 KB side buffers of the fused accumulation (`SB`, `SB + 8192`). -/
+def SB : Nat := 0x10700
+/-- SampleInBall's stream limit (byte offset of the lane where `c`'s second
+block is squeezed on demand). -/
+def LIM : Nat := 0x0f80
+/-- kf4 state images (25 words each) in the dead part of `FIN` (`FIN + 256 +
+800 i`): the window's paused states, and (`SC`) the states of `c` (slot 0) and
+μ (slot 1) after their SIMD squeeze. -/
+def SAVE0 : Nat := 0xea00
+def SAVE1 : Nat := 0xed20
+def SC : Nat := 0xf040
 
 /-! ## Calldata offsets -/
 
@@ -90,30 +101,33 @@ def H0 : Nat := 3648
 /-! ## Subroutine entry points (`MlDsaOpt/44/opt.asm` labels) -/
 
 namespace Entry
-def absorb17 : Nat := 6705
-def sib : Nat := 7301
-def dhint : Nat := 7530
-def dz : Nat := 8009
-def blk : Nat := 8887
-def pass3 : Nat := 10062
-def pass3m : Nat := 10344
-def pass3k4 : Nat := 10643
-def gfix : Nat := 10754
-def ginit : Nat := 11084
-def trabs : Nat := 11497
-def cext : Nat := 12118
-def spr : Nat := 12392
-def mu0 : Nat := 12607
-def fix : Nat := 12972
-def group : Nat := 13659
-def tbuild : Nat := 13924
-def csum : Nat := 14732
-def usehint : Nat := 15457
-def pack : Nat := 15739
-def ntt : Nat := 16828
-def intt : Nat := 18095
-def kf1 : Nat := 19576
-def kf4 : Nat := 21570
+def absorb17 : Nat := 6644
+def sib : Nat := 7240
+def dhint : Nat := 7740
+def dz : Nat := 8219
+def blk : Nat := 9025
+/-- `blk` on lanes 0 … 11 only (candidates 0 … 31 of the block). -/
+def blkh : Nat := 10203
+/-- The rest of block 4 (lanes 12 … 20), made by `gfix` on demand. -/
+def blkt : Nat := 10212
+def pass3f4 : Nat := 10229
+def gfix : Nat := 10501
+def ginit : Nat := 10911
+def kmove : Nat := 11324
+def lmerge : Nat := 11451
+def trabs : Nat := 11702
+def cext : Nat := 12151
+def spr : Nat := 12425
+def mub0 : Nat := 12640
+def fix : Nat := 13206
+def group : Nat := 13723
+def tbuild : Nat := 13954
+def csum : Nat := 14762
+def pack : Nat := 15459
+def ntt : Nat := 16548
+def intt : Nat := 17722
+def kf1 : Nat := 20535
+def kf4 : Nat := 22529
 end Entry
 
 /-! ## Stack budgets
@@ -129,25 +143,24 @@ def kf1 : Nat := leaf
 def blk : Nat := leaf
 def ntt : Nat := leaf
 def intt : Nat := leaf
-def pass3 : Nat := leaf
-def pass3m : Nat := leaf
-def pass3k4 : Nat := leaf
+def pass3f4 : Nat := leaf
 def tbuild : Nat := leaf
 def csum : Nat := leaf
-def usehint : Nat := leaf
 def pack : Nat := leaf
 def dz : Nat := leaf
 def dhint : Nat := leaf
-def sib : Nat := leaf
 def spr : Nat := leaf
 def ginit : Nat := leaf
 def absorb17 : Nat := leaf
 def trabs : Nat := leaf
 def cext : Nat := leaf
-def mu0 : Nat := max trabs spr + 64
+def kmove : Nat := leaf
+def lmerge : Nat := leaf
+def sib : Nat := max kf4 cext + 64
+def mub0 : Nat := max trabs spr + 64
 def fix : Nat := max kf4 blk + 64
-def gfix : Nat := fix + 64
-def group : Nat := max ginit (max kf4 (max blk (max gfix pass3))) + 64
+def gfix : Nat := max blk fix + 64
+def group : Nat := max ginit (max kf4 (max blk gfix)) + 64
 end Stack
 
 /-! ## Call contracts -/
@@ -229,6 +242,10 @@ def ZeroOn (m : ByteArray) (lo hi : Nat) : Prop := ∀ a, lo ≤ a → a < hi �
 def KS4 (m : ByteArray) (S : Nat → Fips202.SpongeState) : Prop :=
   ∀ x, x < 25 → word m (KS + 32 * x) = il fun k => cpl x (laneOf (S k) x)
 
+/-- `KS4` at another base: a kf4 state image (25 words at `base`). -/
+def St4At (m : ByteArray) (base : Nat) (S : Nat → Fips202.SpongeState) : Prop :=
+  ∀ x, x < 25 → word m (base + 32 * x) = il fun k => cpl x (laneOf (S k) x)
+
 /-- One state, lane-replicated and lane-complemented, in `KS` (`kf1`). -/
 def KS1 (m : ByteArray) (S : Fips202.SpongeState) : Prop :=
   ∀ x, x < 25 → word m (KS + 32 * x) = rep (cpl x (laneOf S x))
@@ -263,6 +280,10 @@ def nttRec (i : Nat) : Nat :=
 
 def TblAt (m : ByteArray) : Prop := ∀ i, i < 248 → word m (TBL + 32 * i) = nttRec i
 
+/-- `SP`'s constant offset: `csum` stores `spOff − (2^13 S' + n_neg)` per
+lane, which carries UseHint's rounding term `γ2 − 1` (v4). -/
+def spOff : Nat := 128 * Fips204.q + Fips204.gamma2 - 1
+
 /-! ## Spec-level data of a calldata string -/
 
 def pkOf (cd : ByteArray) : ByteArray := cd.extract 0 1312
@@ -276,8 +297,14 @@ def mlenOf (cd : ByteArray) : Nat := cd.size - 3732
 def rawZ (cd : ByteArray) (k t : Nat) : Nat :=
   Fips204.bitsToInteger (cd.extract (Z0 + 576 * k) (Z0 + 576 * (k + 1))) (18 * t) 18
 
-/-- The lane `dz` stores for `z_k[t]`: `γ1 + q − raw ≡ z_k[t] (mod q)`. -/
-def zLane (cd : ByteArray) (k t : Nat) : Nat := 2 ^ 17 + Fips204.q - rawZ cd k t
+/-- The lane `dz` stores for `z_k[t]`: `γ1 + 9q − raw ≡ z_k[t] (mod q)` (v4: the
+forward NTT's bias `8q` is added by the decoder). -/
+def zLane (cd : ByteArray) (k t : Nat) : Nat := 2 ^ 17 + 9 * Fips204.q - rawZ cd k t
+
+/-- Lower and upper bound of the forward NTT's input lanes (`zLane`: `γ1 + 9q − raw`,
+`raw < 2^18`). -/
+def zLo : Nat := 2 ^ 17 + 9 * Fips204.q - (2 ^ 18 - 1)
+def zHi : Nat := 2 ^ 17 + 9 * Fips204.q
 
 /-- The 10-bit field `i` of `t1_r`. -/
 def t1v (cd : ByteArray) (r i : Nat) : Nat :=

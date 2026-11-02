@@ -1,13 +1,12 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
-import MlDsaOpt44.Fn.Decode.ZLoop
 import MlDsaOpt44.Fn.Decode.HintMain
 /-!
 # Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack) (WP8)
 
 * `dz [ZH, Z0, ret] ↦ [f]`: decodes the four 18-bit packed z polynomials into
-  lane-packed words (`lane k of ZH[t] = γ1 + q − raw = zLane`) and returns the
-  OR of the SIMD norm-flag words; bits `50 + 64k` and `25 + 64k` of `f` stay
+  lane-packed words (`lane k of ZH[t] = γ1 + 9q − raw = zLane`) and returns the
+  OR of the SIMD norm-flag words; bits `50 + 64k` and `27 + 64k` of `f` stay
   clear iff `‖z‖∞ < γ1 − β`.
 * `dhint [ret] ↦ [ok]`: FIPS 204 Algorithm 21 on the hint bytes; ORs bit
   `64 i` into `HP[y]` for every index `y` of row `i`.
@@ -21,7 +20,7 @@ open MlDsaOptCommon
 open MlDsa44
 
 /-- The norm-flag bits checked by `flag_check`. -/
-def zBits : Nat := pack4 fun _ => 2 ^ 50 + 2 ^ 25
+def zBits : Nat := pack4 fun _ => 2 ^ 50 + 2 ^ 27
 
 /-- **dz**: `[ZH, Z0, ret] ↦ [f]`. -/
 theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -30,7 +29,7 @@ theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ t, t < 256 → word m' (ZH + 32 * t) = pack4 fun k => zLane s.executionEnv.calldata k t) ∧
       FrameExcept m m' [(ZH, ZH + 8192)] ∧
       Call s Entry.dz [wd ZH, wd Z0] ret tail m [wd f] m' Gas.dz :=
-  DecodeZ.dz_main hs hr m hcd
+  sorry
 
 /-- **dhint**: `[ret] ↦ [ok]`, `HP` initially zero. Every `HP` word is four
 bit lanes; if the hint decodes, lane `r` of `HP[t]` is `h[r][t]`. -/

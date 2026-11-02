@@ -59,6 +59,7 @@ trusted.
 """
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import sys
@@ -147,9 +148,9 @@ def reloc_maps(nn):
     """Index and pc maps v2 → v3 of one set (`--reloc`).
 
     A region with the same instruction count in both versions is mapped
-    entirely. A changed region is mapped on its longest common prefix and
-    suffix, comparing instructions modulo PUSH2 immediates (jump targets), so
-    the unchanged parts of the main flow keep their proofs. Everything else
+    entirely. A changed region is mapped on the matching stretches of the two
+    instruction sequences (difflib), comparing instructions modulo PUSH2
+    immediates (jump targets), so the unchanged parts keep their proofs. Everything else
     (the changed code) is unmapped: its proofs have to be rewritten."""
     ra, rb = regions(nn, OLD), regions(nn)
     da, db = disasm(nn, OLD), disasm(nn)
@@ -166,19 +167,17 @@ def reloc_maps(nn):
             pairs = list(zip(ia, ib))
             pc[b] = b2
         else:
+            # matching blocks of the two instruction sequences (difflib): the
+            # unchanged stretches of a changed region keep their proofs
+            sm = difflib.SequenceMatcher(None, [key(da[i]) for i in ia], [key(db[i]) for i in ib],
+                                         autojunk=False)
             pairs = []
-            k = 0
-            while k < min(len(ia), len(ib)) and key(da[ia[k]]) == key(db[ib[k]]):
-                pairs.append((ia[k], ib[k]))
-                k += 1
-            j = 1
-            while j <= min(len(ia), len(ib)) - k and key(da[ia[-j]]) == key(db[ib[-j]]):
-                pairs.append((ia[-j], ib[-j]))
-                j += 1
-            if j > 1:
+            for x, y, n in sm.get_matching_blocks():
+                pairs += [(ia[x + t], ib[y + t]) for t in range(n)]
+            if pairs and pairs[-1] == (ia[-1], ib[-1]):
                 pc[b] = b2
             print(f"reloc {nn}: {name} changed ({len(ia)} -> {len(ib)} instructions); "
-                  f"mapped prefix {k}, suffix {j - 1}")
+                  f"mapped {len(pairs)} in {len(sm.get_matching_blocks()) - 1} stretches")
         for x, y in pairs:
             idx[x] = y
             pc[pa[x]] = pb[y]

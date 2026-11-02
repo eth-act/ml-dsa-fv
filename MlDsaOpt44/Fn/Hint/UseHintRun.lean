@@ -18,7 +18,7 @@ open MlDsaOpt44.Proofs.L10
 
 theorem uh_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) :
-    Reach (callState s 15457 (wd 43264 :: wd ret :: tail) M)
+    Reach (callState s 15459 (wd 43264 :: wd ret :: tail) M)
       (callState s 15464 (wd 43264 :: wd 51456 :: wd ret :: tail) M) 13 := by
   opt44_reach [6934, 6935, 6936, 6937, 6938]
 

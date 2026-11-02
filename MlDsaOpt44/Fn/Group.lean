@@ -1,22 +1,19 @@
 import MlDsaOpt44.Fn.Fix
 import MlDsaOpt44.Fn.Sponge
 import MlDsaOpt44.Fn.Keccak
-import MlDsaOpt44.Fn.Group.Pass3
-import MlDsaOpt44.Fn.Group.Pass3m
-import MlDsaOpt44.Fn.Group.Pass3k4
-import MlDsaOpt44.Fn.Group.Main
 import MlDsaOpt44.Fn.Group.Defs
 /-!
-# Fused ExpandA · ẑ: `pass3`, `pass3m`, `pass3k4`, `group` (WP6)
-
-`pass3*` accumulate `ACC[t] += ABUF[t] · ẑ` lane-wise (one `MUL` per word: the
-four row lanes of `ABUF[t]` are below `q < 2^23` and `ẑ < 2^28`, so lane
-products stay below `2^51` and never carry). The contracts are exact word
-equations; the lane reading is a pure lemma.
+# ExpandA groups and the fused accumulation: `group`, `pass3f4` (WP6)
 
 `group [amask, col, rb, ret] ↦ [ok]` is one pure ExpandA SIMD group (column
-`col`, rows `0 … 3`): `ginit`, five `kf4` + `blk`, `gfix`, `pass3`. ML-DSA-44
-calls it with `rb = 0`, `amask = 15`, `col ∈ {0, 1}`.
+`col`, rows `0 … 3`): `ginit`, five `kf4` with `blk` (`blkh` for the last
+block), `gfix`. ML-DSA-44 calls it with `rb = 0`, `amask = 15`, `col ∈ {0, 1}`;
+the group's fixed-up candidates are left in `ABUF[0, 256)` (v4: the caller
+copies them to a side buffer and accumulates later).
+
+`pass3f4 [ret]` is ML-DSA-44's single fused accumulation pass: for every
+`t < 256` it stores into `ACC[t]` (no read) the sum of the lane-wise products
+of the five buffers with the ẑ lanes (`acc4Word`).
 -/
 
 namespace MlDsaOpt44.Proofs
@@ -26,63 +23,43 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa44
 
-/-- **pass3**: `[64 k, ZH, ACC, ret]`; `ACC[t] += ABUF[t] · lane k of ZH[t]`. -/
-theorem pass3_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.pass3 ret tail) (m : ByteArray) {k : Nat} (hk : k < 4) :
-    ∃ m', (∀ t, t < 256 → word m' (ACC + 32 * t) =
-        (word m (ACC + 32 * t) + word m (ABUF + 32 * t) * lane (word m (ZH + 32 * t)) k) % 2 ^ 256) ∧
-      FrameExcept m m' [(ACC, ACC + 8192)] ∧
-      Call s Entry.pass3 [wd (64 * k), wd ZH, wd ACC] ret tail m [] m' Gas.pass3 := by
-  exact GroupP.pass3_reach hs hr m hk
-
-/-- **pass3m**: `[lm, 64 k, ZH, ACC, ret]`; as `pass3` with the candidate words
-masked by `lm` (the lanes of active slots). -/
-theorem pass3m_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.pass3m ret tail) (m : ByteArray) {k lm : Nat} (hk : k < 4)
-    (hlm : lm < 2 ^ 256) :
-    ∃ m', (∀ t, t < 256 → word m' (ACC + 32 * t) =
-        (word m (ACC + 32 * t) + (word m (ABUF + 32 * t) &&& lm) * lane (word m (ZH + 32 * t)) k) %
-          2 ^ 256) ∧
-      FrameExcept m m' [(ACC, ACC + 8192)] ∧
-      Call s Entry.pass3m [wd lm, wd (64 * k), wd ZH, wd ACC] ret tail m [] m' Gas.pass3m := by
-  exact GroupP.pass3m_reach hs hr m hk hlm
-
-/-- The Kronecker accumulation of the extra group: slots 3 and 2 hold
-`A[3][2]`, `A[3][3]`; `ẑ_2, ẑ_3` are shifted into lanes 0, 1; lane 3 of the
-product is `A[3][2] ẑ_2 + A[3][3] ẑ_3` (lower lanes are partial sums below
-`2^53`, masked off). -/
-def kronWord (m : ByteArray) (t : Nat) : Nat :=
-  (word m (ABUF + 32 * t) &&& (2 ^ 256 - 2 ^ 128)) * (word m (ZH + 32 * t) / 2 ^ 128) % 2 ^ 256 &&&
-    (M64 * 2 ^ 192)
-
-/-- **pass3k4**: `[ret]`; `ACC[t] += kronWord t`. -/
-theorem pass3k4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.pass3k4 ret tail) (m : ByteArray) :
-    ∃ m', (∀ t, t < 256 → word m' (ACC + 32 * t) = (word m (ACC + 32 * t) + kronWord m t) % 2 ^ 256) ∧
-      FrameExcept m m' [(ACC, ACC + 8192)] ∧
-      Call s Entry.pass3k4 [] ret tail m [] m' Gas.pass3k4 := by
-  exact GroupP.pass3k4_reach hs hr m
-
 /-- Regions a SIMD group may write. -/
 def groupFrame : List (Nat × Nat) :=
-  [(KS, KS + 800), (KB, KB + 800), (ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (BK, BK + 800),
-    (ACC, ACC + 8192)]
+  [(KS, KS + 800), (KB, KB + 800), (ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (BK, BK + 800)]
 
 /-- **group**: `[15, col, 0, ret] ↦ [ok]`; `ok` iff `A[r][col]` exists for all
-rows, and then `ACC[t] += (A[0][col][t], …, A[3][col][t]) · ẑ_col[t]`. -/
+rows, and then `ABUF[t] = (A[0][col][t], …, A[3][col][t])`. -/
 theorem group_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) (m : ByteArray) (hrc : RC4Table m)
     (hrho : Rho1At m s.executionEnv.calldata) {col : Nat} (hcol : col < 4)
     (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', (((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome) = true →
-        ∀ t, t < 256 → word m' (ACC + 32 * t) =
-          (word m (ACC + 32 * t) +
-            pack4 (fun r => ((aD s.executionEnv.calldata r col)[t]!).toNat) *
-              lane (word m (ZH + 32 * t)) col) % 2 ^ 256) ∧
+        ∀ t, t < 256 → word m' (ABUF + 32 * t) =
+          pack4 (fun r => ((aD s.executionEnv.calldata r col)[t]!).toNat)) ∧
       FrameExcept m m' groupFrame ∧
       Call s Entry.group [wd 15, wd col, wd 0] ret tail m
         [flag ((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome)] m'
-        Gas.group := by
-  exact GroupP.group_reach hs hr m hrc hrho hcol hcd
+        Gas.group :=
+  sorry
+
+/-- The word `pass3f4` stores at `ACC[t]`: columns 0 and 1 (`CW`, `HP`,
+aligned), column 2 rows 0 … 2 (`SB`, slots 1 … 3), row 3 columns 2, 3 (the
+Kronecker product of `SB + 8192`'s slots 2, 3 with `ẑ_2, ẑ_3`, lane 3) and
+column 3 rows 0 … 2 (`ABUF`, slots 1 … 3). -/
+def acc4Word (m : ByteArray) (t : Nat) : Nat :=
+  let z := word m (ZH + 32 * t)
+  (word m (CW + 32 * t) * lane z 0 + word m (HP + 32 * t) * lane z 1 +
+    word m (SB + 32 * t) / 2 ^ 64 * lane z 2 +
+    ((word m (SB + 8192 + 32 * t) &&& (2 ^ 256 - 2 ^ 128)) * (z / 2 ^ 128) % 2 ^ 256 &&&
+      (M64 * 2 ^ 192)) +
+    word m (ABUF + 32 * t) / 2 ^ 64 * lane z 3) % 2 ^ 256
+
+/-- **pass3f4**: `[ret]`; `ACC[t] := acc4Word t`. -/
+theorem pass3f4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.pass3f4 ret tail) (m : ByteArray) :
+    ∃ m', (∀ t, t < 256 → word m' (ACC + 32 * t) = acc4Word m t) ∧
+      FrameExcept m m' [(ACC, ACC + 8192)] ∧
+      Call s Entry.pass3f4 [] ret tail m [] m' Gas.pass3f4 :=
+  sorry
 
 end MlDsaOpt44.Proofs

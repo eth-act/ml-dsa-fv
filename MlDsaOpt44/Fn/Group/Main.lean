@@ -33,51 +33,51 @@ theorem gL4n_lt {col : Nat} (hcol : col < 4) : gL4n col < 2 ^ 256 := by
 
 theorem g_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (hcol : col < 4) (M : ByteArray) :
-    Reach (callState s 13659 (gB col ret tail) M)
-      (callState s 11084 (wd (gL4n col) :: wd 0 :: wd 15 :: wd 0 :: wd 13762 :: gB col ret tail)
+    Reach (callState s 13723 (gB col ret tail) M)
+      (callState s 10911 (wd (gL4n col) :: wd 0 :: wd 15 :: wd 0 :: wd 13826 :: gB col ret tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 0 32) HAVE6)) 179 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   interval_cases col <;>
-  opt44_reach [6040, 6041, 6042, 6043, 6044, 6045, 6046, 6047, 6048, 6049, 6050, 6051, 6052, 6053,
-    6054, 6055, 6056, 6057, 6058, 6059, 6060, 6061, 6062, 6063, 6064, 6065, 6066, 6067, 6068, 6069,
-    6070, 6071, 6072, 6073, 6074, 6075, 6076, 6077, 6078, 6079, 6080, 6081, 6082, 6083, 6084, 6085,
-    6086, 6087, 6088, 6089, 6090, 6091, 6092, 6093, 6094, 6095, 6096] with [HAVE6, gL4n]
+  opt44_reach [6170, 6171, 6172, 6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180, 6181, 6182, 6183,
+    6184, 6185, 6186, 6187, 6188, 6189, 6190, 6191, 6192, 6193, 6194, 6195, 6196, 6197, 6198, 6199,
+    6200, 6201, 6202, 6203, 6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213, 6214, 6215,
+    6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224, 6225, 6226] with [HAVE6, gL4n]
 
 theorem g_K {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15 := by
+      (callState s 22529 (wd (13770 + 22 * b) :: gB col ret tail) M) 15 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6097, 6098, 6099, 6100]
-  · opt44_reach [6107, 6108, 6109, 6110]
-  · opt44_reach [6117, 6118, 6119, 6120]
-  · opt44_reach [6127, 6128, 6129, 6130]
-  · opt44_reach [6137, 6138, 6139, 6140]
+  · opt44_reach [6227, 6228, 6229, 6230]
+  · opt44_reach [6237, 6238, 6239, 6240]
+  · opt44_reach [6247, 6248, 6249, 6250]
+  · opt44_reach [6257, 6258, 6259, 6260]
+  · opt44_reach [6267, 6268, 6269, 6270]
 
 theorem g_L {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
-      (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
+      (callState s 9030 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
         gB col ret tail) M) 21 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6101, 6102, 6103, 6104, 6105, 6106] with [FL, ABUF]
-  · opt44_reach [6111, 6112, 6113, 6114, 6115, 6116] with [FL, ABUF]
-  · opt44_reach [6121, 6122, 6123, 6124, 6125, 6126] with [FL, ABUF]
-  · opt44_reach [6131, 6132, 6133, 6134, 6135, 6136] with [FL, ABUF]
-  · opt44_reach [6141, 6142, 6143, 6144, 6145, 6146] with [FL, ABUF]
+  · opt44_reach [6231, 6232, 6233, 6234, 6235, 6236] with [FL, ABUF]
+  · opt44_reach [6241, 6242, 6243, 6244, 6245, 6246] with [FL, ABUF]
+  · opt44_reach [6251, 6252, 6253, 6254, 6255, 6256] with [FL, ABUF]
+  · opt44_reach [6261, 6262, 6263, 6264, 6265, 6266] with [FL, ABUF]
+  · opt44_reach [6271, 6272, 6273, 6274, 6275, 6276] with [FL, ABUF]
 
 theorem g_G {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (M : ByteArray) :
-    Reach (callState s 13872 (gB col ret tail) M)
-      (callState s 10754 (wd 15 :: wd 13881 :: gB col ret tail) M) 18 := by
-  opt44_reach [6147, 6148, 6149, 6150, 6151]
+    Reach (callState s 13936 (gB col ret tail) M)
+      (callState s 10501 (wd 15 :: wd 13945 :: gB col ret tail) M) 18 := by
+  opt44_reach [6277, 6278, 6279, 6280, 6281]
 
 theorem g_P {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} {ok : UInt256} (hcol : col < 4) (M : ByteArray) :
-    Reach (callState s 13881 (ok :: gB col ret tail) M)
+    Reach (callState s 13945 (ok :: gB col ret tail) M)
       (callState s 10062 (wd (64 * col) :: wd ZH :: wd ACC :: wd 13915 :: ok :: gB col ret tail) M) 66 := by
-  opt44_reach [6152, 6153, 6154, 6155, 6156, 6157, 6158, 6159, 6160, 6161, 6162, 6163, 6164, 6165,
+  opt44_reach [6282, 6153, 6154, 6155, 6156, 6157, 6158, 6159, 6160, 6161, 6162, 6163, 6164, 6165,
     6166, 6167, 6168, 6169, 6170, 6171, 6172] with [ZH, ACC]
   rw [Nat.and_comm, show (3 : Nat) = 2 ^ 2 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
     Nat.mod_eq_of_lt hcol, Nat.div_eq_of_lt hcol, Nat.mul_comm]
@@ -85,8 +85,8 @@ theorem g_P {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length 
 
 theorem g_E {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} {ok : UInt256} (M : ByteArray) :
-    Reach (callState s 13915 (ok :: gB col ret tail) M) (callState s 13923 (wd ret :: ok :: tail) M) 19 := by
-  opt44_reach [6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180]
+    Reach (callState s 13915 (ok :: gB col ret tail) M) (callState s 13953 (wd ret :: ok :: tail) M) 19 := by
+  opt44_reach [6173, 6283, 6284, 6285, 6286, 6287, 6288, 6289]
 
 theorem pack4_lane {x : Nat} (hx : x < 2 ^ 256) : pack4 (fun k => lane x k) = x := by
   unfold pack4 lane
@@ -185,7 +185,7 @@ theorem group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     rw [hD]
     exact hpost8 r hr4 (testBit15 hr4) a (by rw [aI_gI h32]; exact ha) t ht
   · rw [call_iff, Entry.group]
-    have hfin := reach_ret hs 6181 m9 (pc := 13923) (tail := flag ((List.range 4).all fun r =>
+    have hfin := reach_ret hs 6290 m9 (pc := 13923) (tail := flag ((List.range 4).all fun r =>
         (aOf s.executionEnv.calldata r col).isSome) :: tail)
       (by decide +kernel) (by simp only [finVal_lit, instrAt_lit]) (by simp only [finVal_lit, pcAt_lit])
       (by norm_num) hr.jumpdest hret (by simp only [List.length_cons]; omega)

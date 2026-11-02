@@ -25,12 +25,12 @@ theorem storeWords_25 (M : ByteArray) (b : Nat) (f : Nat → UInt256) :
     storeWords M b (fun j => (f j).toNat) 25 = mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (mst (M) (b + 32 * 0) (f 0)) (b + 32 * 1) (f 1)) (b + 32 * 2) (f 2)) (b + 32 * 3) (f 3)) (b + 32 * 4) (f 4)) (b + 32 * 5) (f 5)) (b + 32 * 6) (f 6)) (b + 32 * 7) (f 7)) (b + 32 * 8) (f 8)) (b + 32 * 9) (f 9)) (b + 32 * 10) (f 10)) (b + 32 * 11) (f 11)) (b + 32 * 12) (f 12)) (b + 32 * 13) (f 13)) (b + 32 * 14) (f 14)) (b + 32 * 15) (f 15)) (b + 32 * 16) (f 16)) (b + 32 * 17) (f 17)) (b + 32 * 18) (f 18)) (b + 32 * 19) (f 19)) (b + 32 * 20) (f 20)) (b + 32 * 21) (f 21)) (b + 32 * 22) (f 22)) (b + 32 * 23) (f 23)) (b + 32 * 24) (f 24) := rfl
 
 theorem round1 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (0 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M rp) = rc) :
-    Reach (callState s 19606 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20178 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 20565 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21137 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 1024 (fun j => (roundW A rc j).toNat) 25)) 1224 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta1 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans
@@ -67,12 +67,12 @@ theorem round1 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length
       (by simp (disch := omega) only [word_mst_ne]; exact hA 21 (by decide)))) (by norm_num)
 
 theorem round2 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (1024 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M (32 + rp)) = rc) :
-    Reach (callState s 20178 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20795 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 21137 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21754 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 66304 (fun j => (roundW A rc j).toNat) 25)) 1231 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta2 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans
@@ -109,12 +109,12 @@ theorem round2 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length
       (by simp (disch := omega) only [word_mst_ne]; exact hA 21 (by decide)))) (by norm_num)
 
 theorem round3 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (66304 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M (64 + rp)) = rc) :
-    Reach (callState s 20795 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 21553 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 21754 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 22512 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 0 (fun j => (rerepW (roundW A rc j)).toNat) 25)) 1580 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta3 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans

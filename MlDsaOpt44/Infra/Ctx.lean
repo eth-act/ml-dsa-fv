@@ -13,7 +13,7 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 
 /-- Memory size (in words) after the entry store. -/
-def memWords : Nat := 2097
+def memWords : Nat := 2616
 
 /-- Invariant facts about every intermediate state of a run after memory has
 been sized. -/

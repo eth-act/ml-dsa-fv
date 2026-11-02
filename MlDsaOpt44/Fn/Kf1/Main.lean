@@ -65,10 +65,10 @@ theorem frame_storeWords25 {m : ByteArray} {base a : Nat} {v : Nat → Nat}
 /-! ## One iteration: trace -/
 
 theorem iter_reach {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (h2816 : 2816 ≤ rp) :
-    Reach (callState s 19606 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 21553 (REPw :: wd rp :: wd ret :: tail) (iterMem M rp)) 4035 := by
+    Reach (callState s 20565 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 22512 (REPw :: wd rp :: wd ret :: tail) (iterMem M rp)) 4035 := by
   have h1 := round1 (ret := ret) hs htl hsz hrp (A1 M) (fun _ _ => rfl) _ rfl
   have hA2 : ∀ j, j < 25 → UInt256.ofNat (word (mem1 M rp) (1024 + 32 * j)) =
       roundW (A1 M) (UInt256.ofNat (word M rp)) j := fun j hj => by
@@ -191,9 +191,9 @@ theorem kf1_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     Call s Entry.kf1 [] ret tail m [] (memIter m 8) Gas.kf1 := by
   have htl : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.kf1, Stack.leaf] at this; omega
-  have hsz : 2097 ≤ s.activeWords.toNat := hs.sized
+  have hsz : 2616 ≤ s.activeWords.toNat := hs.sized
   let I : Nat → State := fun i =>
-    callState s 19606 (REPw :: wd (2816 + 96 * i) :: wd ret :: tail) (memIter m i)
+    callState s 20565 (REPw :: wd (2816 + 96 * i) :: wd ret :: tail) (memIter m i)
   have hbody : ∀ i, i < 7 → Reach (I i) (I (i + 1)) 4069 := by
     intro i hi
     have h := (iter_reach hs htl hsz (M := memIter m i) (rp := 2816 + 96 * i) (ret := ret)

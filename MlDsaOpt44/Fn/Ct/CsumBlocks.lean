@@ -51,8 +51,8 @@ theorem cs_b1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) :
-    Reach (callState s 14744 (wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 14872 (cs1o0 M bu cw sp g :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 286 := by
+    Reach (callState s 14876 (wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 14971 (cs1o0 M bu cw sp g :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 286 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
@@ -72,14 +72,14 @@ theorem cs_b1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hb41376 : word M 41376 ≤ 6112 := by simpa using hB 13 (by norm_num)
   have hb41408 : word M 41408 ≤ 6112 := by simpa using hB 14 (by norm_num)
   have hb41440 : word M 41440 ≤ 6112 := by simpa using hB 15 (by norm_num)
-  opt44_reach [6567, 6568, 6569, 6570, 6571, 6572, 6573, 6574, 6575, 6576, 6577, 6578, 6579, 6580, 6581, 6582, 6583, 6584, 6585, 6586, 6587, 6588, 6589, 6590, 6591, 6592, 6593, 6594, 6595, 6596, 6597, 6598, 6599, 6600, 6601, 6602, 6603, 6604, 6605, 6606, 6607, 6608, 6609, 6610, 6611, 6612, 6613, 6614, 6615, 6616, 6617, 6618, 6619, 6620, 6621, 6622, 6623, 6624, 6625, 6626, 6627, 6628, 6629, 6630, 6631, 6632, 6633, 6634, 6635, 6636, 6637, 6638, 6639, 6640, 6641, 6642, 6643, 6644, 6645, 6646, 6647, 6648, 6649, 6650, 6651, 6652, 6653, 6654, 6655, 6656, 6657, 6658, 6659, 6660, 6661, 6662] with [cs1o0, word_mstore_disjoint]
+  opt44_reach [6703, 6568, 6569, 6705, 6706, 6707, 6573, 6574, 6709, 6710, 6711, 6712, 6579, 6580, 6714, 6715, 6716, 6717, 6585, 6586, 6719, 6720, 6721, 6722, 6591, 6592, 6724, 6725, 6726, 6727, 6597, 6598, 6729, 6730, 6731, 6732, 6603, 6604, 6734, 6735, 6736, 6737, 6609, 6610, 6739, 6740, 6741, 6742, 6615, 6616, 6744, 6745, 6746, 6747, 6621, 6622, 6749, 6750, 6751, 6752, 6627, 6628, 6754, 6755, 6756, 6757, 6758, 6759, 6760, 6761, 6762, 6763, 6764, 6765, 6766, 6767, 6768, 6769, 6770, 6771, 6772, 6773, 6774, 6775, 6776, 6777, 6778, 6779, 6780, 6781, 6782, 6783, 6784, 6785, 6786, 6787] with [cs1o0, word_mstore_disjoint]
 
 theorem cs_b2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) :
-    Reach (callState s 14872 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 15000 (cs2o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 288 := by
+    Reach (callState s 14971 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 15099 (cs2o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 288 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
@@ -99,14 +99,14 @@ theorem cs_b2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hb41888 : word M 41888 ≤ 6112 := by simpa using hB 29 (by norm_num)
   have hb41920 : word M 41920 ≤ 6112 := by simpa using hB 30 (by norm_num)
   have hb41952 : word M 41952 ≤ 6112 := by simpa using hB 31 (by norm_num)
-  opt44_reach [6663, 6664, 6665, 6666, 6667, 6668, 6669, 6670, 6671, 6672, 6673, 6674, 6675, 6676, 6677, 6678, 6679, 6680, 6681, 6682, 6683, 6684, 6685, 6686, 6687, 6688, 6689, 6690, 6691, 6692, 6693, 6694, 6695, 6696, 6697, 6698, 6699, 6700, 6701, 6702, 6703, 6704, 6705, 6706, 6707, 6708, 6709, 6710, 6711, 6712, 6713, 6714, 6715, 6716, 6717, 6718, 6719, 6720, 6721, 6722, 6723, 6724, 6725, 6726, 6727, 6728, 6729, 6730, 6731, 6732, 6733, 6734, 6735, 6736, 6737, 6738, 6739, 6740, 6741, 6742, 6743, 6744, 6745, 6746, 6747, 6748, 6749, 6750, 6751, 6752, 6753, 6754, 6755, 6756, 6757, 6758] with [cs2o0, word_mstore_disjoint]
+  opt44_reach [6788, 6789, 6790, 6791, 6792, 6793, 6794, 6795, 6796, 6797, 6798, 6799, 6800, 6801, 6802, 6803, 6804, 6805, 6806, 6807, 6808, 6809, 6810, 6811, 6812, 6813, 6814, 6815, 6816, 6817, 6818, 6819, 6820, 6821, 6822, 6823, 6824, 6825, 6826, 6827, 6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836, 6837, 6838, 6839, 6840, 6841, 6842, 6843, 6844, 6845, 6846, 6847, 6848, 6849, 6850, 6851, 6852, 6853, 6854, 6855, 6856, 6857, 6858, 6859, 6860, 6861, 6862, 6863, 6864, 6865, 6866, 6867, 6868, 6869, 6870, 6871, 6872, 6873, 6874, 6875, 6876, 6877, 6878, 6879, 6880, 6881, 6882, 6883] with [cs2o0, word_mstore_disjoint]
 
 theorem cs_b3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) :
-    Reach (callState s 15000 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 15056 (cs3o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 126 := by
+    Reach (callState s 15099 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 15155 (cs3o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 126 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
@@ -117,42 +117,42 @@ theorem cs_b3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hb42112 : word M 42112 ≤ 6112 := by simpa using hB 36 (by norm_num)
   have hb42144 : word M 42144 ≤ 6112 := by simpa using hB 37 (by norm_num)
   have hb42176 : word M 42176 ≤ 6112 := by simpa using hB 38 (by norm_num)
-  opt44_reach [6759, 6760, 6761, 6762, 6763, 6764, 6765, 6766, 6767, 6768, 6769, 6770, 6771, 6772, 6773, 6774, 6775, 6776, 6777, 6778, 6779, 6780, 6781, 6782, 6783, 6784, 6785, 6786, 6787, 6788, 6789, 6790, 6791, 6792, 6793, 6794, 6795, 6796, 6797, 6798, 6799, 6800] with [cs3o0, word_mstore_disjoint]
+  opt44_reach [6884, 6885, 6886, 6887, 6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6907, 6908, 6909, 6910, 6911, 6912, 6913, 6914, 6915, 6916, 6917, 6918, 6919, 6920, 6921, 6922, 6923, 6924, 6925] with [cs3o0, word_mstore_disjoint]
 
 theorem cs_b4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) :
-    Reach (callState s 15056 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 15124 (cs4o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 72 := by
+    Reach (callState s 15155 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 15223 (cs4o0 M bu cw sp g x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M) 72 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6801, 6802, 6803, 6804, 6805, 6806, 6807, 6808, 6809, 6810, 6811, 6812, 6813, 6814, 6815, 6816, 6817, 6818, 6819, 6820, 6821, 6822, 6823, 6824] with [cs4o0, word_mstore_disjoint]
+  opt44_reach [6926, 6927, 6928, 6929, 6930, 6931, 6932, 6933, 6934, 6935, 6936, 6937, 6938, 6939, 6940, 6941, 6942, 6943, 6944, 6945, 6946, 6947, 6948, 6949] with [cs4o0, word_mstore_disjoint]
 
 theorem cs_b5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112)
     (hlt : cw + 128 < 20480) :
-    Reach (callState s 15124 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 14744 (wd (bu - 32) :: wd (128 + cw) :: cs5g M bu cw sp g x0 :: wd (128 + sp) :: wd 20480 :: wd (ret) :: tail) (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (cs5w0 M bu cw sp g x0).toNat 32) (sp)) (Data.Bytes.natToBytesPadded (cs5w1 M bu cw sp g x0).toNat 32) (32 + sp)) (Data.Bytes.natToBytesPadded (cs5w2 M bu cw sp g x0).toNat 32) (64 + sp)) (Data.Bytes.natToBytesPadded (cs5w3 M bu cw sp g x0).toNat 32) (96 + sp))) 319 := by
+    Reach (callState s 15223 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 14876 (wd (bu - 32) :: wd (128 + cw) :: cs5g M bu cw sp g x0 :: wd (128 + sp) :: wd 20480 :: wd (ret) :: tail) (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (cs5w0 M bu cw sp g x0).toNat 32) (sp)) (Data.Bytes.natToBytesPadded (cs5w1 M bu cw sp g x0).toNat 32) (32 + sp)) (Data.Bytes.natToBytesPadded (cs5w2 M bu cw sp g x0).toNat 32) (64 + sp)) (Data.Bytes.natToBytesPadded (cs5w3 M bu cw sp g x0).toNat 32) (96 + sp))) 319 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6825, 6826, 6827, 6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836, 6837, 6838, 6839, 6840, 6841, 6842, 6843, 6844, 6845, 6846, 6847, 6848, 6849, 6850, 6851, 6852, 6853, 6854, 6855, 6856, 6857, 6858, 6859, 6860, 6861, 6862, 6863, 6864, 6865, 6866, 6867, 6868, 6869, 6870, 6871, 6872, 6873, 6874, 6875, 6876, 6877, 6878, 6879, 6880, 6881, 6882, 6883, 6884, 6885, 6886, 6887, 6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6907, 6908, 6909, 6910, 6911, 6912, 6913, 6914, 6915, 6916, 6917, 6918, 6919, 6920, 6921, 6922, 6923, 6924, 6925, 6926, 6927] with [cs5w0, cs5w1, cs5w2, cs5w3, cs5g, word_mstore_disjoint]
+  opt44_reach [6950, 6951, 6952, 6828, 6954, 6955, 6956, 6832, 6833, 6957, 6958, 6961, 6837, 6838, 6839, 6963, 6964, 6965, 6966, 6967, 6968, 6969, 6847, 6971, 6972, 6973, 6851, 6975, 6853, 6977, 6855, 6856, 6978, 6858, 6859, 6860, 6980, 6981, 6982, 6983, 6984, 6985, 6986, 6987, 6988, 6870, 6990, 6991, 6992, 6874, 6994, 6876, 6996, 6878, 6879, 6997, 6881, 6882, 6883, 6999, 7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 6893, 7009, 7010, 7011, 6897, 7013, 6899, 7015, 6901, 6902, 7016, 6904, 6905, 6906, 7018, 7019, 7020, 7021, 7022, 7023, 7024, 7025, 7026, 7027, 7028, 7029, 7030, 7031, 7032, 7033, 7034, 7035, 7036, 7037, 7038] with [cs5w0, cs5w1, cs5w2, cs5w3, cs5g, word_mstore_disjoint]
 
 theorem cs_b5x {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (bu cw sp : Nat) (g : UInt256) (x0 : UInt256)
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480) (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112)
     (hlt : cw + 128 = 20480) :
-    Reach (callState s 15124 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
-      (callState s 15451 (wd (bu - 32) :: wd (128 + cw) :: cs5g M bu cw sp g x0 :: wd (128 + sp) :: wd 20480 :: wd (ret) :: tail) (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (cs5w0 M bu cw sp g x0).toNat 32) (sp)) (Data.Bytes.natToBytesPadded (cs5w1 M bu cw sp g x0).toNat 32) (32 + sp)) (Data.Bytes.natToBytesPadded (cs5w2 M bu cw sp g x0).toNat 32) (64 + sp)) (Data.Bytes.natToBytesPadded (cs5w3 M bu cw sp g x0).toNat 32) (96 + sp))) 319 := by
+    Reach (callState s 15223 (x0 :: wd (bu) :: wd (cw) :: g :: wd (sp) :: wd 20480 :: wd (ret) :: tail) M)
+      (callState s 15441 (wd (bu - 32) :: wd (128 + cw) :: cs5g M bu cw sp g x0 :: wd (128 + sp) :: wd 20480 :: wd (ret) :: tail) (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (cs5w0 M bu cw sp g x0).toNat 32) (sp)) (Data.Bytes.natToBytesPadded (cs5w1 M bu cw sp g x0).toNat 32) (32 + sp)) (Data.Bytes.natToBytesPadded (cs5w2 M bu cw sp g x0).toNat 32) (64 + sp)) (Data.Bytes.natToBytesPadded (cs5w3 M bu cw sp g x0).toNat 32) (96 + sp))) 319 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6825, 6826, 6827, 6828, 6829, 6830, 6831, 6832, 6833, 6834, 6835, 6836, 6837, 6838, 6839, 6840, 6841, 6842, 6843, 6844, 6845, 6846, 6847, 6848, 6849, 6850, 6851, 6852, 6853, 6854, 6855, 6856, 6857, 6858, 6859, 6860, 6861, 6862, 6863, 6864, 6865, 6866, 6867, 6868, 6869, 6870, 6871, 6872, 6873, 6874, 6875, 6876, 6877, 6878, 6879, 6880, 6881, 6882, 6883, 6884, 6885, 6886, 6887, 6888, 6889, 6890, 6891, 6892, 6893, 6894, 6895, 6896, 6897, 6898, 6899, 6900, 6901, 6902, 6903, 6904, 6905, 6906, 6907, 6908, 6909, 6910, 6911, 6912, 6913, 6914, 6915, 6916, 6917, 6918, 6919, 6920, 6921, 6922, 6923, 6924, 6925, 6926, 6927] with [cs5w0, cs5w1, cs5w2, cs5w3, cs5g, word_mstore_disjoint]
+  opt44_reach [6950, 6951, 6952, 6828, 6954, 6955, 6956, 6832, 6833, 6957, 6958, 6961, 6837, 6838, 6839, 6963, 6964, 6965, 6966, 6967, 6968, 6969, 6847, 6971, 6972, 6973, 6851, 6975, 6853, 6977, 6855, 6856, 6978, 6858, 6859, 6860, 6980, 6981, 6982, 6983, 6984, 6985, 6986, 6987, 6988, 6870, 6990, 6991, 6992, 6874, 6994, 6876, 6996, 6878, 6879, 6997, 6881, 6882, 6883, 6999, 7000, 7001, 7002, 7003, 7004, 7005, 7006, 7007, 6893, 7009, 7010, 7011, 6897, 7013, 6899, 7015, 6901, 6902, 7016, 6904, 6905, 6906, 7018, 7019, 7020, 7021, 7022, 7023, 7024, 7025, 7026, 7027, 7028, 7029, 7030, 7031, 7032, 7033, 7034, 7035, 7036, 7037, 7038] with [cs5w0, cs5w1, cs5w2, cs5w3, cs5g, word_mstore_disjoint]
 
 
 end MlDsaOpt44.Proofs.CS

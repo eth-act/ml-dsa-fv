@@ -1,5 +1,73 @@
 # MlDsaOpt44: proof plan
 
+## Status (v4, round 4)
+
+Target: `MlDsaOpt/44/opt.hex` (v4: 24,050 bytes, 12,125 instructions, memory
+2616 words; the proved v3 bytes are `MlDsaOpt/44/v3/opt.hex`, v2 in
+`MlDsaOpt/44/v2/`). The final theorems in `MlDsaOpt44/Main.lean` are stated
+with `code := MlDsaOpt44.optBytecode` (the v4 bytes) and `Gas.schedule`.
+`checks/Axioms.lean` prints their axioms and lists every declaration with a
+direct `sorry` (`#open_items`).
+
+Retarget v3 → v4 (done):
+
+* generated modules: `python3 scripts/proofgen_artifact.py MlDsaOpt/44/opt.hex MlDsaOpt44 MlDsaOpt44 opt44 2616`;
+* unchanged proofs relocated in place: `python3 scripts/proofgen_port.py --reloc 44 FILES`
+  (index/pc maps from `MlDsaOpt/44/v3/opt.hex` to `opt.hex`; changed regions are
+  now mapped on their matching stretches (difflib), not only prefix/suffix).
+  Files with pcs in custom predicates need `--all-jd --pc-lines REGEX`
+  (`Fn/Decode/HintMain.lean`, `Main/Rho/Blocks.lean`, `Main/Fin/*.lean`);
+  hand fixes: the sizing store (`Main/Init/Blocks.lean`), one index list of
+  `Main/Fin/Blocks.lean`, `(ret := N)` arguments of the segment files;
+* unchanged and re-checked: `kf4`, `kf1`, `ginit`, `cext`, `spr`, `absorb17`,
+  `tbuild`, `pack`, `dhint`, `final_hash`; segments `init`, `tbl`, `rho`,
+  `fin`, `short`;
+* `Layout.lean`: v4 entries, `SB` (two side buffers above `KZ`), `LIM`, the
+  state images `SAVE0`, `SAVE1`, `SC` in `FIN`, `zLane` with the `8q` bias,
+  `zLo`/`zHi`, `spOff`, `St4At`; `Budget.lean`, `Main/Base.lean`, `Gas.lean`:
+  v4 budgets and segments;
+* `Main/Inv.lean`: v4 boundaries (table in the file); `SegGroups`, `SegZ`,
+  `SegNtt`, `SegSib`, `SegCt`, `SegW` re-proved against the v4 contracts,
+  `Valid.lean` composes all segments.
+
+Open items (direct `sorry`; the subroutine contracts are stated, the proofs
+are the work packages below):
+
+| WP | open item | code | notes |
+|---|---|---|---|
+| A | `blk_call`, `blkh_call`, `blkt_call` (`Fn/Blk.lean`) | `blk` | v3 loop body over lanes `[xp, xe)`, any `abp`/`flp` (v3 proof: `Fn/Blk/*`) |
+| B | `fix_call`, `gfix_call` (`Fn/Fix.lean`) | `fix`, `gfix` | `fix`: same contract, new compaction (R4-5); `gfix`: `blkt` before the first fix-up (`SlotHead`) |
+| C | `group_call`, `pass3f4_call` (`Fn/Group.lean`) | `group`, `pass3f4` | group without accumulation; fused pass: exact word equation `acc4Word` |
+| D | `trabs_call` (`Fn/Sponge.lean`) | `trabs` | same contract, new delta-swap network (R4-2) |
+| E | `mub0_call`, `kmove_call`, `lmerge_call` (`Fn/Sponge.lean`) | `mub`, `kmove`, `lmerge` | straight line / short loops |
+| F | `dz_call` (`Fn/Decode.lean`) | `dz` | `z + 8q`, flag bit 27, one multiply (R4-3, R4-6) |
+| G | `ntt_call` (`Fn/Ntt.lean`) | `ntt` | bias, `b' = a − u`, Shoup in pass A; interval bounds `opt_selftest.py` |
+| H | `intt_call` (`Fn/Ntt.lean`) | `intt` | GS without swap, UseHint fused into the last pass (`uh_word`) |
+| I | `csum_call` (`Fn/Ct.lean`) | `csum` | replicated codes, pre-negated count, `spOff`; bases on the stack |
+| J | `sib_call` (`Fn/Ball.lean`) | `sample_in_ball` | lane-unrolled loop, `±REP` codes, `c`'s 2nd block on demand from `SC` |
+| K | `seg_g2`, `seg_win`, `seg_zd`, `seg_mu` (`Main/Seg*.lean`) | `expand_a`, `hash_mu` | mixed group, packed window (`kmove`, `lmerge`, images), zeroing + `dhint`, μ from the slot / `kf1` from `SC` |
+
+v3 proof modules of changed code are still in the tree but outside the v4
+import graph (`Fn/Blk/{Proof,Blocks,BodyA,Bits,Mem}`, `Fn/Fix/{Top,Phase,Loop,
+Blocks,GBlocks,Lane,Rej}`, `Fn/Group/{Main,Squeeze,Common,Pass3*}`,
+`Fn/Ntt/*` except `Fn/Ntt.lean`, `Fn/Decode/Z{Loop,Blocks}`, `Fn/Ct/Csum*`,
+`Fn/Ball/{Blocks,Proof}`, `Fn/Hint/UseHint*`, `Fn/Sponge/{Trabs,Mu*}`,
+`Main/Wp11Gen`, `Math/Sponge`): each WP adapts or replaces its files; the
+ML-DSA-65/87 ports still import some of them.
+
+Budgets of data-dependent routines (`Gas.fixNo`, `fixSq`, `gfix`, `sib`,
+`mub0`, `pMu`) are the static longest paths with trip counts as documented in
+`Budget.lean`; `Gas.sib` is a placeholder until WP J fixes its path count.
+
+```sh
+export TMPDIR=$PWD/.lake/tmp
+lake build MlDsaOpt44
+lake env lean MlDsaOpt44/checks/Axioms.lean
+```
+
+The v3 status and the original (v2) plan follow; the contract form, recipe
+and pitfalls still apply. Pcs/indices quoted below are v3/v2.
+
 ## Status (v3, round 3)
 
 Target: `MlDsaOpt/44/opt.hex` (v3: 23,091 bytes, 11,792 instructions, memory

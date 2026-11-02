@@ -1,13 +1,13 @@
 theorem mu_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {len off : Nat} (hlen : len < 136) :
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = word M (KS + 32 * x) ^^^ rep (padLane len x)) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
-      Reach (callState s 5766 [wd len, wd off, flag b] M) (callState s 19576 [wd 5868, flag b] M') 100 := by
+      Reach (callState s 5716 [wd len, wd off, flag b] M) (callState s 20535 [wd 5818, flag b] M') 100 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
   have h7 : 7 &&& len ≤ 7 := Nat.and_le_left
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
-  · opt44_reach [1916, 1917, 1918, 1919, 1920, 1921, 1922, 1923, 1924, 1925, 1926, 1927, 1928, 1929, 1930, 1931, 1932, 1933, 1934, 1935, 1936, 1937, 1938, 1939, 1940, 1941, 1942, 1943, 1944, 1945, 1946, 1947, 1948] with [word_mstore_disjoint]
+  · opt44_reach [1863, 1864, 1865, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 1874, 1875, 1876, 1877, 1878, 1879, 1880, 1881, 1882, 1883, 1884, 1885, 1886, 1887, 1888, 1889, 1890, 1891, 1892, 1893, 1894, 1895] with [word_mstore_disjoint]
   · intro x hx
     have hm8 : len % 8 < 8 := Nat.mod_lt _ (by omega)
     have hk : 7 &&& len = len % 8 := by

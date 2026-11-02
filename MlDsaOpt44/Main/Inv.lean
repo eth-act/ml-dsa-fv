@@ -1,9 +1,10 @@
 import MlDsaOpt44.Fn.Group.Defs
 import MlDsaOpt44.Fn.Ball.Defs
 import MlDsaOpt44.Fn.Ct.Defs
+import MlDsaOpt44.Math.SpongeSeed
 set_option warningAsError true
 /-!
-# Main-flow invariants
+# Main-flow invariants (v4)
 
 The main flow (regions `main`, `expand_a`, `hash_mu`, `final_hash` of
 `MlDsaOpt/44/layout.txt`) is cut into segments at fixed program counters.
@@ -15,19 +16,28 @@ unconditional.
 | boundary | pc | stack | invariant |
 |---|---|---|---|
 | sized, tables | 992 | `[]` | `Inv0` |
-| z, hints | 1085 | `[ok1]` | `Inv1` |
-| NTT records | 3068 | `[ok1]` | `Inv2` |
-| ẑ | 3078 | `[ok1]` | `Inv3` |
-| ρ spread | 3439 | `[ok1]` | `Inv4` |
-| group 0 | 3452 | `[ok1 ∧ A·0]` | `InvG cd m 1` |
-| group 1 | 3466 | `[ok1 ∧ A·0 ∧ A·1]` | `InvG cd m 2` |
-| Â ẑ, tr, c̃ stream, μ | 4648 | `[ok2]` | `Inv5` |
-| μ | 5926 | `[ok2]` | `Inv6` |
-| c | 5936 | `[ok3]` | `Inv7` |
-| c · t1 | 5963 | `[ok3]` | `Inv8` |
-| w1Encode | 6001 | `[ok3]` | `Inv9` |
+| z | 1076 | `[okZ]` | `Inv1` |
+| NTT records | 3059 | `[okZ]` | `Inv2` |
+| ẑ | 3069 | `[okZ]` | `Inv3` |
+| ρ spread | 3430 | `[okZ]` | `Inv4` |
+| group 0 (`CW` = column 0) | 3453 | `[okZ ∧ A·0]` | `InvG0` |
+| group 1 (`HP` = column 1) | 3477 | `[… ∧ A·1]` | `InvG1` |
+| group 2 (`SB` = column 2, rows 0 … 2; tr) | 3875 | `[… ∧ A₀₋₂,2]` | `InvG2` |
+| Â ẑ, tr, c̃ stream, μ's / c's states | 4973 | `[okZ ∧ okA]` | `InvW` |
+| hints | 5075 | `[… ∧ okH]` | `InvH` |
+| μ | 5876 | `[… ∧ okH]` | `Inv6` |
+| c | 5885 | `[ok3]` | `Inv7` |
+| c · t1 | 5912 | `[ok3]` | `Inv8` |
+| w1Encode | 5939 | `[ok3]` | `Inv9` |
 
-with `ok1 = okZ ∧ okH`, `ok2 = ok1 ∧ okA`, `ok3 = ok2 ∧ okC`.
+with `ok2 = (okZ ∧ okA) ∧ okH`, `ok3 = ok2 ∧ okC`.
+
+v4 (44): ExpandA's groups copy their fixed-up candidates to side buffers
+(`CW`, `HP`, `SB`, `SB + 8192`) and one fused pass (`pass3f4`) stores `ACC`;
+the packed window (`emit_window44`) pauses states in images in `FIN`; hints
+are decoded after ExpandA; μ comes from a SIMD slot (`|M| ≤ 69`) or continues
+on `kf1` from the slot's saved state; SampleInBall squeezes `c`'s second block
+on demand from its saved state.
 -/
 
 namespace MlDsaOpt44.Proofs
@@ -37,8 +47,7 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa44
 
-def ok1 (cd : ByteArray) : Bool := okZ cd && okH cd
-def ok2 (cd : ByteArray) : Bool := ok1 cd && okA cd
+def ok2 (cd : ByteArray) : Bool := (okZ cd && okA cd) && okH cd
 def ok3 (cd : ByteArray) : Bool := ok2 cd && okC cd
 
 /-- Column `s` of `A` exists for every row. -/
@@ -58,24 +67,31 @@ def ZHatAt (m : ByteArray) (cd : ByteArray) : Prop :=
   ∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ZH + 32 * t)) k < 2 ^ 28 ∧
     ((lane (word m (ZH + 32 * t)) k : Int) - (zHat cd k)[t]!) % (Fips204.q : Int) = 0
 
-/-- Columns `0 … n − 1` of `A` exist for every row. -/
-def okUpTo (cd : ByteArray) : Nat → Bool
-  | 0 => true
-  | n + 1 => okUpTo cd n && okCol cd n
+/-- The 256 words at `base` are column `col` of `A` (row `r` in lane `r`)
+when that column exists. -/
+def ColAt (m : ByteArray) (base : Nat) (cd : ByteArray) (col : Nat) : Prop :=
+  okCol cd col = true → ∀ t, t < 256 → word m (base + 32 * t) =
+    pack4 fun r => ((aD cd r col)[t]!).toNat
 
-/-- Lane `r` of `ACC[t]` after columns `0 … n − 1`: `Σ_s A[r][s][t] · lane s of ZH[t]`
-(explicit recursion, no `List.sum`: see the pitfalls in `PLAN.md`). -/
-def accSum (cd m : ByteArray) (r t : Nat) : Nat → Nat
-  | 0 => 0
-  | n + 1 => accSum cd m r t n + ((aD cd r n)[t]!).toNat * lane (word m (ZH + 32 * t)) n
+/-- Rows `0 … 2` of column `col` exist. -/
+def okCol3 (cd : ByteArray) (col : Nat) : Bool := (List.range 3).all fun r => (aOf cd r col).isSome
 
-/-- `ACC` after the columns `s < n` of `Â ẑ` (exact lane sums, valid columns). -/
-def AccCols (m : ByteArray) (cd : ByteArray) (n : Nat) : Prop :=
-  okUpTo cd n = true → ∀ t, t < 256 → word m (ACC + 32 * t) = pack4 fun r => accSum cd m r t n
+/-- Lanes `1 … 3` of the 256 words at `base` are rows `0 … 2` of column `col`
+of `A` when they exist. -/
+def Col3At (m : ByteArray) (base : Nat) (cd : ByteArray) (col : Nat) : Prop :=
+  okCol3 cd col = true → ∀ t, t < 256 → ∀ r, r < 3 →
+    lane (word m (base + 32 * t)) (r + 1) = ((aD cd r col)[t]!).toNat
+
+/-- The padded public key (`tr = H(pk, 64)`'s sponge input). -/
+def padPk (cd : ByteArray) : ByteArray := Fips202.pad 136 0x1F (pkOf cd)
+
+/-- μ's sponge input `tr ‖ 0 ‖ 0 ‖ M`, padded. -/
+def padMu (cd : ByteArray) : ByteArray :=
+  Fips202.pad 136 0x1F (trOf cd ++ (ByteArray.mk #[0, 0] ++ msgOf cd))
 
 /-- `ACC` holds `Â ẑ` (bounded representatives mod q) when `A` exists. -/
 def AccAt (m : ByteArray) (cd : ByteArray) : Prop :=
-  okA cd = true → ∀ r, r < 4 → ∀ t, t < 256 → lane (word m (ACC + 32 * t)) r < 2 ^ 58 ∧
+  okA cd = true → ∀ r, r < 4 → ∀ t, t < 256 → lane (word m (ACC + 32 * t)) r < 2 ^ 57 ∧
     ((lane (word m (ACC + 32 * t)) r : Int) - (azRow cd r)[t]!) % (Fips204.q : Int) = 0
 
 /-- The 104 replicated stream lanes of the final hash input in `FIN`. -/
@@ -86,6 +102,13 @@ def FinAt (m : ByteArray) (X : ByteArray) : Prop :=
 def FinMu (m : ByteArray) (cd : ByteArray) : Prop :=
   ∀ x, x < 8 → word m (FIN + 32 * x) = rep (le64 (muOf cd) (8 * x))
 
+/-- The saved kf4 states at `SC`: slot 0 is `c̃`'s sponge after its first
+squeeze (one permutation of the seed state), slot 1 μ's after block 0
+(absorbed and permuted once). -/
+def ScAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∃ S : Nat → Fips202.SpongeState, Sized4 S ∧ St4At m SC S ∧
+    S 0 = permN 1 (seedState 136 (ctOf cd)) ∧ S 1 = absorbPre 136 (padMu cd) 1
+
 structure Inv0 (m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
@@ -95,62 +118,76 @@ structure Inv1 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   z : ZAt m cd
-  hp : HPAt m cd
   zLow : ZeroOn m MISC ZH
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv2 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   z : ZAt m cd
-  hp : HPAt m cd
   zMisc : ZeroOn m MISC TBL
   zCw : ZeroOn m CW ABUF
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv3 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   zhat : ZHatAt m cd
-  hp : HPAt m cd
   zMisc : ZeroOn m MISC TBL
   zCw : ZeroOn m CW ABUF
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv4 (cd m : ByteArray) : Prop extends Inv3 cd m where
   rho : Rho1At m cd
 
-/-- Between the ExpandA groups: `n` columns accumulated. -/
-structure InvG (cd m : ByteArray) (n : Nat) : Prop where
+/-- What every ExpandA boundary keeps. -/
+structure InvX (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   zhat : ZHatAt m cd
-  hp : HPAt m cd
   rho : Rho1At m cd
-  acc : AccCols m cd n
-  zMisc : ZeroOn m MISC (MISC + 0x1e0)
-  zCw : ZeroOn m CW ABUF
-  zIdx : ZeroOn m BASES ACC
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
 
-structure Inv5 (cd m : ByteArray) : Prop where
+structure InvG0 (cd m : ByteArray) : Prop extends InvX cd m where
+  c0 : ColAt m CW cd 0
+
+structure InvG1 (cd m : ByteArray) : Prop extends InvG0 cd m where
+  c1 : ColAt m HP cd 1
+
+structure InvG2 (cd m : ByteArray) : Prop extends InvG1 cd m where
+  c2 : Col3At m SB cd 2
+  /-- `tr`'s sponge in slot 0 after five absorbed blocks. -/
+  tr : ∃ S : Nat → Fips202.SpongeState, Sized4 S ∧ KS4 m S ∧ S 0 = absorbPre 136 (padPk cd) 5
+
+/-- After ExpandA (`pass3f4`). -/
+structure InvW (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
-  hp : HPAt m cd
   acc : AccAt m cd
-  trl : ∀ x, x < 8 → word m (TRL + 32 * x) = le64 (trOf cd) (8 * x)
   mu : mlenOf cd ≤ 69 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
-  cb : ∀ x, x < 34 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
-  fresh : SibFresh m
+  cb : ∀ x, x < 17 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
+  sc : ScAt m cd
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
+
+/-- After the side buffers are zeroed and the hints decoded. -/
+structure InvH (cd m : ByteArray) : Prop extends InvW cd m where
+  hp : HPAt m cd
+  zCw : ZeroOn m CW (CW + 8192)
 
 structure Inv6 (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   hp : HPAt m cd
   acc : AccAt m cd
-  cb : ∀ x, x < 34 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
+  cb : ∀ x, x < 17 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
+  sc : ScAt m cd
   fresh : SibFresh m
   fmu : FinMu m cd
 
@@ -171,7 +208,7 @@ structure Inv8 (cd m : ByteArray) : Prop where
   acc : AccAt m cd
   fmu : FinMu m cd
   sp : okC cd = true → ∀ t, t < 256 → word m (SP + 32 * t) =
-    pack4 fun r => 2 ^ 13 * sPrime (cD cd) cd r t + nNeg (cD cd) t
+    pack4 fun r => spOff - (2 ^ 13 * sPrime (cD cd) cd r t + nNeg (cD cd) t)
 
 structure Inv9 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m

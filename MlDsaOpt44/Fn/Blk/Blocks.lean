@@ -20,47 +20,47 @@ set_option linter.unusedSimpArgs false
 
 theorem pro {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (flp abp ret : Nat) (m : ByteArray) :
-    Reach (callState s 8887 (wd flp :: wd abp :: wd ret :: tail) m)
-      (callState s 9106 (wd U5 :: wd U4 :: wd U3 :: wd U2 :: wd U1 :: wd U0 :: wd 0 :: wd flp :: wd abp :: wd ret :: tail) (flip6 m)) 111 := by
+    Reach (callState s 9030 (wd flp :: wd abp :: wd ret :: tail) m)
+      (callState s 9248 (wd U5 :: wd U4 :: wd U3 :: wd U2 :: wd U1 :: wd U0 :: wd 0 :: wd flp :: wd abp :: wd ret :: tail) (flip6 m)) 111 := by
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [3637, 3638, 3639, 3640, 3641, 3642, 3643, 3644, 3645, 3646, 3647, 3648, 3649, 3650, 3651, 3652, 3653, 3654, 3655, 3656, 3657, 3658, 3659, 3660, 3661, 3662, 3663, 3664, 3665, 3666, 3667, 3668, 3669, 3670, 3671, 3672, 3673, 3674] with [flip6, flipW, U0, U1, U2, U3, U4, U5, word_mstore_disjoint]
+  opt44_reach [3708, 3709, 3710, 3711, 3712, 3713, 3714, 3715, 3716, 3717, 3718, 3719, 3720, 3721, 3722, 3723, 3724, 3725, 3726, 3727, 3728, 3729, 3730, 3731, 3732, 3733, 3734, 3735, 3736, 3737, 3738, 3668, 3739, 3740, 3741, 3742, 3743, 3744] with [flip6, flipW, U0, U1, U2, U3, U4, U5, word_mstore_disjoint]
 
 theorem bodyB_loop {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xp flp abp ret : Nat) (M : ByteArray)
-    (hflp : flp + 32 ≤ 32 * 2097) (hxp : 96 + xp < 672) :
+    (hflp : flp + 32 ≤ 32 * 2616) (hxp : 96 + xp < 672) :
     Reach (callState s 9972 (wd lf :: wd w2 :: wd w1 :: wd w0 :: wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp ::
         wd ret :: tail) M)
-      (callState s 9106 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)
+      (callState s 9248 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (lf % 2 ^ 256) 32) flp)) 70 := by
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4015, 4016, 4017, 4018, 4019, 4020, 4021, 4022, 4023, 4024, 4025, 4026, 4027, 4028, 4029, 4030, 4031, 4032, 4033, 4034, 4035, 4036]
+  opt44_reach [4015, 4086, 4087, 4088, 4089, 4094, 4021, 4096, 4097, 4098, 4025, 4100, 4101, 4028, 4029, 4030, 4031, 4032, 4033, 4104, 4105, 4106]
 
 theorem bodyB_exit {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xp flp abp ret : Nat) (M : ByteArray)
-    (hflp : flp + 32 ≤ 32 * 2097) (hxp : 96 + xp = 672) :
+    (hflp : flp + 32 ≤ 32 * 2616) (hxp : 96 + xp = 672) :
     Reach (callState s 9972 (wd lf :: wd w2 :: wd w1 :: wd w0 :: wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp ::
         wd ret :: tail) M)
-      (callState s 10002 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)
+      (callState s 10143 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd (96 + xp) :: wd (32 + flp) :: wd (256 + abp) :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (lf % 2 ^ 256) 32) flp)) 70 := by
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4015, 4016, 4017, 4018, 4019, 4020, 4021, 4022, 4023, 4024, 4025, 4026, 4027, 4028, 4029, 4030, 4031, 4032, 4033, 4034, 4035, 4036]
+  opt44_reach [4015, 4086, 4087, 4088, 4089, 4094, 4021, 4096, 4097, 4098, 4025, 4100, 4101, 4028, 4029, 4030, 4031, 4032, 4033, 4104, 4105, 4106]
 
 set_option maxRecDepth 100000 in
 theorem epi {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (u5 u4 u3 u2 u1 u0 xp flp abp ret : Nat) (M : ByteArray)
     (hj : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16) :
-    Reach (callState s 10002 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp :: wd ret :: tail) M)
+    Reach (callState s 10143 (wd u5 :: wd u4 :: wd u3 :: wd u2 :: wd u1 :: wd u0 :: wd xp :: wd flp :: wd abp :: wd ret :: tail) M)
       (callState s ret tail (flip6 M)) 116 := by
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
   
-  opt44_reach [4037, 4038, 4039, 4040, 4041, 4042, 4043, 4044, 4045, 4046, 4047, 4048, 4049, 4050, 4051, 4052, 4053, 4054, 4055, 4056, 4057, 4058, 4059, 4060, 4061, 4062, 4063, 4064, 4065, 4066, 4067, 4068, 4069, 4070, 4071, 4072, 4073, 4074, 4075, 4076] with [hj, flip6, flipW, word_mstore_disjoint]
+  opt44_reach [4108, 4109, 4110, 4111, 4112, 4113, 4114, 4115, 4116, 4117, 4118, 4119, 4120, 4121, 4122, 4123, 4124, 4125, 4126, 4127, 4128, 4129, 4130, 4131, 4132, 4133, 4134, 4135, 4136, 4137, 4138, 4139, 4140, 4141, 4142, 4143, 4144, 4145, 4146, 4147] with [hj, flip6, flipW, word_mstore_disjoint]
 
 end MlDsaOpt44.Proofs.Blk

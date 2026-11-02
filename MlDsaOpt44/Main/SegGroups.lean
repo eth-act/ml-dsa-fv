@@ -1,7 +1,10 @@
 import MlDsaOpt44.Main.Base
 import MlDsaOpt44.Fn.Group
 set_option warningAsError true
-/-! # Segment `3439 … 3466`: the two pure ExpandA groups (`group`, columns 0 and 1). -/
+/-! # Segments `3430 … 3453`, `3453 … 3477`: the two pure ExpandA groups
+
+`group` (columns 0 and 1), then one `MCOPY` of the fixed-up candidates
+`ABUF[0, 256)` to the column's side buffer (`CW`, `HP`). -/
 
 namespace MlDsaOpt44.Proofs
 
@@ -23,123 +26,80 @@ theorem aD_lt {cd : ByteArray} {s : Nat} (h : okCol cd s = true) {r : Nat} (hr :
   have := hrange t ht
   omega
 
-theorem group_glue {s : State} (hs : Ctx s) {m : ByteArray} {b : Bool} {col : Nat}
-    {pc ret : Nat} (cost : Nat)
-    (hblk : Reach (callState s pc [flag b] m) (callState s 13659 [wd 15, wd col, wd 0, wd ret, flag b] m)
+/-- A pure group and the copy of its candidates to `dst`. -/
+theorem group_copy {s : State} (hs : Ctx s) {m : ByteArray} {b : Bool} {col : Nat}
+    {pc ret : Nat} (i : Fin 12125) (cost : Nat) {dst : Nat}
+    (hblk : Reach (callState s pc [flag b] m) (callState s 13723 [wd 15, wd col, wd 0, wd ret, flag b] m)
       cost)
     (hj : Decode.isValidJumpDest optBytecode ret = true) (hret : ret < 2 ^ 16)
+    (hand : ∀ M, Reach (callState s ret [flag (okCol s.executionEnv.calldata col), flag b] M)
+      (callState s (ret + 11) [wd dst, wd ABUF, wd 8192, flag (b && okCol s.executionEnv.calldata col)] M) 13)
+    (hi : instrAt i.val = .op .MCOPY) (hpc : pcAt i.val = ret + 11) (hdst : dst + 8192 ≤ 0x10220)
     (hrc : RC4Table m) (hrho : Rho1At m s.executionEnv.calldata) (hcol : col < 4)
     (hcd : HDR ≤ s.executionEnv.calldata.size) :
-    ∃ m', (okCol s.executionEnv.calldata col = true →
-        ∀ t, t < 256 → word m' (ACC + 32 * t) =
-          (word m (ACC + 32 * t) +
-            pack4 (fun r => ((aD s.executionEnv.calldata r col)[t]!).toNat) *
-              lane (word m (ZH + 32 * t)) col) % 2 ^ 256) ∧
-      FrameExcept m m' groupFrame ∧
+    ∃ m', ColAt m' dst s.executionEnv.calldata col ∧
+      FrameExcept m m' (groupFrame ++ [(dst, dst + 8192)]) ∧
       Reach (callState s pc [flag b] m)
-        (callState s ret [flag (okCol s.executionEnv.calldata col), flag b] m') (cost + Gas.group) := by
-  obtain ⟨m', hpost, hfr, hc⟩ := group_call hs (ret := ret) (tail := [flag b])
+        (callState s (ret + 12) [flag (b && okCol s.executionEnv.calldata col)] m')
+        (cost + Gas.group + 13 + 771) := by
+  obtain ⟨m1, hpost, hfr, hc⟩ := group_call hs (ret := ret) (tail := [flag b])
     (retOK_main (by decide) (by simp) hj hret) m hrc hrho hcol hcd
-  exact ⟨m', hpost, hfr, hblk.trans hc⟩
+  have hsz : 2616 ≤ s.activeWords.toNat := by have := hs.sized; simpa [memWords] using this
+  have hmc := reach_mcopy hs i (d := dst) (src := ABUF) (n := 8192)
+    (rest := [flag (b && okCol s.executionEnv.calldata col)]) (m := m1) hi hpc (by omega)
+    (by unfold ABUF; omega) (by omega) (by omega) (by omega) (by unfold ABUF; omega) (by simp)
+  refine ⟨_, fun hok t ht => ?_, hfr.trans (FrameExcept.mcopy _ _ _ _),
+    ((hblk.trans hc).trans ((hand m1).trans hmc)).mono (by omega)⟩
+  rw [word_mcopy _ (by omega) (by omega), show ABUF + (dst + 32 * t - dst) = ABUF + 32 * t by omega]
+  exact hpost hok t ht
 
-theorem accSum_congr {cd m m' : ByteArray} {t : Nat}
-    (hzh : word m' (ZH + 32 * t) = word m (ZH + 32 * t)) (r : Nat) :
-    ∀ n, accSum cd m' r t n = accSum cd m r t n
-  | 0 => rfl
-  | n + 1 => by
-    show accSum cd m' r t n + _ * lane (word m' (ZH + 32 * t)) n =
-      accSum cd m r t n + _ * lane (word m (ZH + 32 * t)) n
-    rw [accSum_congr hzh r n, hzh]
+theorem invX_of_inv4 {cd m : ByteArray} (hI : Inv4 cd m) : InvX cd m :=
+  ⟨hI.rc4, hI.rc1, hI.tbl, hI.zhat, hI.rho,
+    hI.zHigh.mono (by unfold BASES IDX; omega) (by unfold IDX FIN; omega),
+    hI.zMisc.mono (by unfold MISC NNEG; omega) (by unfold NNEG TBL; omega)⟩
 
-theorem accSum_le {cd m : ByteArray} {t : Nat} (ht : t < 256)
-    (hz : ∀ k, k < 4 → lane (word m (ZH + 32 * t)) k < 2 ^ 28) {r : Nat} (hr : r < 4) :
-    ∀ n, n ≤ 4 → okUpTo cd n = true → accSum cd m r t n ≤ n * 2 ^ 51
-  | 0, _, _ => Nat.le_refl _
-  | n + 1, hn, hok => by
-    simp only [okUpTo, Bool.and_eq_true] at hok
-    have ih := accSum_le ht hz hr n (by omega) hok.1
-    have h1 := aD_lt hok.2 hr ht
-    have h2 := hz n (by omega)
-    have h3 : ((aD cd r n)[t]!).toNat * lane (word m (ZH + 32 * t)) n < 2 ^ 23 * 2 ^ 28 :=
-      Nat.mul_lt_mul'' (by unfold Fips204.q at h1; omega) h2
-    have e : (n + 1) * 2 ^ 51 = n * 2 ^ 51 + 2 ^ 51 := by ring
-    show accSum cd m r t n + _ ≤ _
-    omega
-
-/-- One more column: `ACC[t] += A[·][n][t] · ẑ_n[t]`. -/
-theorem accCols_step {m m' : ByteArray} {cd : ByteArray} {n : Nat} (hn : n < 4)
-    (hacc : AccCols m cd n) (hz : ∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ZH + 32 * t)) k < 2 ^ 28)
-    (hzh : ∀ t, t < 256 → word m' (ZH + 32 * t) = word m (ZH + 32 * t))
-    (hpost : okCol cd n = true → ∀ t, t < 256 → word m' (ACC + 32 * t) =
-      (word m (ACC + 32 * t) + pack4 (fun r => ((aD cd r n)[t]!).toNat) *
-        lane (word m (ZH + 32 * t)) n) % 2 ^ 256) :
-    AccCols m' cd (n + 1) := by
-  intro hok t ht
-  have hok' := hok
-  simp only [okUpTo, Bool.and_eq_true] at hok'
-  rw [hpost hok'.2 t ht, hacc hok'.1 t ht, pack4_add_mul]
-  rw [Nat.mod_eq_of_lt (pack4_lt fun r hr => by
-    have := accSum_le ht (fun k hk => hz k hk t ht) hr (n + 1) (by omega) hok
-    show accSum cd m r t n + _ < _
-    have h' : (n + 1) * 2 ^ 51 < 2 ^ 64 := by
-      have : n + 1 ≤ 4 := by omega
-      calc (n + 1) * 2 ^ 51 ≤ 4 * 2 ^ 51 := Nat.mul_le_mul_right _ this
-        _ < 2 ^ 64 := by norm_num
-    exact Nat.lt_of_le_of_lt this h')]
-  exact congrArg pack4 (funext fun r => (accSum_congr (hzh t ht) r (n + 1)).symm)
+theorem InvX.frame {cd m m' : ByteArray} {rs : List (Nat × Nat)} (hI : InvX cd m)
+    (h : FrameExcept m m' rs) (h1 : Avoids rs RC4 (RC4 + 768)) (h2 : Avoids rs RC1 (RC1 + 768))
+    (h3 : Avoids rs TBL (TBL + 7936)) (h4 : Avoids rs ZH (ZH + 8192)) (h5 : Avoids rs RHO1 (RHO1 + 256))
+    (h6 : Avoids rs IDX (IDX + 256)) (h7 : Avoids rs NNEG (NNEG + 64)) : InvX cd m' :=
+  ⟨hI.rc4.frame h h1, hI.rc1.frame h h2, hI.tbl.frame h h3, hI.zhat.frame h h4, hI.rho.frame h h5,
+    hI.zIdx.frame h h6, hI.zNeg.frame h h7⟩
 
 theorem seg_g0 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : Inv4 s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', InvG s.executionEnv.calldata m' 1 ∧
-      Reach (callState s 3439 [flag b] m)
-        (callState s 3452 [flag (b && okCol s.executionEnv.calldata 0)] m') Gas.pG0 := by
-  have hb1 : Reach (callState s 3439 [flag b] m) (callState s 13659 [wd 15, wd 0, wd 0, wd 3450, flag b] m)
+    ∃ m', InvG0 s.executionEnv.calldata m' ∧
+      Reach (callState s 3430 [flag b] m)
+        (callState s 3453 [flag (b && okCol s.executionEnv.calldata 0)] m') Gas.pG0 := by
+  have hb1 : Reach (callState s 3430 [flag b] m) (callState s 13723 [wd 15, wd 0, wd 0, wd 3441, flag b] m)
       21 := by
-    opt44_reach [1139, 1140, 1141, 1142, 1143, 1144]
-  obtain ⟨m', hpost, hfr, hR⟩ := group_glue hs 21 hb1 (by simp only [isValidJumpDest_lit])
-    (by norm_num) hI.rc4 hI.rho (by norm_num : (0 : Nat) < 4) hcd
-  have hb2 : Reach (callState s 3450 [flag (okCol s.executionEnv.calldata 0), flag b] m')
-      (callState s 3452 [flag (b && okCol s.executionEnv.calldata 0)] m') 4 := by
-    opt44_reach [1145, 1146] with [flag, ite01_land]
-  have hzh : ∀ t, t < 256 → word m' (ZH + 32 * t) = word m (ZH + 32 * t) := fun t ht =>
-    word_frame hfr (lo := ZH) (hi := ZH + 8192) (by unfold groupFrame; avoids_tac) (by omega) (by omega)
-  have hacc0 : AccCols m s.executionEnv.calldata 0 := fun _ t _ => by
-    rw [word_zero_of_zeroOn hI.zHigh (by unfold BASES ACC; omega) (by unfold ACC HP; omega)]
-    rfl
-  refine ⟨m', ⟨hI.rc4.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.rc1.frame hfr (by unfold groupFrame; avoids_tac), hI.tbl.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.zhat.frame hfr (by unfold groupFrame; avoids_tac), hI.hp.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.rho.frame hfr (by unfold groupFrame; avoids_tac),
-    accCols_step (by norm_num) hacc0 (fun k hk t ht => (hI.zhat k hk t ht).1) hzh hpost,
-    (hI.zMisc.mono (le_refl _) (by unfold MISC TBL; omega)).frame hfr (by unfold groupFrame; avoids_tac),
-    hI.zCw.frame hfr (by unfold groupFrame; avoids_tac),
-    (hI.zHigh.mono (le_refl _) (by unfold ACC HP; omega)).frame hfr
-      (by unfold groupFrame; avoids_tac)⟩,
-    (hR.trans hb2).mono (by unfold Gas.pG0; omega)⟩
+    opt44_reach [1134, 1135, 1136, 1137, 1138, 1139]
+  obtain ⟨m', hc0, hfr, hR⟩ := group_copy hs ⟨1145, by norm_num⟩ 21 (dst := CW) hb1
+    (by simp only [isValidJumpDest_lit]) (by norm_num)
+    (fun M => by opt44_reach [1140, 1141, 1142, 1143, 1144] with [flag, ite01_land, ABUF, CW])
+    (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by unfold CW; omega) hI.rc4 hI.rho (by norm_num : (0 : Nat) < 4) hcd
+  refine ⟨m', ⟨(invX_of_inv4 hI).frame hfr (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    hR.mono (by unfold Gas.pG0; generalize Gas.group = g; omega)⟩
 
 theorem seg_g1 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
-    (hI : InvG s.executionEnv.calldata m 1) (b : Bool) :
-    ∃ m', InvG s.executionEnv.calldata m' 2 ∧
-      Reach (callState s 3452 [flag b] m)
-        (callState s 3466 [flag (b && okCol s.executionEnv.calldata 1)] m') Gas.pG1 := by
-  have hb1 : Reach (callState s 3452 [flag b] m) (callState s 13659 [wd 15, wd 1, wd 0, wd 3464, flag b] m)
+    (hI : InvG0 s.executionEnv.calldata m) (b : Bool) :
+    ∃ m', InvG1 s.executionEnv.calldata m' ∧
+      Reach (callState s 3453 [flag b] m)
+        (callState s 3477 [flag (b && okCol s.executionEnv.calldata 1)] m') Gas.pG1 := by
+  have hb1 : Reach (callState s 3453 [flag b] m) (callState s 13723 [wd 15, wd 1, wd 0, wd 3465, flag b] m)
       22 := by
-    opt44_reach [1147, 1148, 1149, 1150, 1151, 1152]
-  obtain ⟨m', hpost, hfr, hR⟩ := group_glue hs 22 hb1 (by simp only [isValidJumpDest_lit])
-    (by norm_num) hI.rc4 hI.rho (by norm_num : (1 : Nat) < 4) hcd
-  have hb2 : Reach (callState s 3464 [flag (okCol s.executionEnv.calldata 1), flag b] m')
-      (callState s 3466 [flag (b && okCol s.executionEnv.calldata 1)] m') 4 := by
-    opt44_reach [1153, 1154] with [flag, ite01_land]
-  have hzh : ∀ t, t < 256 → word m' (ZH + 32 * t) = word m (ZH + 32 * t) := fun t ht =>
-    word_frame hfr (lo := ZH) (hi := ZH + 8192) (by unfold groupFrame; avoids_tac) (by omega) (by omega)
-  refine ⟨m', ⟨hI.rc4.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.rc1.frame hfr (by unfold groupFrame; avoids_tac), hI.tbl.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.zhat.frame hfr (by unfold groupFrame; avoids_tac), hI.hp.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.rho.frame hfr (by unfold groupFrame; avoids_tac),
-    accCols_step (by norm_num) hI.acc (fun k hk t ht => (hI.zhat k hk t ht).1) hzh hpost,
-    hI.zMisc.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.zCw.frame hfr (by unfold groupFrame; avoids_tac),
-    hI.zIdx.frame hfr (by unfold groupFrame; avoids_tac)⟩,
-    (hR.trans hb2).mono (by unfold Gas.pG1; omega)⟩
+    opt44_reach [1146, 1147, 1148, 1149, 1150, 1151]
+  obtain ⟨m', hc1, hfr, hR⟩ := group_copy hs ⟨1157, by norm_num⟩ 22 (dst := HP) hb1
+    (by simp only [isValidJumpDest_lit]) (by norm_num)
+    (fun M => by opt44_reach [1152, 1153, 1154, 1155, 1156] with [flag, ite01_land, ABUF, HP])
+    (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by unfold HP; omega) hI.rc4 hI.rho (by norm_num : (1 : Nat) < 4) hcd
+  refine ⟨m', ⟨⟨hI.toInvX.frame hfr (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
+    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac),
+    hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    hR.mono (by unfold Gas.pG1; generalize Gas.group = g; omega)⟩
 
 end MlDsaOpt44.Proofs
