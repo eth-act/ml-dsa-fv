@@ -275,7 +275,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   · -- done in phase 1
     obtain ⟨hval, hfl⟩ := done_result (sl := sl) (by norm_num) h256 hlanes
     obtain ⟨hpend, hlo, hks', hH, hfr⟩ := post_nosq (hL1.mono (by norm_num)) hks
-    refine ⟨M1, hval, hpend, hlo, hks', fun h => hH ▸ h, hfr, ?_⟩
+    refine ⟨M1, hval, hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
     rw [call_iff, if_neg (by rw [hH]; tauto), hfl]
     exact (hpre.trans hrch).mono (by unfold Gas.fixNo; omega)
   · have hH1 : word M1 4064 = word m 4064 :=
@@ -338,7 +338,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         if_neg (fun h => h6 h.1)
       rcases hres2 with ⟨h256, hlanes, hrch2⟩ | ⟨_, hlt2, hrch2⟩
       · obtain ⟨hval, hfl⟩ := done_result (sl := sl) (by norm_num) h256 hlanes
-        refine ⟨M2, hval, hpend, hlo, hks', fun h => hH ▸ h, hfr, ?_⟩
+        refine ⟨M2, hval, hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
         rw [call_iff, hgas, hfl]
         exact ((((hpre.trans hrch).trans hc).trans hc2).trans hrch2).mono (by unfold Gas.fixNo; omega)
       · have hfail := Fix.fx_fail (ret := ret) hs htail hsz M2 (64 * sl) (Fix.lmask sl) (Fix.nmask sl)
@@ -346,7 +346,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           hr.jumpdest hret
         have hlt2' : (Fix.accL (candI I) 336).length < 256 := hlt2
         refine ⟨M2, fun a ha => absurd ((aI_accL I).1 ▸ (show (aI I).isSome = true by rw [ha]; rfl))
-          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hks', fun h => hH ▸ h, hfr, ?_⟩
+          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
         rw [call_iff, hgas, fail_result hlt2]
         exact (((((hpre.trans hrch).trans hc).trans hc2).trans hrch2).trans hfail).mono
           (by unfold Gas.fixNo; omega)
