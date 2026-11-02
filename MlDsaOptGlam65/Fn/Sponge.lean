@@ -3,7 +3,6 @@ import MlDsaOptGlam65.Fn.Sponge.Cext
 import MlDsaOptGlam65.Fn.Sponge.Absorb
 import MlDsaOptGlam65.Fn.Sponge.TrabsRun
 import MlDsaOptGlam65.Fn.Sponge.Mub0
-import MlDsaOptGlam65.Fn.Sponge.Mub
 import MlDsaOptGlam65.Layout
 import MlDsaOptGlam65.Budget
 /- Ported from `MlDsaOpt65/Fn/Sponge.lean` by `scripts/proofgen_port.py --glam 65`; hand adjustments are marked `-- glam:`. -/
@@ -99,27 +98,6 @@ theorem mub0_call {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
           else callState s rl tail m') Gas.mub0 :=
   WP4.mub0_call_aux hs hrl hrs m hsh hcd trabs_call
 
-/-- **mub**: `[136 k, sh, ret]`, after the group's `k`-th `kf4` (`1 ≤ k ≤ 5`),
-`P = 66 + |M|`: for `k < 5` and `136 k ≤ P` slot `sh` absorbs block `k` of
-μ's padded input; for `P < 136 k ≤ P + 136` (the last block was `k − 1`) μ's
-lanes `0 … 7` are extracted from slot `sh` to `MU`; otherwise nothing. -/
-theorem mub_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.mub ret tail) (m : ByteArray) {sh k : Nat} (hsh : sh < 4) (hk1 : 1 ≤ k)
-    (hk5 : k ≤ 5) (hcd : HDR ≤ s.executionEnv.calldata.size) :
-    ∃ m', (∀ tr : ByteArray, tr.size = 64 → k < 5 → 136 * k ≤ 66 + mlenOf s.executionEnv.calldata →
-        ∀ x, x < 25 → word m' (KS + 32 * x) =
-          if x < 17 then word m (KS + 32 * x) ^^^
-            spread (le64 (muPadded tr s.executionEnv.calldata) (136 * k + 8 * x)) * 2 ^ sh
-          else word m (KS + 32 * x)) ∧
-      (66 + mlenOf s.executionEnv.calldata < 136 * k → 136 * k ≤ 66 + mlenOf s.executionEnv.calldata + 136 →
-        ∀ x, x < 8 → word m' (MU + 32 * x) =
-          cpl x (compress (word m (KS + 32 * x) / 2 ^ sh &&& spread M64))) ∧
-      (66 + mlenOf s.executionEnv.calldata < 136 * k →
-        ∀ x, x < 25 → word m' (KS + 32 * x) = word m (KS + 32 * x)) ∧
-      ((k = 5 ∧ 136 * k ≤ 66 + mlenOf s.executionEnv.calldata) ∨
-        66 + mlenOf s.executionEnv.calldata + 136 < 136 * k → m' = m) ∧
-      FrameExcept m m' [(KS, KS + 800), (MU, MU + 256)] ∧
-      Call s Entry.mub [wd (136 * k), wd sh] ret tail m [] m' Gas.mub :=
-  WP4.mub_call_aux hs hr m hsh hk1 hk5 hcd trabs_call
+-- glam: no `mub` (unreachable in the 42-call schedule)
 
 end MlDsaOptGlam65.Proofs

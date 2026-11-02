@@ -73,8 +73,6 @@ def lmerge (k : Nat) : Nat := 21 + 863 * k
 
 /-- `mub0`: the longer of its two exits. -/
 def mub0 : Nat := 3466
-/-- `mub`: the longest of its paths (absorb a block, pad it, or extract μ). -/
-def mub : Nat := 3090
 
 /-- `sib` (`Fn/Ball/V4Loop.lean`): entry 13; the 264 stream bytes as rejected
 (each lane: byte 0 with the loop head 66, bytes 1 … 6 40 each, byte 7 with the
