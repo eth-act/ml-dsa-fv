@@ -1,0 +1,51 @@
+import MlDsaOptGlam44.Layout
+import MlDsaOptGlam44.Budget
+import MlDsaOptGlam44.Fn.Decode.HintMain
+/-!
+# Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack) (WP8)
+
+* `dz [ZH, Z0, ret] ↦ [f]`: decodes the four 18-bit packed z polynomials into
+  lane-packed words (`lane k of ZH[t] = γ1 + 9q − raw = zLane`) and returns the
+  OR of the SIMD norm-flag words; bits `50 + 64k` and `27 + 64k` of `f` stay
+  clear iff `‖z‖∞ < γ1 − β`.
+* `dhint [ret] ↦ [ok]`: FIPS 204 Algorithm 21 on the hint bytes; ORs bit
+  `64 i` into `HP[y]` for every index `y` of row `i`.
+-/
+
+/-! Glamsterdam: `dhint` is v4's code (ported proof). `dz` unrolls the gather loop of each
+chunk (`DZ_UNROLL`); its contract is v4's. **Open item**: `dz_call`. -/
+
+namespace MlDsaOptGlam44.Proofs
+
+open MlDsaOpt44.Proofs
+
+open EvmSemantics
+open EvmSemantics.EVM
+open MlDsaOptCommon
+open MlDsa44
+
+/-- The norm-flag bits checked by `flag_check`. -/
+def zBits : Nat := pack4 fun _ => 2 ^ 50 + 2 ^ 27
+
+/-- **dz**: `[ZH, Z0, ret] ↦ [f]` (proof: `Fn/Decode/Z4*.lean`). -/
+theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.dz ret tail) (m : ByteArray) (hcd : HDR ≤ s.executionEnv.calldata.size) :
+    ∃ m', ∃ f, f < 2 ^ 256 ∧ ((f &&& zBits = 0) ↔ okZ s.executionEnv.calldata = true) ∧
+      (∀ t, t < 256 → word m' (ZH + 32 * t) = pack4 fun k => zLane s.executionEnv.calldata k t) ∧
+      FrameExcept m m' [(ZH, ZH + 8192)] ∧
+      Call s Entry.dz [wd ZH, wd Z0] ret tail m [wd f] m' Gas.dz := by
+  sorry  -- glam: open item
+
+/-- **dhint**: `[ret] ↦ [ok]`, `HP` initially zero. Every `HP` word is four
+bit lanes; if the hint decodes, lane `r` of `HP[t]` is `h[r][t]`. -/
+theorem dhint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.dhint ret tail) (m : ByteArray) (hcd : HDR ≤ s.executionEnv.calldata.size)
+    (hz : ZeroOn m HP (HP + 8192)) :
+    ∃ m', (∀ t, t < 256 → ∃ b : Nat → Nat, (∀ r, r < 4 → b r ≤ 1) ∧ word m' (HP + 32 * t) = pack4 b) ∧
+      (∀ h, hintOf s.executionEnv.calldata = some h →
+        ∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (HP + 32 * t)) r = (h[r]![t]!).toNat) ∧
+      FrameExcept m m' [(HP, HP + 8192)] ∧
+      Call s Entry.dhint [] ret tail m [flag (okH s.executionEnv.calldata)] m' Gas.dhint :=
+  DecodeH.dhint_main hs hr m hcd hz
+
+end MlDsaOptGlam44.Proofs

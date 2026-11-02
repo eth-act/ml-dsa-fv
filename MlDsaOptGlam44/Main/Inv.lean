@@ -1,0 +1,233 @@
+import MlDsaOpt44.Fn.Group.Defs
+import MlDsaOpt44.Fn.Ball.Defs
+import MlDsaOpt44.Fn.Ct.Defs
+import MlDsaOpt44.Math.SpongeSeed
+import MlDsaOptGlam44.Layout
+import MlDsaOptGlam44.Budget
+/- Ported from `MlDsaOpt44/Main/Inv.lean` by `scripts/proofgen_port.py --glam 44`; hand adjustments are marked `-- glam:`. -/
+set_option maxHeartbeats 0  -- glam: re-elaboration headroom
+set_option warningAsError true
+/-!
+# Main-flow invariants (v4, Glamsterdam pcs)
+
+The main flow (regions `main`, `expand_a`, `hash_mu`, `final_hash` of
+`MlDsaOpt/44/layout.txt`) is cut into segments at fixed program counters.
+`InvK cd m` is what memory holds at boundary `K` for calldata `cd`. Facts
+about data that may be invalid (hints, `c`, `A`) are conditional on the
+corresponding validity flag; everything needed for termination and gas is
+unconditional.
+
+| boundary | pc | stack | invariant |
+|---|---|---|---|
+| sized (no iota tables) | 15 | `[]` | `Inv0` |
+| z | 99 | `[okZ]` | `Inv1` |
+| NTT records (4 + 4 table) | 2018 | `[okZ]` | `Inv2` |
+| ẑ | 2028 | `[okZ]` | `Inv3` |
+| ρ spread | 2389 | `[okZ]` | `Inv4` |
+| group 0 (`CW` = column 0) | 2412 | `[okZ ∧ A·0]` | `InvG0` |
+| group 1 (`HP` = column 1); the long-message switch | 2436 | `[… ∧ A·1]` | `InvG1` |
+| packed: group 2 (`SB` = column 2, rows 0 … 2; tr) | 2850 | `[… ∧ A₀₋₂,2]` | `InvG2` |
+| packed: Â ẑ, tr, c̃ stream, μ's / c's states | 3948 (→ 5081) | `[okZ ∧ okA]` | `InvW` |
+| hints | 5183 | `[… ∧ okH]` | `InvH` |
+| μ | 6020 | `[… ∧ okH]` | `Inv6` |
+| c | 6030 | `[ok3]` | `Inv7` |
+| c · t1 | 6057 | `[ok3]` | `Inv8` |
+| w1Encode | 6084 | `[ok3]` | `Inv9` |
+
+`InvG2`, `InvW` (and `InvH`), `Inv6` hold on the packed schedule (`|M| < 342`)
+and carry `FLAG = 1` (glam); the long-message schedule reaches `Inv7` by its
+own path (`seg_alt`).
+
+with `ok2 = (okZ ∧ okA) ∧ okH`, `ok3 = ok2 ∧ okC`.
+
+v4 (44): ExpandA's groups copy their fixed-up candidates to side buffers
+(`CW`, `HP`, `SB`, `SB + 8192`) and one fused pass (`pass3f4`) stores `ACC`;
+the packed window (`emit_window44`) pauses states in images in `FIN`; hints
+are decoded after ExpandA; μ comes from a SIMD slot (`|M| ≤ 69`) or continues
+on `kf1` from the slot's saved state; SampleInBall squeezes `c`'s second block
+on demand from its saved state.
+-/
+
+namespace MlDsaOptGlam44.Proofs
+
+open MlDsaOpt44.Proofs
+
+open EvmSemantics
+open EvmSemantics.EVM
+open MlDsaOptCommon
+open MlDsa44
+
+def ok2 (cd : ByteArray) : Bool := (okZ cd && okA cd) && okH cd
+def ok3 (cd : ByteArray) : Bool := ok2 cd && okC cd
+
+/-- Column `s` of `A` exists for every row. -/
+def okCol (cd : ByteArray) (s : Nat) : Bool := (List.range 4).all fun r => (aOf cd r s).isSome
+
+/-- `HP` holds bit lanes, and the decoded hint when there is one. -/
+def HPAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  (∀ t, t < 256 → ∃ b : Nat → Nat, (∀ r, r < 4 → b r ≤ 1) ∧ word m (HP + 32 * t) = pack4 b) ∧
+  (∀ h, hintOf cd = some h → ∀ t, t < 256 → ∀ r, r < 4 → lane (word m (HP + 32 * t)) r = (h[r]![t]!).toNat)
+
+/-- `ZH` holds the decoded `z` lanes. -/
+def ZAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∀ t, t < 256 → word m (ZH + 32 * t) = pack4 fun k => zLane cd k t
+
+/-- `ZH` holds `ẑ` (bounded representatives mod q). -/
+def ZHatAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ZH + 32 * t)) k < 2 ^ 28 ∧
+    ((lane (word m (ZH + 32 * t)) k : Int) - (zHat cd k)[t]!) % (Fips204.q : Int) = 0
+
+/-- The 256 words at `base` are column `col` of `A` (row `r` in lane `r`)
+when that column exists. -/
+def ColAt (m : ByteArray) (base : Nat) (cd : ByteArray) (col : Nat) : Prop :=
+  okCol cd col = true → ∀ t, t < 256 → word m (base + 32 * t) =
+    pack4 fun r => ((aD cd r col)[t]!).toNat
+
+/-- Rows `0 … 2` of column `col` exist. -/
+def okCol3 (cd : ByteArray) (col : Nat) : Bool := (List.range 3).all fun r => (aOf cd r col).isSome
+
+/-- Lanes `1 … 3` of the 256 words at `base` are rows `0 … 2` of column `col`
+of `A` when they exist. -/
+def Col3At (m : ByteArray) (base : Nat) (cd : ByteArray) (col : Nat) : Prop :=
+  okCol3 cd col = true → ∀ t, t < 256 → ∀ r, r < 3 →
+    lane (word m (base + 32 * t)) (r + 1) = ((aD cd r col)[t]!).toNat
+
+/-- The padded public key (`tr = H(pk, 64)`'s sponge input). -/
+def padPk (cd : ByteArray) : ByteArray := Fips202.pad 136 0x1F (pkOf cd)
+
+/-- μ's sponge input `tr ‖ 0 ‖ 0 ‖ M`, padded. -/
+def padMu (cd : ByteArray) : ByteArray :=
+  Fips202.pad 136 0x1F (trOf cd ++ (ByteArray.mk #[0, 0] ++ msgOf cd))
+
+/-- `ACC` holds `Â ẑ` (bounded representatives mod q) when `A` exists. -/
+def AccAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  okA cd = true → ∀ r, r < 4 → ∀ t, t < 256 → lane (word m (ACC + 32 * t)) r < 2 ^ 57 ∧
+    ((lane (word m (ACC + 32 * t)) r : Int) - (azRow cd r)[t]!) % (Fips204.q : Int) = 0
+
+/-- The 104 replicated stream lanes of the final hash input in `FIN`. -/
+def FinAt (m : ByteArray) (X : ByteArray) : Prop :=
+  ∀ x, x < 104 → word m (FIN + 32 * x) = rep (le64 X (8 * x))
+
+/-- μ's lanes, replicated, in `FIN[0, 8)`. -/
+def FinMu (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∀ x, x < 8 → word m (FIN + 32 * x) = rep (le64 (muOf cd) (8 * x))
+
+/-- The saved kf4 states at `SC`: slot 0 is `c̃`'s sponge after its first
+squeeze (one permutation of the seed state), slot 1 μ's after block 0
+(absorbed and permuted once). -/
+def ScAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∃ S : Nat → Fips202.SpongeState, Sized4 S ∧ St4At m SC S ∧
+    S 0 = permN 1 (seedState 136 (ctOf cd)) ∧ S 1 = absorbPre 136 (padMu cd) 1
+
+structure Inv0 (m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  zero : ZeroOn m MISC TOP
+
+structure Inv1 (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  z : ZAt m cd
+  zLow : ZeroOn m MISC ZH
+  zHigh : ZeroOn m BASES FIN
+
+structure Inv2 (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  z : ZAt m cd
+  zMisc : ZeroOn m MISC TBL
+  zCw : ZeroOn m CW ABUF
+  zHigh : ZeroOn m BASES FIN
+
+structure Inv3 (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  zhat : ZHatAt m cd
+  zMisc : ZeroOn m MISC TBL
+  zCw : ZeroOn m CW ABUF
+  zHigh : ZeroOn m BASES FIN
+
+structure Inv4 (cd m : ByteArray) : Prop extends Inv3 cd m where
+  rho : Rho1At m cd
+
+/-- What every ExpandA boundary keeps. -/
+structure InvX (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  zhat : ZHatAt m cd
+  rho : Rho1At m cd
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
+
+structure InvG0 (cd m : ByteArray) : Prop extends InvX cd m where
+  c0 : ColAt m CW cd 0
+
+structure InvG1 (cd m : ByteArray) : Prop extends InvG0 cd m where
+  c1 : ColAt m HP cd 1
+
+structure InvG2 (cd m : ByteArray) : Prop extends InvG1 cd m where
+  c2 : Col3At m SB cd 2
+  /-- `tr`'s sponge in slot 0 after five absorbed blocks. -/
+  tr : ∃ S : Nat → Fips202.SpongeState, Sized4 S ∧ KS4 m S ∧ S 0 = absorbPre 136 (padPk cd) 5
+  /-- glam: the packed schedule (`|M| < 342`) is running. -/
+  flag : word m FLAG = 1
+
+/-- After ExpandA (`pass3f4`). -/
+structure InvW (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  acc : AccAt m cd
+  mu : mlenOf cd ≤ 69 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
+  cb : ∀ x, x < 17 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
+  sc : ScAt m cd
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
+  /-- glam: the packed schedule (`|M| < 342`) ran. -/
+  flag : word m FLAG = 1
+
+/-- After the side buffers are zeroed and the hints decoded. -/
+structure InvH (cd m : ByteArray) : Prop extends InvW cd m where
+  hp : HPAt m cd
+  zCw : ZeroOn m CW (CW + 8192)
+
+structure Inv6 (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  hp : HPAt m cd
+  acc : AccAt m cd
+  cb : ∀ x, x < 17 → word m (CB + 32 * x) = le64 (cStream cd) (8 * x)
+  sc : ScAt m cd
+  fresh : SibFresh m
+  fmu : FinMu m cd
+  /-- glam: the packed schedule (`|M| < 342`) ran. -/
+  flag : word m FLAG = 1
+
+structure Inv7 (cd m : ByteArray) : Prop where
+  rc1 : RC1Table m
+  tbl : TblAt m
+  hp : HPAt m cd
+  acc : AccAt m cd
+  fmu : FinMu m cd
+  crep : okC cd = true → CRep m (cD cd)
+  /-- `csum` loads from `BASES[i] + TT − 32 u`: the bases stay inside the window table. -/
+  bases : ∀ i, i < Fips204.tau → word m (BASES + 32 * i) ≤ 6112
+
+structure Inv8 (cd m : ByteArray) : Prop where
+  rc1 : RC1Table m
+  tbl : TblAt m
+  hp : HPAt m cd
+  acc : AccAt m cd
+  fmu : FinMu m cd
+  sp : okC cd = true → ∀ t, t < 256 → word m (SP + 32 * t) =
+    pack4 fun r => spOff - (2 ^ 13 * sPrime (cD cd) cd r t + nNeg (cD cd) t)
+
+structure Inv9 (cd m : ByteArray) : Prop where
+  rc1 : RC1Table m
+  fin : ok3 cd = true → FinAt m (finBytes cd)
+
+end MlDsaOptGlam44.Proofs
