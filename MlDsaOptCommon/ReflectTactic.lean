@@ -97,14 +97,20 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
     let finalState := rhs.getArg! 1
     let finalPC := finalState.getArg! 1
     let mut ops := []
+    let mut symbolicJump := false
     for k in [:indices.length] do
       let i := indices[k]!
       let some n ← getFinValue? i | throwError "reflection: nonliteral index"
       let some instr := instructions[n.2.val]? | throwError "reflection: index out of range"
       if k + 1 == indices.length && (← getNatValue? finalPC).isNone &&
-          (instr.isAppOfArity ``Instr.op 1 &&
-            ["JUMP", "JUMPI"].contains (instr.getArg! 0).getAppArgs.back!.getAppFn.constName!.getString!) then
-        throwError "reflection: symbolic final jump target"
+          instr.isAppOfArity ``Instr.op 1 then
+        let name := (instr.getArg! 0).getAppArgs.back!.getAppFn.constName!.getString!
+        if name == "JUMP" then
+          ops := mkApp (mkConst ``Op.jump) finalPC :: ops
+          symbolicJump := true
+          continue
+        if name == "JUMPI" then
+          throwError "reflection: symbolic final conditional jump target"
       let next ← if k + 1 < indices.length then do
           let some j ← getFinValue? indices[k+1]! | throwError "reflection: nonliteral index"
           pure pcs[j.2.val]!
@@ -117,10 +123,36 @@ private def reflectBlockImpl (tables : MetaM (Array Expr × Array Nat)) (sound :
     let config := mkApp2 (mkConst ``Config.mk) terms (mkConst ``Mem.initial)
     let program ← mkListLit (mkConst ``Op) ops.reverse
     trace[opt.reflect] "decoded {indices.length} instructions"
-    let result ← reduce (mkApp2 (mkConst ``run) program config)
+    -- Keep the evaluator closed: reducing an open run can repeatedly unfold
+    -- its recursive matches. This out-of-word-range marker cannot be a PUSH
+    -- literal or a bytecode PC. The auxiliary theorem below checks the result
+    -- for every return PC, so this substitution is not trusted.
+    let marker := mkNatLit (2 ^ 257)
+    let closedProgram := if symbolicJump then
+        program.replace fun e => if e == finalPC then some marker else none
+      else program
+    let closedResult ← reduce (mkApp2 (mkConst ``run) closedProgram config)
+    let reducedMarker ← reduce marker
+    let result := if symbolicJump then
+        closedResult.replace fun e =>
+          if e.isAppOfArity ``Condition.target 2 && e.getArg! 1 == reducedMarker then
+            some (mkApp2 (mkConst ``Condition.target) (e.getArg! 0) finalPC)
+          else none
+      else closedResult
     unless result.isAppOfArity ``Option.some 2 do throwError "reflection: symbolic execution failed"
     let r := result.getArg! 1
-    let cert ← mkDecideProof (← mkEq (mkApp2 (mkConst ``run) program config) result)
+    -- Evaluation does not inspect jump targets. Reflexivity checks the same
+    -- computation with a symbolic return PC, without deciding equality on it.
+    let cert ← if symbolicJump then
+        withLocalDeclD `returnPC (mkConst ``Nat) fun ret => do
+          let replacePC (e : Expr) := e.replace fun e => if e == finalPC then some ret else none
+          let lhs := replacePC (mkApp2 (mkConst ``run) program config)
+          let rhs := replacePC result
+          let ty ← mkForallFVars #[ret] (← mkEq lhs rhs)
+          let value ← mkLambdaFVars #[ret] (← mkEqRefl rhs)
+          let name ← mkAuxLemma [] ty value
+          pure (mkApp (mkConst name) finalPC)
+      else mkDecideProof (← mkEq (mkApp2 (mkConst ``run) program config) result)
     let proof := mkAppN (mkConst sound) #[program, path, config, r, rho, mem, tail, base, pc, cert]
     let mut proof := proof
     let mut goals : List MVarId := []
