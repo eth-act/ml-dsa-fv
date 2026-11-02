@@ -3,6 +3,11 @@ import MlDsaOpt87.Fn.Ginit.Call
 import MlDsaOpt87.Fn.Fix
 import MlDsaOpt87.Fn.Keccak
 import MlDsaOpt87.Fn.Blk
+import MlDsaOpt87.Fn.GroupV4.Main
+import MlDsaOpt87.Fn.Pass3f.P4
+import MlDsaOpt87.Fn.Pass3f.P6
+import MlDsaOpt87.Fn.Pass3f.P10
+import MlDsaOpt87.Fn.Pass3f.P14
 /-!
 # ExpandA groups and the fused accumulation (ML-DSA-87, v4)
 
@@ -41,7 +46,7 @@ theorem group_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' (groupFrame rb) ∧
       Call s Entry.group [wd amask, wd col, wd rb] ret tail m
         [flag (gOk s.executionEnv.calldata amask col rb)] m' Gas.group :=
-  sorry
+  group_call_aux hs hr m hrc hrho hamask hcol hrb hcd
 
 /-- A fused pass's frame and call, given the word it stores at `acc[t]`. -/
 def FusedPass (s : State) (entry ret : Nat) (tail : List UInt256) (m : ByteArray) (acc gas : Nat)
@@ -87,21 +92,21 @@ def p3f14Word (m : ByteArray) (t : Nat) : Nat :=
 theorem pass3f4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f4 ret tail m ACC Gas.pass3f4 p3f4Word :=
-  sorry
+  MlDsaOpt87.Proofs.pass3f4_call_aux hs hr m
 
 theorem pass3f6_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f6 ret tail m ACC Gas.pass3f6 p3f6Word :=
-  sorry
+  MlDsaOpt87.Proofs.pass3f6_call_aux hs hr m
 
 theorem pass3f10_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f10 ret tail m (ACC + 8192) Gas.pass3f10 p3f10Word :=
-  sorry
+  MlDsaOpt87.Proofs.pass3f10_call_aux hs hr m
 
 theorem pass3f14_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f14 ret tail m (ACC + 8192) Gas.pass3f14 p3f14Word :=
-  sorry
+  MlDsaOpt87.Proofs.pass3f14_call_aux hs hr m
 
 end MlDsaOpt87.Proofs
