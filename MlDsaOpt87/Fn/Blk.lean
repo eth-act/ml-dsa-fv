@@ -1,7 +1,8 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
 import MlDsaOpt44.Fn.Blk.Defs
-/- Ported from `MlDsaOpt44/Fn/Blk.lean` by `scripts/proofgen_port.py 87`; hand adjustments are marked `-- port:`. -/
+import MlDsaOpt87.Fn.Blk.Proof
+/- Ported from `MlDsaOpt44/Fn/Blk.lean` by `scripts/proofgen_port.py 87` --sub 65280=90880 --sub 66080=91680; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 /-!
 # `blk`, `blkh`, `blkt`: de-interleave a squeezed SIMD block into RejNTTPoly candidates (WP3)
@@ -20,7 +21,8 @@ slot) and one rejection-flag word at `flp`.
   `ABUF + 1792 · 4 + 32 · 32`, flag words 4 … 6), made by `gfix` before the
   first fix-up of a group.
 
-`sbyte`, `cand`, `flagWord` are defined in `Blk/Defs.lean`.
+`sbyte`, `cand`, `flagWord` are defined in `Blk/Defs.lean`; the proofs are in
+`Blk/Proof.lean`.
 -/
 
 namespace MlDsaOpt87.Proofs
@@ -43,7 +45,7 @@ theorem blk_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (∀ g, g < 7 → word m' (flp + 32 * g) = flagWord S g)) ∧
       FrameExcept m m' [(abp, abp + 1792), (flp, flp + 224)] ∧
       Call s Entry.blk [wd flp, wd abp] ret tail m [] m' Gas.blk :=
-  sorry
+  blk_call_proof hs hr m ha ha' hf hf' hd
 
 /-- **blkh**: candidates `0 … 31` and flag words `0 … 3` of a block at any
 32-byte aligned `abp`, `flp` below `TOP`. -/
@@ -56,7 +58,7 @@ theorem blkh_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (∀ g, g < 4 → word m' (flp + 32 * g) = flagWord S g)) ∧
       FrameExcept m m' [(abp, abp + 1024), (flp, flp + 128)] ∧
       Call s Entry.blkh [wd flp, wd abp] ret tail m [] m' Gas.blkh :=
-  sorry
+  blkh_call_proof hs hr m ha ha' hf hf' hd
 
 /-- **blkt**: the rest of block 4: candidates `32 … 55` and flag words `4 … 6`. -/
 theorem blkt_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -66,6 +68,6 @@ theorem blkt_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (∀ g, 4 ≤ g → g < 7 → word m' (FL + 224 * 4 + 32 * g) = flagWord S g)) ∧
       FrameExcept m m' [(ABUF + 1792 * 4 + 1024, ABUF + 1792 * 5), (FL + 224 * 4 + 128, FL + 224 * 5)] ∧
       Call s Entry.blkt [] ret tail m [] m' Gas.blkt :=
-  sorry
+  blkt_call_proof hs hr m
 
 end MlDsaOpt87.Proofs

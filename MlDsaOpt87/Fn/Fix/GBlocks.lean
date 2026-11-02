@@ -10,8 +10,9 @@ set_option maxRecDepth 100000
 /-!
 # `gfix`: straight-line blocks
 
-Slot-check heads at pcs `10952, 10981, 11013, 11045` and the exit `11077`, stack
-`flags :: ok :: amask :: ret :: tail`.
+Slot-check heads at pcs `13164, 13213, 13265, 13317` and the exit `13369`, stack
+`flags :: ok :: amask :: ret :: tail`. Bit 0 of `flags` records that `blkt`
+has made the tail of block 4 (before the group's first `fix`).
 -/
 
 namespace MlDsaOpt87.Proofs.Fix
@@ -72,12 +73,30 @@ theorem gx_skip0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt87_reach [5728, 5729, 5730, 5731, 5732, 5733, 5734, 5735, 5736, 5737, 5738, 5739] with [gone_land, gmod2_mod, hc]
   gx_close
 
-theorem gx_call0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+theorem gx_callT0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
-    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 1 &&& f / 8388608) % 2 = 1) :
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 1 &&& f / 8388608) % 2 = 1)
+    (hb : f % 2 = 0) :
     Reach (callState s 13164 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
-      (callState s 14669 (wd 0 :: wd 13208 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 58 := by
-  opt87_reach [5728, 5729, 5730, 5731, 5732, 5733, 5734, 5735, 5736, 5737, 5738, 5739, 5752, 5753, 5754, 5755] with [gone_land, gmod2_mod, hc]
+      (callState s 12179 (wd 13195 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 78 := by
+  opt87_reach [5728, 5729, 5730, 5731, 5732, 5733, 5734, 5735, 5736, 5737, 5738, 5739, 5740, 5741, 5742, 5743, 5744, 5745, 5746, 5747] with [gone_land, gmod2_mod, hc, hb]
+  gx_close
+
+theorem gx_tret0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (hfl : f < 2 ^ 256) :
+    Reach (callState s 13195 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 0 :: wd 13208 :: wd (1 ||| f) :: wd ok :: wd amask :: wd ret :: tail) M) 24 := by
+  opt87_reach [5748, 5749, 5750, 5751, 5752, 5753, 5754, 5755]
+  gx_close
+
+theorem gx_callF0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 1 &&& f / 8388608) % 2 = 1)
+    (hb : f % 2 = 1) :
+    Reach (callState s 13164 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 0 :: wd 13208 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 81 := by
+  opt87_reach [5728, 5729, 5730, 5731, 5732, 5733, 5734, 5735, 5736, 5737, 5738, 5739, 5740, 5741, 5742, 5743, 5744, 5751, 5752, 5753, 5754, 5755] with [gone_land, gmod2_mod, hc, hb]
   gx_close
 
 theorem gx_ret0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -96,12 +115,30 @@ theorem gx_skip1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt87_reach [5761, 5762, 5763, 5764, 5765, 5766, 5767, 5768, 5769, 5770, 5771, 5772, 5773] with [gone_land, gmod2_mod, hc]
   gx_close
 
-theorem gx_call1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+theorem gx_callT1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
-    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 2 &&& f / 154742504910672534362390528) % 2 = 1) :
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 2 &&& f / 154742504910672534362390528) % 2 = 1)
+    (hb : f % 2 = 0) :
     Reach (callState s 13213 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
-      (callState s 14669 (wd 64 :: wd 13260 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
-  opt87_reach [5761, 5762, 5763, 5764, 5765, 5766, 5767, 5768, 5769, 5770, 5771, 5772, 5773, 5786, 5787, 5788, 5789] with [gone_land, gmod2_mod, hc]
+      (callState s 12179 (wd 13246 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 80 := by
+  opt87_reach [5761, 5762, 5763, 5764, 5765, 5766, 5767, 5768, 5769, 5770, 5771, 5772, 5773, 5774, 5775, 5776, 5777, 5778, 5779, 5780, 5781] with [gone_land, gmod2_mod, hc, hb]
+  gx_close
+
+theorem gx_tret1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (hfl : f < 2 ^ 256) :
+    Reach (callState s 13246 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 64 :: wd 13260 :: wd (1 ||| f) :: wd ok :: wd amask :: wd ret :: tail) M) 25 := by
+  opt87_reach [5782, 5783, 5784, 5785, 5786, 5787, 5788, 5789]
+  gx_close
+
+theorem gx_callF1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 2 &&& f / 154742504910672534362390528) % 2 = 1)
+    (hb : f % 2 = 1) :
+    Reach (callState s 13213 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 64 :: wd 13260 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 84 := by
+  opt87_reach [5761, 5762, 5763, 5764, 5765, 5766, 5767, 5768, 5769, 5770, 5771, 5772, 5773, 5774, 5775, 5776, 5777, 5778, 5785, 5786, 5787, 5788, 5789] with [gone_land, gmod2_mod, hc, hb]
   gx_close
 
 theorem gx_ret1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -120,12 +157,30 @@ theorem gx_skip2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt87_reach [5795, 5796, 5797, 5798, 5799, 5800, 5801, 5802, 5803, 5804, 5805, 5806, 5807] with [gone_land, gmod2_mod, hc]
   gx_close
 
-theorem gx_call2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+theorem gx_callT2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
-    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 4 &&& f / 2854495385411919762116571938898990272765493248) % 2 = 1) :
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 4 &&& f / 2854495385411919762116571938898990272765493248) % 2 = 1)
+    (hb : f % 2 = 0) :
     Reach (callState s 13265 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
-      (callState s 14669 (wd 128 :: wd 13312 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
-  opt87_reach [5795, 5796, 5797, 5798, 5799, 5800, 5801, 5802, 5803, 5804, 5805, 5806, 5807, 5820, 5821, 5822, 5823] with [gone_land, gmod2_mod, hc]
+      (callState s 12179 (wd 13298 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 80 := by
+  opt87_reach [5795, 5796, 5797, 5798, 5799, 5800, 5801, 5802, 5803, 5804, 5805, 5806, 5807, 5808, 5809, 5810, 5811, 5812, 5813, 5814, 5815] with [gone_land, gmod2_mod, hc, hb]
+  gx_close
+
+theorem gx_tret2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (hfl : f < 2 ^ 256) :
+    Reach (callState s 13298 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 128 :: wd 13312 :: wd (1 ||| f) :: wd ok :: wd amask :: wd ret :: tail) M) 25 := by
+  opt87_reach [5816, 5817, 5818, 5819, 5820, 5821, 5822, 5823]
+  gx_close
+
+theorem gx_callF2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 4 &&& f / 2854495385411919762116571938898990272765493248) % 2 = 1)
+    (hb : f % 2 = 1) :
+    Reach (callState s 13265 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 128 :: wd 13312 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 84 := by
+  opt87_reach [5795, 5796, 5797, 5798, 5799, 5800, 5801, 5802, 5803, 5804, 5805, 5806, 5807, 5808, 5809, 5810, 5811, 5812, 5819, 5820, 5821, 5822, 5823] with [gone_land, gmod2_mod, hc, hb]
   gx_close
 
 theorem gx_ret2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -144,12 +199,30 @@ theorem gx_skip3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   opt87_reach [5829, 5830, 5831, 5832, 5833, 5834, 5835, 5836, 5837, 5838, 5839, 5840, 5841] with [gone_land, gmod2_mod, hc]
   gx_close
 
-theorem gx_call3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+theorem gx_callT3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
-    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 8 &&& f / 52656145834278593348959013841835216159447547700274555627155488768) % 2 = 1) :
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 8 &&& f / 52656145834278593348959013841835216159447547700274555627155488768) % 2 = 1)
+    (hb : f % 2 = 0) :
     Reach (callState s 13317 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
-      (callState s 14669 (wd 192 :: wd 13364 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 61 := by
-  opt87_reach [5829, 5830, 5831, 5832, 5833, 5834, 5835, 5836, 5837, 5838, 5839, 5840, 5841, 5854, 5855, 5856, 5857] with [gone_land, gmod2_mod, hc]
+      (callState s 12179 (wd 13350 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 80 := by
+  opt87_reach [5829, 5830, 5831, 5832, 5833, 5834, 5835, 5836, 5837, 5838, 5839, 5840, 5841, 5842, 5843, 5844, 5845, 5846, 5847, 5848, 5849] with [gone_land, gmod2_mod, hc, hb]
+  gx_close
+
+theorem gx_tret3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (hfl : f < 2 ^ 256) :
+    Reach (callState s 13350 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 192 :: wd 13364 :: wd (1 ||| f) :: wd ok :: wd amask :: wd ret :: tail) M) 25 := by
+  opt87_reach [5850, 5851, 5852, 5853, 5854, 5855, 5856, 5857]
+  gx_close
+
+theorem gx_callF3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat)
+    (M : ByteArray) (amask f ok : Nat) (ha : amask < 16) (hfl : f < 2 ^ 256) (hc : (amask / 8 &&& f / 52656145834278593348959013841835216159447547700274555627155488768) % 2 = 1)
+    (hb : f % 2 = 1) :
+    Reach (callState s 13317 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
+      (callState s 14669 (wd 192 :: wd 13364 :: wd f :: wd ok :: wd amask :: wd ret :: tail) M) 84 := by
+  opt87_reach [5829, 5830, 5831, 5832, 5833, 5834, 5835, 5836, 5837, 5838, 5839, 5840, 5841, 5842, 5843, 5844, 5845, 5846, 5853, 5854, 5855, 5856, 5857] with [gone_land, gmod2_mod, hc, hb]
   gx_close
 
 theorem gx_ret3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -165,7 +238,7 @@ theorem gx_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (M : ByteArray) (amask f ok : Nat) (hj : EvmSemantics.EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) (hret : ret < 65536) :
     Reach (callState s 13369 (wd f :: wd ok :: wd amask :: wd ret :: tail) M)
       (callState s ret (wd ok :: tail) M) 20 := by
-  opt87_reach [5863, 5864, 5865, 5866, 5867, 5868, 5869] with [hj]
+  opt87_reach [5863, 5864, 5865, 5866, 5867, 5868, 5869]  with [hj]
   gx_close
 
 end MlDsaOpt87.Proofs.Fix
