@@ -43,6 +43,7 @@ from `kp` absorbs the spread calldata lanes. -/
 theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.trabs ret tail) (m : ByteArray) {off sh n4 lm kp : Nat}
     (hoff : off < 2 ^ 64) (hsh : sh < 4) (hn4 : 1 ≤ n4) (hlm : lm < 2 ^ 256)
+    (hlmL : ∀ k, k < 4 → lane lm k = 0 ∨ lane lm k = M64)
     (hkp : kp + 128 * n4 ≤ KS + 800) (hkp' : KS ≤ kp) (hkp32 : kp % 32 = 0) :
     ∃ m', (∀ x, x < 25 → word m' (KS + 32 * x) =
         if kp ≤ KS + 32 * x ∧ KS + 32 * x < kp + 128 * n4 then
