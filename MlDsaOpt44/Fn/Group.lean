@@ -2,6 +2,8 @@ import MlDsaOpt44.Fn.Fix
 import MlDsaOpt44.Fn.Sponge
 import MlDsaOpt44.Fn.Keccak
 import MlDsaOpt44.Fn.Group.Defs
+import MlDsaOpt44.Fn.Group.Pass3f4
+import MlDsaOpt44.Fn.Group.Main
 /-!
 # ExpandA groups and the fused accumulation: `group`, `pass3f4` (WP6)
 
@@ -40,7 +42,7 @@ theorem group_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Call s Entry.group [wd 15, wd col, wd 0] ret tail m
         [flag ((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome)] m'
         Gas.group :=
-  sorry
+  group_call_aux hs hr m hrc hrho hcol hcd
 
 /-- The word `pass3f4` stores at `ACC[t]`: columns 0 and 1 (`CW`, `HP`,
 aligned), column 2 rows 0 … 2 (`SB`, slots 1 … 3), row 3 columns 2, 3 (the
@@ -60,6 +62,6 @@ theorem pass3f4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', (∀ t, t < 256 → word m' (ACC + 32 * t) = acc4Word m t) ∧
       FrameExcept m m' [(ACC, ACC + 8192)] ∧
       Call s Entry.pass3f4 [] ret tail m [] m' Gas.pass3f4 :=
-  sorry
+  pass3f4_call_aux hs hr m
 
 end MlDsaOpt44.Proofs
