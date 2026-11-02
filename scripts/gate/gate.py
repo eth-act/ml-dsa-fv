@@ -110,6 +110,7 @@ GENERATORS = (
        ("glam port 65", ["python3", "MlDsaOptGlam65/port.py"], None),
        ("glam blk gen.py", ["python3", "MlDsaOptGlam44/Fn/Blk/gen.py"], None),
        ("glam gen_nttg.py", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py"], None),
+       ("glam gen_inttg.py 65", ["python3", "MlDsaOptGlam65/Fn/Ntt/gen_inttg.py", "65"], None),
        ("glam ball gen_blocks.py", ["python3", "MlDsaOptGlam44/Fn/Ball/gen_blocks.py"], None),
        ("glam gen_csum.py", ["python3", "MlDsaOptGlam44/Fn/Ct/gen_csum.py"], None),
        ("glam gen_dz.py", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py"], None)]
