@@ -1,6 +1,7 @@
 import MlDsaOpt44.Fn.Ball
 import MlDsaOpt44.Fn.Ct.Defs
 import MlDsaOpt44.Fn.Ct.TBuildRun
+import MlDsaOpt44.Fn.Ct.Csum4Main
 /-!
 # Sparse `c · t1` in the normal domain: `tbuild`, `csum` (WP10)
 
@@ -33,7 +34,7 @@ theorem tbuild_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Call s Entry.tbuild [wd TT, wd 32] ret tail m [] m' Gas.tbuild := by
   unfold TTable tEntry; exact TB.tbuild_main hs hr m hcd
 
-/-- **csum**: `[SP, TT, ret]`. -/
+/-- **csum**: `[SP, TT, ret]` (proof: `Fn/Ct/Csum4*.lean`). -/
 theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.csum ret tail) (m : ByteArray)
     (hb : ∀ i, i < Fips204.tau → word m (BASES + 32 * i) ≤ 6112) :
@@ -43,6 +44,6 @@ theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           pack4 fun r => spOff - (2 ^ 13 * sPrime c s.executionEnv.calldata r t + nNeg c t)) ∧
       FrameExcept m m' [(SP, SP + 8192)] ∧
       Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum :=
-  sorry
+  CS4.csum_main hs hr m hb
 
 end MlDsaOpt44.Proofs
