@@ -92,7 +92,7 @@ theorem rejNTTPoly_eq_squeeze (x : ByteArray) :
   unfold Fips204.rejNTTPoly Fips204.G Fips202.shake128
   rw [← Math.squeeze_extract_shake 168 x Fips204.rejNTTPolyLimit 6 (Or.inr rfl)
     (by decide)]
-  congr 1
+  refine congrArg Fips204.rejNTTPolyOf ?_
   conv_rhs => rw [← ByteArray.extract_zero_size (b := Fips202.squeeze _ _ _)]
   rw [Math.squeeze_size_of_rate _ _ _ (Or.inr rfl)]
   rfl
@@ -149,7 +149,7 @@ theorem t1_scaled (cd : ByteArray) {i : Nat} (hi : i < 4) :
   have hx : (cd.extract 0 1312).extract (32 + 32 * 10 * i) (32 + 32 * 10 * (i + 1)) =
       cd.extract (32 + 320 * i) (32 + 320 * i + 320) := by
     rw [ByteArray.extract_extract]
-    congr 1 <;> omega
+    exact congrArg₂ cd.extract (by omega) (by omega)
   simp only [Fips204.pkDecode, h2]
   rw [getElem!_pos _ i (by simp [Fips204.k]; omega)]
   simp only [Array.getElem_map, Array.getElem_range, Fips204.simpleBitUnpack, hx,
