@@ -89,8 +89,10 @@ theorem iC_body {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
       intro t ht hS
       obtain ⟨i, rfl⟩ : ∃ i, t = 4 * n + i := ⟨t % 4, by omega⟩
       have hi : i < 4 := by omega
+      rw [show 51456 + 32 * (4 * n + i) =
+        32 * i + (51456 + 128 * n) by omega]
       interval_cases i
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v2_0
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v2_1
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v2_2
-      · simp (disch := omega) only [word_wrU, if_pos, if_neg, ofNat_toNat]; exact v2_3
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v2_0
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v2_1
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v2_2
+      · simp (disch := with_unfolding_all rfl) only [word_wrU_add_eq, word_wrU_add_ne, word_wrU_base_eq, word_wrU_base_ne, ofNat_toNat]; exact v2_3
