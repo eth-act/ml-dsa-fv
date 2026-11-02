@@ -1,15 +1,16 @@
 import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
 import MlDsaOpt87.Fn.Hint.G5Pack
+import MlDsaOpt87.Fn.Hint.UseHint4
 /-!
 # `usehint`, `pack` (ML-DSA-87)
 
-Proved in `Fn/Hint/G5UseHint.lean` and `Fn/Hint/G5Pack.lean` (+ `G5PackBlocks`; the code is
+Proved in `Fn/Hint/UseHint4.lean` (v4) and `Fn/Hint/G5Pack.lean` (+ `G5PackBlocks`; the code is
 the ML-DSA-65 code relocated, the pack proof covers `nr ∈ {2, 4}`); the pure part is
 `MlDsaOpt65/Fn/Hint/G5Pure.lean`. They follow `MlDsaOpt44/Fn/Hint/*` with the ML-DSA-87
 parameters and the row-group pointers as parameters.
 
-* `usehint [ACC + 0x2000 g, ret]` (v4, open): for the 256 row-packed words `W` at `ACC_g`,
+* `usehint [ACC + 0x2000 g, ret]` (v4): for the 256 row-packed words `W` at `ACC_g`,
   lane-wise `W := UseHint(HP_g, W + SP_g − spOff)` (`SP` stores `spOff − (2^13 S' + n_neg)`,
   `y = x − ⌊x/q⌋` instead of `x mod q`; v3 description:)
   `W := UseHint(HP_g, (W − SP_g) mod q)` (`HP_g = ACC_g + 0x4000`, `SP_g = ACC_g − 0x4900`),
@@ -47,7 +48,7 @@ theorem usehint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r < 16) ∧
       FrameExcept m m' [(ACC + 0x2000 * g, ACC + 0x2000 * g + 8192)] ∧
       Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint :=
-  sorry
+  UH4.usehint_main hs hr m hg
 
 /-- **pack**: `[4, FIN + 256 + 2048 g, ACC + 0x2000 g, ret]`, `g < 2`.
 Row `r < 4` of row group `g` (lane `r` of `ACC_g`) is 4-bit packed; its stream lane
