@@ -58,6 +58,13 @@ def lmerge (n : Nat) : Nat := 21 + 683 * n
 continuation). -/
 def mub0 : Nat := 3466
 
+/-- `mub` (long-message schedule): the longest of its paths (absorb and pad:
+glue, `trabs 5`, `spr`). -/
+def mub : Nat := 3090
+
+/-- `pass3f4b`, the long-message schedule's fused pass (static). -/
+def pass3f4b : Nat := 59042
+
 /-- `fix` without a sixth squeeze: entry 40, the first-flag scan (at most 32
 visits of 55), its exit 4, at most 42 group-loop visits of at most 580, the
 exhaustion check with the continue path (65) and the exit (at most 53). -/

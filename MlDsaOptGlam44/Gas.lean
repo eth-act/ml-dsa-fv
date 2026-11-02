@@ -7,13 +7,7 @@ import MlDsaOptGlam44.Budget
 A function of the calldata length only, composed from the segment budgets of
 `Main/Base.lean` as in v4 (`MlDsaOpt44/Gas.lean`), with the long-message switch:
 for `|M| < 342` the packed schedule's segments (`pSw` … `pSib`), from there on
-`pAlt`.
-
-**Provisional:** `pAlt` is an upper bound stated before the long-message path
-is proved (open item `seg_alt`): twice the packed schedule's budget for the
-same stretch. That path makes at most 20 `kf4`, 16 `blk`, 4 `blkh` and 4
-`gfix` calls (the packed stretch's budget has 13, 11, 2 and 3), and its μ part
-is bounded by `pMu`. It will be replaced by the path's exact static budget.
+`pAlt`, the exact static budget of the long-message schedule (`Main/SegAlt.lean`).
 -/
 
 namespace MlDsaOptGlam44.Proofs.Gas
@@ -27,9 +21,27 @@ def short : Nat := 37
 /-- `2436 … 6030` on the packed schedule (`|M| < 342`). -/
 def pPacked (mlen : Nat) : Nat := pSw + pG2 + pWin + pJoin + pZd + pMu mlen + pSib
 
-/-- `2436 … 6030` on the long-message schedule (`|M| ≥ 342`); provisional, see
-the module doc. -/
-def pAlt (mlen : Nat) : Nat := 2 * pPacked mlen
+/-- `2436 … 5081` on the long-message schedule: the jump to `alt` (24), the two
+`tr`-rider groups (`Main/Alt/GrpA.lean`, `GrpB.lean`), the μ group with its
+`mulong` region (`GrpK.lean`) and `pass3f4b`; 2825 gas of glue. -/
+def pAltX : Nat :=
+  2825 + 3 * ginit + mub0 + 9 * trabs 5 + trabs 3 + 15 * kf4 + 12 * blk + 3 * blkh + cext 8 +
+    2 * cext 17 + 5 * mub + 2 * gfix 3 + gfix 2 + pass3f4b
+
+/-- `5183 … 6020` on the long-message schedule (`FLAG = 0`), the exact path:
+`|M| ≤ 613`: the dispatch and the copy of `MU` to `FIN` (212). Otherwise the
+dispatch (41), `hash_mu`'s setup without the `MCOPY` (637: `FLAG` test 23,
+`cext` call 23, replication 522, block 5's call 37, loop head 32) with
+`cext 25` and `absorb17`, one loop visit (`kf1 + absorb17 + 88`) per further
+full block of `tr ‖ 0 ‖ 0 ‖ M` (`(|M| − 614) / 136` visits), and the exit
+(check 23, padding 100, `kf1`, copy to `FIN` 102). -/
+def pMuA (mlen : Nat) : Nat :=
+  if mlen ≤ 613 then 212
+  else 41 + 637 + cext 25 + absorb17 + (mlen - 614) / 136 * (kf1 + absorb17 + 88) + (kf1 + 225)
+
+/-- `2436 … 6030` on the long-message schedule (`|M| ≥ 342`, `Main/SegAlt.lean`):
+ExpandA, then the side buffers and hints, μ and SampleInBall with `FLAG = 0`. -/
+def pAlt (mlen : Nat) : Nat := pAltX + pZd + pMuA mlen + pSib
 
 /-- **The public gas schedule.** -/
 def schedule (size : Nat) : Nat :=

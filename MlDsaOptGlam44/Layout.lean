@@ -72,6 +72,8 @@ def trabs : Nat := 18792
 def cext : Nat := 19241
 def spr : Nat := 19515
 def mub0 : Nat := 19730
+/-- `mub` (the long-message schedule's μ blocks 1 … 5, `mulong`). -/
+def mub : Nat := 20094
 def fix : Nat := 20297
 def group : Nat := 20814
 def tbuild : Nat := 21045
@@ -110,6 +112,8 @@ def kmove : Nat := leaf
 def lmerge : Nat := leaf
 def sib : Nat := max kf4 cext + 64
 def mub0 : Nat := max trabs spr + 64
+def mub : Nat := max trabs (max spr cext) + 64
+def pass3f4b : Nat := leaf
 def fix : Nat := max kf4 blk + 64
 def gfix : Nat := max blk fix + 64
 def group : Nat := max ginit (max kf4 (max blk gfix)) + 64
