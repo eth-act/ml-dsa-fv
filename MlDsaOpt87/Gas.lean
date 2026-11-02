@@ -10,8 +10,8 @@ RejNTTPoly fix-ups including the sixth squeeze in every group, SampleInBall's
 byte loop (with the second `H(c̃)` block), HintBitUnpack's loops; μ's block
 count depends on the message length only (always the `kf1` sponge).
 
-`schedule (7219 + n) = 7,470,384 + ⌊(66 + n) / 136⌋ · 33,819` (`schedule_msg`):
-7,470,384 for `n ≤ 69`, 7,504,203 for `70 ≤ n ≤ 205`, and 33,819 more per
+`schedule (7219 + n) = 7,443,165 + ⌊(66 + n) / 136⌋ · 33,819` (`schedule_msg`):
+7,443,165 for `n ≤ 69`, 7,476,984 for `70 ≤ n ≤ 205`, and 33,819 more per
 further 136 message bytes. The ExpandA segment is charged at its longest
 static path. The measured adversarial worst case of `docs/opt.md` (v4) is
 7,261,604 for `n = 0`.
@@ -32,11 +32,11 @@ def schedule (size : Nat) : Nat :=
 
 /-- The schedule in closed form: one more `kf1` block per 136 message bytes. -/
 theorem schedule_msg (n : Nat) :
-    schedule (7219 + n) = 7470384 + (66 + n) / 136 * 33819 := by
+    schedule (7219 + n) = 7443165 + (66 + n) / 136 * 33819 := by
   unfold schedule
   rw [if_neg (by omega), Nat.add_sub_cancel_left]
   have hc : pInit + EvmSemantics.MachineState.memCost memWords + pZ + pTbl + pNtt + pRho + pExp +
-      pZd + pSib + pCt + pW + pFin = 7402810 := by decide
+      pZd + pSib + pCt + pW + pFin = 7375591 := by decide
   rw [hc]
   unfold pMu
   have hk : kf1 + absorb17 + 88 = 33819 := rfl
