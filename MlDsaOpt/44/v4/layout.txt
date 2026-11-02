@@ -1,33 +1,32 @@
-ML-DSA-44 optimised verifier: 22533 bytes (limit 24576)
+ML-DSA-44 optimised verifier: 22546 bytes (limit 24576)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   3430   3430 bytes  main
-    3430 ..   5265   1835 bytes  expand_a
-    5265 ..   6049    784 bytes  hash_mu
-    6049 ..   6753    704 bytes  final_hash
-    6753 ..   7349    596 bytes  absorb17
-    7349 ..   7578    229 bytes  sample_in_ball
-    7578 ..   8057    479 bytes  decode_hint
-    8057 ..   8938    881 bytes  dz
-    8938 ..  10113   1175 bytes  blk
-   10113 ..  10275    162 bytes  pass3f2
-   10275 ..  10495    220 bytes  pass3f4
-   10495 ..  10825    330 bytes  gfix
-   10825 ..  11238    413 bytes  ginit
-   11238 ..  11687    449 bytes  trabs
-   11687 ..  11961    274 bytes  cext
-   11961 ..  12176    215 bytes  spr
-   12176 ..  12541    365 bytes  mu0
-   12541 ..  13228    687 bytes  fix
-   13228 ..  13459    231 bytes  group
-   13459 ..  14267    808 bytes  tbuild
-   14267 ..  14992    725 bytes  csum
-   14992 ..  15274    282 bytes  usehint
-   15274 ..  16363   1089 bytes  pack
-   16363 ..  17537   1174 bytes  ntt
-   17537 ..  19018   1481 bytes  intt
-   19018 ..  21012   1994 bytes  kf1
-   21012 ..  22533   1521 bytes  kf4
+    3430 ..   5291   1861 bytes  expand_a
+    5291 ..   6075    784 bytes  hash_mu
+    6075 ..   6779    704 bytes  final_hash
+    6779 ..   7375    596 bytes  absorb17
+    7375 ..   7652    277 bytes  sample_in_ball
+    7652 ..   8131    479 bytes  decode_hint
+    8131 ..   9012    881 bytes  dz
+    9012 ..  10216   1204 bytes  blk
+   10216 ..  10510    294 bytes  pass3f4
+   10510 ..  10920    410 bytes  gfix
+   10920 ..  11333    413 bytes  ginit
+   11333 ..  11782    449 bytes  trabs
+   11782 ..  12056    274 bytes  cext
+   12056 ..  12271    215 bytes  spr
+   12271 ..  12636    365 bytes  mu0
+   12636 ..  13323    687 bytes  fix
+   13323 ..  13554    231 bytes  group
+   13554 ..  14362    808 bytes  tbuild
+   14362 ..  15035    673 bytes  csum
+   15035 ..  15287    252 bytes  usehint
+   15287 ..  16376   1089 bytes  pack
+   16376 ..  17550   1174 bytes  ntt
+   17550 ..  19031   1481 bytes  intt
+   19031 ..  21025   1994 bytes  kf1
+   21025 ..  22546   1521 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
@@ -51,9 +50,10 @@ Memory map (byte offsets):
   MU     0x00fe00 .. 0x00ff00  (256 bytes)
   BK     0x00ff00 .. 0x010220  (800 bytes)
   KZ     0x010300 .. 0x010620  (800 bytes)
+  SB     0x010700 .. 0x014700  (16384 bytes)
   TT     0x005000 (overlays ABUF/FL/ZH after ExpandA)
   SP     0x006800 (overlays ABUF/FL/ZH after ExpandA)
-  top    0x010620 (touched once at entry)
+  top    0x014700 (touched once at entry)
 
 SIMD groups (slot roles; each group squeezes 5 blocks of 4 states):
    0: slots=[('A', 0, 0), ('A', 1, 0), ('A', 2, 0), ('A', 3, 0)] keep=None acc=('aligned', 0, 0)

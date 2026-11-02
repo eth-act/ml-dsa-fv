@@ -174,6 +174,13 @@ def analyse(nn, version="v3"):
     datadep = reg["fix"] + reg["gfix"] + reg["sample_in_ball"] + reg["decode_hint"]
     if not g.simd_c():
         datadep += 0
+    if "blkt" in lab:
+        # v4: the last block's tail (blkt) is made only for groups with a
+        # fix-up; the worst case makes it in every group
+        rt = opt_evm.run(hcode, b"", memory=bytearray(mem0), stack=[RET], start_pc=lab["blkt"])
+        assert rt["status"] == "stop"
+        ntail = base["cnt"][lab["blkt"]]
+        fix_total_worst += (len(groups) - ntail) * rt["gas_used"]
     worst = typical - datadep + fix_total_worst + sib_worst + hint_worst
     return dict(nn=nn, typical=typical, worst=int(worst), fix_typ=reg["fix"] + reg["gfix"],
                 fix_worst=fix_total_worst, sib_typ=reg["sample_in_ball"], sib_worst=int(sib_worst),
