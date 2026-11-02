@@ -282,3 +282,18 @@ sub('Main/Mu/Proof.lean', "  have r4 := mu_head0 hs b m7 hfit hl\n", """  have h
     exact hfl6
   have r4 := mu_head0 hs b m7 hfit hl hfl7
 """)
+# glam (seg_alt): `seg_g0` / `seg_g1` keep `FLAG` (the long-message schedule needs `FLAG = 0`)
+subonce('Main/SegGroups.lean', """    ∃ m', InvG0 s.executionEnv.calldata m' ∧
+      Reach (callState s 2389""", """    ∃ m', InvG0 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
+      Reach (callState s 2389""")
+subonce('Main/SegGroups.lean', """    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    hR.mono""", """    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
+    hR.mono""")
+subonce('Main/SegGroups.lean', """    ∃ m', InvG1 s.executionEnv.calldata m' ∧
+      Reach (callState s 2412""", """    ∃ m', InvG1 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
+      Reach (callState s 2412""")
+subonce('Main/SegGroups.lean', """    hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    hR.mono""", """    hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
+    hR.mono""")
