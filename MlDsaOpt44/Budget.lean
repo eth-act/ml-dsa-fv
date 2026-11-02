@@ -68,8 +68,11 @@ def gfix (n : Nat) : Nat := gfix0 + blkt + n * fixNo + (fixSq - fixNo)
 /-- `group`: glue 404, `ginit`, five `kf4`, four `blk` and one `blkh`, `gfix 4`. -/
 def group : Nat := 404 + ginit + 5 * kf4 + 4 * blk + blkh + gfix 4
 
-/-- `sib`: see `Fn/Ball.lean`. -/
-def sib : Nat := 13 + 226 * 125 + 39 * 454 + kf4 + cext 17 + 200
+/-- `sib` (`Fn/Ball/V4Loop.lean`): entry 22; the 264 stream bytes as rejected
+(each lane: byte 0 with the loop head 69, bytes 1 … 6 40 each, byte 7 with the
+lane epilogue 62, so 33 × 371); 353 more per accepted byte (39); the failure
+exit 72; the second block's squeeze 196 + `kf4` + `cext 17`. -/
+def sib : Nat := 22 + 33 * 371 + 39 * 353 + 72 + 196 + kf4 + cext 17
 
 /-- `dhint`: fixed part 312 plus at most 85 loop visits of at most 161 each
 (80 hint indices, the trailing-zero scan, and the 5 loop exits). -/

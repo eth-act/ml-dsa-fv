@@ -1,0 +1,567 @@
+import MlDsaOpt44.Fn.Ball.Defs
+import MlDsaOpt44.Fn.Ball.V4Blocks
+import MlDsa44.Proofs.Math.Sampling.Ball
+set_option linter.unusedSimpArgs false
+/-! # `sib` (v4, WP J): loop invariant, scan and the contract proof
+
+As v3 (`Fn/Ball/Proof.lean`): the invariant `SInv` describes the
+SampleInBall array after each accepted byte (codes now `±REP`). The scan is
+a recursion over the stream position `p` (`8 ≤ p ≤ 272`); a position is
+either the loop head (`p ≡ 0 mod 8`) or the test of byte `p mod 8` of the
+current lane. At `p = 136` the head squeezes the second block from `SC`. -/
+
+namespace MlDsaOpt44.Proofs
+
+open EvmSemantics
+open EvmSemantics.EVM
+open MlDsaOptCommon
+open MlDsa44
+
+namespace Ball4
+
+open MlDsa44.Proofs.Sampling (ballFold ballStep ballSet ballSign ballFold_succ ballFold_zero
+  ballFold_inv foldl_ballStep_done sampleInBallOf_eq)
+
+/-! ## Words and bytes -/
+
+theorem byteAt_eq_get (b : ByteArray) (p : Nat) : byteAt b p = b[p]!.toNat := by
+  unfold byteAt
+  split
+  · rename_i h; simp [getElem!_pos, h]
+  · rename_i h; simp [getElem!_neg, h]; rfl
+
+theorem le64_byte (b : ByteArray) (a r : Nat) (hr : r < 8) :
+    le64 b a / 2 ^ (8 * r) % 256 = byteAt b (a + r) := by
+  have h0 := byteAt_lt b a; have h1 := byteAt_lt b (a + 1)
+  have h2 := byteAt_lt b (a + 2); have h3 := byteAt_lt b (a + 3)
+  have h4 := byteAt_lt b (a + 4); have h5 := byteAt_lt b (a + 5)
+  have h6 := byteAt_lt b (a + 6); have h7 := byteAt_lt b (a + 7)
+  simp only [le64, List.range_succ, List.range_zero, List.map_append, List.map_cons, List.map_nil,
+    List.sum_append, List.sum_cons, List.sum_nil, List.nil_append]
+  interval_cases r <;> norm_num <;> omega
+
+theorem le64_lt (b : ByteArray) (a : Nat) : le64 b a < 2 ^ 64 := by
+  have h0 := byteAt_lt b a; have h1 := byteAt_lt b (a + 1)
+  have h2 := byteAt_lt b (a + 2); have h3 := byteAt_lt b (a + 3)
+  have h4 := byteAt_lt b (a + 4); have h5 := byteAt_lt b (a + 5)
+  have h6 := byteAt_lt b (a + 6); have h7 := byteAt_lt b (a + 7)
+  simp only [le64, List.range_succ, List.range_zero, List.map_append, List.map_cons, List.map_nil,
+    List.sum_append, List.sum_cons, List.sum_nil, List.nil_append]
+  norm_num; omega
+
+theorem div_mod_two_low (y r : Nat) (hr : r < 8) : y / 2 ^ r % 2 = y % 256 / 2 ^ r % 2 := by
+  interval_cases r <;> norm_num <;> omega
+
+/-- The sign bit the code reads (`signs & 1` after `n` shifts) is `bit bs n`. -/
+theorem sign_bit (bs : ByteArray) (n : Nat) (hn : n < 64) :
+    1 &&& le64 bs 0 / 2 ^ n = Fips204.bit bs n := by
+  rw [Nat.and_comm, Nat.and_one_is_mod]
+  unfold Fips204.bit
+  have hn' : n = 8 * (n / 8) + n % 8 := by omega
+  rw [hn', Nat.pow_add, ← Nat.div_div_eq_div_mul, div_mod_two_low _ _ (by omega),
+    le64_byte _ _ _ (by omega), byteAt_eq_get, ← hn']
+  simp
+
+theorem cb_byte {M bs : ByteArray} (hcb : ∀ x, x < 34 → word M (CB + 32 * x) = le64 bs (8 * x))
+    (p : Nat) (hp : p < 272) :
+    255 &&& word M (63488 + p / 8 * 32) / 2 ^ (p % 8 * 8) = bs[p]!.toNat := by
+  rw [show 63488 + p / 8 * 32 = CB + 32 * (p / 8) by simp only [CB]; omega, hcb _ (by omega),
+    Nat.and_comm, show ∀ x : Nat, x &&& 255 = x % 256 from fun x => Nat.and_two_pow_sub_one_eq_mod x 8,
+    show p % 8 * 8 = 8 * (p % 8) by omega, le64_byte _ _ _ (by omega),
+    show 8 * (p / 8) + p % 8 = p by omega, byteAt_eq_get]
+
+theorem beNat_zero {m : ByteArray} {a : Nat} :
+    ∀ w, (∀ k, k < w → byteAt m (a + k) = 0) → beNat m a w = 0
+  | 0, _ => rfl
+  | w + 1, h => by
+    simp only [beNat]; rw [beNat_zero w (fun k hk => h k (by omega)), h w (by omega)]
+
+theorem word_zero {m : ByteArray} {a : Nat} (h : ∀ k, k < 32 → byteAt m (a + k) = 0) :
+    word m a = 0 := by
+  rw [word_eq_beNat]; exact beNat_zero 32 h
+
+theorem word_mstore_ite (m : ByteArray) {a b v : Nat} (hv : v < 2 ^ 256)
+    (h : a = b ∨ a + 32 ≤ b ∨ b + 32 ≤ a) :
+    word (MachineState.writeBytes m (Data.Bytes.natToBytesPadded v 32) a) b =
+      if a = b then v else word m b := by
+  split
+  · rename_i hab; subst hab; exact word_mstore m a v hv
+  · exact word_mstore_disjoint m v (by omega)
+
+theorem byteAt_mstore_ne (m : ByteArray) {a b : Nat} (v : Nat) (h : b < a ∨ a + 32 ≤ b) :
+    byteAt (MachineState.writeBytes m (Data.Bytes.natToBytesPadded v 32) a) b = byteAt m b :=
+  byteAt_writeBytes_of_not_mem (by rw [natToBytesPadded_size]; exact h)
+
+theorem byteAt_mstore8_ite (m : ByteArray) (a b v : Nat) :
+    byteAt (MachineState.writeBytes m (ByteArray.mk #[UInt8.ofNat v]) a) b =
+      if a = b then v % 256 else byteAt m b := by
+  have hsize : (ByteArray.mk #[UInt8.ofNat v]).size = 1 := rfl
+  rw [byteAt_writeBytes, hsize]
+  split
+  · rename_i h
+    rw [if_pos (by omega), show b - a = 0 by omega, byteAt, dif_pos (by omega)]
+    change (UInt8.ofNat v).toNat = v % 256
+    rw [UInt8.toNat_ofNat']
+  · rw [if_neg (by omega)]
+
+/-! ## The coefficient counts -/
+
+def cntTo (c : Fips204.Poly) : Nat → Nat
+  | 0 => 0
+  | n + 1 => cntTo c n + if c[n]! = -1 then 1 else 0
+
+theorem filter_cntTo (c : Fips204.Poly) : ∀ n,
+    ((List.range n).filter fun p => c[p]! = -1).length = cntTo c n
+  | 0 => rfl
+  | n + 1 => by
+    rw [List.range_succ, List.filter_append, List.length_append, filter_cntTo c n, cntTo]
+    by_cases h : c[n]! = -1 <;> simp [h]
+
+theorem negCount_eq (c : Fips204.Poly) : negCount c = cntTo c 256 := filter_cntTo c 256
+
+theorem cntTo_le (c : Fips204.Poly) : ∀ n, cntTo c n ≤ n
+  | 0 => le_rfl
+  | n + 1 => by have := cntTo_le c n; simp only [cntTo]; split <;> omega
+
+theorem cntTo_update (c c' : Fips204.Poly) (x : Nat) (h : ∀ t, t ≠ x → c'[t]! = c[t]!) : ∀ n,
+    cntTo c' n + (if x < n ∧ c[x]! = -1 then 1 else 0) =
+      cntTo c n + (if x < n ∧ c'[x]! = -1 then 1 else 0)
+  | 0 => by simp [cntTo]
+  | n + 1 => by
+    have ih := cntTo_update c c' x h n
+    simp only [cntTo]
+    by_cases hxn : x = n
+    · subst hxn
+      have h1 : ¬ (x < x ∧ c[x]! = -1) := fun h => by omega
+      have h2 : ¬ (x < x ∧ c'[x]! = -1) := fun h => by omega
+      rw [if_neg h1, if_neg h2] at ih
+      by_cases a : c[x]! = -1 <;> by_cases b : c'[x]! = -1 <;> simp [a, b] <;> omega
+    · rw [h n (Ne.symm hxn)]
+      have e1 : (x < n + 1 ∧ c[x]! = -1) ↔ (x < n ∧ c[x]! = -1) := by
+        constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by omega, h2⟩
+      have e2 : (x < n + 1 ∧ c'[x]! = -1) ↔ (x < n ∧ c'[x]! = -1) := by
+        constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by omega, h2⟩
+      simp only [e1, e2]
+      omega
+
+theorem getElem!_set! (a : Array Int) (i j : Nat) (z : Int) :
+    (a.set! j z)[i]! = if i = j ∧ j < a.size then z else a[i]! :=
+  MlDsa44.Proofs.Sampling.getElem!_set! a i j z
+
+theorem size_set! (a : Array Int) (j : Nat) (z : Int) : (a.set! j z).size = a.size :=
+  MlDsa44.Proofs.Sampling.size_set! a j z
+
+/-! ## The loop invariant -/
+
+/-- The scratch regions one accept step writes. -/
+abbrev sibRegions : List (Nat × Nat) :=
+  [(CW, CW + 8192), (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64)]
+
+/-- Everything `sib` (v4) writes: the accept steps' scratch, `LIM`, and the second
+block's squeeze (`KS`, `KB`, `CB[17, 34)`). -/
+abbrev sibRegions4 : List (Nat × Nat) :=
+  [(KS, KS + 800), (KB, KB + 800), (LIM, LIM + 32), (CW, CW + 8192), (BASES, BASES + 2048),
+    (IDX, IDX + 256), (NNEG, NNEG + 64), (CB + 544, CB + 1088)]
+
+theorem sub_regions {a : Nat} (ha : ∀ r ∈ sibRegions4, a < r.1 ∨ r.2 ≤ a) :
+    ∀ r ∈ sibRegions, a < r.1 ∨ r.2 ≤ a := by
+  intro r hr
+  simp only [sibRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> exact ha _ (by simp)
+
+/-- Memory after placing `n = i − 217` coefficients of the array `c`: `f s` is
+the position whose window base sits in `BASES[s]`. -/
+structure SInv (m M : ByteArray) (c : Fips204.Poly) (i : Nat) : Prop where
+  frame : FrameExcept m M sibRegions4
+  cw : ∀ t, t < 256 → word M (CW + 32 * t) = codeOf c[t]!
+  nneg : word M NNEG = negCount c
+  cnt : word M CNT = i - 217
+  slots : ∃ f : Nat → Nat, (∀ s s', s < i - 217 → s' < i - 217 → f s = f s' → s = s') ∧
+    (∀ p, (∃ s, s < i - 217 ∧ f s = p) ↔ p < 256 ∧ c[p]! ≠ 0) ∧
+    ∀ s, s < i - 217 → word M (BASES + 32 * s) = baseOf c (f s) ∧ byteAt M (IDX + f s) = s + 1
+  idx0 : ∀ t, t < 256 → c[t]! = 0 → byteAt M (IDX + t) = 0
+  free : ∀ s, i - 217 ≤ s → s < 39 → word M (BASES + 32 * s) ≤ 6112
+
+theorem baseOf_le (c : Fips204.Poly) (p : Nat) (hp : p < 256) : baseOf c p ≤ 6104 := by
+  unfold baseOf; split <;> omega
+
+theorem sinv_init (m : ByteArray) (hz : SibFresh m)
+    (hb0 : ∀ i, i < 39 → word m (BASES + 32 * i) ≤ 6112) : SInv m m Fips204.zeroPoly 217 := by
+  obtain ⟨hcw, hbi, hnn⟩ := hz
+  have hz0 : ∀ t : Nat, Fips204.zeroPoly[t]! = (0 : Int) := fun t => by
+    simp only [Fips204.zeroPoly, getElem!_def, Array.getElem?_replicate]
+    split <;> rename_i h <;> [skip; rfl]
+    split at h <;> simp_all
+  refine ⟨FrameExcept.refl _ _, fun t ht => ?_, ?_, ?_, ⟨id, fun _ _ h => absurd h (by omega),
+    fun p => ⟨fun ⟨_, h, _⟩ => absurd h (by omega), fun ⟨_, h⟩ => absurd (hz0 p) h⟩,
+    fun _ h => absurd h (by omega)⟩, fun t ht _ => ?_, fun s _ hs => ?_⟩
+  · rw [hz0, word_zero (fun k hk => hcw _ (by simp only [CW]; omega) (by simp only [CW]; omega))]
+    rfl
+  · rw [word_zero (fun k hk => hnn _ (by simp only [NNEG]; omega) (by simp only [NNEG]; omega)),
+      negCount_eq]
+    have : ∀ n, cntTo Fips204.zeroPoly n = 0 := fun n => by
+      induction n with
+      | zero => rfl
+      | succ n ih => simp [cntTo, ih, hz0]
+    rw [this]
+  · exact word_zero (fun k hk => hnn _ (by simp only [NNEG, CNT]; omega)
+      (by simp only [NNEG, CNT]; omega))
+  · exact hbi _ (by simp only [IDX]; omega) (by simp only [IDX]; omega)
+  · exact hb0 s hs
+
+/-- Read-after-write on the `sib` memory terms. -/
+macro "memsimp" : tactic => `(tactic| simp (disch := omega) only [memA, memB, memC, word_mstore_ite,
+  word_mstore8_disjoint, byteAt_mstore_ne, byteAt_mstore8_ite, CW, NNEG, CNT, BASES, IDX])
+
+/-- The sign coefficient for the bit `sg`. -/
+abbrev sgnOf (sg : Nat) : Int := if sg = 1 then -1 else 1
+
+theorem negCount_step (c : Fips204.Poly) (hsz : c.size = 256) (i j sg : Nat) (hi : i < 256)
+    (hj : j < 256) (hci : c[i]! = 0) (hsg : sg ≤ 1) :
+    negCount ((c.set! i c[j]!).set! j (sgnOf sg)) = negCount c + sg := by
+  rw [negCount_eq, negCount_eq]
+  have h1 := cntTo_update c (c.set! i c[j]!) i (fun t ht => by
+    rw [getElem!_set!, if_neg (fun h => ht h.1)]) 256
+  have h2 := cntTo_update (c.set! i c[j]!) ((c.set! i c[j]!).set! j (sgnOf sg)) j (fun t ht => by
+    rw [getElem!_set!, if_neg (fun h => ht h.1)]) 256
+  have e1 : (c.set! i c[j]!)[i]! = c[j]! := by
+    rw [getElem!_set!, if_pos ⟨rfl, by omega⟩]
+  have e2 : (c.set! i c[j]!)[j]! = c[j]! := by
+    rw [getElem!_set!]; split
+    · rename_i h; rw [h.1]
+    · rfl
+  have e3 : ((c.set! i c[j]!).set! j (sgnOf sg))[j]! = sgnOf sg := by
+    rw [getElem!_set!, if_pos ⟨rfl, by rw [size_set!, hsz]; omega⟩]
+  rw [e1, hci] at h1
+  rw [e2, e3] at h2
+  simp only [show i < 256 from hi, show j < 256 from hj, true_and] at h1 h2
+  have : (if sgnOf sg = -1 then 1 else 0) = sg := by
+    unfold sgnOf; rcases (by omega : sg = 0 ∨ sg = 1) with rfl | rfl <;> decide
+  rw [this] at h2
+  simp only [show ¬ ((0 : Int) = -1) by decide, if_false] at h1
+  omega
+
+theorem codeOf_sgn (sg : Nat) (hsg : sg ≤ 1) :
+    codeOf (sgnOf sg) = if sg = 1 then REP else 2 ^ 256 - REP := by
+  rcases (by omega : sg = 0 ∨ sg = 1) with rfl | rfl <;> decide
+
+theorem REP_val : REP = 6277101735386680764176071790128604879584176795969512275969 := by
+  unfold REP pack4; norm_num
+
+theorem baseOf_congr {c c' : Fips204.Poly} {p : Nat} (h : c'[p]! = c[p]!) :
+    baseOf c' p = baseOf c p := by
+  unfold baseOf; rw [h]
+
+/-- `IDX`/`BASES` after block `A` and, when `j` holds a coefficient, block `B`. -/
+def sibMB (M : ByteArray) (c : Fips204.Poly) (i j nn sg code : Nat) : ByteArray :=
+  if byteAt M (IDX + j) = 0 then memA M i j nn sg code
+  else memB (memA M i j nn sg code) i j (byteAt M (IDX + j)) (baseOf c j)
+
+/-- Close a read-after-write goal after `memsimp`. -/
+macro "memclose" : tactic => `(tactic| all_goals ((try split_ifs) <;> first | omega | (congr 1; omega)))
+
+/-- Writes outside `sibRegions` leave nothing else changed. -/
+macro "memframe" : tactic => `(tactic| (
+  intro a ha
+  have r1 := ha (CW, CW + 8192) (by simp)
+  have r2 := ha (BASES, BASES + 2048) (by simp)
+  have r3 := ha (IDX, IDX + 256) (by simp)
+  have r4 := ha (NNEG, NNEG + 64) (by simp)
+  simp only [CW, BASES, IDX, NNEG] at r1 r2 r3 r4
+  memsimp
+  memclose))
+
+set_option maxHeartbeats 2000000 in
+/-- One accepted byte: the memory after blocks `A`, (`B`), `C` represents the
+updated array. -/
+theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
+    (h : SInv m M c i) (hsz : c.size = 256) (hi1 : 217 ≤ i) (hi : i < 256) (hji : j ≤ i)
+    (hhigh : ∀ t, i ≤ t → c[t]! = 0) (hsg : sg ≤ 1) (hnn : nn = negCount c)
+    (hcode : code = if sg = 1 then REP else 2 ^ 256 - REP) :
+    (byteAt M (IDX + j) ≠ 0 → byteAt M (IDX + j) < 40 ∧
+        word (memA M i j nn sg code) (40928 + byteAt M (IDX + j) * 32) = baseOf c j) ∧
+    word (sibMB M c i j nn sg code) 4032 = i - 217 ∧
+    FrameExcept M (memC (sibMB M c i j nn sg code) j sg (i - 217)) sibRegions ∧
+    SInv m (memC (sibMB M c i j nn sg code) j sg (i - 217))
+      ((c.set! i c[j]!).set! j (sgnOf sg)) (i + 1) := by
+  obtain ⟨hfr, hcw, hnneg, hcnt, ⟨f, finj, fmem, fslot⟩, hidx0, hfree⟩ := h
+  have hn : i - 217 < 39 := by omega
+  have hj256 : j < 256 := by omega
+  have hci : c[i]! = 0 := hhigh i le_rfl
+  have hc' : ∀ p, ((c.set! i c[j]!).set! j (sgnOf sg))[p]! =
+      if p = j then sgnOf sg else if p = i then c[j]! else c[p]! := by
+    intro p
+    rw [getElem!_set!, getElem!_set!, size_set!, hsz]
+    by_cases hpj : p = j
+    · simp [hpj, hj256]
+    · by_cases hpi : p = i <;> simp [hpj, hpi, hi, hj256]
+  have hsv : sgnOf sg ≠ 0 := by unfold sgnOf; split <;> decide
+  have hwj := word_lt M (12288 + j * 32)
+  have hnn' : nn ≤ 256 := by rw [hnn, negCount_eq]; exact cntTo_le c 256
+  have hcode' : code < 2 ^ 256 := by rw [hcode, REP_val]; split <;> norm_num
+  have hbj := baseOf_le c j hj256
+  have hcnt' : word M 4032 = i - 217 := hcnt
+  have hnneg' : word M 4000 = nn := by rw [hnn]; exact hnneg
+  have hflt : ∀ s, s < i - 217 → f s < 256 := fun s hs => ((fmem (f s)).1 ⟨s, hs, rfl⟩).1
+  have hfnz : ∀ s, s < i - 217 → c[f s]! ≠ 0 := fun s hs => ((fmem (f s)).1 ⟨s, hs, rfl⟩).2
+  have hfi : ∀ s, s < i - 217 → f s ≠ i := fun s hs he => hfnz s hs (he ▸ hci)
+  have hnc : negCount ((c.set! i c[j]!).set! j (sgnOf sg)) = nn + sg := by
+    rw [hnn]; exact negCount_step c hsz i j sg hi hj256 hci hsg
+  -- block `A`
+  have hA_cw : ∀ t, t < 256 → word (memA M i j nn sg code) (CW + 32 * t) =
+      if t = j then code else if t = i then word M (CW + 32 * j) else word M (CW + 32 * t) := by
+    intro t ht; simp only [CW]; memsimp; memclose
+  have hA_nn : word (memA M i j nn sg code) NNEG = nn + sg := by
+    simp only [NNEG]; memsimp; memclose
+  have hA_cnt : word (memA M i j nn sg code) CNT = i - 217 := by
+    simp only [CNT]; memsimp; memclose
+  have hA_bases : ∀ s, s < 39 →
+      word (memA M i j nn sg code) (BASES + 32 * s) = word M (BASES + 32 * s) := by
+    intro s hs; simp only [BASES]; memsimp; memclose
+  have hA_idx : ∀ t, t < 256 → byteAt (memA M i j nn sg code) (IDX + t) = byteAt M (IDX + t) := by
+    intro t ht; simp only [IDX]; memsimp
+  have hA_fr : FrameExcept M (memA M i j nn sg code) sibRegions := by memframe
+  -- block `C`
+  have hC_cw : ∀ MB : ByteArray, ∀ t, t < 256 →
+      word (memC MB j sg (i - 217)) (CW + 32 * t) = word MB (CW + 32 * t) := by
+    intro MB t ht; simp only [CW]; memsimp; memclose
+  have hC_nn : ∀ MB : ByteArray, word (memC MB j sg (i - 217)) NNEG = word MB NNEG := by
+    intro MB; simp only [NNEG]; memsimp; memclose
+  have hC_cnt : ∀ MB : ByteArray, word (memC MB j sg (i - 217)) CNT = 1 + (i - 217) := by
+    intro MB; simp only [CNT]; memsimp; memclose
+  have hC_bases : ∀ MB : ByteArray, ∀ s, s < 39 → word (memC MB j sg (i - 217)) (BASES + 32 * s) =
+      if s = i - 217 then 4064 + j * 8 - sg * 2048 else word MB (BASES + 32 * s) := by
+    intro MB s hs; simp only [BASES]; memsimp; memclose
+  have hC_idx : ∀ MB : ByteArray, ∀ t, t < 256 → byteAt (memC MB j sg (i - 217)) (IDX + t) =
+      if t = j then i - 216 else byteAt MB (IDX + t) := by
+    intro MB t ht; simp only [IDX]; memsimp; memclose
+  have hC_fr : ∀ MB : ByteArray, FrameExcept MB (memC MB j sg (i - 217)) sibRegions := by
+    intro MB; memframe
+  have hcwC : ∀ MB : ByteArray, (∀ t, t < 256 → word MB (CW + 32 * t) =
+      word (memA M i j nn sg code) (CW + 32 * t)) → ∀ t, t < 256 →
+      word (memC MB j sg (i - 217)) (CW + 32 * t) = codeOf ((c.set! i c[j]!).set! j (sgnOf sg))[t]! := by
+    intro MB hMB t ht
+    rw [hC_cw MB t ht, hMB t ht, hA_cw t ht, hc' t]
+    by_cases htj : t = j
+    · rw [if_pos htj, if_pos htj, codeOf_sgn sg hsg, hcode]
+    · rw [if_neg htj, if_neg htj]
+      by_cases hti : t = i
+      · rw [if_pos hti, if_pos hti, hcw j hj256]
+      · rw [if_neg hti, if_neg hti, hcw t ht]
+  have hnewbase : 4064 + j * 8 - sg * 2048 = baseOf ((c.set! i c[j]!).set! j (sgnOf sg)) j := by
+    unfold baseOf; rw [hc' j, if_pos rfl]
+    unfold sgnOf; rcases (by omega : sg = 0 ∨ sg = 1) with rfl | rfl <;> simp <;> omega
+  by_cases hcj : c[j]! = 0
+  · -- `j` was empty: block `B` is skipped
+    have hk : byteAt M (IDX + j) = 0 := hidx0 j hj256 hcj
+    have hMB : sibMB M c i j nn sg code = memA M i j nn sg code := by
+      unfold sibMB; rw [if_pos hk]
+    have hfj : ∀ s, s < i - 217 → f s ≠ j := fun s hs he => hfnz s hs (he ▸ hcj)
+    rw [hMB]
+    refine ⟨fun h0 => absurd hk h0, hA_cnt, fun a ha => by rw [hC_fr _ a ha, hA_fr a ha],
+      ⟨fun a ha => by rw [hC_fr _ a (sub_regions ha), hA_fr a (sub_regions ha), hfr a ha],
+      hcwC _ (fun _ _ => rfl), by rw [hC_nn, hA_nn, hnc], by rw [hC_cnt]; omega,
+      ⟨fun s => if s = i - 217 then j else f s, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
+    · intro s s' hs hs' he
+      simp only at he
+      by_cases hsn : s = i - 217 <;> by_cases hs'n : s' = i - 217
+      · omega
+      · rw [if_pos hsn, if_neg hs'n] at he; exact absurd he.symm (hfj s' (by omega))
+      · rw [if_neg hsn, if_pos hs'n] at he; exact absurd he (hfj s (by omega))
+      · rw [if_neg hsn, if_neg hs'n] at he; exact finj s s' (by omega) (by omega) he
+    · intro p
+      rw [hc' p]
+      constructor
+      · rintro ⟨s, hs, rfl⟩
+        by_cases hsn : s = i - 217
+        · simp only [if_pos hsn, if_true]; exact ⟨hj256, hsv⟩
+        · have hs' : s < i - 217 := by omega
+          simp only [if_neg hsn]
+          rw [if_neg (hfj s hs'), if_neg (hfi s hs')]
+          exact ⟨hflt s hs', hfnz s hs'⟩
+      · rintro ⟨hp, hne⟩
+        by_cases hpj : p = j
+        · exact ⟨i - 217, by omega, by simp [hpj]⟩
+        · rw [if_neg hpj] at hne
+          by_cases hpi : p = i
+          · rw [if_pos hpi] at hne; exact absurd hcj hne
+          · rw [if_neg hpi] at hne
+            obtain ⟨s, hs, hfs⟩ := (fmem p).2 ⟨hp, hne⟩
+            exact ⟨s, by omega, by simp [show s ≠ i - 217 by omega, hfs]⟩
+    · intro s hs
+      by_cases hsn : s = i - 217
+      · simp only [if_pos hsn]
+        rw [hC_bases _ s (by omega), if_pos hsn, hC_idx _ j hj256, if_pos rfl]
+        exact ⟨hnewbase, by omega⟩
+      · have hs' : s < i - 217 := by omega
+        simp only [if_neg hsn]
+        rw [hC_bases _ s (by omega), if_neg hsn, hA_bases s (by omega), hC_idx _ _ (hflt s hs'),
+          if_neg (hfj s hs'), hA_idx _ (hflt s hs'), (fslot s hs').1]
+        refine ⟨(baseOf_congr ?_).symm, (fslot s hs').2⟩
+        rw [hc', if_neg (hfj s hs'), if_neg (hfi s hs')]
+    · intro t ht hz
+      rw [hc' t] at hz
+      have htj : t ≠ j := fun e => by rw [if_pos e] at hz; exact hsv hz
+      rw [if_neg htj] at hz
+      rw [hC_idx _ t ht, if_neg htj, hA_idx t ht]
+      apply hidx0 t ht
+      by_cases hti : t = i
+      · rw [hti]; exact hci
+      · rw [if_neg hti] at hz; exact hz
+    · intro s hs1 hs2
+      rw [hC_bases _ s hs2, if_neg (by omega), hA_bases s hs2]
+      exact hfree s (by omega) hs2
+  · -- `j` held a coefficient (slot `s0`): block `B` moves it to `i`
+    obtain ⟨s0, hs0, hfs0⟩ := (fmem j).2 ⟨hj256, hcj⟩
+    have hk : byteAt M (IDX + j) = s0 + 1 := by rw [← hfs0]; exact (fslot s0 hs0).2
+    have hij : i ≠ j := fun e => hcj (e ▸ hci)
+    have hMB : sibMB M c i j nn sg code =
+        memB (memA M i j nn sg code) i j (s0 + 1) (baseOf c j) := by
+      unfold sibMB; rw [if_neg (by omega), hk]
+    have hfj : ∀ s, s < i - 217 → s ≠ s0 → f s ≠ j :=
+      fun s hs hne e => hne (finj s s0 hs hs0 (e.trans hfs0.symm))
+    have hB_cw : ∀ MA : ByteArray, ∀ t, t < 256 →
+        word (memB MA i j (s0 + 1) (baseOf c j)) (CW + 32 * t) = word MA (CW + 32 * t) := by
+      intro MA t ht; simp only [CW]; memsimp; memclose
+    have hB_nn : ∀ MA : ByteArray, word (memB MA i j (s0 + 1) (baseOf c j)) NNEG = word MA NNEG := by
+      intro MA; simp only [NNEG]; memsimp; memclose
+    have hB_cnt : ∀ MA : ByteArray, word (memB MA i j (s0 + 1) (baseOf c j)) CNT = word MA CNT := by
+      intro MA; simp only [CNT]; memsimp; memclose
+    have hB_bases : ∀ MA : ByteArray, ∀ s, s < 39 →
+        word (memB MA i j (s0 + 1) (baseOf c j)) (BASES + 32 * s) =
+          if s = s0 then (i - j) * 8 + baseOf c j else word MA (BASES + 32 * s) := by
+      intro MA s hs; simp only [BASES]; memsimp; memclose
+    have hB_idx : ∀ MA : ByteArray, ∀ t, t < 256 →
+        byteAt (memB MA i j (s0 + 1) (baseOf c j)) (IDX + t) =
+          if t = i then s0 + 1 else byteAt MA (IDX + t) := by
+      intro MA t ht; simp only [IDX]; memsimp; memclose
+    have hB_fr : ∀ MA : ByteArray, FrameExcept MA (memB MA i j (s0 + 1) (baseOf c j)) sibRegions := by
+      intro MA; memframe
+    refine ⟨fun _ => ⟨by omega, ?_⟩, ?_, ?_⟩
+    · rw [hk, show 40928 + (s0 + 1) * 32 = BASES + 32 * s0 by simp only [BASES]; omega,
+        hA_bases s0 (by omega), (fslot s0 hs0).1, hfs0]
+    · rw [hMB, show (4032 : Nat) = CNT from rfl, hB_cnt, hA_cnt]
+    rw [hMB]
+    let f' : Nat → Nat := fun s => if s = i - 217 then j else if s = s0 then i else f s
+    have hf'j : ∀ s, s < i - 217 + 1 → (f' s = j ↔ s = i - 217) := by
+      intro s hs
+      simp only [f']
+      by_cases hsn : s = i - 217
+      · simp [hsn]
+      · rw [if_neg hsn]
+        by_cases hss : s = s0
+        · rw [if_pos hss]; exact ⟨fun e => absurd e hij, fun e => absurd e hsn⟩
+        · rw [if_neg hss]; exact ⟨fun e => absurd e (hfj s (by omega) hss), fun e => absurd e hsn⟩
+    have hf'i : ∀ s, s < i - 217 + 1 → (f' s = i ↔ s = s0) := by
+      intro s hs
+      simp only [f']
+      by_cases hsn : s = i - 217
+      · rw [if_pos hsn]; exact ⟨fun e => absurd e.symm hij, fun e => by omega⟩
+      · rw [if_neg hsn]
+        by_cases hss : s = s0
+        · simp [hss]
+        · rw [if_neg hss]; exact ⟨fun e => absurd e (hfi s (by omega)), fun e => absurd e hss⟩
+    refine ⟨fun a ha => by rw [hC_fr _ a ha, hB_fr _ a ha, hA_fr a ha], fun a ha => by
+        rw [hC_fr _ a (sub_regions ha), hB_fr _ a (sub_regions ha), hA_fr a (sub_regions ha), hfr a ha],
+      hcwC _ (hB_cw _), by rw [hC_nn, hB_nn, hA_nn, hnc], by rw [hC_cnt]; omega,
+      ⟨f', ?_, ?_, ?_⟩, ?_, ?_⟩
+    · intro s s' hs hs' he
+      have hs1 : s < i - 217 + 1 := by omega
+      have hs1' : s' < i - 217 + 1 := by omega
+      by_cases hsn : s = i - 217
+      · exact hsn.trans ((hf'j s' hs1').1 (he ▸ (hf'j s hs1).2 hsn)).symm
+      · by_cases hss : s = s0
+        · exact hss.trans ((hf'i s' hs1').1 (he ▸ (hf'i s hs1).2 hss)).symm
+        · have hs'n : s' ≠ i - 217 := fun e => hsn ((hf'j s hs1).1 (he.trans ((hf'j s' hs1').2 e)))
+          have hs's : s' ≠ s0 := fun e => hss ((hf'i s hs1).1 (he.trans ((hf'i s' hs1').2 e)))
+          simp only [f', if_neg hsn, if_neg hss, if_neg hs'n, if_neg hs's] at he
+          exact finj s s' (by omega) (by omega) he
+    · intro p
+      rw [hc' p]
+      constructor
+      · rintro ⟨s, hs, rfl⟩
+        by_cases hsn : s = i - 217
+        · simp only [f', if_pos hsn, if_true]; exact ⟨hj256, hsv⟩
+        · by_cases hss : s = s0
+          · simp only [f', if_neg hsn, if_pos hss, if_neg hij, if_true]; exact ⟨hi, hcj⟩
+          · have hs' : s < i - 217 := by omega
+            simp only [f', if_neg hsn, if_neg hss]
+            rw [if_neg (hfj s hs' hss), if_neg (hfi s hs')]
+            exact ⟨hflt s hs', hfnz s hs'⟩
+      · rintro ⟨hp, hne⟩
+        by_cases hpj : p = j
+        · exact ⟨i - 217, by omega, by simp [f', hpj]⟩
+        · rw [if_neg hpj] at hne
+          by_cases hpi : p = i
+          · exact ⟨s0, by omega, by simp [f', hpi, show s0 ≠ i - 217 by omega]⟩
+          · rw [if_neg hpi] at hne
+            obtain ⟨s, hs, hfs⟩ := (fmem p).2 ⟨hp, hne⟩
+            have hss : s ≠ s0 := fun e => hpj (hfs ▸ e ▸ hfs0)
+            exact ⟨s, by omega, by simp [f', show s ≠ i - 217 by omega, hss, hfs]⟩
+    · intro s hs
+      by_cases hsn : s = i - 217
+      · simp only [f', if_pos hsn]
+        rw [hC_bases _ s (by omega), if_pos hsn, hC_idx _ j hj256, if_pos rfl]
+        exact ⟨hnewbase, by omega⟩
+      · by_cases hss : s = s0
+        · simp only [f', if_neg hsn, if_pos hss]
+          rw [hC_bases _ s (by omega), if_neg hsn, hB_bases _ s (by omega), if_pos hss,
+            hC_idx _ i hi, if_neg hij, hB_idx _ i hi, if_pos rfl]
+          refine ⟨?_, by omega⟩
+          unfold baseOf
+          rw [hc' i, if_neg hij, if_pos rfl]
+          split <;> omega
+        · have hs' : s < i - 217 := by omega
+          simp only [f', if_neg hsn, if_neg hss]
+          rw [hC_bases _ s (by omega), if_neg hsn, hB_bases _ s (by omega), if_neg hss,
+            hA_bases s (by omega), hC_idx _ _ (hflt s hs'), if_neg (hfj s hs' hss),
+            hB_idx _ _ (hflt s hs'), if_neg (hfi s hs'), hA_idx _ (hflt s hs'), (fslot s hs').1]
+          refine ⟨(baseOf_congr ?_).symm, (fslot s hs').2⟩
+          rw [hc', if_neg (hfj s hs' hss), if_neg (hfi s hs')]
+    · intro t ht hz
+      rw [hc' t] at hz
+      have htj : t ≠ j := fun e => by rw [if_pos e] at hz; exact hsv hz
+      rw [if_neg htj] at hz
+      have hti : t ≠ i := fun e => by rw [if_pos e] at hz; exact hcj hz
+      rw [if_neg hti] at hz
+      rw [hC_idx _ t ht, if_neg htj, hB_idx _ t ht, if_neg hti, hA_idx t ht]
+      exact hidx0 t ht hz
+    · intro s hs1 hs2
+      rw [hC_bases _ s hs2, if_neg (by omega), hB_bases _ s hs2, if_neg (by omega),
+        hA_bases s hs2]
+      exact hfree s (by omega) hs2
+
+/-! ## The scan -/
+
+theorem zeroPoly_get (t : Nat) : Fips204.zeroPoly[t]! = (0 : Int) := by
+  simp only [Fips204.zeroPoly, getElem!_def, Array.getElem?_replicate]
+  split <;> rename_i h <;> [skip; rfl]
+  split at h <;> simp_all
+
+/-- Positions at or above the index are still empty. -/
+theorem ballFold_high (bs : ByteArray) : ∀ k t, (ballFold bs k).2 ≤ t → (ballFold bs k).1[t]! = 0
+  | 0, t, _ => by rw [ballFold_zero]; exact zeroPoly_get t
+  | k + 1, t, ht => by
+    have ih := ballFold_high bs k
+    rw [ballFold_succ] at ht ⊢
+    unfold ballStep at ht ⊢
+    by_cases hc : (ballFold bs k).2 < 256 ∧ bs[8 + k]!.toNat ≤ (ballFold bs k).2
+    · rw [if_pos hc] at ht ⊢
+      simp only at ht
+      simp only [ballSet]
+      rw [getElem!_set!, getElem!_set!, if_neg (fun h => by omega), if_neg (fun h => by omega)]
+      exact ih t (by omega)
+    · rw [if_neg hc] at ht ⊢; exact ih t ht
+
+/-- Once all `τ` coefficients are placed the scan stops changing. -/
+theorem ballFold_stop (bs : ByteArray) (k : Nat) (hk : 256 ≤ (ballFold bs k).2) :
+    ∀ d, ballFold bs (k + d) = ballFold bs k
+  | 0 => rfl
+  | d + 1 => by
+    rw [← Nat.add_assoc, ballFold_succ, ballFold_stop bs k hk d]
+    unfold ballStep; rw [if_neg (fun h => by omega)]
+
+
+end Ball4
+
+end MlDsaOpt44.Proofs
