@@ -175,19 +175,20 @@ def CbAt (m : ByteArray) (cd : ByteArray) : Prop :=
 def TrlAt (m : ByteArray) (cd : ByteArray) : Prop :=
   ∀ x, x < 8 → word m (TRL + 32 * x) = le64 (trOf cd) (8 * x)
 
-/-- μ (8 lanes) in `MU` for messages of at most five blocks (v4: group 8's μ
-slot, `mub`). -/
+/-- μ (8 lanes) in `MU` for one-block messages (`|M| ≤ 69`; the window's
+`cext [MU, 2, 8]` after the last call).  -- glam -/
 def MuAt (m : ByteArray) (cd : ByteArray) : Prop :=
-  mlenOf cd ≤ 613 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
+  mlenOf cd ≤ 69 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
 
 /-- μ's padded sponge input `tr ‖ 0 ‖ 0 ‖ M`. -/
 def padMu (cd : ByteArray) : ByteArray :=
   MlDsa44.Fips202.pad 136 0x1F (trOf cd ++ (ByteArray.mk #[0, 0] ++ msgOf cd))
 
-/-- For longer messages μ's sponge after blocks `0 … 4` is slot 2 of `KS`. -/
+/-- μ's sponge after block 0 is slot 2 of the state image at `MUIMG` (saved after
+the 42-call schedule's last call; `hash_mu` restores it).  -- glam -/
 def MuKs (m : ByteArray) (cd : ByteArray) : Prop :=
-  613 < mlenOf cd → ∃ S : Nat → MlDsa44.Fips202.SpongeState, Sized4 S ∧ KS4 m S ∧
-    S 2 = MlDsaOpt44.Proofs.absorbPre 136 (padMu cd) 5
+  ∃ S : Nat → MlDsa44.Fips202.SpongeState, Sized4 S ∧ MlDsaOpt44.Proofs.St4At m MUIMG S ∧
+    S 2 = MlDsaOpt44.Proofs.absorbPre 136 (padMu cd) 1
 
 /-- The 8 + 96 replicated stream lanes of the final hash input in `FIN`. -/
 def FinAt (m : ByteArray) (X : ByteArray) : Prop :=

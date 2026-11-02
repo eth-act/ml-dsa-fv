@@ -140,10 +140,10 @@ theorem seg_zd {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     TblAt.frame hI.tbl hfr (by avoids_tac),
     AccAt.frame hI.acc hfr (by avoids_tac),
     MuAt.frame hI.mu hfr (by avoids_tac),
-    fun hl => by
-      obtain ⟨S, hS, hks, h2⟩ := hI.muks hl
+    by  -- glam: the state image at `MUIMG`
+      obtain ⟨S, hS, hks, h2⟩ := hI.muks
       exact ⟨S, hS, fun x hx => by
-        rw [word_frame hfr (lo := KS) (hi := KS + 800) (by avoids_tac) (by omega) (by omega)]
+        rw [word_frame hfr (lo := MUIMG) (hi := MUIMG + 800) (by unfold MUIMG; avoids_tac) (by omega) (by omega)]
         exact hks x hx, h2⟩,
     CbAt.frame hI.cb hfr (by avoids_tac),
     ZeroOn.frame hI.zBases hfr (by avoids_tac),

@@ -35,6 +35,11 @@ export MlDsaOptGlam44.Proofs (RC4Table RC1Table TblAt nttRecG)
 /-- Two 8 KB side buffers of the 42-call schedule's accumulation (`SB`, `SB + 8192`). -/
 def SB : Nat := 0x16700
 
+/-- The kf4 state image saved after the 42-call schedule's last call (inside `FIN`,
+written before `FIN` is): slot 2 holds μ's sponge after block 0; `hash_mu`
+restores it into `KS` for messages longer than one block. -/
+def MUIMG : Nat := 0x15040
+
 /-! The constants and spec-level data that `MlDsaOpt65.Layout` defines for this
 parameter set (where they differ from ML-DSA-44's), re-exported so that they win over
 `MlDsaOpt44.Proofs`' when a file of this namespace opens both. -/
@@ -64,7 +69,6 @@ def trabs : Nat := 18543
 def cext : Nat := 18992
 def spr : Nat := 19266
 def mub0 : Nat := 19481
-def mub : Nat := 19853
 def fix : Nat := 20056
 def group : Nat := 20575
 def tbuild : Nat := 20806
@@ -104,7 +108,6 @@ def lmerge : Nat := leaf
 def fix : Nat := max kf4 blk + 64
 def pass3f : Nat := leaf
 def mub0 : Nat := max trabs spr + 64
-def mub : Nat := max trabs (max spr cext) + 64
 def gfix : Nat := max blk fix + 64
 def group : Nat := max ginit (max kf4 (max blk gfix)) + 64
 end Stack

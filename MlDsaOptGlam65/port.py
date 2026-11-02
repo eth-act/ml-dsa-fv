@@ -11,7 +11,7 @@
 
 The tree must be unchanged afterwards (the gate checks it). Files of
 `MlDsaOptGlam65/` not listed in `FILES` are hand-written (`Layout`, `Budget`,
-`Gas`, `Main.lean`, `Main/SegExp.lean`, `Fn/Sponge/Mub.lean`, `Main/SegMu.lean` (v4's statements, open items),
+`Gas`, `Main.lean`, `Main/SegExp.lean`, `Main/SegMu.lean` (v4's statements, open items),
 `Main/S1/{Init,Tbl}` (glam 44's, no iota
 tables, the 240-record table), the `Fn` wrappers `Keccak`, `Blk`, `Ntt`,
 `Decode`, `Csum`) or generated (`Infra`, `Fn/Kf4`, `Fn/Kf1`).
@@ -25,7 +25,7 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 os.chdir(ROOT)
 R = "MlDsaOptGlam65/"
 # hand-written modules that replace a v4 module of the same name
-HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Main\.SegExp|Fn\.Sponge\.Mub|Main\.SegMu|Main\.S1\.(?:Init|Tbl)|Gas|Main"
+HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Main\.SegExp|Main\.SegMu|Main\.S1\.(?:Init|Tbl)|Gas|Main"
 
 FILES = [
     "MlDsaOpt65/Fn/Ball.lean",
@@ -145,3 +145,41 @@ sub('Main/Frame.lean', "import MlDsaOptGlam65.Main.Inv\n",
     "import MlDsaOptGlam44.Main.Frame  -- glam: and of glam 44's tables (`TblAt`, `RC1Table`)\n")
 # the final RETURN's pc
 sub('Main/S1/Fin.lean', "    7057, [], M7, fun X hX hF", "    6728, [], M7, fun X hX hF")
+
+# `mub` is unreachable in glam 65 (the 42-call schedule squeezes μ once: `mub0`, then
+# `hash_mu` from the state image `MUIMG`): no `mub` contract
+sub('Fn/Sponge.lean', "import MlDsaOpt65.Fn.Sponge.Mub\n", "")
+p = R + 'Fn/Sponge.lean'
+t = open(p).read()
+i = t.index("/-- **mub**: `[136 k, sh, ret]`")
+j = t.index("\nend MlDsaOptGlam65.Proofs")
+open(p, 'w').write(t[:i].rstrip("\n") + "\n\n-- glam: no `mub` (unreachable in the 42-call schedule)\n" + t[j:])
+
+# μ in the 42-call schedule: one squeeze (block 0, `mub0`); `MU` holds μ for one-block
+# messages, the state image `MUIMG` (saved after the last call) has μ's sponge after block 0
+sub('Main/Inv.lean', """/-- μ (8 lanes) in `MU` for messages of at most five blocks (v4: group 8's μ
+slot, `mub`). -/
+def MuAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  mlenOf cd ≤ 613 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)""",
+    """/-- μ (8 lanes) in `MU` for one-block messages (`|M| ≤ 69`; the window's
+`cext [MU, 2, 8]` after the last call).  -- glam -/
+def MuAt (m : ByteArray) (cd : ByteArray) : Prop :=
+  mlenOf cd ≤ 69 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)""")
+sub('Main/Inv.lean', """/-- For longer messages μ's sponge after blocks `0 … 4` is slot 2 of `KS`. -/
+def MuKs (m : ByteArray) (cd : ByteArray) : Prop :=
+  613 < mlenOf cd → ∃ S : Nat → MlDsa44.Fips202.SpongeState, Sized4 S ∧ KS4 m S ∧
+    S 2 = MlDsaOpt44.Proofs.absorbPre 136 (padMu cd) 5""",
+    """/-- μ's sponge after block 0 is slot 2 of the state image at `MUIMG` (saved after
+the 42-call schedule's last call; `hash_mu` restores it).  -- glam -/
+def MuKs (m : ByteArray) (cd : ByteArray) : Prop :=
+  ∃ S : Nat → MlDsa44.Fips202.SpongeState, Sized4 S ∧ MlDsaOpt44.Proofs.St4At m MUIMG S ∧
+    S 2 = MlDsaOpt44.Proofs.absorbPre 136 (padMu cd) 1""")
+sub('Main/SegZd.lean', """    fun hl => by
+      obtain ⟨S, hS, hks, h2⟩ := hI.muks hl
+      exact ⟨S, hS, fun x hx => by
+        rw [word_frame hfr (lo := KS) (hi := KS + 800) (by avoids_tac) (by omega) (by omega)]
+        exact hks x hx, h2⟩,""", """    by  -- glam: the state image at `MUIMG`
+      obtain ⟨S, hS, hks, h2⟩ := hI.muks
+      exact ⟨S, hS, fun x hx => by
+        rw [word_frame hfr (lo := MUIMG) (hi := MUIMG + 800) (by unfold MUIMG; avoids_tac) (by omega) (by omega)]
+        exact hks x hx, h2⟩,""")
