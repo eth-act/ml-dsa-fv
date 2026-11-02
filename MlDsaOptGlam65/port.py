@@ -184,57 +184,96 @@ sub('Main/SegZd.lean', """    fun hl => by
         rw [word_frame hfr (lo := MUIMG) (hi := MUIMG + 800) (by unfold MUIMG; avoids_tac) (by omega) (by omega)]
         exact hks x hx, h2⟩,""")
 
-# `gfix` keeps whole slot blocks (candidates 0 … 279, flag words 0 … 34) of inactive slots
-# (the window's `gfix 12` before KX's `lmerge` and the copy of block 4)
+# `fix` and `gfix` keep the flag words 0 … 34; `gfix` keeps the other slots' lanes of
+# candidates 0 … 279 when block 4's tail already holds the kf4 state's words (the
+# window's `gfix 12` before KX's `lmerge` and the copy of block 4)
+for f in ['Fn/Fix.lean']:
+    sub(f, """      KS4 m' S ∧ word m' HAVE6 = word m HAVE6 ∧ FrameExcept m m' fixRegions := by""",
+        """      KS4 m' S ∧ word m' HAVE6 = word m HAVE6 ∧ FrameExcept m m' fixRegions ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) := by  -- glam""")
+    sub(f, """    fun sl' h1 h2 t _ => hl sl' h1 h2 t, Fix.ks4_frame hks hL.1 (by fx_av), hH, hL.1.mono ?_⟩""",
+        """    fun sl' h1 h2 t _ => hl sl' h1 h2 t, Fix.ks4_frame hks hL.1 (by fx_av), hH, hL.1.mono ?_,
+    fun g _ => hFL g⟩""")
+    sub(f, """      KS4 m' S ∧ word m' HAVE6 = 1 ∧ FrameExcept m m' fixRegions := by""",
+        """      KS4 m' S ∧ word m' HAVE6 = 1 ∧ FrameExcept m m' fixRegions ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) := by  -- glam""")
+    sub(f, "  refine ⟨fun sl' I' h1 h2 hp => ?_, hlo, ?_, hH, ?_⟩", "  refine ⟨fun sl' I' h1 h2 hp => ?_, hlo, ?_, hH, ?_, hFL⟩")
+    sub(f, "obtain ⟨hpend, hlo, hks', hH, hfr⟩ := post_", "obtain ⟨hpend, hlo, hks', hH, hfr, hFLk⟩ := post_", count=3)
+    sub(f, """        lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl') ∧
+      KS4 m' S ∧ (word m HAVE6 ≠ 0 → word m' HAVE6 ≠ 0) ∧""",
+        """        lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl') ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) ∧  -- glam
+      KS4 m' S ∧ (word m HAVE6 ≠ 0 → word m' HAVE6 ≠ 0) ∧""")
+    sub(f, "hval, hpend, hlo, hks',", "hval, hpend, hlo, hFLk, hks',", count=3)
+    sub(f, "omega), hpend, hlo, hks',", "omega), hpend, hlo, hFLk, hks',", count=2)
+    sub(f, "obtain ⟨M', hval, hpend', hlanes', hks', hmono, hfr', hcl⟩ := fix_call",
+        "obtain ⟨M', hval, hpend', hlanes', hfl', hks', hmono, hfr', hcl⟩ := fix_call", count=2)
 sub('Fn/Fix.lean', """  keep : ∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 256 →
     lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j
 """, """  keep : ∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 256 →
     lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j
-  -- glam: inactive slots with all five blocks in place stay pending
-  keepB : ∀ j J, j < 4 → amask.testBit j = false → S j = permN 5 J → SlotBlocks m j J 5 →
-    Pending M S j J
+  -- glam: with block 4's tail in place, inactive lanes of candidates < 280 and flag words < 35 kept
+  keepB : ((∀ i, 32 ≤ i → i < 56 → word m (ABUF + 1792 * 4 + 32 * i) = pack4 fun k => cand (S k) i) ∧
+      (∀ g, 4 ≤ g → g < 7 → word m (FL + 224 * 4 + 32 * g) = flagWord S g)) →
+    (∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 280 →
+      lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j) ∧
+    ∀ g, g < 35 → word M (FL + 32 * g) = word m (FL + 32 * g)
 """)
 sub('Fn/Fix.lean', """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_⟩, _, ((((hcallT (hc1 0 (by omega))).trans hcT).trans""",
-    """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+    """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun hB4 => ?_⟩, _,
         ((((hcallT (hc1 0 (by omega))).trans hcT).trans""")
 sub('Fn/Fix.lean', """        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega),
           hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)]
 """, """        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega),
           hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)]
-      · -- glam: inactive slots stay pending (`blkt` rewrites block 4's tail with the same words)
-        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
-          (pend_blkt hS hI.ks h6 hfrT hpostT hj ⟨fun t' ht' => hB.1 t' (by omega),
-            fun g hg => hB.2 g (by omega)⟩ hSj)
+      · -- glam: `blkt` rewrites block 4's tail with the words already there
+        obtain ⟨hc4, hf4⟩ := hpostT S hS hI.ks
+        have hA : ∀ t', t' < 280 → word MT (ABUF + 32 * t') = word M (ABUF + 32 * t') := fun t' ht' => by
+          by_cases hlt : t' < 256
+          · exact hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)
+          · rw [show ABUF + 32 * t' = ABUF + 1792 * 4 + 32 * (t' - 224) by simp only [ABUF]; omega,
+              hc4 _ (by omega) (by omega), hB4.1 _ (by omega) (by omega)]
+        have hF : ∀ g, g < 35 → word MT (FL + 32 * g) = word M (FL + 32 * g) := fun g hg => by
+          by_cases hlt : g < 32
+          · exact hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)
+          · rw [show FL + 32 * g = FL + 224 * 4 + 32 * (g - 28) by simp only [FL]; omega,
+              hf4 _ (by omega) (by omega), hB4.2 _ (by omega) (by omega)]
+        refine ⟨fun j hj hna t' ht' => ?_, fun g hg => by rw [hfl' g hg, hF g hg]⟩
+        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' ht', hA t' ht']
 """)
 sub('Fn/Fix.lean', """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_⟩, _, ((hcallF (hc1 1 (by omega))).trans hcl).trans""",
-    """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+    """        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun hB4 => ?_⟩, _,
         ((hcallF (hc1 1 (by omega))).trans hcl).trans""")
 sub('Fn/Fix.lean', """        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega)]
         exact hI.keep j hj hna t' ht'
 """, """        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega)]
         exact hI.keep j hj hna t' ht'
-      · -- glam: inactive slots stay pending
-        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
-          (hI.keepB j J hj hna hSj hB)
+      · -- glam
+        refine ⟨fun j hj hna t' ht' => ?_, fun g hg => by rw [hfl' g hg]; exact (hI.keepB hB4).2 g hg⟩
+        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' ht']
+        exact (hI.keepB hB4).1 j hj hna t' ht'
 """)
 sub('Fn/Fix.lean', "      fun j h1 h2 a ha t' ht' => ?_, hI.keep⟩, sk, ?_, ?_⟩",
     "      fun j h1 h2 a ha t' ht' => ?_, hI.keep, hI.keepB⟩, sk, ?_, ?_⟩")
+sub('Fn/Fix.lean', """        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl⟩""",
+    """        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl, fun _ => ⟨fun _ _ _ _ _ => rfl, fun _ _ => rfl⟩⟩""")
 sub('Fn/Fix.lean', """      (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 256 →
         lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
       FrameExcept m m' [(ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (KB, KB + 800), (BK, BK + 800)] ∧
       Call s Entry.gfix""", """      (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 256 →
         lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
-      (∀ sl, sl < 4 → amask.testBit sl = false → ∀ J, S sl = permN 5 J →  -- glam
-        SlotBlocks m sl J 5 → SlotBlocks m' sl J 5) ∧
+      -- glam: with block 4's tail in place, the inactive lanes of candidates `< 280` and the flag words `< 35`
+      (((∀ i, 32 ≤ i → i < 56 → word m (ABUF + 1792 * 4 + 32 * i) = pack4 fun k => cand (S k) i) ∧
+          (∀ g, 4 ≤ g → g < 7 → word m (FL + 224 * 4 + 32 * g) = flagWord S g)) →
+        (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 280 →
+          lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
+        ∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) ∧
       FrameExcept m m' [(ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (KB, KB + 800), (BK, BK + 800)] ∧
       Call s Entry.gfix""")
 sub('Fn/Fix.lean', "    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl,",
-    "    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl, fun _ _ _ _ _ hB => hB,")
+    "    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl,\n"
+    "      fun _ => ⟨fun _ _ _ _ _ => rfl, fun _ _ => rfl⟩,")
 sub('Fn/Fix.lean', "    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep, hI4.fr, ?_⟩",
-    "    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep,\n"
-    "      fun sl hsl hna J hSj hB => (hI4.keepB sl J hsl hna hSj hB).1, hI4.fr, ?_⟩")
+    "    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep, hI4.keepB, hI4.fr, ?_⟩")
 sub('Fn/GroupV4/Main.lean', "obtain ⟨m8, hpost8, -, hkeep8, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call",
     "obtain ⟨m8, hpost8, -, hkeep8, -, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call")
-sub('Fn/Fix.lean', """        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl⟩""",
-    """        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl,
-        fun _ _ _ _ hSj hB => ⟨hB, fun _ => hSj, fun h => absurd h6 h⟩⟩""")

@@ -117,9 +117,9 @@ structure BufOK (ab fl : Nat) : Prop where
 
 theorem bufOK_abuf : BufOK ABUF FL := ⟨by decide, by decide, by decide, by decide, by decide, by decide⟩
 
-/-- One squeeze of a group: glue, `kf4`, glue, `blk b` (`b < 4`). -/
+/-- One squeeze of a group: glue, `kf4`, glue, `blk b` (`b < 5`). -/
 theorem kb_round {s : State} (hs : Ctx s) {tl stk : List UInt256} (htl : tl.length ≤ 8) {m : ByteArray}
-    {pc0 r1 r2 c1 c2 b ab fl : Nat} (hb : b < 4) (hbuf : BufOK ab fl)
+    {pc0 r1 r2 c1 c2 b ab fl : Nat} (hb : b < 5) (hbuf : BufOK ab fl)
     (g1 : Reach (callState s pc0 stk m) (callState s 41842 (wd r1 :: tl) m) c1)
     (g2 : ∀ m', Reach (callState s r1 tl m')
       (callState s 10187 (wd (fl + 224 * b) :: wd (ab + 1792 * b) :: wd r2 :: tl) m') c2)

@@ -93,7 +93,8 @@ theorem post_nosq {m m' : ByteArray} {sl : Nat} (hL : Fix.LaneFrame m m' sl 336)
     (∀ sl' I', sl' < 4 → sl' ≠ sl → Pending m S sl' I' → Pending m' S sl' I') ∧
       (∀ sl', sl' < 4 → sl' ≠ sl → ∀ t, t < 280 →
         lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl') ∧
-      KS4 m' S ∧ word m' HAVE6 = word m HAVE6 ∧ FrameExcept m m' fixRegions := by
+      KS4 m' S ∧ word m' HAVE6 = word m HAVE6 ∧ FrameExcept m m' fixRegions ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) := by  -- glam
   have hFL : ∀ g, word m' (FL + 32 * g) = word m (FL + 32 * g) := fun g =>
     hL.1.word (by simp only [avoids_cons, avoids_nil, and_true, FL]; omega)
   have hH : word m' HAVE6 = word m HAVE6 :=
@@ -102,7 +103,8 @@ theorem post_nosq {m m' : ByteArray} {sl : Nat} (hL : Fix.LaneFrame m m' sl 336)
       lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl' :=
     fun sl' h1 h2 t => hL.2 t sl' h1 h2
   refine ⟨fun sl' I' h1 h2 hp => ⟨?_, fun h0 => hp.2.1 (hH ▸ h0), fun h0 => ?_⟩,
-    fun sl' h1 h2 t _ => hl sl' h1 h2 t, Fix.ks4_frame hks hL.1 (by fx_av), hH, hL.1.mono ?_⟩
+    fun sl' h1 h2 t _ => hl sl' h1 h2 t, Fix.ks4_frame hks hL.1 (by fx_av), hH, hL.1.mono ?_,
+    fun g _ => hFL g⟩
   · exact SlotBlocks.transport (fun t _ => hl sl' h1 h2 t) (fun g _ => hFL g) hp.1
   · exact SlotBlocks.transport (fun t _ => hl sl' h1 h2 t) (fun g _ => hFL g) (hp.2.2 (hH ▸ h0))
   · intro r hr
@@ -121,7 +123,8 @@ theorem post_sq {m M1 M5 m' : ByteArray} {sl : Nat} (hL1 : Fix.LaneFrame m M1 sl
     (∀ sl' I', sl' < 4 → sl' ≠ sl → Pending m S sl' I' → Pending m' S sl' I') ∧
       (∀ sl', sl' < 4 → sl' ≠ sl → ∀ t, t < 280 →
         lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl') ∧
-      KS4 m' S ∧ word m' HAVE6 = 1 ∧ FrameExcept m m' fixRegions := by
+      KS4 m' S ∧ word m' HAVE6 = 1 ∧ FrameExcept m m' fixRegions ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) := by  -- glam
   have hH : word m' HAVE6 = 1 := by
     rw [hL2.1.word (by simp only [avoids_cons, avoids_nil, and_true, HAVE6]; omega)]; exact h65
   have hlo : ∀ sl', sl' < 4 → sl' ≠ sl → ∀ t, t < 280 →
@@ -136,7 +139,7 @@ theorem post_sq {m M1 M5 m' : ByteArray} {sl : Nat} (hL1 : Fix.LaneFrame m M1 sl
     rw [hL2.1.word (by simp only [avoids_cons, avoids_nil, and_true, FL]; omega),
       hfr.word (by simp only [Fix.sqRegions, avoids_cons, avoids_nil, and_true, FL]; omega),
       hL1.1.word (by simp only [avoids_cons, avoids_nil, and_true, FL]; omega)]
-  refine ⟨fun sl' I' h1 h2 hp => ?_, hlo, ?_, hH, ?_⟩
+  refine ⟨fun sl' I' h1 h2 hp => ?_, hlo, ?_, hH, ?_, hFL⟩
   · have hSk : S sl' = permN 5 I' := hp.2.1 h6
     have h6' : SlotBlocks m' sl' I' 6 := by
       refine ⟨fun t ht => ?_, fun g hg => ?_⟩
@@ -206,6 +209,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ sl' I', sl' < 4 → sl' ≠ sl → Pending m S sl' I' → Pending m' S sl' I') ∧
       (∀ sl', sl' < 4 → sl' ≠ sl → ∀ t, t < 280 →
         lane (word m' (ABUF + 32 * t)) sl' = lane (word m (ABUF + 32 * t)) sl') ∧
+      (∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) ∧  -- glam
       KS4 m' S ∧ (word m HAVE6 ≠ 0 → word m' HAVE6 ≠ 0) ∧
       FrameExcept m m' [(ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (KB, KB + 800), (BK, BK + 800)] ∧
       Call s Entry.fix [wd (64 * sl)] ret tail m [flag (aI I).isSome] m'
@@ -261,8 +265,8 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   rcases hres1 with ⟨h256, hlanes, hrch⟩ | ⟨hA1, hlt1, hrch⟩
   · -- done in phase 1
     obtain ⟨hval, hfl⟩ := done_result (sl := sl) (by norm_num) h256 hlanes
-    obtain ⟨hpend, hlo, hks', hH, hfr⟩ := post_nosq (hL1.mono (by norm_num)) hks
-    refine ⟨M1, hval, hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
+    obtain ⟨hpend, hlo, hks', hH, hfr, hFLk⟩ := post_nosq (hL1.mono (by norm_num)) hks
+    refine ⟨M1, hval, hpend, hlo, hFLk, hks', fun h => by rwa [hH], hfr, ?_⟩
     rw [call_iff, if_neg (by rw [hH]; tauto), hfl]
     exact (hpre.trans hrch).mono (by unfold Gas.fixNo; omega)
   · have hH1 : word M1 4064 = word m 4064 :=
@@ -289,12 +293,12 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           rw [show 31232 + 32 * g' = 32352 + 32 * (g' - 35) by omega, hW'.2 (g' - 35) (by omega),
             Nat.add_comm 23]
           exact flag_hi S hsl I hS5 h1 h2)
-      obtain ⟨hpend, hlo, hks', hH, hfr⟩ := post_sq hL1 hfr5 h65 hks hW' hL2 h6
+      obtain ⟨hpend, hlo, hks', hH, hfr, hFLk⟩ := post_sq hL1 hfr5 h65 hks hW' hL2 h6
       have hgas : (if word m HAVE6 = 0 ∧ word M2 HAVE6 ≠ 0 then Gas.fixSq else Gas.fixNo) = Gas.fixSq :=
         if_pos ⟨h6, by rw [hH]; decide⟩
       rcases hres2 with ⟨h256, hlanes, hrch2⟩ | ⟨_, hlt2, hrch2⟩
       · obtain ⟨hval, hfl⟩ := done_result (sl := sl) (by norm_num) h256 hlanes
-        refine ⟨M2, hval, hpend, hlo, hks', fun _ => by rw [hH]; decide, hfr, ?_⟩
+        refine ⟨M2, hval, hpend, hlo, hFLk, hks', fun _ => by rw [hH]; decide, hfr, ?_⟩
         rw [call_iff, hgas, hfl]
         exact (((hpre.trans hrch).trans hsq).trans hrch2).mono (by unfold Gas.fixSq Gas.kf4 Gas.blk; omega)
       · have hfail := Fix.fx_fail (ret := ret) hs htail hsz M2 (64 * sl) (Fix.lmask sl) (Fix.nmask sl)
@@ -302,7 +306,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (20480 + 32 * (Fix.accL (candI I) (8 * 42)).length) hr.jumpdest hret
         have hlt2' : (Fix.accL (candI I) 336).length < 256 := hlt2
         refine ⟨M2, fun a ha => absurd ((aI_accL I).1 ▸ (show (aI I).isSome = true by rw [ha]; rfl))
-          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hks', fun _ => by rw [hH]; decide,
+          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hFLk, hks', fun _ => by rw [hH]; decide,
           hfr, ?_⟩
         rw [call_iff, hgas, fail_result hlt2]
         exact ((((hpre.trans hrch).trans hsq).trans hrch2).trans hfail).mono
@@ -322,12 +326,12 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (fun g' h1 h2 => by
           rw [hL1.1.word (by simp only [avoids_cons, avoids_nil, and_true]; omega), Nat.add_comm 23]
           exact hB6.2 g' (by omega))
-      obtain ⟨hpend, hlo, hks', hH, hfr⟩ := post_nosq ((hL1.mono (by norm_num)).trans hL2 (le_refl _)) hks
+      obtain ⟨hpend, hlo, hks', hH, hfr, hFLk⟩ := post_nosq ((hL1.mono (by norm_num)).trans hL2 (le_refl _)) hks
       have hgas : (if word m HAVE6 = 0 ∧ word M2 HAVE6 ≠ 0 then Gas.fixSq else Gas.fixNo) = Gas.fixNo :=
         if_neg (fun h => h6 h.1)
       rcases hres2 with ⟨h256, hlanes, hrch2⟩ | ⟨_, hlt2, hrch2⟩
       · obtain ⟨hval, hfl⟩ := done_result (sl := sl) (by norm_num) h256 hlanes
-        refine ⟨M2, hval, hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
+        refine ⟨M2, hval, hpend, hlo, hFLk, hks', fun h => by rwa [hH], hfr, ?_⟩
         rw [call_iff, hgas, hfl]
         exact ((((hpre.trans hrch).trans hc).trans hc2).trans hrch2).mono (by unfold Gas.fixNo; omega)
       · have hfail := Fix.fx_fail (ret := ret) hs htail hsz M2 (64 * sl) (Fix.lmask sl) (Fix.nmask sl)
@@ -335,7 +339,7 @@ theorem fix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (20480 + 32 * (Fix.accL (candI I) (8 * 42)).length) hr.jumpdest hret
         have hlt2' : (Fix.accL (candI I) 336).length < 256 := hlt2
         refine ⟨M2, fun a ha => absurd ((aI_accL I).1 ▸ (show (aI I).isSome = true by rw [ha]; rfl))
-          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hks', fun h => by rwa [hH], hfr, ?_⟩
+          (by simp only [decide_eq_true_eq]; omega), hpend, hlo, hFLk, hks', fun h => by rwa [hH], hfr, ?_⟩
         rw [call_iff, hgas, fail_result hlt2]
         exact (((((hpre.trans hrch).trans hc).trans hc2).trans hrch2).trans hfail).mono
           (by unfold Gas.fixNo; omega)
@@ -514,9 +518,12 @@ structure GInv (m M : ByteArray) (S I : Nat → Fips202.SpongeState) (amask k t 
     lane (word M (ABUF + 32 * t')) j = (a[t']!).toNat
   keep : ∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 256 →
     lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j
-  -- glam: inactive slots with all five blocks in place stay pending
-  keepB : ∀ j J, j < 4 → amask.testBit j = false → S j = permN 5 J → SlotBlocks m j J 5 →
-    Pending M S j J
+  -- glam: with block 4's tail in place, inactive lanes of candidates < 280 and flag words < 35 kept
+  keepB : ((∀ i, 32 ≤ i → i < 56 → word m (ABUF + 1792 * 4 + 32 * i) = pack4 fun k => cand (S k) i) ∧
+      (∀ g, 4 ≤ g → g < 7 → word m (FL + 224 * 4 + 32 * g) = flagWord S g)) →
+    (∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 280 →
+      lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j) ∧
+    ∀ g, g < 35 → word M (FL + 32 * g) = word m (FL + 32 * g)
 
 /-- Slot-check state of `gfix`. -/
 abbrev cst (s : State) (ret : Nat) (tail : List UInt256) (pc f ok amask : Nat) (M : ByteArray) :
@@ -606,7 +613,7 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         ⟨g, hg, by
           rw [hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)]
           exact hfg⟩
-      obtain ⟨M', hval, hpend', hlanes', hks', hmono, hfr', hcl⟩ := fix_call hs hrF' MT
+      obtain ⟨M', hval, hpend', hlanes', hfl', hks', hmono, hfr', hcl⟩ := fix_call hs hrF' MT
         (Fix.rc4_frame hI.rc hfrT (by fx_av)) hk S hS (Fix.ks4_frame hI.ks hfrT (by fx_av)) (I k)
         (hpT k hk hact) hflag
       rw [call_iff] at hcl
@@ -614,7 +621,7 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       refine ⟨M', 1, ⟨by omega, Fix.rc4_frame hI.rc (fixRegions_trans hfrT' hfr') (by fx_av), hks',
         fixRegions_trans hfrT' hfr', fun h => absurd h (by omega),
         fun _ j h1 h2 h3 => hpend' j (I j) h2 (by omega) (hpT j h2 h3),
-        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun hB4 => ?_⟩, _,
         ((((hcallT (hc1 0 (by omega))).trans hcT).trans
           (htret MT)).trans hcl).trans (hr2.of_eq rfl (by rw [okv_succ_and amask I hact])), ?_⟩
       · by_cases hjk : j = k
@@ -625,10 +632,20 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · -- port: inactive lanes kept
         rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega),
           hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)]
-      · -- glam: inactive slots stay pending (`blkt` rewrites block 4's tail with the same words)
-        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
-          (pend_blkt hS hI.ks h6 hfrT hpostT hj ⟨fun t' ht' => hB.1 t' (by omega),
-            fun g hg => hB.2 g (by omega)⟩ hSj)
+      · -- glam: `blkt` rewrites block 4's tail with the words already there
+        obtain ⟨hc4, hf4⟩ := hpostT S hS hI.ks
+        have hA : ∀ t', t' < 280 → word MT (ABUF + 32 * t') = word M (ABUF + 32 * t') := fun t' ht' => by
+          by_cases hlt : t' < 256
+          · exact hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)
+          · rw [show ABUF + 32 * t' = ABUF + 1792 * 4 + 32 * (t' - 224) by simp only [ABUF]; omega,
+              hc4 _ (by omega) (by omega), hB4.1 _ (by omega) (by omega)]
+        have hF : ∀ g, g < 35 → word MT (FL + 32 * g) = word M (FL + 32 * g) := fun g hg => by
+          by_cases hlt : g < 32
+          · exact hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)
+          · rw [show FL + 32 * g = FL + 224 * 4 + 32 * (g - 28) by simp only [FL]; omega,
+              hf4 _ (by omega) (by omega), hB4.2 _ (by omega) (by omega)]
+        refine ⟨fun j hj hna t' ht' => ?_, fun g hg => by rw [hfl' g hg, hF g hg]⟩
+        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' ht', hA t' ht']
       · unfold gbud
         rw [cntA_succ, if_pos hact, if_pos h6, hH6T]
         by_cases h1 : word M' HAVE6 = 0
@@ -638,14 +655,14 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       have hPk := hI.pend rfl k (le_refl _) hk hact
       have hflag : ∃ g, g < 32 ∧ flagBit (word M (FL + 32 * g)) k = 1 :=
         ⟨g, hg, by rw [hPk.1.2 g (by omega), ← hHk.2 g hg]; exact hfg⟩
-      obtain ⟨M', hval, hpend', hlanes', hks', hmono, hfr', hcl⟩ := fix_call hs hrF' M hI.rc hk S hS
+      obtain ⟨M', hval, hpend', hlanes', hfl', hks', hmono, hfr', hcl⟩ := fix_call hs hrF' M hI.rc hk S hS
         hI.ks (I k) hPk hflag
       rw [call_iff] at hcl
       have hr2 := hret M' (if (aI (I k)).isSome then 1 else 0) (by split <;> omega)
       refine ⟨M', 1, ⟨by omega, Fix.rc4_frame hI.rc hfr' (by fx_av), hks', fixRegions_trans hI.fr hfr',
         fun h => absurd h (by omega),
         fun _ j h1 h2 h3 => hpend' j (I j) h2 (by omega) (hI.pend rfl j (by omega) h2 h3),
-        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun hB4 => ?_⟩, _,
         ((hcallF (hc1 1 (by omega))).trans hcl).trans
           (hr2.of_eq rfl (by rw [okv_succ_and amask I hact])), ?_⟩
       · by_cases hjk : j = k
@@ -654,9 +671,10 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · -- port: inactive lanes kept
         rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega)]
         exact hI.keep j hj hna t' ht'
-      · -- glam: inactive slots stay pending
-        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
-          (hI.keepB j J hj hna hSj hB)
+      · -- glam
+        refine ⟨fun j hj hna t' ht' => ?_, fun g hg => by rw [hfl' g hg]; exact (hI.keepB hB4).2 g hg⟩
+        rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' ht']
+        exact (hI.keepB hB4).1 j hj hna t' ht'
       · unfold gbud
         rw [cntA_succ, if_pos hact]
         by_cases h0 : word M HAVE6 = 0
@@ -711,8 +729,12 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       KS4 m' S ∧
       (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 256 →
         lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
-      (∀ sl, sl < 4 → amask.testBit sl = false → ∀ J, S sl = permN 5 J →  -- glam
-        SlotBlocks m sl J 5 → SlotBlocks m' sl J 5) ∧
+      -- glam: with block 4's tail in place, the inactive lanes of candidates `< 280` and the flag words `< 35`
+      (((∀ i, 32 ≤ i → i < 56 → word m (ABUF + 1792 * 4 + 32 * i) = pack4 fun k => cand (S k) i) ∧
+          (∀ g, 4 ≤ g → g < 7 → word m (FL + 224 * 4 + 32 * g) = flagWord S g)) →
+        (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 280 →
+          lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
+        ∀ g, g < 35 → word m' (FL + 32 * g) = word m (FL + 32 * g)) ∧
       FrameExcept m m' [(ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (KB, KB + 800), (BK, BK + 800)] ∧
       Call s Entry.gfix [wd amask] ret tail m
         [flag ((List.range 4).all fun sl => !amask.testBit sl || (aI (I sl)).isSome)] m'
@@ -739,7 +761,8 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       cases hact : amask.testBit sl
       · exact Or.inl rfl
       · exact Or.inr (hall sl hsl hact).1
-    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl, fun _ _ _ _ _ hB => hB,
+    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl,
+      fun _ => ⟨fun _ _ _ _ _ => rfl, fun _ _ => rfl⟩,
       FrameExcept.refl _ _, ?_⟩
     rw [call_iff, hok]
     exact (Fix.gx_fast (ret := ret) hs htail hsz m amask hf0 hr.jumpdest hret).mono (by
@@ -750,8 +773,7 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       hpre.of_eq rfl (by rw [fv_zero]; rfl)
     have hI0 : GInv m m S I amask 0 0 :=
       ⟨by omega, hrc, hks, FrameExcept.refl _ _, fun _ => rfl, fun h => absurd h (by omega),
-        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl,
-        fun _ _ _ _ hSj hB => ⟨hB, fun _ => hSj, fun h => absurd h6 h⟩⟩
+        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl, fun _ => ⟨fun _ _ _ _ _ => rfl, fun _ _ => rfl⟩⟩
     have hH := hp
     obtain ⟨M1, t1, hI1, c0, hr0, hb0⟩ := gstep hs hr m S hS I hH h6 (k := 0) (by omega) (pc := 17447)
       (pc' := 17496) (rT := 17478) (rF := 17491) (by simp only [Infra.isValidJumpDest_lit])
@@ -802,8 +824,7 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (fv_mod2 m (by omega)))
       (fun M' r hr' => Fix.gx_ret3 (ret := ret) hs htail hsz M' amask _ _ r (by unfold okv; split <;> omega) hr')
     have hex := Fix.gx_exit (ret := ret) hs htail hsz M4 amask (fv m t4) (okv amask I 4) hr.jumpdest hret
-    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep,
-      fun sl hsl hna J hSj hB => (hI4.keepB sl J hsl hna hSj hB).1, hI4.fr, ?_⟩
+    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep, hI4.keepB, hI4.fr, ?_⟩
     rw [call_iff]
     have hb4 : gbud amask 4 M4 t4 ≤ popcnt amask * Gas.fixNo + (Gas.fixSq - Gas.fixNo) + Gas.blkt := by
       have := hI4.t2
