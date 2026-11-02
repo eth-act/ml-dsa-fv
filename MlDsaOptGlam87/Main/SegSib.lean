@@ -1,7 +1,7 @@
 import MlDsaOptGlam87.Main.Base
 import MlDsaOptGlam87.Fn.Ball
 import MlDsaOpt44.Math
-import MlDsaOptGlam87.Main.S1.Tac
+import MlDsaOpt87.Main.S1.Tac
 import MlDsaOptGlam87.Layout
 import MlDsaOptGlam87.Budget
 /- Ported from `MlDsaOpt87/Main/SegSib.lean` by `scripts/proofgen_port.py --glam 87`; hand adjustments are marked `-- glam:`. -/

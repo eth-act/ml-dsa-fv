@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate the `csum` block lemmas and loop of the Glamsterdam ML-DSA-44 bytecode.
 
-  python3 MlDsaOptGlam44/Fn/Ct/gen_csum.py
+  python3 MlDsaOptGlam44/Fn/Ct/gen_csum.py        # 44
+  python3 MlDsaOptGlam44/Fn/Ct/gen_csum.py 65|87  # gen_csum_nn.py
 
 Writes `Csum4Blocks.lean` and `Csum4Iter.lean` next to this script, from
 `MlDsaOptGlam44/listing.tsv` only. The code is v4's `csum` (`MlDsaOpt44/Fn/Ct/
@@ -15,8 +16,14 @@ the emits and the loop test are v4's instructions, so v4's `c4T`, `c4g*`,
 from __future__ import annotations
 
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] != "44":
+    sys.path.insert(0, HERE)
+    from gen_csum_nn import main
+    main(int(sys.argv[1]))
+    sys.exit(0)
 ROOT = os.path.join(HERE, "..", "..", "..")
 
 ROWS = [l.rstrip("\n").split("\t") for l in open(os.path.join(ROOT, "MlDsaOptGlam44", "listing.tsv"))][1:]

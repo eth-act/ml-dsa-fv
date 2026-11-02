@@ -24,9 +24,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 os.chdir(ROOT)
 R = "MlDsaOptGlam87/"
 # hand-written modules that replace a v4 module of the same name
-HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Main\.SegW|Main\.S1\.(?:Init|Tbl)|Gas|Main"
+HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Fn\.Csum\.(?:Blocks|Iter)|Main\.SegW|Main\.S1\.(?:Init|Tbl)|Gas|Main"
 
 FILES = [
+    "MlDsaOpt87/Fn/Csum/Main.lean",
     "MlDsaOpt87/Fn/Ball.lean",
     "MlDsaOpt87/Fn/Ball/V4Blocks.lean",
     "MlDsaOpt87/Fn/Ball/V4Loop.lean",
@@ -86,7 +87,6 @@ FILES = [
     "MlDsaOpt87/Main/S1/Fin.lean",
     "MlDsaOpt87/Main/S1/FinBlocks.lean",
     "MlDsaOpt87/Main/S1/Rho.lean",
-    "MlDsaOpt87/Main/S1/Tac.lean",
     "MlDsaOpt87/Main/SegCt.lean",
     "MlDsaOpt87/Main/SegExp.lean",
     "MlDsaOpt87/Main/SegFin.lean",
@@ -157,9 +157,11 @@ sub('Fn/GroupV4/Main.lean', 'have htail : tail.length ≤ 768 := by', 'have htai
 sub('Main/Frame.lean', "import MlDsaOptGlam87.Main.Inv\n",
     "import MlDsaOptGlam87.Main.Inv\nimport MlDsaOpt87.Main.Frame  -- glam: frame lemmas of the shared v4 predicates\n"
     "import MlDsaOptGlam44.Main.Frame  -- glam: and of glam 44's tables (`TblAt`, `RC1Table`)\n")
-# no `usehint` call: `pW` is provisional (the segment is package 2's, `Main/SegW.lean`)
-sub('Main/Base.lean', "def pW : Nat := 120 + 2 * (intt + usehint + pack 4)",
-    "def pW : Nat := 120 + 2 * (intt + pack 4)  -- glam: provisional, `intt` with UseHint fused")
+# no `usehint` call (`Main/SegW.lean`): intt, pack per row group, 84 gas of glue
+sub('Main/Base.lean', "/-- `6727 … 6805`: `intt`, `usehint`, `pack 4` per row group. -/\n"
+    "def pW : Nat := 120 + 2 * (intt + usehint + pack 4)",
+    "/-- `5686 … 5742`: `intt` (UseHint fused), `pack 4` per row group. -/\n"
+    "def pW : Nat := 84 + 2 * (intt + pack 4)  -- glam: no `usehint` call")
 # the final RETURN's pc
 sub('Main/S1/Fin.lean', "    7560, [], M7, fun X hX hF", "    6497, [], M7, fun X hX hF")
 sub('Fn/Ball/V4Proof.lean', r"(RC1Table M :=) fun i hi => by\n(?:  .*\n)*?  exact hrc i hi\n",
@@ -170,3 +172,30 @@ sub('Fn/Ball/V4Loop.lean', r"(  have hrc4 : RC1Table M4 :=) fun a ha => by\n    
     r"\1 trivial  -- glam: no iota table\n", regex=True)
 sub('Fn/Ball/V4Scan.lean', r"\(fun a ha => by\n      rw \[f2\.word[^\n]*\n      exact hrc a ha\)",
     "trivial  -- glam: no iota table", regex=True)
+
+# csum: all τ = 60 window bases on the stack (`gen_csum.py 87` writes Fn/Csum/{Blocks,Iter})
+p = R + 'Fn/Csum/Main.lean'
+t = open(p).read()
+i = t.index("theorem sW_toNat")
+j = t.index("theorem wsum_cells")
+es = "".join(f"  have e{x} : word m0 {49152 + 32 * x} = word M {49152 + 32 * x} := by simpa using hm0 {x} (by norm_num)\n"
+             for x in range(60))
+new = ("theorem sW_toNat (m0 M : ByteArray) (bu : Nat)  -- glam: all τ bases from the stack\n"
+       "    (hm0 : ∀ i, i < 60 → word m0 (49152 + 32 * i) = word M (49152 + 32 * i)) :\n"
+       "    (sW m0 M bu).toNat = wsum M bu 60 % 2 ^ 256 := by\n" + es +
+       "  simp only [sW, ld0, ld1, ld2, ld3, bwOf, Nat.reduceMul, Nat.reduceAdd, "
+       + ", ".join(f"e{x}" for x in range(60)) + "]\n"
+       "  simp only [EvmProof.Word.ofNat_add_mod, EvmProof.Word.word_toNat_ofNat]\n"
+       "  rw [wsum_tau]\n"
+       "  simp only [W, Nat.reduceMul, Nat.reduceAdd]\n"
+       "  apply congrArg (· % 2 ^ 256)\n"
+       "  ring\n\n")
+open(p, 'w').write(t[:i] + new + t[j:])
+sub('Fn/Csum/Main.lean', "    ∀ i, i < 11 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by",
+    "    ∀ i, i < 60 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by  -- glam")
+sub('Fn/Csum/Main.lean', "have htail : tail.length ≤ 960 := by have := hr.depth",
+    "have htail : tail.length ≤ 950 := by have := hr.depth")
+sub('Fn/Csum/Main.lean', "only [csMem, word_mstore_disjoint, word_mstore]",
+    "only [csMem, c4mem, word_mstore_disjoint, word_mstore]", count=4)
+# ExpandA's exact cost on this artifact (the composed segment cost, `Exp.seg_exp_of`)
+sub('Main/Base.lean', "def pExp : Nat := 6090544", "def pExp : Nat := 5435839  -- glam: pureCost 3617135 + gG1013 1406472 + gG14 412232")

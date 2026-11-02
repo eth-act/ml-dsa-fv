@@ -25,9 +25,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 os.chdir(ROOT)
 R = "MlDsaOptGlam65/"
 # hand-written modules that replace a v4 module of the same name
-HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Main\.SegExp|Main\.SegMu|Main\.S1\.(?:Init|Tbl)|Gas|Main"
+HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Fn\.Csum\.(?:Blocks|Iter)|Main\.SegExp|Main\.SegMu|Main\.S1\.(?:Init|Tbl)|Gas|Main"
 
 FILES = [
+    "MlDsaOpt65/Fn/Csum/Main.lean",
     "MlDsaOpt65/Fn/Ball.lean",
     "MlDsaOpt65/Fn/Ball/V4Blocks.lean",
     "MlDsaOpt65/Fn/Ball/V4Loop.lean",
@@ -68,7 +69,6 @@ FILES = [
     "MlDsaOpt65/Main/S1/Fin.lean",
     "MlDsaOpt65/Main/S1/FinBlocks.lean",
     "MlDsaOpt65/Main/S1/Rho.lean",
-    "MlDsaOpt65/Main/S1/Tac.lean",
     "MlDsaOpt65/Main/SegCt.lean",
     "MlDsaOpt65/Main/SegFin.lean",
     "MlDsaOpt65/Main/SegInit.lean",
@@ -294,3 +294,28 @@ of them), the padded last block and the final permutation (`kf1` + 225).  -- gla
 def pMu (mlen : Nat) : Nat :=
   if mlen ≤ 69 then 195
   else 24 + 6971 + (mlen - 70) / 136 * (kf1 + absorb17 + 88) + (kf1 + 225)""")
+
+# csum: all τ = 49 window bases on the stack (`gen_csum.py 65` writes Fn/Csum/{Blocks,Iter})
+p = R + 'Fn/Csum/Main.lean'
+t = open(p).read()
+i = t.index("theorem sW_toNat")
+j = t.index("theorem wsum_cells")
+es = "".join(f"  have e{x} : word m0 {49152 + 32 * x} = word M {49152 + 32 * x} := by simpa using hm0 {x} (by norm_num)\n"
+             for x in range(49))
+new = ("theorem sW_toNat (m0 M : ByteArray) (bu : Nat)  -- glam: all τ bases from the stack\n"
+       "    (hm0 : ∀ i, i < 49 → word m0 (49152 + 32 * i) = word M (49152 + 32 * i)) :\n"
+       "    (sW m0 M bu).toNat = wsum M bu 49 % 2 ^ 256 := by\n" + es +
+       "  simp only [sW, ld0, ld1, ld2, bwOf, Nat.reduceMul, Nat.reduceAdd, "
+       + ", ".join(f"e{x}" for x in range(49)) + "]\n"
+       "  simp only [EvmProof.Word.ofNat_add_mod, EvmProof.Word.word_toNat_ofNat]\n"
+       "  rw [wsum_tau]\n"
+       "  simp only [W, Nat.reduceMul, Nat.reduceAdd]\n"
+       "  apply congrArg (· % 2 ^ 256)\n"
+       "  ring\n\n")
+open(p, 'w').write(t[:i] + new + t[j:])
+sub('Fn/Csum/Main.lean', "    ∀ i, i < 11 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by",
+    "    ∀ i, i < 49 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by  -- glam")
+sub('Fn/Csum/Main.lean', "have htail : tail.length ≤ 960 := by have := hr.depth",
+    "have htail : tail.length ≤ 950 := by have := hr.depth")
+sub('Fn/Csum/Main.lean', "only [csMem, word_mstore_disjoint, word_mstore]",
+    "only [csMem, c4mem, word_mstore_disjoint, word_mstore]", count=4)

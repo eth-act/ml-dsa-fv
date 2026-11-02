@@ -43,7 +43,7 @@ def pRho : Nat := 275 + 4 * spr
 buffers `CW`, `HP`, `HP + 0x2000`, `ACC + 0x2000`; the fused passes `pass3f4`,
 `pass3f6`, `pass3f10`, `pass3f14`; the `tr` rider of groups 10–13, `TRL`).
 Longest static path (`scripts/proofgen_gas_param.py`). -/
-def pExp : Nat := 6090544
+def pExp : Nat := 5435839  -- glam: pureCost 3617135 + gG1013 1406472 + gG14 412232
 /-- `4510 … 5665`: zero the side buffers in `CW`, `HP`, `HP + 0x2000`, `dhint`, `AND`. -/
 def pZd : Nat := 2448 + dhint
 /-- `5665 … 6663`: μ = `H(tr ‖ 0 ‖ 0 ‖ M)` by `kf1` (`hash_mu`): setup 982, one
@@ -55,8 +55,8 @@ def pMu (mlen : Nat) : Nat :=
 def pSib : Nat := 18 + sib
 /-- `6672 … 6727`: `tbuild`, `csum` per row group. -/
 def pCt : Nat := 84 + 2 * (tbuild + csum)
-/-- `6727 … 6805`: `intt`, `usehint`, `pack 4` per row group. -/
-def pW : Nat := 120 + 2 * (intt + pack 4)  -- glam: provisional, `intt` with UseHint fused
+/-- `5686 … 5742`: `intt` (UseHint fused), `pack 4` per row group. -/
+def pW : Nat := 84 + 2 * (intt + pack 4)  -- glam: no `usehint` call
 /-- `6805 …`: the final hash (eight absorbing `kf1` visits of the 17-lane
 loop over the 136 `FIN` lanes, then the padding block), the 64-byte c̃
 comparison, `mstore(0, ok)`, `return(0, 32)`. -/

@@ -1,7 +1,8 @@
-import MlDsaOptGlam87.Main.S1.Tac
+import MlDsaOpt87.Main.S1.Tac
 import MlDsaOpt44.Main.Fin.Proof
 import MlDsaOptGlam87.Layout
 import MlDsaOptGlam87.Budget
+import MlDsaOptGlam87.Main.Base
 /- Ported from `MlDsaOpt87/Main/S1/FinBlocks.lean` by `scripts/proofgen_port.py --glam 87`; hand adjustments are marked `-- glam:`. -/
 set_option maxHeartbeats 0  -- glam: re-elaboration headroom
 set_option warningAsError true
