@@ -38,10 +38,11 @@ rev = "v4.33.0"
 # `Challenge.EvmProof` renamed to `EvmProof`.
 [[lean_lib]]
 name = "EvmProof"
+# `EvmProof.Amsterdam`: what the semantics patch changes and what it does not.
 # `EvmProof.MeterX` (with `StepperX`, `XInstr`): the stepper with EIP-8024's
 # DUPN / SWAPN / EXCHANGE, a separate root so nothing built on `EvmProof`
 # changes.
-roots = ["EvmProof", "EvmProof.MeterX"]
+roots = ["EvmProof", "EvmProof.Amsterdam", "EvmProof.MeterX"]
 
 [[lean_lib]]
 name = "MlDsa44"
@@ -85,3 +86,4 @@ name = "MlDsaOpt65"
 
 [[lean_lib]]
 name = "MlDsaOpt87"
+

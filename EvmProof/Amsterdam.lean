@@ -9,17 +9,24 @@ plus a patch) adds a fork `Amsterdam` with EIP-8024 (`DUPN` / `SWAPN` /
 `EXCHANGE`) and EIP-7954 (code size limit). This module states what the patch
 changes and what it does not:
 
-1. **The forks up to Osaka are unchanged.** The patch edits the bodies of
+1. **The forks up to Osaka are unchanged.** The patch changes the bodies of
    `Operation.availableInFork`, `State.maxCodeSize`, `Gas.maxInitCodeSize`
-   and the `StepRunning.dupN` / `swapN` / `exchange` rules (plus the
-   accessors those rules read). On every fork before `Amsterdam`:
+   (and their callers `Gas.initCodeTooLarge`, `State.resumeCreateSuccess`,
+   `Tx.execute`, which now pass the fork), renames the `DupNOp` / `SwapNOp`
+   field to `imm`, redefines the accessors `DupNOp.n`, `SwapNOp.n`,
+   `ExchangeOp.n` / `m` (so `Operation.popArity` / `pushArity` and
+   `stepF.dupN` / `swapN` / `exchange` of the EIP-8024 operations change
+   meaning) and edits the `StepRunning.dupN` / `swapN` / `exchange` rules.
+   On every fork before `Amsterdam`:
    * `availableInFork` equals its 2f8714d definition, copied verbatim below
      (`availableInFork_eq_2f8714d`), so `State.decoded` (whose own definition
      and `Decode.decodeAt` are untouched) is unchanged;
-   * the three EIP-8024 operations never decode, so the edited `StepRunning`
-     rules, whose `h_op` premise is such a decode, never apply
+   * the three EIP-8024 operations never decode, so nothing that reads their
+     arities or accessors applies: every rule of `Step` and every branch of
+     `stepF` that reaches them is guarded by such a decode
      (`decodedOp_ne_dupN` and the two below);
-   * the code size limits are 24,576 and 49,152 bytes, as before;
+   * the code size limits are 24,576 and 49,152 bytes, as before
+     (`maxCodeSize_eq`, `maxInitCodeSize_eq`);
    * `Fork.toOrd`, which every `fork ≥ X` test compares, is unchanged
      (`toOrd_eq_2f8714d`).
 2. **EIP-8024's immediate decoding is the execution specs'.**
@@ -244,8 +251,7 @@ theorem decodePair_eels :
       if Operation.validPair x then some (Operation.decodePair x) else none)
       = eelsDecodePair := by decide
 
-/-- A valid DUPN / SWAPN immediate names an item in `[17, 235]`; in particular
-`SwapNOp.n + 1 = decodeSingle imm` for the immediates that decode. -/
+/-- A valid DUPN / SWAPN immediate names an item in `[17, 235]`. -/
 theorem decodeSingle_range (x : Fin 256) (h : Operation.validSingle x.val = true) :
     17 ≤ Operation.decodeSingle x.val ∧ Operation.decodeSingle x.val ≤ 235 := by
   revert x; decide
@@ -255,6 +261,29 @@ theorem decodePair_range (x : Fin 256) (h : Operation.validPair x.val = true) :
     1 ≤ (Operation.decodePair x.val).1 ∧
       (Operation.decodePair x.val).1 < (Operation.decodePair x.val).2 ∧
       (Operation.decodePair x.val).2 ≤ 30 - (Operation.decodePair x.val).1 := by
+  revert x; decide
+
+/-- The stack positions of the patched rules are EIP-8024's: `DUPN` copies
+zero-indexed position `decode_single(x) - 1` (item `decode_single(x)`) and
+`SWAPN` swaps the top with zero-indexed position `decode_single(x)`, for every
+immediate that decodes. -/
+theorem dupN_index (x : Fin 256) (h : Operation.validSingle x.val = true) :
+    (⟨x⟩ : Operation.DupNOp).n.val + 1 = Operation.decodeSingle x.val := by
+  have := (decodeSingle_range x h).1
+  simp only [Operation.DupNOp.n]
+  omega
+
+theorem swapN_index (x : Fin 256) (h : Operation.validSingle x.val = true) :
+    (⟨x⟩ : Operation.SwapNOp).n.val + 1 = Operation.decodeSingle x.val := by
+  have := (decodeSingle_range x h).1
+  simp only [Operation.SwapNOp.n]
+  omega
+
+/-- `EXCHANGE` swaps zero-indexed positions `n` and `m` of `decode_pair(x)`,
+for every byte. -/
+theorem exchange_index (x : Fin 256) :
+    (⟨x⟩ : Operation.ExchangeOp).n + 1 = (Operation.decodePair x.val).1 ∧
+      (⟨x⟩ : Operation.ExchangeOp).m + 1 = (Operation.decodePair x.val).2 := by
   revert x; decide
 
 /-- On Amsterdam, a decoded `DUPN` carries a valid immediate. -/

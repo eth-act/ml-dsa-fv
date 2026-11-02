@@ -36,7 +36,7 @@ def run : Nat → State → State
 
 /-- `(halted normally, stack as naturals, gas used)`. -/
 def exec (fork : Fork) (hex : String) : Bool × List Nat × Nat :=
-  let s := run 100 (frame fork (ofHex hex))
+  let s := run 3000 (frame fork (ofHex hex))
   (match s.halt with | .Success => true | _ => false,
     s.stack.map UInt256.toNat, 1000000 - s.gasAvailable)
 
@@ -66,6 +66,24 @@ def stk (hex : String) : List Nat := (exec .Amsterdam hex).2.1
 #guard !(ok "6000808080808080808080808080808080e680")
 -- 3 gas, like DUP1: 2 PUSH1 + 15 DUP1 + DUPN = 18 instructions of 3 gas
 #guard (exec .Amsterdam "60016000808080808080808080808080808080e680").2.2 = 18 * 3
+-- boundaries
+def rep (n : Nat) (h : String) : String := String.join (List.replicate n h)
+-- DUPN with 1024 items: overflow; with 1023 it pushes the 1024th
+#guard !(ok (rep 1024 "5f" ++ "e680"))
+#guard ok (rep 1023 "5f" ++ "e680")
+-- SWAPN 0x80 (item 18) with exactly 18 items succeeds, with 17 it underflows
+#guard ok (rep 18 "5f" ++ "e780")
+#guard !(ok (rep 17 "5f" ++ "e780"))
+-- EXCHANGE 0x8f = (1, 29) needs 30 items
+#guard ok (rep 30 "5f" ++ "e88f")
+#guard !(ok (rep 29 "5f" ++ "e88f"))
+-- DUPN 0x5a is item 235 (valid with 235 items); 0x5b is forbidden
+#guard ok (rep 235 "5f" ++ "e65a")
+#guard !(ok (rep 234 "5f" ++ "e65a"))
+#guard !(ok (rep 235 "5f" ++ "e65b"))
+-- DUPN as the last byte of the code: the missing immediate reads as 0, item 145
+#guard ok (rep 145 "5f" ++ "e6")
+#guard !(ok (rep 144 "5f" ++ "e6"))
 -- not defined before Amsterdam, whatever the immediate
 #guard !((exec .Osaka "e680").1)
 #guard !((exec .Osaka "60016002e780").1)
