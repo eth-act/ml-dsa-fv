@@ -116,6 +116,7 @@ GENERATORS = (
        ("glam gen_nttg.py 65", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py", "65"], None),
        ("glam gen_nttg.py 87", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py", "87"], None),
        ("glam gen_inttg.py 65", ["python3", "MlDsaOptGlam65/Fn/Ntt/gen_inttg.py", "65"], None),
+       ("glam gen_inttg.py 87", ["python3", "MlDsaOptGlam65/Fn/Ntt/gen_inttg.py", "87"], None),
        ("glam ball gen_blocks.py", ["python3", "MlDsaOptGlam44/Fn/Ball/gen_blocks.py"], None),
        ("glam gen_csum.py", ["python3", "MlDsaOptGlam44/Fn/Ct/gen_csum.py"], None),
        ("glam gen_csum.py 65", ["python3", "MlDsaOptGlam44/Fn/Ct/gen_csum.py", "65"], None),

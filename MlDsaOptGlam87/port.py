@@ -158,9 +158,11 @@ sub('Fn/GroupV4/Main.lean', 'have htail : tail.length ≤ 768 := by', 'have htai
 sub('Main/Frame.lean', "import MlDsaOptGlam87.Main.Inv\n",
     "import MlDsaOptGlam87.Main.Inv\nimport MlDsaOpt87.Main.Frame  -- glam: frame lemmas of the shared v4 predicates\n"
     "import MlDsaOptGlam44.Main.Frame  -- glam: and of glam 44's tables (`TblAt`, `RC1Table`)\n")
-# no `usehint` call: `pW` is provisional (the segment is package 2's, `Main/SegW.lean`)
-sub('Main/Base.lean', "def pW : Nat := 120 + 2 * (intt + usehint + pack 4)",
-    "def pW : Nat := 120 + 2 * (intt + pack 4)  -- glam: provisional, `intt` with UseHint fused")
+# no `usehint` call (`Main/SegW.lean`): intt, pack per row group, 84 gas of glue
+sub('Main/Base.lean', "/-- `6727 … 6805`: `intt`, `usehint`, `pack 4` per row group. -/\n"
+    "def pW : Nat := 120 + 2 * (intt + usehint + pack 4)",
+    "/-- `5686 … 5742`: `intt` (UseHint fused), `pack 4` per row group. -/\n"
+    "def pW : Nat := 84 + 2 * (intt + pack 4)  -- glam: no `usehint` call")
 # the final RETURN's pc
 sub('Main/S1/Fin.lean', "    7560, [], M7, fun X hX hF", "    6497, [], M7, fun X hX hF")
 sub('Fn/Ball/V4Proof.lean', r"(RC1Table M :=) fun i hi => by\n(?:  .*\n)*?  exact hrc i hi\n",

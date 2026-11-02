@@ -55,8 +55,8 @@ def pMu (mlen : Nat) : Nat :=
 def pSib : Nat := 18 + sib
 /-- `6672 … 6727`: `tbuild`, `csum` per row group. -/
 def pCt : Nat := 84 + 2 * (tbuild + csum)
-/-- `6727 … 6805`: `intt`, `usehint`, `pack 4` per row group. -/
-def pW : Nat := 120 + 2 * (intt + pack 4)  -- glam: provisional, `intt` with UseHint fused
+/-- `5686 … 5742`: `intt` (UseHint fused), `pack 4` per row group. -/
+def pW : Nat := 84 + 2 * (intt + pack 4)  -- glam: no `usehint` call
 /-- `6805 …`: the final hash (eight absorbing `kf1` visits of the 17-lane
 loop over the 136 `FIN` lanes, then the padding block), the 64-byte c̃
 comparison, `mstore(0, ok)`, `return(0, 32)`. -/
