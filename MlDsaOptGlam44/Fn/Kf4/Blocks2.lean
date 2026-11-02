@@ -9,6 +9,7 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsaOptGlam44.Proofs.Infra
 open MlDsaOpt44.Proofs.Kf4 (Ops256 rot256 ldY stY)
+open MlDsaOptGlam44.Proofs.Kf4
 
 set_option maxRecDepth 100000
 set_option maxHeartbeats 0
