@@ -277,3 +277,20 @@ sub('Fn/Fix.lean', "    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, h
     "    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep, hI4.keepB, hI4.fr, ?_⟩")
 sub('Fn/GroupV4/Main.lean', "obtain ⟨m8, hpost8, -, hkeep8, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call",
     "obtain ⟨m8, hpost8, -, hkeep8, -, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call")
+
+# μ in the 42-call schedule: one-block messages from `MU`, else `hash_mu` from block 1 (exact)
+sub('Main/Base.lean', """/-- `5356 … 5843`: μ, from `MU` (`|M| ≤ 613`, 195) or by `kf1` from slot 2's
+state (`hash_mu`): selection 24, setup (`cext 25`, replication, block 5) 6884,
+one loop visit (`kf1` + `absorb17` + 88) per further 136 bytes plus one, the
+final permutation (`kf1` + 202). -/
+def pMu (mlen : Nat) : Nat :=
+  if mlen ≤ 613 then 195
+  else 24 + 6884 + ((mlen - 614) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)""",
+    """/-- `5017 … 5843`: μ, from `MU` (`|M| ≤ 69`, 195) or by `kf1` from μ's sponge after
+block 0, slot 2 of the state image `MUIMG` (`hash_mu`): selection 24, setup 6971
+(`MCOPY` to `KS` 87, `cext 25` 5167, replication 522, block 1's `absorb17` 1195),
+one loop visit (`kf1` + `absorb17` + 88) per further full block (`⌊(|M| + 66) / 136⌋ - 1`
+of them), the padded last block and the final permutation (`kf1` + 225).  -- glam: exact -/
+def pMu (mlen : Nat) : Nat :=
+  if mlen ≤ 69 then 195
+  else 24 + 6971 + (mlen - 70) / 136 * (kf1 + absorb17 + 88) + (kf1 + 225)""")
