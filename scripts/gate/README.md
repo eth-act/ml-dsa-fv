@@ -65,9 +65,12 @@ Per revision (HEAD must pass all of these):
   and `Lean.ofReduceNat` (`native_decide`, `bv_decide`) are rejected even if
   the list were widened.
 * **Headline theorems**: the four per bytecode (`MlDsa44.Proofs.reference_*`,
-  `MlDsaOpt{44,65,87}.Proofs.opt_*`) exist and are theorems.
-* **Bytecode literals**: `MlDsa44.referenceBytecode` and
-  `MlDsaOpt{44,65,87}.optBytecode`, evaluated (compiled code, in a process of
+  `MlDsaOpt{44,65,87}.Proofs.opt_*`, `MlDsaOptGlam{44,65,87}.Proofs.opt_*`) exist,
+  are theorems, depend only on the allowed axioms (listed with their statement
+  digest), and keep base's statement digest when base has them.
+* **Bytecode literals**: `MlDsa44.referenceBytecode`,
+  `MlDsaOpt{44,65,87}.optBytecode` and `MlDsaOptGlam{44,65,87}.optBytecode`
+  (against `MlDsaOpt/NN/glam/opt.hex`), evaluated (compiled code, in a process of
   its own), equal the bytes of `reference.hex` / `opt.hex`. Their logical value
   is also part of the signature diff.
 
@@ -138,7 +141,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOpt65/Fn/Ginit/gen_lanes.py 87`, `65` (stdout) | `MlDsaOpt87/Fn/Ginit/Lanes.lean`, `MlDsaOpt65/Fn/Ginit/Lanes.lean` |
 | `proofgen_artifact_glam.py MlDsaOpt/NN/glam/opt.hex MlDsaOptGlamNN MlDsaOptGlamNN glamNN M` (M = 2616, 3384, 2897) | `MlDsaOptGlamNN/{Bytecode,Artifact,Infra,Infra/*}.lean`, `listing.tsv` |
 | `MlDsaOptGlam44/Fn/Kf4/gen_kf4.py NN`, `MlDsaOptGlam44/Fn/Kf1/gen_kf1.py NN` (44, 65, 87) | `MlDsaOptGlamNN/Fn/{Kf4,Kf1}/*.lean` (`Model`, `Algebra` for 44 only) |
-| `MlDsaOptGlam44/port.py` (`proofgen_port.py --glam 44` and its recorded adjustments) | the ported files of `MlDsaOptGlam44/` |
+| `MlDsaOptGlam{44,65}/port.py` (`proofgen_port.py --glam NN` and its recorded adjustments) | the ported files of `MlDsaOptGlam{44,65}/` |
 | `MlDsaOptGlam44/Fn/Blk/gen.py` | `MlDsaOptGlam44/Fn/Blk/{Iters,Proof}.lean` |
 | `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py` | `MlDsaOptGlam44/Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}.lean` |
 | `MlDsaOptGlam44/Fn/Ball/gen_blocks.py` | `MlDsaOptGlam44/Fn/Ball/Blocks.lean` |

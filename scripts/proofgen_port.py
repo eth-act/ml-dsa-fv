@@ -4,7 +4,7 @@
 Usage:
   python3 scripts/proofgen_port.py NN [--sub OLD=NEW ...] [--path OLD=NEW ...] FILE ...
   python3 scripts/proofgen_port.py --reloc NN [--all-jd] [--pc-lines REGEX] FILE ...
-  python3 scripts/proofgen_port.py --glam NN [--sub OLD=NEW ...] FILE ...
+  python3 scripts/proofgen_port.py --glam NN [--sub OLD=NEW ...] [--hand REGEX] FILE ...
 
 `--glam NN` ports files of `MlDsaOptNN/` (the v4 proofs) to `MlDsaOptGlamNN/`, the
 Glamsterdam bytes `MlDsaOpt/NN/glam/` (`glam_maps`): indices and pcs through the
@@ -75,6 +75,7 @@ ROOT = os.path.join(HERE, "..")
 MEMW = {44: 2616, 65: 2865, 87: 2897}             # v4 (current bytes)
 OLD = "v3"                                        # `--reloc` source: `MlDsaOpt/NN/v3/`
 MEMW_OLD = {44: 2097, 65: 2865, 87: 2897}         # memory size of OLD
+GLAM_MEMW = {44: 2616, 65: 3384, 87: 2897}        # `--glam` destination (65: two side buffers)
 
 
 def regions(nn, sub=""):
@@ -237,13 +238,90 @@ def glam_maps(nn):
     return idx, pc, jd
 
 
+_DECLS = {}
+
+
+def file_decls(path):
+    """`namespace -> short names` declared in one `.lean` file (nested namespaces and
+    dotted declaration names resolved)."""
+    if path in _DECLS:
+        return _DECLS[path]
+    out, stack = {}, []
+    for l in open(path):
+        m = re.match(r"namespace\s+(\S+)\s*$", l)
+        if m:
+            stack.append(m.group(1) if not stack else stack[-1] + "." + m.group(1))
+            continue
+        if re.match(r"end\s+\S+\s*$", l) and stack:
+            stack.pop()
+            continue
+        m = re.match(r"(?:@\[[^\]]*\]\s*)?(?:private |protected |noncomputable )*"
+                     r"(?:theorem|def|abbrev|structure|inductive|lemma)\s+([\w.']+)", l)
+        if m and stack:
+            out.setdefault(stack[-1], set()).add(m.group(1))
+    _DECLS[path] = out
+    return out
+
+
+def import_closure(text, seen=None):
+    """The `.lean` files of the repository that `text`'s imports reach."""
+    seen = set() if seen is None else seen
+    for mod in re.findall(r"^import (\S+)", text, re.M):
+        g = os.path.join(ROOT, mod.replace(".", "/") + ".lean")
+        if not os.path.exists(g):         # not yet ported (first run): its v4 source
+            g = os.path.join(ROOT, re.sub(r"^MlDsaOptGlam", "MlDsaOpt", mod).replace(".", "/") + ".lean")
+        if g not in seen and os.path.exists(g):
+            seen.add(g)
+            import_closure(open(g).read(), seen)
+    return seen
+
+
+def hide_shadowed(text, nn):
+    """For NN ≠ 44: in a v4 NN source, `MlDsaOptNN.Proofs.*` names shadowed the opened
+    `MlDsaOpt44.Proofs.*` ones by namespace priority; the port opens both, so every
+    `open MlDsaOpt44.Proofs.X` hides the names that the opened NN namespaces redefine
+    (among the declarations the file's imports reach)."""
+    d = {}
+    for g in import_closure(text):
+        for ns, names in file_decls(g).items():
+            d.setdefault(ns, set()).update(names)
+    opened = set(re.findall(rf"\b(MlDsaOpt{nn}\.Proofs(?:\.\w+)*)", " ".join(
+        l for l in text.split("\n") if re.match(r"\s*open\s", l))))
+    opened.add(f"MlDsaOpt{nn}.Proofs")
+    mine = set().union(*(d.get(n, set()) for n in opened))
+    out = []
+    for l in text.split("\n"):
+        m = re.match(r"(\s*)open\s+(.*?)\s*$", l)
+        if not m or "hiding" in l or " in" in l or "(" in l or l.strip().startswith("open scoped"):
+            out.append(l)
+            continue
+        body, _, comment = m.group(2).partition("--")
+        comment = ("  --" + comment) if comment else ""
+        names = body.split()
+        keep = [n for n in names if not (n.startswith("MlDsaOpt44.") and d.get(n, set()) & mine)]
+        hide = [n for n in names if n not in keep]
+        if keep:
+            out.append(m.group(1) + "open " + " ".join(keep) + comment)
+        elif comment:
+            out.append(m.group(1) + comment.strip())
+        for n in hide:
+            out.append(m.group(1) + f"open {n} hiding " + " ".join(sorted(d[n] & mine)))
+    return "\n".join(out)
+
+
 # hand-written Glamsterdam modules that replace a v4 module of the same name
 GLAM_HAND = (r"Fn\.(?:Keccak|Blk|Ntt|Ball|Ct|Decode)|Fn\.Ct\.Csum4(?:Blocks|Iter)|Main\.(?:Init|Tbl)\.Blocks|"
              r"Main\.(?:Base|Valid|SegMu)|Gas|Main")
 
 
-def glam_main(nn, files, subs):
-    """`--glam NN FILE ...`: port v4 proofs of `MlDsaOptNN/` to `MlDsaOptGlamNN/`."""
+def glam_main(nn, files, subs, hand=None):
+    """`--glam NN FILE ...`: port v4 proofs of `MlDsaOptNN/` to `MlDsaOptGlamNN/`.
+
+    For NN ≠ 44 the sources are the v4 NN proofs, which import both `MlDsaOptNN`
+    and (shared) `MlDsaOpt44` modules: `MlDsaOpt44` names are kept, `MlDsaOptNN`
+    names play the part of 44's (renamed when ported, opened as twins). `hand`
+    overrides `GLAM_HAND` (the set's hand-written modules)."""
+    hand = hand or GLAM_HAND
     idx, pcm, jd = glam_maps(nn)
     nsn = f"Glam{nn}"
     # pcs relocated as numbers: JUMPDESTs outside the rewritten kernels (their
@@ -267,21 +345,20 @@ def glam_main(nn, files, subs):
     for k, v in eo.items():
         if k in eg:
             pcm[int(v)] = int(eg[k])
-    if nn == 44:
-        # main-flow boundaries next to rewritten code (`Main/Inv.lean`): the end of the
-        # init (no iota tables here), of `dz`'s segment and of the NTT table
-        pcm.update({992: 15, 1076: 99, 3059: 2018})
+    # main-flow boundaries next to rewritten code (`Main/Inv.lean`): the end of the
+    # init (no iota tables here), of `dz`'s segment and of the NTT table
+    pcm.update({44: {992: 15, 1076: 99, 3059: 2018}, 65: {1101: 124}, 87: {1117: 140}}.get(nn, {}))
     n_instr = len(glam_disasm(nn, "glam"))
     n_old = len(glam_disasm(nn, ""))
     ported = set(files)
     report = []
     global TWINS, PORTED_NS
-    PORTED_NS = namespaces44([os.path.join(ROOT, f) for f in files])
+    PORTED_NS = namespaces44([os.path.join(ROOT, f) for f in files], pre=f"MlDsaOpt{nn}")
 
     def closure(f, seen):
         # the unported v4 modules a ported file can see (through ported imports too)
         for l in open(os.path.join(ROOT, f)):
-            m = re.match(r"import (MlDsaOpt44\.\S+)", l)
+            m = re.match(rf"import (MlDsaOpt{nn}\.\S+)", l)
             if m:
                 g = m.group(1).replace(".", "/") + ".lean"
                 if g not in seen and os.path.exists(os.path.join(ROOT, g)):
@@ -308,7 +385,7 @@ def glam_main(nn, files, subs):
                 qdecls.add(full)
     for f in files:
         vis = [os.path.join(ROOT, g) for g in closure(f, set()) if g not in ported]
-        TWINS = namespaces44(vis)
+        TWINS = namespaces44(vis, pre=f"MlDsaOpt{nn}")
         src = open(os.path.join(ROOT, f)).read()
         dst = f.replace(f"MlDsaOpt{nn}/", f"MlDsaOpt{nsn}/", 1)
         os.makedirs(os.path.dirname(os.path.join(ROOT, dst)), exist_ok=True)
@@ -335,12 +412,21 @@ def glam_main(nn, files, subs):
             L + str(idx[int(m.group(1))]) + R if int(m.group(1)) in idx else m.group(1))
             + ", by " + m.group(2) + "⟩", src)
         # named pc arguments, `(pc := 13656)`
-        src = re.sub(r"(\((?:pc|pc'|pc\d|r\d|rT|rF|ret|ret'|rl|rs) := )(\d{4,5})\)",
+        src = re.sub(r"(\((?:pc|pc'|pc\d|pcm|r|r\d|rT|rF|ret|ret'|rl|rs) := )(\d{4,5})\)",
                      lambda m: m.group(1) + (L + str(pcm[int(m.group(2))]) + R
                                              if int(m.group(2)) in pcm else m.group(2)) + ")", src)
         text = reloc_text(src, nn, idx, pcm, jdr, report, f, True, data)
-        text = port_text(text, nsn, ident, ident, subs, ported, report, f, tacn=f"glam{nn}_",
-                         memw=(MEMW[nn], MEMW[nn]), kzmap=False, jd=set(), strict=False)
+        if nn != 44:
+            # `MlDsaOptNN` takes 44's part in `port_text`; the real 44 names are parked
+            text = text.replace("MlDsaOpt44", "MlDsaOptV44").replace(f"MlDsaOpt{nn}", "MlDsaOpt44")
+            text = text.replace(f"opt{nn}_", "opt44_")
+            sported = {g.replace(f"MlDsaOpt{nn}/", "MlDsaOpt44/", 1) for g in ported}
+        else:
+            sported = ported
+        text = port_text(text, nsn, ident, ident, subs, sported, report, f, tacn=f"glam{nn}_",
+                         memw=(MEMW[nn], GLAM_MEMW[nn]), kzmap=False, jd=set(), strict=False)
+        if nn != 44:
+            text = text.replace("MlDsaOpt44", f"MlDsaOpt{nn}").replace("MlDsaOptV44", "MlDsaOpt44")
         # fully qualified references to declarations of ported files
         text = re.sub(rf"\bMlDsaOpt{nn}\.Proofs\.((?:\w+\.)*)(\w+)\b",
                       lambda m: (f"MlDsaOpt{nsn}.Proofs." if (m.group(1) + m.group(2)) in qdecls
@@ -353,8 +439,8 @@ def glam_main(nn, files, subs):
         # the Glamsterdam `glamNN_reach` is the chunked fallback, so call `rreach`
         text = re.sub(rf"\bglam{nn}_reach\b", f"glam{nn}_rreach", text)
         # modules with a hand-written Glamsterdam version (the kernels' wrappers)
-        text = re.sub(rf"^import MlDsaOpt{nn}\.({GLAM_HAND})$",
-                      rf"import MlDsaOpt{nsn}.\1", text, flags=re.M)
+        text = re.sub(rf"^import MlDsaOpt{nn}\.({hand})((?:\s+--.*)?)$",
+                      rf"import MlDsaOpt{nsn}.\1\2", text, flags=re.M)
         text = re.sub(rf"\bFin {n_old}\b", f"Fin {n_instr}", text)
         header = (f"/- Ported from `{f}` by `scripts/proofgen_port.py --glam {nn}`"
                   + (" " + " ".join(f"--sub {o}={n}" for o, n in subs) if subs else "")
@@ -372,24 +458,26 @@ def glam_main(nn, files, subs):
             if g in seen or not os.path.exists(os.path.join(ROOT, g)):
                 return
             seen.add(g)
-            if g in ported or re.fullmatch(GLAM_HAND, mod.split(".", 1)[1]):
+            if g in ported or re.fullmatch(hand, mod.split(".", 1)[1]):
                 return
             for l2 in open(os.path.join(ROOT, g)):
-                m2 = re.match(r"import (MlDsaOpt44\.\S+)", l2)
+                m2 = re.match(rf"import (MlDsaOpt{nn}\.\S+)", l2)
                 if m2:
                     via(m2.group(1), seen)
         seen = set()
         for l in list(imps):
-            m = re.match(r"import (MlDsaOpt44\.\S+)$", l)
+            m = re.match(rf"import (MlDsaOpt{nn}\.\S+)(?:\s+--.*)?$", l)
             if m:
                 via(m.group(1), seen)
         for g in sorted(g for g in seen if g in ported or
-                        re.fullmatch(GLAM_HAND, g[:-5].replace("/", ".").split(".", 1)[1])):
+                        re.fullmatch(hand, g[:-5].replace("/", ".").split(".", 1)[1])):
             e = "import " + g[:-5].replace("/", ".").replace(f"MlDsaOpt{nn}.", f"MlDsaOpt{nsn}.", 1)
             if e not in imps and g != f:
                 imps.append(e)
         text = "\n".join(imps + [header.rstrip("\n"),
                                  "set_option maxHeartbeats 0  -- glam: re-elaboration headroom"] + rest)
+        if nn != 44:
+            text = hide_shadowed(text, nn)
         with open(os.path.join(ROOT, dst), "w") as fh:
             fh.write(text)
         print(f"ported {f} -> {dst}")
@@ -509,9 +597,10 @@ def reloc_main(nn, files, all_jd=False, pc_lines=None):
         print("CHECK", r)
 
 
-def namespaces44(files=None):
+def namespaces44(files=None, pre="MlDsaOpt44"):
     """Every namespace declared (absolutely or nested) in `MlDsaOpt44/**.lean` (or in
-    the given files)."""
+    the given files, whose absolute namespaces start with `pre`; reported with
+    `MlDsaOpt44` in its place)."""
     out = set()
     if files is None:
         files = [os.path.join(dp, f) for dp, _, fs in os.walk(os.path.join(ROOT, "MlDsaOpt44"))
@@ -523,6 +612,8 @@ def namespaces44(files=None):
                 m = re.match(r"namespace\s+(\S+)\s*$", l)
                 if m:
                     n = m.group(1)
+                    if pre != "MlDsaOpt44":
+                        n = n.replace("MlDsaOpt44", "MlDsaOptV44").replace(pre, "MlDsaOpt44")
                     full = n if n.startswith("MlDsaOpt44") or not stack else stack[-1] + "." + n
                     stack.append(full)
                     out.add(full)
@@ -703,15 +794,17 @@ def main(argv):
                     f.write(text)
         return
     if argv[0] == "--glam":
-        nn, subs, files = int(argv[1]), [], []
+        nn, subs, files, hand = int(argv[1]), [], [], None
         it = iter(argv[2:])
         for a in it:
             if a == "--sub":
                 o, n = next(it).split("=")
                 subs.append((o, n))
+            elif a == "--hand":
+                hand = next(it)
             else:
                 files.append(os.path.relpath(a, ROOT) if os.path.isabs(a) else a)
-        glam_main(nn, files, subs)
+        glam_main(nn, files, subs, hand)
         return
     if argv[0] == "--reloc":
         nn = int(argv[1])
