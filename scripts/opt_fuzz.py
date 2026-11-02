@@ -6,7 +6,8 @@ divergence: it accepts a repeated hint index inside a row; only a strict
 mismatch outside that case is an error).
 
 Usage: python3 scripts/opt_fuzz.py NN COUNT SEED [OUT.tsv]
-OPT_VERSION=v4 fuzzes MlDsaOpt/NN/v4/opt.hex instead.
+OPT_VERSION=v4 fuzzes MlDsaOpt/NN/v4/opt.hex instead; OPT_VERSION=glam fuzzes
+the Glamsterdam variant MlDsaOpt/NN/glam/opt.hex with EIP-8024.
 Each case: fresh or reused key, random message length, then one mutation
 (none, bit flip in pk / c-tilde / z / hint / message, hint byte set, z
 coefficient at the norm boundary, truncation, extension).
@@ -53,12 +54,13 @@ def repeated_hint(nn, cd):
 
 
 def main():
+    glam = os.environ.get("OPT_VERSION") == "glam"
     nn, count, seed = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
     out = sys.argv[4] if len(sys.argv) > 4 else None
     rng = random.Random(seed)
     lib = LIBS[nn]
     p = opt_ref.derived(nn)
-    sub = ("v4",) if os.environ.get("OPT_VERSION") == "v4" else ()
+    sub = {"v4": ("v4",), "glam": ("glam",)}.get(os.environ.get("OPT_VERSION"), ())
     code = bytes.fromhex(open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), *sub, "opt.hex")).read().strip())
     keys = []
     bad = 0
@@ -108,7 +110,7 @@ def main():
             if dpy != exp and not (dpy == 1 and repeated_hint(nn, cd)):
                 print(f"MODEL/DPY DISAGREE case {case} kind {kind}", flush=True)
                 bad += 1
-        r = opt_evm.run(code, cd)
+        r = opt_evm.run(code, cd, fork="glamsterdam" if glam else "osaka")
         got = int.from_bytes(r["ret"], "big") if r["status"] == "return" and len(r["ret"]) == 32 else None
         acc += exp
         rows.append(f"{nn}\t{case}\t{kind}\t{len(cd)}\t{exp}\t{got}\t{r['gas_used']}")
