@@ -17,11 +17,16 @@ git = "https://github.com/powdr-labs/yul-semantics"
 rev = "c9914c13df47efe026376723acd632bc33bc16e3"
 
 # The EVM semantics the correctness theorem is stated against. Part of the
-# trust boundary, so pinned explicitly.
+# trust boundary, so pinned explicitly. Temporarily: powdr-labs/evm-semantics
+# 2f8714d plus the Glamsterdam patch (a partial `Amsterdam` fork: EIP-8024 and
+# EIP-7954), vendored in deps/evm-semantics and pinned at the commit of this
+# repository that added the patch (see deps/README.md). The yul packages
+# below require the same package name and build against it too.
 [[require]]
 name = "evm_semantics"
-git = "https://github.com/powdr-labs/evm-semantics"
-rev = "2f8714d6ba960a3de67720019b54513f5bc1a2e3"
+git = "https://github.com/eth-act/ml-dsa-fv"
+rev = "2e8a064f00cab4ba11799ccbed5bcaf7fcb349be"
+subDir = "deps/evm-semantics"
 
 [[require]]
 name = "mathlib"
@@ -33,6 +38,8 @@ rev = "v4.33.0"
 # `Challenge.EvmProof` renamed to `EvmProof`.
 [[lean_lib]]
 name = "EvmProof"
+# `EvmProof.Amsterdam`: what the semantics patch changes and what it does not.
+roots = ["EvmProof", "EvmProof.Amsterdam"]
 
 [[lean_lib]]
 name = "MlDsa44"
