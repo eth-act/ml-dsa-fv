@@ -9,7 +9,7 @@ set_option warningAsError true
 |---|---|---|
 | 3556 | `[okZ]` | `Inv4` |
 | 3674 | `[… ∧ okUpTo0 5]` | `Exp.PureOut` (`Main/Exp/Pure.lean`) |
-| 5022 | `[… ∧ okI 0 … okI 8]` | `Exp.InvG8` (after group 7's copy to `HP + 0x2000`) |
+| 5022 | `[… ∧ okIUpTo 9]` | `Exp.InvG8` (after group 7's copy to `HP + 0x2000`; `Main/Exp/G57.lean`) |
 | 5242 | `[… ∧ okI 9]` | `InvW` (group 8, `pass3f8`; `Main/Exp/G8.lean`) |
 
 Row-group-1 instance `i` (`okI`) is `A[4 + i % 2][i / 2]`; groups 5, 6, 7 run
@@ -25,6 +25,18 @@ open MlDsaOptCommon
 open MlDsa
 
 namespace Exp
+
+/-- What row group 0 leaves for the rest of ExpandA (pc 3674, after `pass3f4`). -/
+structure PureOut (cd m : ByteArray) : Prop where
+  rc4 : RC4Table m
+  rc1 : RC1Table m
+  tbl : TblAt m
+  zhat : ZHatAt m cd
+  rho : Rho1At m cd
+  acc0 : AccCols0 m cd 5
+  zNeg : ZeroOn m NNEG (NNEG + 64)
+  zBases : ZeroOn m BASES (BASES + 2048)
+  zIdx : ZeroOn m IDX (IDX + 256)
 
 /-- The side buffer at `dst` holds the row-group-1 instances `i0, i0 + 1,
 i0 + 2` in lanes `0, 1, 2` (when `A` exists). -/
