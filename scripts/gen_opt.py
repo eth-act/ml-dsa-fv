@@ -129,6 +129,8 @@ class Gen:
         self.a = Asm()
         self.n = 0
         self.nttk = NttKernel(self.a, L.TBL)
+        self.nttk.biased = self.v4
+        self.ZFB = 27 if self.v4 else 25   # z norm flag bit: > K = g1 + q (+ 8q) > 2^(ZFB - 1)
 
     def fresh(self, base):
         self.n += 1
@@ -525,9 +527,10 @@ class Gen:
         L = self.L
         p = L.p
         Z = p["zbits"]
-        K = p["g1"] + Q
+        # v4: z carries a bias of 8q for the forward NTT (opt_ntt `biased`)
+        K = p["g1"] + Q + (8 * Q if self.v4 else 0)
         C2 = (1 << Z) - 2 * p["g1"] + p["beta"]      # bit Z set iff raw >= 2g1 - beta
-        C1 = (1 << 25) - (K - p["beta"])              # bit 25 set iff K - raw >= K - beta
+        C1 = (1 << self.ZFB) - (K - p["beta"])        # bit ZFB set iff K - raw >= K - beta
         lanes = lambda v: sum(v << (64 * j) for j in range(4))
         st.dup("raw", "x")
         st.push(lanes(C2), "c")
@@ -547,7 +550,7 @@ class Gen:
     def flag_check(self):
         """[acc] -> [ok]: in every lane, bits zbits+32 and 25 of the z flag word are clear."""
         a, L = self.a, self.L
-        bit = (1 << (L.p["zbits"] + 32)) | (1 << 25)
+        bit = (1 << (L.p["zbits"] + 32)) | (1 << self.ZFB)
         a.push(sum(bit << (64 * j) for j in range(4)))
         a.op("AND")
         a.op("ISZERO")

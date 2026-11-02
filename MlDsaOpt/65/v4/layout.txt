@@ -1,4 +1,4 @@
-ML-DSA-65 optimised verifier: 23237 bytes (limit 24576)
+ML-DSA-65 optimised verifier: 23147 bytes (limit 24576)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   3556   3556 bytes  main
@@ -8,26 +8,26 @@ Subroutines / regions (pc ranges of the generated code):
     7577 ..   8173    596 bytes  absorb17
     8173 ..   8404    231 bytes  sample_in_ball
     8404 ..   9091    687 bytes  decode_hint
-    9091 ..   9973    882 bytes  dz
-    9973 ..  11148   1175 bytes  blk
-   11148 ..  11340    192 bytes  pass3f4
-   11340 ..  11706    366 bytes  pass3f8
-   11706 ..  12036    330 bytes  gfix
-   12036 ..  12476    440 bytes  ginit
-   12476 ..  12925    449 bytes  trabs
-   12925 ..  13199    274 bytes  cext
-   13199 ..  13414    215 bytes  spr
-   13414 ..  13787    373 bytes  mu0
-   13787 ..  14476    689 bytes  fix
-   14476 ..  14707    231 bytes  group
-   14707 ..  15515    808 bytes  tbuild
-   15515 ..  16320    805 bytes  csum
-   16320 ..  16591    271 bytes  usehint
-   16591 ..  16974    383 bytes  pack
-   16974 ..  18241   1267 bytes  ntt
-   18241 ..  19722   1481 bytes  intt
-   19722 ..  21716   1994 bytes  kf1
-   21716 ..  23237   1521 bytes  kf4
+    9091 ..   9976    885 bytes  dz
+    9976 ..  11151   1175 bytes  blk
+   11151 ..  11343    192 bytes  pass3f4
+   11343 ..  11709    366 bytes  pass3f8
+   11709 ..  12039    330 bytes  gfix
+   12039 ..  12479    440 bytes  ginit
+   12479 ..  12928    449 bytes  trabs
+   12928 ..  13202    274 bytes  cext
+   13202 ..  13417    215 bytes  spr
+   13417 ..  13790    373 bytes  mu0
+   13790 ..  14479    689 bytes  fix
+   14479 ..  14710    231 bytes  group
+   14710 ..  15518    808 bytes  tbuild
+   15518 ..  16323    805 bytes  csum
+   16323 ..  16594    271 bytes  usehint
+   16594 ..  16977    383 bytes  pack
+   16977 ..  18151   1174 bytes  ntt
+   18151 ..  19632   1481 bytes  intt
+   19632 ..  21626   1994 bytes  kf1
+   21626 ..  23147   1521 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)

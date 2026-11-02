@@ -103,7 +103,26 @@ def test_constants():
             assert D == (r + g2 - 1) // g2
             assert (D >> 1) % m == opt_ref.use_hint(0, r, g2)
             assert ((D >> 1) + m - 1 + 2 * (D & 1)) % m == opt_ref.use_hint(1, r, g2)
-    print("constants: multiply-shift quotients exact")
+    # v4 forward NTT: inputs z + 8q (bias from the z decoder), b' = a - u without
+    # +2q; u < t / 2^32 + q (Montgomery) or q (1 + b / 2^32) (Shoup, pass A).
+    # Lanes stay in [0, 2^28) and Montgomery / Shoup inputs in range.
+    from opt_ntt import Kernel
+    rng = random.Random(3)
+    for z in range(1, 8):
+        zs = Kernel.shoup(z)
+        for b in [0, 1, (1 << 28) - 1] + [rng.randrange(1 << 28) for _ in range(20000)]:
+            u = b * opt_ref.ZETAS[z] - ((b * zs) >> 32) * Q
+            assert 0 <= u < Q + (b * Q >> 32) + 1 and (u - b * opt_ref.ZETAS[z]) % Q == 0
+    for nn in (44, 65, 87):
+        p = opt_ref.derived(nn)
+        lo, hi = p["g1"] + 9 * Q - (1 << p["zbits"]) + 1, p["g1"] + 9 * Q
+        for layer in range(8):
+            t = hi * (Q - 1)
+            assert t < 1 << 64 and hi < 1 << 32
+            umax = Q + (hi * Q >> 32) + 1 if layer < 3 else (t >> 32) + Q
+            lo, hi = lo - umax, hi + umax
+            assert lo >= 0 and hi < 1 << 28
+    print("constants: multiply-shift quotients exact; v4 NTT bias bounds hold")
 
 
 def run_vectors(nn, code, check6=None):
