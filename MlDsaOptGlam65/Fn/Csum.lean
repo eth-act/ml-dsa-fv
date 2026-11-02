@@ -1,6 +1,4 @@
-import MlDsaOpt65.Fn.Csum.Defs
-import MlDsaOpt65.Fn.Ball.Defs
-import MlDsaOpt65.Fn.TBuild.Defs
+import MlDsaOptGlam65.Fn.Csum.Main
 import MlDsaOptGlam65.Budget
 import MlDsaOptGlam65.Layout
 /- Ported from `MlDsaOpt65/Fn/Csum.lean` by `scripts/proofgen_port.py --glam 65`; hand adjustments are marked `-- glam:`. -/
@@ -43,7 +41,7 @@ theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         ∀ t, t < 256 → word m' (SP + 0x2000 * g + 32 * t) =
           pack4 fun r => spOff - (2 ^ 13 * sPrime c s.executionEnv.calldata off r t + nNeg c t)) ∧
       FrameExcept m m' [(SP + 0x2000 * g, SP + 0x2000 * g + 8192)] ∧
-      Call s Entry.csum [wd (SP + 0x2000 * g), wd (TT + 0x1800 * g)] ret tail m [] m' Gas.csum := by
-  sorry  -- glam: open item (package dz/csum)
+      Call s Entry.csum [wd (SP + 0x2000 * g), wd (TT + 0x1800 * g)] ret tail m [] m' Gas.csum :=
+  G4.csum_main hs hr m hg hb
 
 end MlDsaOptGlam65.Proofs

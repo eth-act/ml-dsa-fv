@@ -149,6 +149,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam65/Fn/Ntt/gen_inttg.py 65` | `MlDsaOptGlam65/Fn/Ntt/{Inv1,Inv2,InvCtl,InvTop}.lean` |
 | `MlDsaOptGlam44/Fn/Ball/gen_blocks.py` | `MlDsaOptGlam44/Fn/Ball/Blocks.lean` |
 | `MlDsaOptGlam44/Fn/Ct/gen_csum.py` | `MlDsaOptGlam44/Fn/Ct/{Csum4Blocks,Csum4Iter}.lean` |
+| `MlDsaOptGlam44/Fn/Ct/gen_csum.py 65`, `87` (`gen_csum_nn.py`) | `MlDsaOptGlamNN/Fn/Csum/{Blocks,Iter}.lean` |
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py` | `MlDsaOptGlam44/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py 65`, `87` (`gen_dz_nn.py`) | `MlDsaOptGlamNN/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `MlDsaOptGlam44/Main/Alt/gen.py {0,1}` | stdout = `MlDsaOptGlam44/Main/Alt/Grp{A,B}.lean` |

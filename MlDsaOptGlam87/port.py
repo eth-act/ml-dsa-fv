@@ -24,9 +24,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 os.chdir(ROOT)
 R = "MlDsaOptGlam87/"
 # hand-written modules that replace a v4 module of the same name
-HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Main\.SegW|Main\.S1\.(?:Init|Tbl)|Gas|Main"
+HAND = r"Fn\.(?:Keccak|Blk|Ntt|Decode|Csum)|Fn\.Csum\.(?:Blocks|Iter)|Main\.SegW|Main\.S1\.(?:Init|Tbl)|Gas|Main"
 
 FILES = [
+    "MlDsaOpt87/Fn/Csum/Main.lean",
     "MlDsaOpt87/Fn/Ball.lean",
     "MlDsaOpt87/Fn/Ball/V4Blocks.lean",
     "MlDsaOpt87/Fn/Ball/V4Loop.lean",
@@ -170,3 +171,28 @@ sub('Fn/Ball/V4Loop.lean', r"(  have hrc4 : RC1Table M4 :=) fun a ha => by\n    
     r"\1 trivial  -- glam: no iota table\n", regex=True)
 sub('Fn/Ball/V4Scan.lean', r"\(fun a ha => by\n      rw \[f2\.word[^\n]*\n      exact hrc a ha\)",
     "trivial  -- glam: no iota table", regex=True)
+
+# csum: all τ = 60 window bases on the stack (`gen_csum.py 87` writes Fn/Csum/{Blocks,Iter})
+p = R + 'Fn/Csum/Main.lean'
+t = open(p).read()
+i = t.index("theorem sW_toNat")
+j = t.index("theorem wsum_cells")
+es = "".join(f"  have e{x} : word m0 {49152 + 32 * x} = word M {49152 + 32 * x} := by simpa using hm0 {x} (by norm_num)\n"
+             for x in range(60))
+new = ("theorem sW_toNat (m0 M : ByteArray) (bu : Nat)  -- glam: all τ bases from the stack\n"
+       "    (hm0 : ∀ i, i < 60 → word m0 (49152 + 32 * i) = word M (49152 + 32 * i)) :\n"
+       "    (sW m0 M bu).toNat = wsum M bu 60 % 2 ^ 256 := by\n" + es +
+       "  simp only [sW, ld0, ld1, ld2, ld3, bwOf, Nat.reduceMul, Nat.reduceAdd, "
+       + ", ".join(f"e{x}" for x in range(60)) + "]\n"
+       "  simp only [EvmProof.Word.ofNat_add_mod, EvmProof.Word.word_toNat_ofNat]\n"
+       "  rw [wsum_tau]\n"
+       "  simp only [W, Nat.reduceMul, Nat.reduceAdd]\n"
+       "  apply congrArg (· % 2 ^ 256)\n"
+       "  ring\n\n")
+open(p, 'w').write(t[:i] + new + t[j:])
+sub('Fn/Csum/Main.lean', "    ∀ i, i < 11 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by",
+    "    ∀ i, i < 60 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by  -- glam")
+sub('Fn/Csum/Main.lean', "have htail : tail.length ≤ 960 := by have := hr.depth",
+    "have htail : tail.length ≤ 950 := by have := hr.depth")
+sub('Fn/Csum/Main.lean', "only [csMem, word_mstore_disjoint, word_mstore]",
+    "only [csMem, c4mem, word_mstore_disjoint, word_mstore]", count=4)
