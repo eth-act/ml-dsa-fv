@@ -62,6 +62,9 @@ FILES = [
     "MlDsaOpt44/Main/Frame.lean",
     "MlDsaOpt44/Main/Inv.lean",
     "MlDsaOpt44/Main/Rho/Blocks.lean",
+    "MlDsaOpt44/Main/Mu/Cext.lean",
+    "MlDsaOpt44/Main/Mu/Long.lean",
+    "MlDsaOpt44/Main/Mu/Proof.lean",
     "MlDsaOpt44/Main/SegCt.lean",
     "MlDsaOpt44/Main/SegFin.lean",
     "MlDsaOpt44/Main/SegG2.lean",
@@ -205,3 +208,77 @@ own path (`seg_alt`).
 """ + s[j:]
     s = s.replace('# Main-flow invariants (v4)', '# Main-flow invariants (v4, Glamsterdam pcs)')
     open(p, 'w').write(s)
+
+# μ on the packed schedule: four blocks read `FLAG` (the bound `0x10fa − 0x220 · FLAG`, the
+# `hash_mu` entry test); `FLAG = 1` comes from `InvH`
+G = '  have hfl\' : word M 3936 = 1 := hfl  -- glam: `FLAG`\n'
+sub('Main/Mu/Long.lean', """    (hl : 3802 ≤ s.executionEnv.calldata.size) :
+    Reach (callState s 5183 [flag b] M) (callState s 5486 [flag b] M) 24 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  glam44_rreach [1746, 1752, 1753, 1754, 1755, 1756]""", """    (hl : 3802 ≤ s.executionEnv.calldata.size) (hfl : word M FLAG = 1) :
+    Reach (callState s 5183 [flag b] M) (callState s 5486 [flag b] M) 41 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+""" + G + """  glam44_rreach [1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1755, 1756] with [hfl']""")
+sub('Main/Mu/Long.lean', """    (hU : ∀ x, x < 8 → word M (MU + 32 * x) < 2 ^ 64) :
+    ∃ M', (∀ x, x < 8 → word M' (FIN + 32 * x) = rep (word M (MU + 32 * x))) ∧
+      FrameExcept M M' [(FIN, FIN + 256)] ∧
+      Reach (callState s 5183 [flag b] M) (callState s 6020 [flag b] M') 195 := by
+""", """    (hU : ∀ x, x < 8 → word M (MU + 32 * x) < 2 ^ 64) (hfl : word M FLAG = 1) :
+    ∃ M', (∀ x, x < 8 → word M' (FIN + 32 * x) = rep (word M (MU + 32 * x))) ∧
+      FrameExcept M M' [(FIN, FIN + 256)] ∧
+      Reach (callState s 5183 [flag b] M) (callState s 6020 [flag b] M') 212 := by
+""" + G)
+sub('Main/Mu/Long.lean', "  · glam44_rreach [1746, 1752, 1753, 1754, 1755, 1756, 1757,",
+    "  · glam44_rreach [1746, 1747, 1748, 1749, 1750, 1751, 1752, 1753, 1754, 1755, 1756, 1757,")
+sub('Main/Mu/Long.lean', "] with [word_mstore_disjoint]\n    rfl", "] with [word_mstore_disjoint, hfl']\n    rfl")
+sub('Main/Mu/Long.lean', """theorem mu_cpy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
+    Reach (callState s 5486 [flag b] M) (callState s 5503 [wd KS, wd SC, wd 800, flag b] M) 9 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  glam44_rreach [1807, 1813, 1814, 1815] with [KS, SC]""", """theorem mu_cpy {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) (hfl : word M FLAG = 1) :
+    Reach (callState s 5486 [flag b] M) (callState s 5503 [wd KS, wd SC, wd 800, flag b] M) 31 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+""" + G + """  glam44_rreach [1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815] with [KS, SC, hfl']""")
+sub('Main/Mu/Long.lean', """theorem mu_abs1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
+    Reach (callState s 5783 [flag b] M)
+      (callState s 7000 [wd 3802, wd 5803, wd 3802, flag b] M) 20 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  glam44_rreach [1983, 1989, 1990, 1991, 1992]""", """theorem mu_abs1 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) (hfl : word M FLAG = 1) :
+    Reach (callState s 5783 [flag b] M)
+      (callState s 7000 [wd 3802, wd 5803, wd 3802, flag b] M) 37 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+""" + G + """  glam44_rreach [1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992] with [hfl']""")
+sub('Main/Mu/Long.lean', """    (hl : 3802 ≤ s.executionEnv.calldata.size) :
+    Reach (callState s 5803 [wd 3802, flag b] M)
+      (callState s 5821 [wd (s.executionEnv.calldata.size - 3802), wd 3938, flag b] M) 15 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  glam44_rreach [1993, 1994, 1995, 1996, 2002, 2003]""", """    (hl : 3802 ≤ s.executionEnv.calldata.size) (hfl : word M FLAG = 1) :
+    Reach (callState s 5803 [wd 3802, flag b] M)
+      (callState s 5821 [wd (s.executionEnv.calldata.size - 3802), wd 3938, flag b] M) 32 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+""" + G + """  glam44_rreach [1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003] with [hfl']""")
+sub('Main/Mu/Proof.lean', """    {m : ByteArray} (hsc : ScAt m s.executionEnv.calldata) (hrc : RC1Table m)
+    (hl : 3802 ≤ s.executionEnv.calldata.size) :""", """    {m : ByteArray} (hsc : ScAt m s.executionEnv.calldata) (hrc : RC1Table m)
+    (hl : 3802 ≤ s.executionEnv.calldata.size) (hfl : word m FLAG = 1) :""")
+sub('Main/Mu/Proof.lean', "wd (3802 + 136 * 1), flag b] M) (24 + 667 + Gas.cext 25 + Gas.absorb17) := by",
+    "wd (3802 + 136 * 1), flag b] M) (41 + 723 + Gas.cext 25 + Gas.absorb17) := by")
+sub('Main/Mu/Proof.lean', "  have r0 := mu_chk_long hs b m hfit hl\n  have r1 := mu_cpy hs b m\n",
+    "  have r0 := mu_chk_long hs b m hfit hl hfl\n  have r1 := mu_cpy hs b m hfl\n")
+sub('Main/Mu/Proof.lean', "  have r3 := mu_abs1 hs b m6\n", """  have hfl6 : word m6 FLAG = 1 := by  -- glam: `FLAG`
+    rw [word_frame ((hf1.trans hf2).trans hAD.2) (lo := FLAG) (hi := FLAG + 32)
+      (by unfold FLAG; avoids_tac) le_rfl le_rfl]
+    exact hfl
+  have r3 := mu_abs1 hs b m6 hfl6
+""")
+sub('Main/Mu/Proof.lean', "  have r4 := mu_head0 hs b m7 hfit hl\n", """  have hfl7 : word m7 FLAG = 1 := by  -- glam: `FLAG`
+    rw [word_frame hf7 (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG; avoids_tac) le_rfl le_rfl]
+    exact hfl6
+  have r4 := mu_head0 hs b m7 hfit hl hfl7
+""")

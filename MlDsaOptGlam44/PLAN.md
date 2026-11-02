@@ -27,10 +27,11 @@ Proved: the kernels (`kf4_spec`, `kf1_spec`), every ported routine (`fix`,
 `gfix`, `group`, `pass3f4`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`,
 `kmove`, `lmerge`, `spr`, `tbuild`, `pack`, `dhint`), the main flow up to the
 long-message switch and the packed schedule's segments (`|M| < 342`), the
-shared tail (`tbuild` / `csum`, `intt` / `pack`, the final hash), the short
+shared tail (`tbuild` / `csum`, `intt` / `pack`, the final hash), μ on the
+packed schedule (v4's proof with the four blocks that read `FLAG`), the short
 path, and the composition into the final theorems.
 
-Open (`#open_items`, 10 declarations):
+Open (`#open_items`, 9 declarations):
 
 | item | code | notes |
 |---|---|---|
@@ -39,7 +40,6 @@ Open (`#open_items`, 10 declarations):
 | `dz_call` | `dz` | gather loop unrolled per chunk |
 | `csum_call` | `csum` | all τ bases on the stack (DUPN) |
 | `sib_call` | `sample_in_ball` | two loop copies (the first stops at block 1's end, where c's 2nd block is squeezed from `SC` if `FLAG = 1`); contract as v4's with `FLAG = 1`; `Gas.sib` to re-derive |
-| `seg_mu` | `hash_mu` + dispatch | v4's proof plus four blocks reading `FLAG` (`Gas.pMu`: +17 / +73) |
 | `seg_alt` | `alt` … `altj`, `mulong`, `pass3f4b`, the tail with `FLAG = 0` | the long-message schedule; `Gas.pAlt` is a provisional bound (`Gas.lean`) |
 
 ```sh
