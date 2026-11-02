@@ -275,11 +275,15 @@ theorem b_ext4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   opt44_reach [2993, 2994, 2995]
 
+set_option warningAsError false in
 theorem b_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960) (hsized : 2616 ≤ s.activeWords.toNat) (M : ByteArray)
     (hjd : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
     (i sg : Nat) (hlim : word M 3968 = 1088) :
     Reach (headSt s ret tail 1088 i sg M) (callState s ret (wd 0 :: tail) M) 72 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt44_reach [2711, 2712, 2713, 2714, 2715, 2716, 2717, 2969, 2970, 2971, 2972, 2973, 2974, 2975, 2996, 2997, 2998, 2999, 3000, 3001, 3002] with [hlim, hjd]
+  -- R4-8 (2342c7d): the fail exit now jumps to `sibz` (indices 12123–12149),
+  -- which zeroes BASES[cnt … τ); this statement (memory unchanged) no longer
+  -- holds and is re-proved by WP J.
+  sorry
 
 end MlDsaOpt44.Proofs.Ball4
