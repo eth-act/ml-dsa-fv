@@ -8,7 +8,7 @@ set_option linter.unusedSimpArgs false
 The 20-bit twin of `MlDsaOpt44/Fn/Decode/Lanes.lean`: one gather step builds
 `W = gW gs V0 V1 V2 V3` (60 bits of each little-endian window `V_k` from bit `gs` in
 lane `k`), extracts three raw words `zR (W >> 20 kk)`, stores `zv R = K − R`
-(`K = γ1 + q`) and ORs the flag word `zf R` into the accumulator.
+(`K = γ1 + 9q`, v4) and ORs the flag word `zf R` into the accumulator.
 -/
 
 namespace MlDsaOpt65.Proofs.DecodeZ
@@ -37,20 +37,21 @@ def zR (x : Nat) : Nat := 658201195218308878229592447733410186160997818383373133
 theorem zR_eq (x : Nat) :
     6582011952183088782295924477334101861609978183833731334774194175 &&& x = zR x := rfl
 
-/-- Stored word `K − R`, `K = γ1 + q` in every lane. -/
-def zv (R : Nat) : Nat := 55895739208606453134162487349917138514257617035953695811382534145 - R
+/-- Stored word `K − R`, `K = γ1 + 9q` in every lane (v4: the forward NTT's bias `8q` is
+added here). -/
+def zv (R : Nat) : Nat := 476733579960318781531555631535630678667459122251541153085296926729 - R
 
-/-- Flag word: bit `25` of a lane is set iff `raw ≤ β = 196`, bit `52` iff `raw ≥ 2γ1 − β`. -/
+/-- Flag word (v4, one multiply): `C + (2^32 − 1) R`, lane `(r + β) 2^32 + (2^27 + β − r)`
+(no borrow, no carry across lanes). Bit `27` of a lane is set iff `raw ≤ β = 196`, bit `52`
+iff `raw ≥ 2γ1 − β`. -/
 def zf (R : Nat) : Nat :=
-  154730074440448056062521328069142270379174230039035187950190600387 + zv R |||
-    (1230311940135789429778510070865206556398498652010024406089924 + R) * 4294967296
+  5284992046325185797670607723898850609056285312075943487823019889393860 + 4294967295 * R
 
 theorem zf_eq (R : Nat) :
-    154730074440448056062521328069142270379174230039035187950190600387 + zv R |||
-      (1230311940135789429778510070865206556398498652010024406089924 + R) * 4294967296 = zf R := rfl
+    5284992046325185797670607723898850609056285312075943487823019889393860 + 4294967295 * R = zf R := rfl
 
 theorem zsub (x : Nat) :
-    UInt256.ofNat 55895739208606453134162487349917138514257617035953695811382534145 -
+    UInt256.ofNat 476733579960318781531555631535630678667459122251541153085296926729 -
       UInt256.ofNat (zR x) = UInt256.ofNat (zv (zR x)) := by
   have h : zR x ≤ 6582011952183088782295924477334101861609978183833731334774194175 := Nat.and_le_left
   exact ofNat_sub (by omega) (by norm_num)

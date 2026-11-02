@@ -10,7 +10,8 @@ set_option linter.unusedSimpArgs false
 
 20-bit twin of `MlDsaOpt44/Fn/Decode/ZBlocks.lean` (port plus the constants of
 `gen_opt.py`'s `gen_decode` at 20 bits: windows at `off + 640 k`, shifts `20 kk`,
-gather step `60`, chunk `30` bytes, clamp `−20`). Loop heads: `9044` (chunk loop,
+gather step `60`, chunk `30` bytes, clamp `−20`; v4 stores `zv` and flag words `zf` in
+`z_g2` … `z_g4`). Loop heads: `9044` (chunk loop,
 stack `dp, off, acc, MB, end`), `9436` (gather loop). The entry is generic in the
 base `[dp, off]` (two call sites).
 -/
@@ -78,8 +79,8 @@ theorem z_g2 (hs : Ctx s) (M : ByteArray) {W gp x1 x2 x3 x4 x5 x6 x7 x8 : Nat}
         wd x7 :: wd x8 :: wd 6582011952183088782295924477334101861609978183833731334774194175 :: rest) M)
       (callState s 9577 (wd (zf (zR W)) :: wd W :: wd gp :: wd x1 :: wd x2 :: wd x3 :: wd x4 :: wd x5 ::
         wd x6 :: wd x7 :: wd x8 :: wd 6582011952183088782295924477334101861609978183833731334774194175 :: rest)
-        (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (zv (zR W)) 32) gp)) 56 := by
-  opt65_reach [4058, 4059, 4060, 4061, 4062, 3950, 4066, 3952, 3953, 4067, 3955, 4069, 3957, 3958, 4071, 3960, 3961, 3962, 4072] with [zR_eq, zsub, zv_mod, zf_eq, Nat.or_zero]
+        (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (zv (zR W)) 32) gp)) 46 := by
+  opt65_reach [4058, 4059, 4060, 4061, 4062, 4063, 4064, 4065, 4066, 4067, 4068, 4069, 4070, 4071, 4072] with [zR_eq, zsub, zv_mod, zf_eq, Nat.or_zero]
 
 theorem z_g3 (hs : Ctx s) (M : ByteArray) {Lf W gp x1 x2 x3 x4 x5 x6 x7 x8 : Nat}
     {rest : List UInt256} (hrest : rest.length ≤ 962) (hW : W < 2 ^ 256)
@@ -89,8 +90,8 @@ theorem z_g3 (hs : Ctx s) (M : ByteArray) {Lf W gp x1 x2 x3 x4 x5 x6 x7 x8 : Nat
       (callState s 9658 (wd (zf (zR (W / 1048576)) ||| Lf) :: wd W :: wd gp :: wd x1 :: wd x2 :: wd x3 ::
         wd x4 :: wd x5 :: wd x6 :: wd x7 :: wd x8 :: wd 6582011952183088782295924477334101861609978183833731334774194175 :: rest)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (zv (zR (W / 1048576))) 32) (32 + gp)))
-        66 := by
-  opt65_reach [4073, 4074, 4075, 4076, 4077, 4078, 3970, 4082, 3972, 3973, 4083, 3975, 4085, 3977, 3978, 4087, 4088, 4089, 3982, 3983, 3984, 4090] with [zR_eq, zsub, zv_mod, zf_eq]
+        56 := by
+  opt65_reach [4073, 4074, 4075, 4076, 4077, 4078, 4079, 4080, 4081, 4082, 4083, 4084, 4085, 4086, 4087, 4088, 4089, 4090] with [zR_eq, zsub, zv_mod, zf_eq]
 
 theorem z_g4 (hs : Ctx s) (M : ByteArray) {Lf W gp x1 x2 x3 x4 x5 x6 x7 x8 : Nat}
     {rest : List UInt256} (hrest : rest.length ≤ 962) (hW : W < 2 ^ 256)
@@ -100,8 +101,8 @@ theorem z_g4 (hs : Ctx s) (M : ByteArray) {Lf W gp x1 x2 x3 x4 x5 x6 x7 x8 : Nat
       (callState s 9739 (wd (zf (zR (W / 1099511627776)) ||| Lf) :: wd W :: wd gp :: wd x1 :: wd x2 ::
         wd x3 :: wd x4 :: wd x5 :: wd x6 :: wd x7 :: wd x8 :: wd 6582011952183088782295924477334101861609978183833731334774194175 :: rest)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (zv (zR (W / 1099511627776))) 32) (64 + gp)))
-        66 := by
-  opt65_reach [4091, 4092, 4093, 4094, 4095, 4096, 3992, 4100, 3994, 3995, 4101, 3997, 4103, 3999, 4000, 4105, 4106, 4107, 4004, 4005, 4006, 4108] with [zR_eq, zsub, zv_mod, zf_eq]
+        56 := by
+  opt65_reach [4091, 4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 4101, 4102, 4103, 4104, 4105, 4106, 4107, 4108] with [zR_eq, zsub, zv_mod, zf_eq]
 
 theorem z_g5 (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray)
     {Lf W gp gs V0 V1 V2 V3 dp off acc e : Nat} :
