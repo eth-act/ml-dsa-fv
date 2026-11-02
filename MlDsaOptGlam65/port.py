@@ -11,7 +11,8 @@
 
 The tree must be unchanged afterwards (the gate checks it). Files of
 `MlDsaOptGlam65/` not listed in `FILES` are hand-written (`Layout`, `Budget`,
-`Gas`, `Main.lean`, `Main/SegExp.lean`, `Main/SegMu.lean` (v4's statements, open items),
+`Gas`, `Main.lean`, `Main/SegExp.lean` and `Main/Exp/*` (the 42-call schedule's ExpandA),
+`Main/SegMu.lean` and `Main/Mu/{Cext,Long,Run}` (v4's μ, adapted by hand to the state image),
 `Main/S1/{Init,Tbl}` (glam 44's, no iota
 tables, the 240-record table), the `Fn` wrappers `Keccak`, `Blk`, `Ntt`,
 `Decode`, `Csum`) or generated (`Infra`, `Fn/Kf4`, `Fn/Kf1`).
@@ -109,8 +110,20 @@ def pInit : Nat := 29""")
 sub('Main/Base.lean', """/-- `1101 … 3084`: the 248 NTT zeta records. -/
 def pTbl : Nat := 2232""", """/-- `124 … 2043`: the 240 records of the 4 + 4 NTT's table.  -- glam -/
 def pTbl : Nat := 2160""")
-sub('Main/Base.lean', "def pExp : Nat := 3623550",
-    "def pExp : Nat := 3623550  -- glam: provisional (v4's), until the 42-call schedule's `seg_exp`")
+# ExpandA: the 42-call schedule's exact static cost (`Main/SegExp.lean`, `Main/Exp/*`)
+p = R + 'Main/Base.lean'
+t = open(p).read()
+i = t.index("/-- `3556 … 4903`: ExpandA")
+j = t.index("def pExp : Nat := 3623550\n")
+open(p, 'w').write(t[:i] + """/-- `2515 … 4903`: ExpandA, the 42-call schedule (`Main/SegExp.lean`): calls 0–14
+(`group [15, s, 0]`, `s < 3`, copies to `CW`, `HP`, `HP + 0x2000`) 1059743; calls
+15–24 (rows 4, 5, Kronecker order, copies to `ACC + 0x2000`, `SB`) 706104; calls
+25–34 (`tr` blocks 0 … 9 in slot 0, rows 0 … 2 of columns 3, 4, copies to `ACC`,
+`SB + 0x2000`) 680920; the window, calls 35–41 (`tr`'s last blocks, `P`, `KX`, c̃,
+μ's block 0 by `mub0`, `pass3f7`, `pass3f8`) 635378 (the long-message return of
+`mub0` is 3 gas cheaper).  -- glam: exact -/
+def pExp : Nat := 3082145
+""" + t[j + len("def pExp : Nat := 3623550\n"):])
 
 # v4's fused passes `pass3f4` (gone) and `pass3f8` (rewritten): their contracts are the
 # 42-call schedule's (`Fn/Pack65.lean`, package 3); `FusedPass` and `bz*` stay here

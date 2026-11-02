@@ -11,7 +11,6 @@ import MlDsaOptGlam65.Budget
 /- Generated once from `MlDsaOpt65/Main/Exp/Round.lean` by `scripts/proofgen_port.py --glam 65`
 (the 42-call schedule's building blocks); hand-maintained since. -/
 /- Ported from `MlDsaOpt44/Main/Ex/Round.lean` by `scripts/proofgen_port.py 65`; hand adjustments are marked `-- port:`. -/
-set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
 set_option maxRecDepth 10000
 /-!

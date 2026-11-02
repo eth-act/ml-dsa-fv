@@ -38,15 +38,14 @@ def pTbl : Nat := 2160
 def pNtt : Nat := 36 + 2 * ntt
 /-- `3106 … 3556`: `RHO1` (ρ and c̃ lanes spread, ten `spr` calls). -/
 def pRho : Nat := 705 + 10 * spr
-/-- `3556 … 4903`: ExpandA: the five pure groups of row group 0 (copies to
-`CW`, `HP`, `HP + 0x2000`, `ACC + 0x2000`, then `pass3f4`), the mixed groups
-5 … 7 (row group 1 instances, `tr`; copies to `CW`, `HP`, `HP + 0x2000`), group
-8 (`A[5][4]`, c̃ stream, μ's blocks 0 … 4 in slot 2, `mub0`/`mub`, the `mulong`
-region), `pass3f8`. Longest static path: row group 0 2038895
-(`Exp.exp_pure`), groups 5–7 1152470 (`Exp.gG57`), group 8 and `pass3f8` on the
-`mulong` path (`|M| ≥ 70`: five `mub` instead of `cext [MU, 2, 8]`) 432185
-(the short-μ path is 13870 cheaper). -/
-def pExp : Nat := 3623550  -- glam: provisional (v4's), until the 42-call schedule's `seg_exp`
+/-- `2515 … 4903`: ExpandA, the 42-call schedule (`Main/SegExp.lean`): calls 0–14
+(`group [15, s, 0]`, `s < 3`, copies to `CW`, `HP`, `HP + 0x2000`) 1059743; calls
+15–24 (rows 4, 5, Kronecker order, copies to `ACC + 0x2000`, `SB`) 706104; calls
+25–34 (`tr` blocks 0 … 9 in slot 0, rows 0 … 2 of columns 3, 4, copies to `ACC`,
+`SB + 0x2000`) 680920; the window, calls 35–41 (`tr`'s last blocks, `P`, `KX`, c̃,
+μ's block 0 by `mub0`, `pass3f7`, `pass3f8`) 635378 (the long-message return of
+`mub0` is 3 gas cheaper).  -- glam: exact -/
+def pExp : Nat := 3082145
 /-- `4903 … 5356`: zero the side buffers in `CW`, `HP`, `HP + 0x2000`, `dhint`, `AND`. -/
 def pZd : Nat := 2448 + dhint
 /-- `5017 … 5843`: μ, from `MU` (`|M| ≤ 69`, 195) or by `kf1` from μ's sponge after

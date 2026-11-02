@@ -6,9 +6,9 @@ set_option warningAsError true
 # The public gas schedule (Glamsterdam ML-DSA-65)
 
 v4's schedule (`MlDsaOpt65/Gas.lean`) over this artifact's segment budgets
-(`Main/Base.lean`, re-measured where the code changed). **Provisional**: `pExp`
-(the 42-call ExpandA schedule) is v4's segment composition re-costed, an open
-item of package 4 until `seg_exp` is proved with its exact cost.
+(`Main/Base.lean`, re-measured where the code changed): `pExp` is the 42-call
+ExpandA schedule's exact static cost (`Main/SegExp.lean`), `pMu` glam's μ (one
+squeeze in the SIMD slot, `hash_mu` from the state image).
 
 v4's notes:
 
@@ -22,6 +22,10 @@ length only.
 `schedule (5261 + n)` is constant for `n ≤ 613` and grows by 33,819 per 136
 message bytes after that. The measured adversarial worst case of
 `docs/opt.md` (v4) is 4,610,258 for `n = 0`.
+
+Glam: `schedule (5261 + n)` is constant for `n ≤ 69`, steps by 32,952 at `n = 70`
+(μ moves from `MU` to `hash_mu`) and grows by 27,175 (`kf1 + absorb17 + 88`) per
+further 136 message bytes.
 -/
 
 namespace MlDsaOptGlam65.Proofs.Gas
