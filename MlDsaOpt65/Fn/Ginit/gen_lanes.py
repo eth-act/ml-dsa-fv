@@ -3,12 +3,14 @@
 
 Usage (repo root): python3 MlDsaOpt65/Fn/Ginit/gen_lanes.py NN > MlDsaOptNN/Fn/Ginit/Lanes.lean
 (NN = 65 or 87). Block costs are the static costs; the total must equal `Gas.ginit`
-(printed on stderr)."""
+(printed on stderr). The entry pc is the start of the `ginit` region of
+`MlDsaOpt/NN/layout.txt`, so the lemmas follow the current bytes."""
+import re
 import sys
 
 NN = sys.argv[1]
-ENTRY = {"65": 11644, "87": 12945}[NN]
-NINSTR = {"65": 11461, "87": 11950}[NN]
+with open(f"MlDsaOpt/{NN}/layout.txt") as f:
+    ENTRY = int(re.search(r"^\s*(\d+) \.\.\s+\d+\s+\d+ bytes\s+ginit$", f.read(), re.M).group(1))
 
 rows = []
 with open(f"MlDsaOpt{NN}/listing.tsv") as f:
