@@ -2,7 +2,7 @@
 
 ## Status (v4, round 4)
 
-Target: `MlDsaOpt/44/opt.hex` (v4: 24,050 bytes, 12,125 instructions, memory
+Target: `MlDsaOpt/44/opt.hex` (v4 with R4-8: 24,089 bytes, 12,150 instructions, memory
 2616 words; the proved v3 bytes are `MlDsaOpt/44/v3/opt.hex`, v2 in
 `MlDsaOpt/44/v2/`). The final theorems in `MlDsaOpt44/Main.lean` are stated
 with `code := MlDsaOpt44.optBytecode` (the v4 bytes) and `Gas.schedule`.
@@ -30,8 +30,24 @@ Retarget v3 → v4 (done):
   `SegNtt`, `SegSib`, `SegCt`, `SegW` re-proved against the v4 contracts,
   `Valid.lean` composes all segments.
 
-Open items (direct `sorry`; the subroutine contracts are stated, the proofs
-are the work packages below):
+**Closed** (proof/v4): `checks/Axioms.lean` lists 0 direct sorries; the four
+final theorems depend on `propext`, `Classical.choice`, `Quot.sound` only.
+Clean build of `MlDsaOpt44` + `MlDsaOptCommon` on a 4-vCPU orb: 389 s wall,
+1,218 s user CPU, 3.5 GB peak RSS.
+
+R4-8 (`docs/opt.md`): the proof of `sib_call` showed that SampleInBall's fail
+exit left the window's flag words in BASES, which `csum` then read as offsets
+(out of gas instead of 0). The fail exit now jumps to `sibz` (after `kf4`),
+which clears BASES[cnt … τ); the artifact was regenerated and the proofs
+relocated from the R4-7 bytes (`--reloc` with the old v4 bytes as `OLD`:
+indices ≥ 3002 shift by −2, pcs unchanged).
+
+The work packages (all done, merged from the branches proof/v4-ab, -gh,
+-dfij, -cek); contract changes against the retarget: `trabs_call` gained
+`hlmL` (the mask is applied before the byte swap, so it must be lane-aligned).
+`Gas.sib` is the proved path count (70,042); `Gas.pMu`'s long branch is valid
+but 33,796 above the code's path (n − 1 visits + a 23-gas exit check would be
+exact).
 
 | WP | open item | code | notes |
 |---|---|---|---|
@@ -57,7 +73,7 @@ ML-DSA-65/87 ports still import some of them.
 
 Budgets of data-dependent routines (`Gas.fixNo`, `fixSq`, `gfix`, `sib`,
 `mub0`, `pMu`) are the static longest paths with trip counts as documented in
-`Budget.lean`; `Gas.sib` is a placeholder until WP J fixes its path count.
+`Budget.lean`.
 
 ```sh
 export TMPDIR=$PWD/.lake/tmp

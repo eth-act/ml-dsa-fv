@@ -40,6 +40,7 @@ def CRep (m : ByteArray) (c : Fips204.Poly) : Prop :=
 
 /-- `sib`'s scratch regions start zeroed. -/
 def SibFresh (m : ByteArray) : Prop :=
-  ZeroOn m CW (CW + 8192) ∧ ZeroOn m IDX (IDX + 256) ∧ ZeroOn m NNEG (NNEG + 64)
+  ZeroOn m CW (CW + 8192) ∧ ZeroOn m BASES (BASES + 2048) ∧ ZeroOn m IDX (IDX + 256) ∧
+    ZeroOn m NNEG (NNEG + 64)
 
 end MlDsaOpt65.Proofs

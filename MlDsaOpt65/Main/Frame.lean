@@ -116,8 +116,9 @@ theorem CRep.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {c : Fips204.Poly
     rw [word_frame h hb (a := BASES + 32 * i) (by omega) (by omega)]; exact h6 i hi
 
 theorem SibFresh.frame {m m' : ByteArray} {rs : List (Nat × Nat)} (hr : SibFresh m)
-    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hb : Avoids rs IDX (IDX + 256))
-    (hn : Avoids rs NNEG (NNEG + 64)) : SibFresh m' :=
-  ⟨ZeroOn.frame hr.1 h ha, ZeroOn.frame hr.2.1 h hb, ZeroOn.frame hr.2.2 h hn⟩
+    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hbs : Avoids rs BASES (BASES + 2048))
+    (hb : Avoids rs IDX (IDX + 256)) (hn : Avoids rs NNEG (NNEG + 64)) : SibFresh m' :=
+  ⟨ZeroOn.frame hr.1 h ha, ZeroOn.frame hr.2.1 h hbs, ZeroOn.frame hr.2.2.1 h hb,
+    ZeroOn.frame hr.2.2.2 h hn⟩
 
 end MlDsaOpt65.Proofs

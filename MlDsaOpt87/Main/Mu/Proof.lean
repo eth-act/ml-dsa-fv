@@ -293,7 +293,8 @@ theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.call
         tbl := hI.tbl.frame hfr (by avoids_tac)
         hp := hI.hp.frame hfr (by avoids_tac)
         acc := hI.acc.frame hfr (by avoids_tac)
-        fresh := ⟨ZeroOn.frame hI.zCw hfr (by avoids_tac), ZeroOn.frame hI.zIdx hfr (by avoids_tac),
+        fresh := ⟨ZeroOn.frame hI.zCw hfr (by avoids_tac), ZeroOn.frame hI.zBases hfr (by avoids_tac),
+          ZeroOn.frame hI.zIdx hfr (by avoids_tac),
           ZeroOn.frame hI.zNeg hfr (by avoids_tac)⟩
         fmu := hmu }
   obtain ⟨M0, hI0, r1⟩ := mu_setup hs hcd b hI.trl hI.rc1

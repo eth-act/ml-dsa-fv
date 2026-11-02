@@ -234,6 +234,7 @@ structure InvW (cd m : ByteArray) : Prop where
   mu : MuAt m cd
   muks : MuKs m cd
   cb : CbAt m cd
+  zBases : ZeroOn m BASES (BASES + 2048)
   zIdx : ZeroOn m IDX (IDX + 256)
   zNeg : ZeroOn m NNEG (NNEG + 64)
 

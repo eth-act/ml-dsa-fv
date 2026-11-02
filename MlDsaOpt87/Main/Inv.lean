@@ -211,6 +211,7 @@ structure InvW (cd m : ByteArray) : Prop where
   tbl : TblAt m
   acc : AccAt m cd
   trl : TrlAt m cd
+  zBases : ZeroOn m BASES (BASES + 2048)
   zIdx : ZeroOn m IDX (IDX + 256)
   zNeg : ZeroOn m NNEG (NNEG + 64)
 
@@ -219,7 +220,7 @@ structure InvH (cd m : ByteArray) : Prop extends InvW cd m where
   hp : HPAt m cd
   zCw : ZeroOn m CW (CW + 8192)
 
-/-- After μ: `sib`'s scratch is fresh (`CW`, `IDX`, `NNEG` zero). -/
+/-- After μ: `sib`'s scratch is fresh (`CW`, `BASES`, `IDX`, `NNEG` zero). -/
 structure Inv6 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
   tbl : TblAt m
