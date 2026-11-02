@@ -6,11 +6,17 @@ The EVM semantics the correctness theorems are stated against (part of the
 trust boundary). It is
 [powdr-labs/evm-semantics](https://github.com/powdr-labs/evm-semantics) at
 `2f8714d6ba960a3de67720019b54513f5bc1a2e3` (the revision `master` pins), with
-`.claude/` and `.github/` left out, plus the commits on top that touch
-`deps/evm-semantics/` (`git log -- deps/evm-semantics`). The first commit
-adding this directory is the verbatim copy; every later commit is a patch to
-review.
+`.claude/` and `.github/` left out, plus a patch adding a partial `Amsterdam`
+fork (EIP-8024 `DUPN` / `SWAPN` / `EXCHANGE`, EIP-7954 code size). The commit
+that adds this directory is the verbatim copy (58e20dd); the patch is the next
+commit (cbc0a96), so `git diff 58e20dd cbc0a96 -- deps/evm-semantics` is the
+whole trust-boundary change.
 
-It is vendored, and required as a path dependency in `lakefile.toml`, only
-until the patch is published as a git revision; the require then goes back to
+`lakefile.toml` requires it as a git package: this repository at cbc0a96
+(`subDir = "deps/evm-semantics"`), so the gate sees an ordinary pinned
+dependency. Editing this directory therefore changes nothing until the require
+is re-pinned to a commit with the edit.
+
+This is temporary: once the patch is published as a revision of
+powdr-labs/evm-semantics (or a fork of it), the require goes back to that
 `git = ...`, `rev = ...` and this directory is deleted.
