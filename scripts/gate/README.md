@@ -140,6 +140,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam44/Fn/Kf4/gen_kf4.py NN`, `MlDsaOptGlam44/Fn/Kf1/gen_kf1.py NN` (44, 65, 87) | `MlDsaOptGlamNN/Fn/{Kf4,Kf1}/*.lean` (`Model`, `Algebra` for 44 only) |
 | `MlDsaOptGlam44/port.py` (`proofgen_port.py --glam 44` and its recorded adjustments) | the ported files of `MlDsaOptGlam44/` |
 | `MlDsaOptGlam44/Fn/Blk/gen.py` | `MlDsaOptGlam44/Fn/Blk/{Iters,Proof}.lean` |
+| `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py` | `MlDsaOptGlam44/Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 29 ported files (28 carry hand adjustments
