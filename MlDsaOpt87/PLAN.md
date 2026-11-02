@@ -13,8 +13,6 @@ are those of ML-DSA-65 (`MlDsaOpt65/PLAN.md`, "Status (v4, round 4)").
 **Closed**: no direct `sorry`; the four final theorems depend on `propext`,
 `Classical.choice`, `Quot.sound` only.
 
-* seg_exp: in progress
-
 Retarget v3 → v4 (`586178e`, same method as ML-DSA-44 and -65):
 
 * generated modules: `python3 scripts/proofgen_artifact.py MlDsaOpt/87/opt.hex MlDsaOpt87 MlDsaOpt87 opt87 2897`;

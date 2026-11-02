@@ -15,8 +15,6 @@ declaration with a direct `sorry`. ML-DSA-87: `MlDsaOpt87/PLAN.md`.
 **Closed**: no direct `sorry`; the four final theorems depend on `propext`,
 `Classical.choice`, `Quot.sound` only.
 
-* seg_exp: in progress
-
 Retarget v3 → v4 (`1b97187`, same method as ML-DSA-44):
 
 * generated modules: `python3 scripts/proofgen_artifact.py MlDsaOpt/65/opt.hex MlDsaOpt65 MlDsaOpt65 opt65 2865`;
