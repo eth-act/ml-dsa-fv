@@ -1,6 +1,7 @@
 import MlDsaOptGlam44.Fn.Ball
 import MlDsaOpt44.Fn.Ct.Defs
 import MlDsaOptGlam44.Fn.Ct.TBuildRun
+import MlDsaOptGlam44.Fn.Ct.Csum4Main
 /-!
 # Sparse `c · t1` in the normal domain: `tbuild`, `csum` (WP10)
 
@@ -19,7 +20,8 @@ Since `2^13 · 1023 = q − 1`, `2^13 S' + n_neg ≡ 2^13 (c · t1_r)(t) (mod q)
 -/
 
 /-! Glamsterdam: `tbuild` is v4's code (ported proof). `csum` keeps all τ window bases on
-the stack (`CSUM_DEEP`, DUPN); its contract is v4's. **Open item**: `csum_call`. -/
+the stack (`CSUM_DEEP`, DUPN); its contract is v4's (blocks and loop: `Fn/Ct/gen_csum.py`,
+the rest v4's `Csum4Main` ported). -/
 
 namespace MlDsaOptGlam44.Proofs
 
@@ -47,7 +49,7 @@ theorem csum_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         ∀ t, t < 256 → word m' (SP + 32 * t) =
           pack4 fun r => spOff - (2 ^ 13 * sPrime c s.executionEnv.calldata r t + nNeg c t)) ∧
       FrameExcept m m' [(SP, SP + 8192)] ∧
-      Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum := by
-  sorry  -- glam: open item
+      Call s Entry.csum [wd SP, wd TT] ret tail m [] m' Gas.csum :=
+  CS4.csum_main hs hr m hb
 
 end MlDsaOptGlam44.Proofs

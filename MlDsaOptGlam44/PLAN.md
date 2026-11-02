@@ -13,7 +13,7 @@ theorems in `Main.lean` are the four of v4 stated over `MlDsa44.Amsterdam`
 | part | source |
 |---|---|
 | `Bytecode`, `Artifact`, `Infra/*`, `listing.tsv` | `scripts/proofgen_artifact_glam.py MlDsaOpt/44/glam/opt.hex MlDsaOptGlam44 MlDsaOptGlam44 glam44 2616` (`EvmProof.XInstr` paths, `glam44_rreach`) |
-| `Fn/Blk/{Iters,Proof}`, `Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}`, `Fn/Ball/Blocks` | `Fn/Blk/gen.py`, `Fn/Ntt/gen_nttg.py`, `Fn/Ball/gen_blocks.py` (from `listing.tsv` / `opt.asm`) |
+| `Fn/Blk/{Iters,Proof}`, `Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}`, `Fn/Ball/Blocks`, `Fn/Ct/{Csum4Blocks,Csum4Iter}`, `Fn/Decode/{Z4GBlocks,Z4GLoop}` | `Fn/Blk/gen.py`, `Fn/Ntt/gen_nttg.py`, `Fn/Ball/gen_blocks.py`, `Fn/Ct/gen_csum.py`, `Fn/Decode/gen_dz.py` (from `listing.tsv` / `opt.asm`) |
 | `Fn/Kf4/*`, `Fn/Kf1/*` | `Fn/Kf4/gen_kf4.py 44`, `Fn/Kf1/gen_kf1.py 44` (the stack-resident kernels; 65 and 87 share `Model` / `Algebra`) |
 | every v4 proof of unchanged code | `python3 MlDsaOptGlam44/port.py`: `scripts/proofgen_port.py --glam 44` on the files listed there (index and pc maps v4 → glam, region by region; `opt44_reach` → `glam44_rreach`) and the recorded adjustments |
 | the rest | hand-written: `Layout` (entries, 74-slot stack leaf, `RC4Table` / `RC1Table` trivial, the 4 + 4 `TblAt`, `FLAG`), `Budget`, `Gas`, `Main.lean`, `Main/{Base,Valid,SegMu,SegSwitch}`, `Main/{Init,Tbl}/*`, the `Fn` wrappers `Keccak`, `Blk`, `Ntt`, `Decode`, `Ct`, `Ball` |
@@ -27,7 +27,10 @@ reproduced by the gate.
 Proved: the kernels (`kf4_spec`, `kf1_spec`), the unrolled `blk` / `blkh` / `blkt`
 (`Fn/Blk/`, package 1; `Fn/Blk/gen.py`), the 4 + 4 NTT and inverse NTT (`Fn/Ntt/`,
 package 2; `Fn/Ntt/gen_nttg.py`), `sib_call` and `sib_call0` (`Fn/Ball/`, package 4;
-`Fn/Ball/gen_blocks.py`; `Gas.sib` = 64,094 covers both flag values), every ported routine (`fix`,
+`Fn/Ball/gen_blocks.py`; `Gas.sib` = 64,094 covers both flag values), `dz_call` (`Fn/Decode/Z4G*`, package 3;
+`Fn/Decode/gen_dz.py`: v4's lane algebra, the gather unrolled per chunk), `csum_call`
+(`Fn/Ct/Csum4*`, package 3; `Fn/Ct/gen_csum.py`: all τ = 39 bases on the stack via `DUPN`),
+every ported routine (`fix`,
 `gfix`, `group`, `pass3f4`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`,
 `kmove`, `lmerge`, `spr`, `tbuild`, `pack`, `dhint`), the main flow up to the
 long-message switch and the packed schedule's segments (`|M| < 342`), the
@@ -39,8 +42,6 @@ Open (`#open_items`):
 
 | item | code | notes |
 |---|---|---|
-| `dz_call` | `dz` | gather loop unrolled per chunk |
-| `csum_call` | `csum` | all τ bases on the stack (DUPN) |
 | `seg_alt` | `alt` … `altj`, `mulong`, `pass3f4b`, the tail with `FLAG = 0` | the long-message schedule; `Gas.pAlt` is a provisional bound (`Gas.lean`) |
 
 ```sh

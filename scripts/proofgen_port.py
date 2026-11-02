@@ -238,7 +238,7 @@ def glam_maps(nn):
 
 
 # hand-written Glamsterdam modules that replace a v4 module of the same name
-GLAM_HAND = (r"Fn\.(?:Keccak|Blk|Ntt|Ball|Ct|Decode)|Main\.(?:Init|Tbl)\.Blocks|"
+GLAM_HAND = (r"Fn\.(?:Keccak|Blk|Ntt|Ball|Ct|Decode)|Fn\.Ct\.Csum4(?:Blocks|Iter)|Main\.(?:Init|Tbl)\.Blocks|"
              r"Main\.(?:Base|Valid|SegMu)|Gas|Main")
 
 

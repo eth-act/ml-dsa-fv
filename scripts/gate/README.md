@@ -142,6 +142,8 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam44/Fn/Blk/gen.py` | `MlDsaOptGlam44/Fn/Blk/{Iters,Proof}.lean` |
 | `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py` | `MlDsaOptGlam44/Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}.lean` |
 | `MlDsaOptGlam44/Fn/Ball/gen_blocks.py` | `MlDsaOptGlam44/Fn/Ball/Blocks.lean` |
+| `MlDsaOptGlam44/Fn/Ct/gen_csum.py` | `MlDsaOptGlam44/Fn/Ct/{Csum4Blocks,Csum4Iter}.lean` |
+| `MlDsaOptGlam44/Fn/Decode/gen_dz.py` | `MlDsaOptGlam44/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 29 ported files (28 carry hand adjustments
