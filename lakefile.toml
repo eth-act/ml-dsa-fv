@@ -38,6 +38,10 @@ rev = "v4.33.0"
 # `Challenge.EvmProof` renamed to `EvmProof`.
 [[lean_lib]]
 name = "EvmProof"
+# `EvmProof.MeterX` (with `StepperX`, `XInstr`): the stepper with EIP-8024's
+# DUPN / SWAPN / EXCHANGE, a separate root so nothing built on `EvmProof`
+# changes.
+roots = ["EvmProof", "EvmProof.MeterX"]
 
 [[lean_lib]]
 name = "MlDsa44"
