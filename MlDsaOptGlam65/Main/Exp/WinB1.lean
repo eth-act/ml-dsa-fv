@@ -55,13 +55,20 @@ theorem W_KX (cd : ByteArray) {b sl : Nat} (hsl : sl < 2) :
     · simp [show ¬ b < 2 by omega]
 
 theorem KXH.frame {m m' cd : ByteArray} {n : Nat} {rs : List (Nat × Nat)} (h : KXH m cd n)
-    (hf : FrameExcept m m' rs) (ha : Avoids rs ABUF (FL + 1344)) (hn : n ≤ 5) : KXH m' cd n :=
-  ⟨fun b hb i hi sl hsl => by
-      rw [word_frame hf ha (a := ABUF + 1792 * b + 32 * i) (by omega) (by unfold ABUF FL; omega)]
-      exact h.1 b hb i hi sl hsl,
-    fun b hb g hg sl hsl => by
-      rw [word_frame hf ha (a := FL + 224 * b + 32 * g) (by unfold ABUF FL; omega) (by unfold FL; omega)]
-      exact h.2 b hb g hg sl hsl⟩
+    (hf : FrameExcept m m' rs) (ha : Avoids rs ABUF (ABUF + 1792 * n)) (hb : Avoids rs FL (FL + 224 * n)) :
+    KXH m' cd n :=
+  ⟨fun b hb' i hi sl hsl => by
+      rw [word_frame hf ha (a := ABUF + 1792 * b + 32 * i) (by omega) (by
+        have : b + 1 ≤ n := hb'
+        have := Nat.mul_le_mul_left 1792 this
+        omega)]
+      exact h.1 b hb' i hi sl hsl,
+    fun b hb' g hg sl hsl => by
+      rw [word_frame hf hb (a := FL + 224 * b + 32 * g) (by omega) (by
+        have : b + 1 ≤ n := hb'
+        have := Nat.mul_le_mul_left 224 this
+        omega)]
+      exact h.2 b hb' g hg sl hsl⟩
 
 theorem wfr {m m' : ByteArray} {rs : List (Nat × Nat)} (h : FrameExcept m m' rs) (a : Nat)
     (ha : Avoids rs a (a + 32)) : word m' a = word m a :=
@@ -224,7 +231,7 @@ theorem win_B1 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
       show _ = laneOf (seedState 136 (ctOf s.executionEnv.calldata)) x
       exact S4.freshLane_ctSeed (by unfold Z0; omega) (fun _ _ => rfl) (by decide) (by decide) rfl hx)
     g6 (by simp only [isValidJumpDest_lit]) (by norm_num)
-  refine ⟨m6, hKX.frame (hf5.trans hf6) (by w_frame) (by norm_num), hks6,
+  refine ⟨m6, hKX.frame (hf5.trans hf6) (by w_frame) (by w_frame), hks6,
     ((hfA.trans hf5).trans hf6).mono (by decide), ?_⟩
   have hR := ((((((((g1.trans hc1).trans g2).trans hc2).trans g3).trans hmc3).trans g4).trans hmc4).trans
     g5 |>.trans hc5).trans hR6
