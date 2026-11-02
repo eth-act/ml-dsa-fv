@@ -157,6 +157,7 @@ def main():
     if not quick:
         test_bytecode()
         opt_selftest.test_mu_lengths("glam", build=lambda nn: gen_glam.build(nn)[1], run=glam_run)
+        opt_selftest.test_c2(build=lambda **d: gen_glam.build(44, **d), run=glam_run, label="glam")
         os.environ["OPT_DBG_NO_OVERLAY"] = "1"
         test_bytecode(force6=True)
     print("all glam self-tests passed")

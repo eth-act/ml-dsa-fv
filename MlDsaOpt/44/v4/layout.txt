@@ -1,32 +1,33 @@
-ML-DSA-44 optimised verifier: 23488 bytes (limit 24576)
+ML-DSA-44 optimised verifier: 24049 bytes (limit 24576)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   3430   3430 bytes  main
-    3430 ..   5022   1592 bytes  expand_a
-    5022 ..   5583    561 bytes  hash_mu
-    5583 ..   6287    704 bytes  final_hash
-    6287 ..   6499    212 bytes  mulong
-    6499 ..   7095    596 bytes  absorb17
-    7095 ..   7533    438 bytes  sample_in_ball
-    7533 ..   8012    479 bytes  decode_hint
-    8012 ..   8818    806 bytes  dz
-    8818 ..  10022   1204 bytes  blk
-   10022 ..  10316    294 bytes  pass3f4
-   10316 ..  10726    410 bytes  gfix
-   10726 ..  11139    413 bytes  ginit
-   11139 ..  11588    449 bytes  trabs
-   11588 ..  11862    274 bytes  cext
-   11862 ..  12077    215 bytes  spr
-   12077 ..  12644    567 bytes  mub
-   12644 ..  13161    517 bytes  fix
-   13161 ..  13392    231 bytes  group
-   13392 ..  14200    808 bytes  tbuild
-   14200 ..  14897    697 bytes  csum
-   14897 ..  15986   1089 bytes  pack
-   15986 ..  17160   1174 bytes  ntt
-   17160 ..  19973   2813 bytes  intt
-   19973 ..  21967   1994 bytes  kf1
-   21967 ..  23488   1521 bytes  kf4
+    3430 ..   5392   1962 bytes  expand_a
+    5392 ..   5961    569 bytes  hash_mu
+    5961 ..   6665    704 bytes  final_hash
+    6665 ..   7261    596 bytes  absorb17
+    7261 ..   7761    500 bytes  sample_in_ball
+    7761 ..   8240    479 bytes  decode_hint
+    8240 ..   9046    806 bytes  dz
+    9046 ..  10250   1204 bytes  blk
+   10250 ..  10522    272 bytes  pass3f4
+   10522 ..  10932    410 bytes  gfix
+   10932 ..  11345    413 bytes  ginit
+   11345 ..  11472    127 bytes  kmove
+   11472 ..  11701    229 bytes  lmerge
+   11701 ..  12150    449 bytes  trabs
+   12150 ..  12424    274 bytes  cext
+   12424 ..  12639    215 bytes  spr
+   12639 ..  13205    566 bytes  mub
+   13205 ..  13722    517 bytes  fix
+   13722 ..  13953    231 bytes  group
+   13953 ..  14761    808 bytes  tbuild
+   14761 ..  15458    697 bytes  csum
+   15458 ..  16547   1089 bytes  pack
+   16547 ..  17721   1174 bytes  ntt
+   17721 ..  20534   2813 bytes  intt
+   20534 ..  22528   1994 bytes  kf1
+   22528 ..  24049   1521 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
@@ -58,6 +59,6 @@ Memory map (byte offsets):
 SIMD groups (slot roles; each group squeezes 5 blocks of 4 states):
    0: slots=[('A', 0, 0), ('A', 1, 0), ('A', 2, 0), ('A', 3, 0)] keep=None acc=('aligned', 0, 0)
    1: slots=[('A', 0, 1), ('A', 1, 1), ('A', 2, 1), ('A', 3, 1)] keep=None acc=('aligned', 0, 1)
-   2: slots=[('A', 0, 2), ('A', 1, 2), ('A', 2, 2), ('tr', 0)] keep=None acc=('masked', 0, 2)
-   3: slots=[('A', 0, 3), ('A', 1, 3), ('A', 2, 3), ('tr', 1)] keep=3 acc=('masked', 0, 3)
-   4: slots=[('c',), ('mu',), ('A', 3, 3), ('A', 3, 2)] keep=None acc=('kron', 0, 2, 2)
+   2: slots=[('tr', 0), ('A', 0, 2), ('A', 1, 2), ('A', 2, 2)] keep=None acc=('mix', 0, [(1, 0, 2), (2, 1, 2), (3, 2, 2)])
+   3: slots=[('c',), ('mu',), ('A', 3, 3), ('A', 3, 2)] keep=None acc=('kron', 0, 2, 2)
+   4: slots=[('tr', 1), ('A', 0, 3), ('A', 1, 3), ('A', 2, 3)] keep=0 acc=('mix', 0, [(1, 0, 3), (2, 1, 3), (3, 2, 3)])

@@ -230,6 +230,37 @@ def test_mu_lengths(version="v4", build=None, run=None):
         print(f"mu lengths {version}: {nn} ok ({len(lens)} lengths, valid and flipped)")
 
 
+def test_c2(build=None, run=None, label="v4"):
+    """44 (R4-7): H(c-tilde) gets one SIMD squeeze; SampleInBall squeezes the
+    second block from the saved state on demand. Debug build `dbg_c2`
+    squeezes it at the first stream lane: CB lanes 0..33 must equal
+    SHAKE256(c-tilde) bytes 0..271 and every verdict must be unchanged.
+    build(**dbg) -> (g, code)."""
+    import gen_opt
+    if build is None:
+        def build(**dbg):
+            g = gen_opt.Gen(gen_opt.Layout(44, "v4"))
+            for k, v in dbg.items():
+                setattr(g, k, v)
+            return g, g.build()
+    g, code = build(dbg_c2=True)
+    if not g.c_saved:
+        return
+    L = g.L
+    n = 0
+    for cd, exp in rows(44):
+        r = (run or opt_evm.run)(code, cd)
+        got = int.from_bytes(r["ret"], "big") if r["status"] == "return" and len(r["ret"]) == 32 else None
+        assert got == exp, (label, "c2 verdict")
+        if len(cd) >= L.HDR:
+            m = r["memory"]
+            st = hashlib.shake_256(cd[L.CT:L.CT + L.p["ctb"]]).digest(272)
+            assert all(int.from_bytes(m[L.CB + 32 * x:L.CB + 32 * x + 32], "big")
+                       == int.from_bytes(st[8 * x:8 * x + 8], "little") for x in range(34)), (label, "c2 stream")
+            n += 1
+    print(f"c's second block on demand {label}: 44 ok ({n} vectors)")
+
+
 # SHA-256 of the formally verified v2 artifacts (MlDsaOpt44/65/87 Bytecode.lean)
 V2_SHA256 = {
     44: "947bd2821b80e384110fcee27613528400d07ff2a9c2013f9b58498d1b6d4a00",
@@ -265,6 +296,7 @@ def main():
         test_bytecode("v3")
         test_bytecode("v4")
         test_mu_lengths("v4")
+        test_c2()
         os.environ["OPT_DBG_NO_OVERLAY"] = "1"
         test_bytecode("v4", force6=True)
     print("all self-tests passed")

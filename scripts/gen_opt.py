@@ -145,6 +145,17 @@ class Gen:
         self.wc_mu = L.v4 and "mu" in feats        # mu blocks 0..4 in the SIMD mu slot
         self.wc_sib = L.v4 and "sib" in feats      # lane-unrolled SampleInBall loop
         self.deferred = []       # (region, emitter) placed after main's code
+        # v4 (R4-7): ML-DSA-44 at the kf4 packing floor (23 calls); states
+        # pause and move between slots, see build_schedule / emit_window44
+        self.pack = L.v4 and L.nn == 44 and os.environ.get("OPT_V4_PACK", "1") == "1"
+        if self.pack:
+            self.MU_SIMD_BLOCKS = 1          # mu's slot gets one squeeze; kf1 continues
+            F = L.FIN + 8 * 32               # FIN[8..] is dead until pack (w1Encode)
+            self.SAVE = [F, F + 25 * 32, F + 50 * 32]   # kf4 state images (25 words)
+            assert F + 75 * 32 <= L.FIN + 32 * (8 + L.w1lanes)
+            self.LIM = L.MISC + 0x180       # SampleInBall stream limit (c's 2nd block on demand)
+        self.c_saved = None      # (state image, slot) of c's sponge after its only SIMD squeeze
+        self.mu_saved = None     # (state image, slot) of mu's sponge after its SIMD squeeze
 
     def fresh(self, base):
         self.n += 1
@@ -312,7 +323,12 @@ class Gen:
         if self.wc_mu and self.has_mu_slot():
             # |M| >= 614: blocks 0..4 were absorbed and permuted in the SIMD
             # mu slot of the last group; continue on kf1 from that state
-            msl = [s_ for s_, r in enumerate(self.schedule[-1]['slots']) if r and r[0] == 'mu'][0]
+            if self.mu_saved:
+                # R4-7: mu's slot was squeezed once; its state image was saved
+                img, msl = self.mu_saved
+                self.mcopy(L.KS, img, 25)
+            else:
+                msl = [s_ for s_, r in enumerate(self.schedule[-1]['slots']) if r and r[0] == 'mu'][0]
             nb = self.MU_SIMD_BLOCKS
             assert L.KS == 0             # cext reads lane x at 32 x
             self.call("cext", [L.KS, msl, 25])   # in place: plain lanes
@@ -742,11 +758,29 @@ class Gen:
         a.push(256 - tau)
         a.push(32)
         loop, fail, done, acc = (self.fresh(x) for x in ("sibloop", "sibfail", "sibdone", "sibacc"))
-        a.label(loop)
-        a.op("DUP1")
-        a.push(34 * 32)
-        a.op("EQ")
-        a.jumpi(fail)
+        if cb and self.c_saved:
+            # R4-7: c's slot was squeezed once (CB lanes 0..16); the stream
+            # limit LIM starts at block 1's end, where its second block is
+            # squeezed from the saved state on demand
+            ext = self.fresh("sibext")
+            # debug: squeeze block 2 at the first lane (opt_selftest) or
+            # never (opt_worstcase measures the byte loop on crafted lanes)
+            a.push(32 if getattr(self, "dbg_c2", False) else
+                   34 * 32 if getattr(self, "dbg_c2_off", False) else 17 * 32)
+            a.push(self.LIM)
+            a.op("MSTORE")
+            a.label(loop)
+            a.op("DUP1")
+            a.push(self.LIM)
+            a.op("MLOAD")
+            a.op("EQ")
+            a.jumpi(ext)
+        else:
+            a.label(loop)
+            a.op("DUP1")
+            a.push(34 * 32)
+            a.op("EQ")
+            a.jumpi(fail)
         if not cb:
             assert L.KS == 0
             nok = self.fresh("sibnok")
@@ -816,6 +850,21 @@ class Gen:
         a.push(1)
         a.op("SWAP1")
         a.op("JUMP")
+        if cb and self.c_saved:
+            a.label(ext)
+            a.push(self.LIM)
+            a.op("MLOAD")
+            a.push(34 * 32)
+            a.op("EQ")
+            a.jumpi(fail)
+            a.push(34 * 32)
+            a.push(self.LIM)
+            a.op("MSTORE")
+            img, csl = self.c_saved
+            self.mcopy(L.KS, img, 25)        # KS is dead here (mu is in FIN)
+            self.call("kf4")
+            self.call("cext", [L.CB + 17 * 32, csl, 17])
+            a.jump(loop)
         a.label(fail)
         for _ in range(3):
             a.op("POP")
@@ -1990,6 +2039,20 @@ class Gen:
                     g['slots'][3] = ('mu',)
                 groups.append(g)
             return groups
+        if self.pack and L.nn == 44:
+            # R4-7, 23 kf4 calls: columns 0, 1 aligned; column 2 rows 0..2 in
+            # slots 1..3 with tr in slot 0; then the window (emit_window44):
+            # B3 = column 3 rows 0..2 in lanes 1..3 and E = row 3 columns 2, 3
+            # (Kronecker), sharing 8 calls with tr's last run, c and mu
+            for j in range(2):
+                groups.append(pure(0, j))
+            groups.append(dict(slots=[('tr', 0)] + [('A', r, 2) for r in range(3)], keep=None,
+                               p3=('mix', 0, [(r + 1, r, 2) for r in range(3)])))
+            groups.append(dict(slots=[('c',), ('mu',), ('A', 3, 3), ('A', 3, 2)], keep=None,
+                               p3=('kron', 0, 2, 2), win=44))
+            groups.append(dict(slots=[('tr', 1)] + [('A', r, 3) for r in range(3)], keep=0,
+                               p3=('mix', 0, [(r + 1, r, 3) for r in range(3)]), win=44))
+            return groups
         # 44 / 87: tr runs in slot 3 of the last trruns groups of the last row
         # group; the displaced A instances (row 4 rb + 3) go to one extra group
         rbl = L.GR - 1
@@ -2713,7 +2776,9 @@ class Gen:
             out = []
             for (j, d), sls in sorted(terms.items()):
                 m = sum(M64 << (64 * s_) for s_ in sls)
-                out.append(('lane', j, None if m == ALL else m, d))
+                # the shift by 64 d drops lanes; no mask if it keeps only lanes of m
+                keep = sum(M64 << (64 * s_) for s_ in range(4) if 0 <= s_ + d < 4)
+                out.append(('lane', j, None if m & keep == keep else m, d))
             return out
         assert p3[0] == 'kron'
         return [('kron', p3[2], p3[3])]
@@ -2945,6 +3010,212 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    def tr_absorb(self, b, sh):
+        """XOR block b of tr = H(pk) (padded if last) into slot sh."""
+        L = self.L
+        nb = L.PK // 136 + 1
+        if b < nb - 1:
+            self.call("trabs", [136 * b, sh, 5, ALL ^ ((1 << 192) - 1), L.KS])
+        else:
+            rem = (L.PK % 136) // 8
+            n4 = (rem + 3) // 4
+            keepl = rem - 4 * (n4 - 1)
+            self.call("trabs", [136 * b, sh, n4, ALL ^ ((1 << (256 - 64 * keepl)) - 1), L.KS])
+            self.xor_ks_const(rem, spread(0x1F) << sh)
+            self.xor_ks_const(16, spread(0x80 << 56) << sh)
+
+    # ── v4 R4-7: packed windows (states pause and move between slots) ──
+    @staticmethod
+    def seed(r, j):
+        return j | r << 8 | 0x1F << 16
+
+    def mcopy(self, dst, src, nwords):
+        a = self.a
+        a.push(32 * nwords)
+        a.push(src)
+        a.push(dst)
+        a.op("MCOPY")
+
+    def kmove(self, src, d, slots, keep):
+        """KS[x] = (KS[x] & keep) | ((src[x] shifted by d bits, d < 0: right)
+        & slots) for the 25 lanes: moves states between slots (bit 4 b + s
+        is bit b of slot s) or restores them from a saved image."""
+        m = self.slotbits(slots)
+        self.call("kmove", [src, max(d, 0), max(-d, 0), m, keep])
+
+    def gen_kmove(self):
+        """kmove: entry [ret, src, sl, sr, m, keep]; see Gen.kmove."""
+        a, L = self.a, self.L
+        assert L.KS == 0
+        a.region("kmove")
+        a.label("kmove")
+        st = Stack(a, ["ret", "src", "sl", "sr", "m", "keep"])
+        st.push(20 * 32, "x")
+        layout = list(st.s)
+        loop = self.fresh("kml")
+        a.label(loop)
+        for k in range(5):               # lanes x .. x + 4
+            st.dup("x", "p")
+            if k:
+                st.push(32 * k, "c")
+                st.op("ADD", 2, "p")
+            st.dup("src", "v")
+            st.dup("p", "c")
+            st.op("ADD", 2, "v")
+            st.op("MLOAD", 1, "v")
+            st.dup("sl", "c")
+            st.op("SHL", 2, "v")
+            st.dup("sr", "c")
+            st.op("SHR", 2, "v")
+            st.dup("m", "c")
+            st.op("AND", 2, "v")
+            st.dup("p", "o")
+            st.op("MLOAD", 1, "o")
+            st.dup("keep", "c")
+            st.op("AND", 2, "o")
+            st.op("OR", 2, "v")
+            st.swap(1)
+            st.op("MSTORE", 2)
+        st.sub_const("x", 5 * 32)        # wraps below 0
+        assert st.s == layout
+        st.push(25 * 32, "c")
+        st.dup("x", "y")
+        st.op("LT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in ("x", "keep", "m", "sr", "sl", "src"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    LM_UNROLL = 11
+
+    def lmerge(self, dst, src_a, ma, src_b, sl, n):
+        """dst[w] = (src_a[w] & ma) | (src_b[w] << sl), w < n words."""
+        assert n % self.LM_UNROLL == 0
+        self.call("lmerge", [(dst - src_a) & ALL, ma, (src_b - src_a) & ALL, sl, src_a + 32 * n, src_a])
+
+    def gen_lmerge(self):
+        """lmerge: entry [ret, da, ma, db, sl, end, p]; p runs over
+        src_a .. end, dst = p + da, src_b = p + db (offsets mod 2^256)."""
+        a = self.a
+        a.region("lmerge")
+        a.label("lmerge")
+        st = Stack(a, ["ret", "da", "ma", "db", "sl", "end", "p"])
+        layout = list(st.s)
+        loop = self.fresh("lml")
+        a.label(loop)
+        for k in range(self.LM_UNROLL):
+            st.dup("p", "q")
+            if k:
+                st.push(32 * k, "c")
+                st.op("ADD", 2, "q")
+            st.dup("q", "v")
+            st.op("MLOAD", 1, "v")
+            st.dup("ma", "c")
+            st.op("AND", 2, "v")
+            st.dup("db", "w")
+            st.dup("q", "c")
+            st.op("ADD", 2, "w")
+            st.op("MLOAD", 1, "w")
+            st.dup("sl", "c")
+            st.op("SHL", 2, "w")
+            st.op("OR", 2, "v")
+            st.swap(1)
+            st.dup("da", "c")
+            st.op("ADD", 2, "q")
+            st.op("MSTORE", 2)
+        st.add_const("p", 32 * self.LM_UNROLL)
+        assert st.s == layout
+        st.dup("end", "e")
+        st.dup("p", "x")
+        st.op("LT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in ("p", "end", "sl", "db", "ma", "da"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    def gfix_acc(self, gi, amask):
+        """HAVE6 = 0; gfix the ABUF of schedule entry gi (lanes amask, its
+        final states in KS); accumulate it. Stack [ok] -> [ok]."""
+        a, L = self.a, self.L
+        a.op("PUSH0")
+        a.push(L.MISC + 0x1E0)
+        a.op("MSTORE")
+        ret = self.fresh("ret")
+        a.pushl(ret)
+        a.push(amask)
+        a.jump("gfix")
+        a.label(ret)
+        a.op("AND")
+        self.accumulate(gi)
+
+    def mu_start(self, sh):
+        """mu's block 0 into the fresh slot sh (padded if |M| <= 69)."""
+        a = self.a
+        join, short = self.fresh("muj"), self.fresh("mus")
+        a.pushl(join)
+        a.pushl(short)
+        a.push(sh)
+        a.jump("mub0")
+        a.label(short)
+        a.op("POP")
+        a.label(join)
+
+    def emit_window44(self, gi):
+        """ML-DSA-44 calls 15..22 (8 kf4 calls, all 32 slot-permutations used).
+        slot 0: tr blocks 5..9 (15..19), c (20), A13 (21, 22)
+        slot 1: A03 (15..19), mu (20), A23 (21, 22)
+        slot 2: A13 (15..17), A33 (18..22);  slot 3: A23 (15..17), A32 (18..22)
+        E = (A33, A32) is written to ABUF blocks 0..4 by calls 18..22. B3 =
+        (A03, A13, A23) in lanes 1..3 is staged in ACC / BASES: blocks 0..2
+        from calls 15..17, blocks 3, 4 merged from A03's lane of calls 18, 19
+        and A13 / A23's lanes 0, 1 of calls 21, 22 (shifted to lanes 2, 3).
+        A13 / A23 pause after call 17 (state image SAVE[0]) and resume in
+        slots 0, 1; for B3's fix-up the state is rebuilt (A03 from SAVE[1])."""
+        a, L = self.a, self.L
+        gE, gB = gi, gi + 1
+        S17, S19, SC = self.SAVE
+        R, RF = L.ACC, L.BASES                 # B3 staging: 256 + 32 words
+        assert L.GR == 1
+        sd = self.seed
+        self.call("ginit", [self.slotbits([0]), 0b1110, 0, interleave([0, sd(0, 3), sd(1, 3), sd(2, 3)])])
+        for t in range(8):
+            if t == 3:
+                self.mcopy(S17, L.KS, 25)
+                self.call("ginit", [self.slotbits([0, 1]), 0b1100, 0, interleave([0, 0, sd(3, 3), sd(3, 2)])])
+            elif t == 5:
+                self.mcopy(S19, L.KS, 25)
+                self.call("ginit", [self.slotbits([2, 3]), 0, 1, interleave([0x1F, 0, 0, 0])])
+                self.mu_start(1)
+            elif t == 6:
+                self.kmove(S17, -2, [0, 1], self.slotbits([2, 3]))
+            if t < 5:
+                self.tr_absorb(5 + t, 0)
+            self.call("kf4")
+            if t < 3:
+                self.call("blk", [R + 56 * 32 * t, RF + 7 * 32 * t])
+            else:
+                self.call("blkh" if t == 7 else "blk", [L.ABUF + 56 * 32 * (t - 3), L.FL + 7 * 32 * (t - 3)])
+            if t == 4:
+                self.call("cext", [L.TRL, 0, 8])
+            elif t == 5:
+                self.call("cext", [L.CB, 0, 17])
+                self.call("cext", [L.MU, 1, 8])
+                self.mcopy(SC, L.KS, 25)
+        self.c_saved = (SC, 0)
+        self.mu_saved = (SC, 1)
+        # B3 blocks 3, 4 (head: candidates 0..31 and 4 flag words of block 4)
+        l1 = M64 << 64
+        self.lmerge(R + 168 * 32, L.ABUF, l1, L.ABUF + 168 * 32, 128, 88)
+        self.lmerge(RF + 21 * 32, L.FL, l1, L.FL + 21 * 32, 128, 11)
+        self.gfix_acc(gE, 0b1100)
+        self.mcopy(L.ABUF, R, 256)
+        self.mcopy(L.FL, RF, 32)
+        self.kmove(L.KS, 2, [2, 3], ALL ^ self.slotbits([2, 3]))
+        self.kmove(S19, 0, [1], ALL ^ self.slotbits([1]))
+        self.gfix_acc(gB, 0b1110)
+
     def expand_a(self):
         """All SIMD groups of the schedule; stack [ok] -> [ok]."""
         a, L = self.a, self.L
@@ -2953,6 +3224,10 @@ class Gen:
             self.plan_accumulation()
         nb = L.PK // 136 + 1
         for gi, g in enumerate(self.schedule):
+            if g.get('win'):
+                if gi == min(i for i, x in enumerate(self.schedule) if x.get('win')):
+                    getattr(self, f"emit_window{g['win']}")(gi)
+                continue
             slots = g['slots']
             p3 = g['p3']
             Aslots = [s_ for s_, r in enumerate(slots) if r and r[0] == 'A']
@@ -3016,17 +3291,7 @@ class Gen:
             def blocks(longmu):
                 for blk in range(5):
                     if trs:
-                        sh = trs[0]
-                        b = 5 * slots[sh][1] + blk
-                        if b < nb - 1:
-                            self.call("trabs", [136 * b, sh, 5, ALL ^ ((1 << 192) - 1), L.KS])
-                        else:
-                            rem = (L.PK % 136) // 8
-                            n4 = (rem + 3) // 4
-                            keepl = rem - 4 * (n4 - 1)
-                            self.call("trabs", [136 * b, sh, n4, ALL ^ ((1 << (256 - 64 * keepl)) - 1), L.KS])
-                            self.xor_ks_const(rem, spread(0x1F) << sh)
-                            self.xor_ks_const(16, spread(0x80 << 56) << sh)
+                        self.tr_absorb(5 * slots[trs[0]][1] + blk, trs[0])
                     self.call("kf4")
                     self.call("blkh" if self.v4 and blk == 4 else "blk", [L.ABUF + 56 * 32 * blk, L.FL + 7 * 32 * blk])
                     if cslot is not None and blk < 2:
@@ -3909,6 +4174,9 @@ class Gen:
                     self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
         self.gen_gfix()
         self.gen_ginit()
+        if self.pack:
+            self.gen_kmove()
+            self.gen_lmerge()
         self.gen_trabs()
         self.gen_cext()
         self.gen_spr()

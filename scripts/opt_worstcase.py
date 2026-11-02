@@ -131,9 +131,27 @@ def analyse(nn, version="v3"):
         lanes = opt_ref.bytes_to_lanes(bytes(stream))
         for x, v in enumerate(lanes):
             put(m, L.CB + 32 * x, v)
-        r = run(hcode, b"", memory=m, stack=[RET], start_pc=lab["sib"])
-        assert r["status"] == "stop" and r["stack"][-1] == 1
-        sib_worst = r["gas_used"]
+        if g.c_saved:
+            # R4-7 (44): the second block is squeezed on demand from c's saved
+            # state, which would replace the crafted bytes; measure the byte
+            # loop on a build without that squeeze and add its cost (kf4,
+            # cext of 17 lanes, the 25-word state copy and the limit update)
+            if version == "glam":
+                gd, dcode = gen_glam.build(nn, dbg_c2_off=True)
+            else:
+                gd = gen_opt.Gen(gen_opt.Layout(nn, version))
+                gd.dbg_c2_off = True
+                dcode = gd.build()
+            dcode += b"\x5b\x00"
+            r = run(dcode, b"", memory=m, stack=[len(dcode) - 2], start_pc=gd.a.labels["sib"])
+            assert r["status"] == "stop" and r["stack"][-1] == 1
+            cext17 = run(hcode, b"", memory=bytearray(mem0), stack=[RET, L.CB + 17 * 32, 0, 17],
+                         start_pc=lab["cext"])["gas_used"]
+            sib_worst = r["gas_used"] + reg["kf4"] // base["cnt"][lab["kf4"]] + cext17 + 3 * 3 + 3 + 3 * 25 + 60
+        else:
+            r = run(hcode, b"", memory=m, stack=[RET], start_pc=lab["sib"])
+            assert r["status"] == "stop" and r["stack"][-1] == 1
+            sib_worst = r["gas_used"]
     elif g.wc_sib:
         # v4 kf1 variant (lane-unrolled loop): exact, in three segments:
         # block 1 (128 rejected bytes) up to the 2nd squeeze, the squeeze,
