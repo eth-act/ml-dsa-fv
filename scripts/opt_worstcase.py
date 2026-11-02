@@ -22,7 +22,7 @@ memory) with patterns that take the most expensive path:
     an existing nonzero position (the "moved" branch);
   * hints: all omega indices in one row, strictly decreasing (every index
     takes the failing order check).
-Usage: python3 scripts/opt_worstcase.py [NN ...]
+Usage: python3 scripts/opt_worstcase.py [--version v3|wc] [NN ...]
 """
 from __future__ import annotations
 
@@ -45,11 +45,16 @@ def regions(g, code, prof):
     return {n: sum(prof[a:b]) for (a, n), (b, _) in zip(rp, rp[1:])}
 
 
-def analyse(nn):
-    L = gen_opt.Layout(nn)
+def artifact(nn, version):
+    d = os.path.join(HERE, "..", "MlDsaOpt", str(nn))
+    return os.path.join(d, "opt.hex") if version == "v3" else os.path.join(d, version, "opt.hex")
+
+
+def analyse(nn, version="v3"):
+    L = gen_opt.Layout(nn, version)
     g = gen_opt.Gen(L)
     code = g.build()
-    with open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), "opt.hex")) as f:
+    with open(artifact(nn, version)) as f:
         assert f.read().strip() == code.hex(), "stale artifact"
     lab = g.a.labels
     hcode = code + b"\x5b\x00"            # harness return target: JUMPDEST STOP
@@ -123,6 +128,39 @@ def analyse(nn):
         r = opt_evm.run(hcode, b"", memory=m, stack=[RET], start_pc=lab["sib"])
         assert r["status"] == "stop" and r["stack"][-1] == 1
         sib_worst = r["gas_used"]
+    elif g.wc_sib:
+        # wc kf1 variant (lane-unrolled loop): exact, in three segments:
+        # block 1 (128 rejected bytes) up to the 2nd squeeze, the squeeze,
+        # block 2 ((136 - tau) rejected, then tau accepted bytes, j = 0)
+        loop = [k for k in lab if k.startswith("sibloop")][0]
+        sq = [k for k in lab if k.startswith("sibsq")][0]
+        nok = [k for k in lab if k.startswith("sibnok")][0]
+
+        def crafted(stream):
+            m = bytearray(mem0)
+            for a_ in range(L.CW, L.CW + 0x2000, 32):
+                put(m, a_, 0)
+            for a_ in range(L.IDX, L.IDX + 0x100, 32):
+                put(m, a_, 0)
+            put(m, L.MISC + 0x1C0, 0)
+            put(m, L.MISC + 0x1A0, 0)
+            for x, v in enumerate(opt_ref.bytes_to_lanes(bytes(stream))):
+                put(m, L.KS + 32 * x, v * gen_opt.REP)
+            return m
+        r = opt_evm.run(hcode, cd, memory=bytearray(mem0), stack=[RET], start_pc=lab["sib"],
+                        stop_pc=lab[loop])
+        assert r["status"] == "break"
+        setup = r["gas_used"]
+        r1 = opt_evm.run(hcode, b"", memory=crafted(bytes(8) + b"\xff" * 128), stack=[RET, 0, 256 - tau, 32],
+                         start_pc=lab[loop], stop_pc=lab[sq])
+        assert r1["status"] == "break" and r1["stack"][-1] == 17 * 32
+        r2 = opt_evm.run(hcode, b"", memory=bytearray(mem0), stack=[RET, 0, 256 - tau, 17 * 32],
+                         start_pc=lab[sq], stop_pc=lab[nok])
+        assert r2["status"] == "break"
+        r3 = opt_evm.run(hcode, b"", memory=crafted(b"\xff" * (136 - tau) + bytes(tau)),
+                         stack=[RET, 0, 256 - tau, 17 * 32], start_pc=lab[nok])
+        assert r3["status"] == "stop" and r3["stack"][-1] == 1
+        sib_worst = setup + r1["gas_used"] + r2["gas_used"] + r3["gas_used"]
     else:
         # kf1 variant: per-iteration costs from two crafted block-1 runs, then
         # 264 iterations + the second squeeze
@@ -181,9 +219,12 @@ def analyse(nn):
 
 
 def main(argv):
+    version = "v3"
+    if argv[:1] == ["--version"]:
+        version, argv = argv[1], argv[2:]
     for nn in [int(x) for x in argv] or [44, 65, 87]:
-        r = analyse(nn)
-        print(f"ML-DSA-{nn}: typical {r['typical']:,}  worst {r['worst']:,}  (|M| = 0)")
+        r = analyse(nn, version)
+        print(f"ML-DSA-{nn} {version}: typical {r['typical']:,}  worst {r['worst']:,}  (|M| = 0)")
         print(f"  fix-ups: typical {r['fix_typ']:,}  worst {r['fix_worst']:,} "
               f"({r['instances']} instances x {r['per_instance']:,} + {r['groups']} groups x 6th squeeze {r['ext']:,})")
         print(f"  SampleInBall: typical {r['sib_typ']:,}  worst {r['sib_worst']:,}")

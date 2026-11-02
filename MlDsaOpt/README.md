@@ -12,6 +12,7 @@ analysis and proof plan are in `docs/opt.md`.
 | `NN/opt.asm` | readable intermediate form: annotated listing (pc, mnemonic, immediate, subroutine, generator comments) |
 | `NN/layout.txt` | subroutine pc ranges, memory map, SIMD slot schedule |
 | `NN/v2/` | the same three files for v2 (the proved bytes) |
+| `NN/wc/` | the same three files for wc: v3 with cheaper data-dependent paths (fix-ups, multi-block μ in a SIMD slot, SampleInBall); not proved, see `docs/opt.md` "Data-dependent paths (wc, not proved)" |
 
 Gas for a valid signature over an empty message, frame gas as measured by
 `mldsa44tool run-file` and foundry's GasProbe:

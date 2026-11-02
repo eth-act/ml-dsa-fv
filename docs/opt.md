@@ -86,6 +86,11 @@ python3 scripts/opt_fuzz.py 65 400 111         # differential fuzzing (Python EV
 python3 scripts/opt_selftest.py                # model, kernels, constants, all vectors, forced 6th squeeze
 python3 scripts/opt_worstcase.py               # worst-case gas over adversarial inputs, per set
 .lake/build/bin/mldsa44tool run-file MlDsaOpt/44/opt.hex FILE   # Lean-semantics gas (one calldata per line)
+python3 scripts/gen_opt.py --version wc        # wc (data-dependent paths, not proved): MlDsaOpt/{44,65,87}/wc/
+python3 scripts/opt_diff.py --from v3 --to wc  # subroutines changed v3 -> wc
+python3 scripts/opt_worstcase.py --version wc  # worst case of the wc build
+python3 scripts/opt_fuzz.py --version v3,wc 44 400 341   # same cases on several builds, accepted mean per build
+python3 scripts/opt_corpus.py 44 v3,wc         # Python EVM: corpus verdicts, gas median / mean / max per build
 ```
 
 `scripts/opt_evm.py` is a Python Osaka interpreter with exact frame gas. It
@@ -198,6 +203,103 @@ the agreed rate of < 1% per re-proved subroutine, this is the stopping
 point. The non-Keccak gap to the v1 bounds is mostly bounds that were not
 achievable (de-interleave alone, 4-op table loads, stack-resident zetas),
 not unexploited structure.
+
+## Data-dependent paths (wc, not proved)
+
+`python3 scripts/gen_opt.py --version wc` writes `MlDsaOpt/NN/wc/`. It is
+v3 plus three changes to the data-dependent paths, each gated on
+`Gen.wc_fix`, `Gen.wc_mu` and `Gen.wc_sib` (all on for `wc`; the
+environment variable `OPT_WC_FEATURES=fix,mu,sib` selects a subset, for
+measurement only). v3 and v2 bytes are unchanged. No proof exists yet.
+
+Gas against v3. Typical and worst case are for |M| = 0 (worst case as in
+"Worst-case gas"); the fuzz mean is over the accepted cases of one
+`opt_fuzz.py` run, the same cases for every build (seeds 341 / 141 / 241,
+400 cases each, messages up to 1,200 bytes); the median is over all cases
+of `scripts/opt_corpus.py` (44: the 3,639-case corpus; 65 / 87: the 57
+vector rows).
+
+| build | typical 44 / 65 / 87 | fuzz mean (accepted) 44 / 65 / 87 | corpus median 44 / 65 / 87 | worst case 44 / 65 / 87 |
+|---|---|---|---|---|
+| v3 | 2,105,097 / 3,701,979 / 5,424,737 | 2,152,701 / 3,751,723 / 5,490,731 | 2,236,639 / 3,702,164 / 5,470,332 | 2,864,301 / 5,073,355 / 7,954,105 |
+| v3 + fix | 2,100,250 / 3,692,149 / 5,408,596 | 2,147,862 / 3,739,811 / 5,469,151 | 2,226,988 / 3,692,334 / 5,447,326 | 2,717,597 / 4,798,285 / 7,440,641 |
+| v3 + mu | 2,105,090 / 3,701,972 / = v3 | 2,112,370 / 3,717,579 / = v3 | 2,142,424 / 3,701,972 / = v3 | 2,864,294 / 5,073,348 / = v3 |
+| v3 + sib | 2,102,960 / 3,699,360 / 5,418,854 | 2,150,601 / 3,748,999 / 5,485,255 | 2,234,575 / 3,699,535 / 5,464,921 | 2,844,675 / 5,054,049 / 7,927,448 |
+| **wc** (all three) | **2,098,106 / 3,689,523 / 5,402,713** | **2,105,431 / 3,702,942 / 5,463,674** | **2,130,195 / 3,689,523 / 5,441,915** | **2,697,964 / 4,778,972 / 7,413,984** |
+
+The worst-case components for wc: fix-ups 614,265 / 1,133,409 / 2,027,675
+(v3 760,969 / 1,408,479 / 2,541,139), SampleInBall 25,779 / 29,289 /
+100,291 (v3 45,405 / 48,595 / 126,948); hints unchanged. The mu change
+does not move the |M| = 0 worst case, but lowers every |M| ≥ 70 case of
+44 and 65 by 64k–155k (worst case included). All builds give 0 verdict
+mismatches on the corpus and the fuzz runs.
+
+Changed subroutines (`scripts/opt_diff.py --from v3 --to wc`, modulo
+relocation):
+
+| change | 44 | 65 | 87 |
+|---|---|---|---|
+| fix | `fix` | `fix` | `fix` |
+| mu | `expand_a` (mu group and the post-ExpandA mu dispatch), `hash_mu`; new `mub`, `mulong`; `mu0` removed | same | – (no idle slot) |
+| sib | `sample_in_ball` | `sample_in_ball` | `sample_in_ball` |
+
+Sizes: 44 23,015 B, 65 23,343 B, 87 23,975 B. No new opcode.
+
+* **fix: cheaper compaction.** Same contract and memory as v3's `fix`.
+  * The lane is kept in place: x = word & lm, accepted iff x < q << sh.
+    A flagged candidate is 19 ops (v3: 27): load and mask, read-merge-write
+    of lane s at wp, wp += 32·[x < q << sh] with wp on top of the stack.
+  * The flag word of the group at rp is read at (rp >> 3) + FL − ABUF/8,
+    so there is no separate flag pointer, and one combined test
+    (wp < END256 and rp < rlim) closes each group.
+  * Clean groups are 8 masked copies as before (16 ops per word, v3 18).
+  * Per fully flagged instance 32,279 → 23,110; the sixth squeeze is
+    unchanged (48,271 per group).
+  * Re-proof: v3's loop invariant (lane s of ABUF[0, wp) holds the first
+    accepted candidates, rp is the next unread one) is unchanged; new are
+    the flag-address identity rp = ABUF + 8 (fp − FL) and the in-place
+    comparison x < q << sh ⇔ (x >> sh) < q for x = word & lm.
+* **mu: blocks 0..4 in the SIMD mu slot (44, 65).** The last group's mu
+  slot absorbs one mu block before each of its 5 kf4 calls, so
+  |M| ≤ 613 needs no kf1 call for mu, and longer messages continue on kf1
+  from that state after 5 blocks.
+  * `mub0` absorbs block 0 (tr ‖ 0 ‖ 0 ‖ M[0..70)). For |M| ≤ 69 it pads
+    and returns to v3's block loop (mu extracted after kf4 #0); otherwise
+    it returns to `mulong`, an out-of-line copy of the block loop that
+    calls `mub` after each kf4. `mub` absorbs block k (17 lanes via
+    `trabs`), pads the last block, or extracts mu to MU after the last
+    block's permutation.
+  * For |M| ≥ 614, `hash_mu` extracts the slot's 25 lanes in place
+    (`cext`), replicates them (REP·v, NOT on the complemented lanes) and
+    runs v3's kf1 loop from block 5.
+  * Gas (44): −64k for 70 ≤ |M| ≤ 205, −94k / −123k / −153k for the next
+    136-byte steps up to 613, −149k for |M| ≥ 614 (65: −66k … −155k,
+    −151k). |M| ≤ 69 is unchanged (−7).
+  * Re-proof: per-slot sponge semantics as for tr (the absorption
+    pattern is `trabs` again), the padding position P − 136 k, and the
+    interleaved-slot → replicated-state conversion (complemented lanes:
+    NOT(REP·v) = REP·(v ⊕ M64)). The 6th squeeze's state save/restore
+    keeps the mu state.
+* **sib: lane-unrolled SampleInBall loop.** One iteration per 64-bit
+  stream lane, 8 unrolled byte tests j = (w >> 8k) & 0xFF; a rejected byte
+  is 10 ops, one taken JUMPI and a POP (v3: 36 ops and three jumps). Accepted bytes call one shared
+  accept step (v3's body unchanged) with their return label. The kf1
+  variant (87) addresses the lane as KS + (32 x mod 544) and squeezes at
+  x = 17. Re-proof: the byte order is v3's (byte 8 x + k of the stream);
+  the accept step is v3's code.
+
+Evaluated and not done:
+
+* **Sixth squeeze on kf1 for the one slot that needs it.** Per slot:
+  `cext` of 25 lanes (~5.2k), replication (~0.6k), kf1 (32.6k),
+  candidate extraction into lane s (~3k) and the state save/restore: about
+  41k against 48.3k for the whole-group kf4 + `blk`. But a group can need
+  it in up to 4 slots (k slots: k × 41k), and a hybrid (kf1 for the first
+  slot, kf4 for a second) costs 41k + 48k. So the worst case gets worse,
+  and the typical, corpus and fuzz cases never take this path
+  (probability ≈ 10^-38 per instance). Not done.
+* **mu in idle SIMD slots for 87.** All 300 slot-permutations carry
+  ExpandA or tr, so there is none.
 
 ## Design
 
