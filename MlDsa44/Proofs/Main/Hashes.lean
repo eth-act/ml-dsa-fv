@@ -190,9 +190,10 @@ theorem hash_phase {s : State} (hs : Ctx s) {mlen : Nat}
       trOf s.executionEnv.calldata ++ (ByteArray.mk #[0, 0] ++ msgOf s.executionEnv.calldata) := by
     have := readPadded_of_bytesAt hmsg
     have htrs : (trOf s.executionEnv.calldata).size = 64 := H_size _ _
-    rwa [ByteArray.size_append, ByteArray.size_append, htrs, msgOf_size hmlen,
+    rw [ByteArray.size_append, ByteArray.size_append, htrs, msgOf_size hmlen,
       show 64 + ((ByteArray.mk #[0, 0]).size + mlen) = 66 + mlen by
         change 64 + (2 + mlen) = 66 + mlen; omega] at this
+    exact this
   have hR7 := msg_blockB hs hmlen M6
   -- μ
   obtain ⟨M8, hb8, hf8, hC8⟩ := shake_call hs
