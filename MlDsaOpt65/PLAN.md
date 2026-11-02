@@ -1,6 +1,108 @@
 # MlDsaOpt65 / MlDsaOpt87: proof plan
 
-One plan for both artifacts (`MlDsaOpt87/PLAN.md` points here).
+The v3 and v2 sections below cover both artifacts; the v4 status of ML-DSA-87
+is in `MlDsaOpt87/PLAN.md`.
+
+## Status (v4, round 4)
+
+Target: `MlDsaOpt/65/opt.hex` (v4: 24,049 bytes, 12,202 instructions, memory
+2865 words, unchanged from v3; the proved v3 bytes are `MlDsaOpt/65/v3/opt.hex`,
+v2 in `MlDsaOpt/65/v2/`). The four final theorems in `MlDsaOpt65/Main.lean`
+are stated with `code := MlDsaOpt65.optBytecode` (the v4 bytes) and
+`Gas.schedule`. `checks/Axioms.lean` prints their axioms and lists every
+declaration with a direct `sorry`. ML-DSA-87: `MlDsaOpt87/PLAN.md`.
+
+**Closed**: no direct `sorry`; the four final theorems depend on `propext`,
+`Classical.choice`, `Quot.sound` only.
+
+* seg_exp: in progress
+
+Retarget v3 → v4 (`1b97187`, same method as ML-DSA-44):
+
+* generated modules: `python3 scripts/proofgen_artifact.py MlDsaOpt/65/opt.hex MlDsaOpt65 MlDsaOpt65 opt65 2865`;
+* unchanged proofs relocated in place from `MlDsaOpt/65/v3/opt.hex`:
+  `python3 scripts/proofgen_port.py --reloc 65 FILES` (`kf4`, `kf1`, `ginit`,
+  `cext`, `spr`, `absorb17`, `tbuild`, `pack`, `dhint`; segments `init`, `tbl`,
+  `rho`, `ntt`, `sib`, `ct`, `fin`, `short`);
+* changed subroutines stated with the ML-DSA-44 v4 contracts and proved by
+  porting the 44 v4 proofs (`python3 scripts/proofgen_port.py 65 [--sub A=B]
+  [--path OLD=NEW] FILES`, hand adjustments marked `-- port:`): `blk`/`blkh`/
+  `blkt`, `fix`, `gfix`, `group`, `trabs`, `mub0`; `csum` and `sib` rebuilt
+  on the 44 v4 proofs (`csum`: `Fn/Csum/gen_blocks.py` rewritten for v4);
+  `dz`: the v3 `Fn/Decode/Z*` adapted as in 44's `Z4*`; the NTTs from one
+  generator per set (`Fn/NttV4/gen_ntt4p.py`, polynomial address a
+  parameter, so one development covers both call sites); `mub`, `pass3f4`,
+  `pass3f8` (44 `Pass3f4` template) and the ExpandA groups written for 65;
+* main flow: `seg_z` re-proved at the retarget; `seg_exp` (one segment,
+  3556 → 5242), `seg_zd`, `seg_mu`, `seg_w` re-proved against the v4
+  contracts; `Valid.lean` composes all segments;
+* removed with their v3 code: `usehint` (fused into `intt`), `pass3x5 …
+  pass3x8`, `mu0`.
+
+Contract changes against the retarget (each approved by the lead):
+
+* `trabs_call` gained `hlmL` (each lane of the mask is 0 or `M64`: the mask is
+  applied before the byte swap, so it must be lane-aligned), as for 44;
+* `gfix_call`: new conjunct after `KS4 m' S`, the lanes of `ABUF[0, 256)` of
+  slots not in `amask` are unchanged (`54cde64`; `group_call` uses it);
+* `SibFresh` includes `BASES` (as in v3) and `InvW` carries `zBases`
+  (`17d0209`): SampleInBall's fail exit returns 0 without clearing BASES,
+  so `sib_call` needs BASES zero on entry (ExpandA establishes it, `seg_mu`
+  carries it);
+* `mub_call` (65 only): KS unchanged when `66 + |M| < 136 k` (`d252db7`;
+  only `cext [MU, sh, 8]` or nothing runs there).
+
+Budgets (`Budget.lean`, `Main/Base.lean`, `Gas.lean`):
+
+* `Gas.pExp` = 3,623,550, the maximum of ExpandA's two μ paths: group 8 plus
+  `pass3f8` costs 432,185 on the mulong path (|M| ≥ 70: five `mub` calls
+  instead of `cext [MU, 2, 8]`) and 418,315 on the short-μ path (`Exp.gG8`,
+  `gG8_eq`, `gShort_eq`); row group 0 (`exp_pure` + 5 groups + `pass3f4`) and
+  groups 5–7 make up the rest, and `Exp.seg_exp_of` sums them to exactly
+  `Gas.pExp` (`bfddc3b`, `0b2c226`);
+* `Gas.sib` = 29,497 (`13 + 33 · 368 + 49 · 353 + 43`, the proved path count;
+  `5374d66`);
+* the other v4 budgets are the exact contract costs: `ntt` 92,404, `intt`
+  (UseHint fused) 147,497, `dz` 43,516, `csum` 76,176, `trabs n4` = 65 + 529
+  `n4`, `mub0` 3,466, `mub` 3,090, `pass3f4` 55,187, `pass3f8` 88,999;
+  data-dependent ones (`fixNo`, `fixSq`, `gfix`, `group`, `sib`) are static
+  longest paths with the trip counts documented in `Budget.lean`;
+* `schedule (5261 + n)` is constant for `n ≤ 613` (μ in the SIMD slot) and
+  grows by 33,819 per 136 message bytes after that: 4,721,203 for an empty
+  message (the measured adversarial worst case is 4,610,258).
+
+File layout of the v4 proofs (live modules; the import graph from
+`MlDsaOpt65.lean`):
+
+| path | content |
+|---|---|
+| `Fn/Blk.lean`, `Fn/Blk/*`; `Fn/Fix.lean`, `Fn/Fix/*` | `blk`, `blkh`, `blkt`; `fix`, `gfix` (ports of the 44 v4 proofs) |
+| `Fn/Group.lean`, `Fn/GroupV4/{Main,Squeeze}`, `Fn/Group/{Defs,Seed}` | `group_call` (amask/col/rb symbolic), the fused-pass words |
+| `Fn/Pass3f/{P4,P8}` | `pass3f4`, `pass3f8` |
+| `Fn/Sponge.lean`, `Fn/Sponge/{TrabsRun,Mub0,Mub0Blocks,Mub0Math,Mub,MubBlocks,MubMath}` | `trabs` (delta-swap network), `mub0`, `mub` |
+| `Fn/Decode.lean`, `Fn/Decode/Z*` | `dz` (`z + 8q`, flag bit 27) |
+| `Fn/Ntt.lean`, `Fn/NttV4/*` (`gen_ntt4p.py`, `Arith`, `Lemmas`) | `ntt`, `intt` with fused UseHint (γ2 = 261888) |
+| `Fn/Csum.lean`, `Fn/Csum/*` (`gen_blocks.py`) | `csum` (stack bases, `spOff`) |
+| `Fn/Ball.lean`, `Fn/Ball/V4{Blocks,Proof,Scan,Run,Loop}` | `sib` (lane-unrolled SampleInBall) |
+| `Main/Inv.lean`, `Main/Base.lean`, `Gas.lean` | v4 boundaries, segment budgets, schedule |
+| `Main/SegExp.lean`, `Main/Exp/*` | ExpandA: `Bound` (boundaries `PureOut`, `InvG8`), `Pure` (groups 0–4, `pass3f4`), `G57/*` (mixed groups 5–7, generated by `G57/gen.py`), `G8*` (group 8, both μ paths, `pass3f8`), `Compose` (`seg_exp_of`); helpers `Acc`, `Math`, `Round` |
+| `Main/SegZd.lean`, `Main/SegMu.lean`, `Main/Mu/{Cext,Long,Run,Spec}`, `Main/SegW.lean` | zeroing + `dhint`; μ (slot or `kf1`); `intt` + `pack` per row group |
+
+v3 modules of changed code still in the tree but outside the v4 import
+graph: `Fn/Ball/{Blocks,Proof}`, `Fn/Group/{Blocks,Common,Main,Pass3,Prologue,
+Squeeze}`, `Fn/Hint/G5UseHint`, `Fn/Mu0/{Mu0,MuBlocks}`, `Fn/Ntt/*`,
+`Fn/Ntt2/*`, `Fn/Pass3x/*`, `Fn/Sponge/Trabs`. `Fn/Mu0/{Defs,MuMath,MuVal,
+MuFinal}` (v3) are imported by `Fn/Sponge/Mub0Math`/`MubMath` and are part of
+the v4 build: do not delete them as dead code.
+
+```sh
+export TMPDIR=$PWD/.lake/tmp
+lake build MlDsaOpt65
+lake env lean MlDsaOpt65/checks/Axioms.lean
+```
+
+The v3 status and the original (v2) plan follow; pcs/indices quoted below
+are v3/v2.
 
 ## Status (v3, round 3)
 

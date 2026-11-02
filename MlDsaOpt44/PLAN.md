@@ -301,6 +301,26 @@ annotated listing with labels: `MlDsaOpt/44/opt.asm`;
 * `&&` binds weaker than `=`: parenthesise Bool equations.
 * `Avoids [(ZH, …)] MISC TOP` is false: shrink a `ZeroOn` with `.mono` before
   transporting it.
+* **Importing a 44 `Main.*` module from 65/87** (directly or through a 44
+  file such as `Main/Mu/Lemmas.lean`, which imports `MlDsaOpt44.Main.Base`)
+  brings in 44's `avoids_tac` macro (44 layout names). In importers it shadows
+  the set's own `avoids_tac` (`MlDsaOptNN/Main/Frame.lean`) under `lake build`
+  but not under `lake env lean`, so a file can check alone and fail in the
+  build (seen in 87 `Main/SegSib.lean`: `omega could not prove the goal` in
+  the `(by avoids_tac)` frame obligations; the shadowing mechanism is an
+  explanation, not verified). Fix: copy the few facts needed into a 65/87
+  module (87 `Fn/Ball/V4Rep.lean`, `f231eb6`) and keep 44 `Main.*` out of the
+  65/87 imports.
+* 65's `Fn/Sponge/Mub0Math` and `MubMath` import the v3 modules
+  `MlDsaOpt65/Fn/Mu0/{Defs,MuMath,MuVal,MuFinal}`, so these are part of the v4
+  build and must not be deleted as dead code (`Fn/Mu0/{Mu0,MuBlocks}` are not
+  imported).
+* With those imports, 65's `Fn/Sponge/Mub*` (namespace `MlDsaOpt65.Proofs.WP4`)
+  see `WP4.muPad` and `WP4.byteAt_extract` from `Fn/Mu0/MuMath.lean`; similar
+  short names exist in other namespaces (`S6Mu.muPad` in `Main/Mu/Spec.lean`,
+  `DecodeZ.byteAt_extract'` in 65, `DecodeZ.byteAt_extract` in 44). Nothing
+  clashes now, but a file that opens both namespaces gets ambiguous names: use
+  qualified names there.
 
 ## Reuse for ML-DSA-65/87
 
