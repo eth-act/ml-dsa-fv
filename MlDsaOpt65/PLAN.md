@@ -37,7 +37,9 @@ Retarget v3 → v4 (`1b97187`, same method as ML-DSA-44):
 * removed with their v3 code: `usehint` (fused into `intt`), `pass3x5 …
   pass3x8`, `mu0`.
 
-Contract changes against the retarget (each approved by the lead):
+The full list of contract changes v3 → v4 (all three sets, each checked
+against the code that causes it) is in `MlDsaOpt44/PLAN.md`, "Contract
+changes v3 → v4". Contract changes against the retarget (each approved by the lead):
 
 * `trabs_call` gained `hlmL` (each lane of the mask is 0 or `M64`: the mask is
   applied before the byte swap, so it must be lane-aligned), as for 44;

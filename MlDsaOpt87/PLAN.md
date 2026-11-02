@@ -34,7 +34,9 @@ Retarget v3 → v4 (`586178e`, same method as ML-DSA-44 and -65):
   retarget; `seg_exp` (one segment, 3371 → 5551), `seg_zd`, `seg_w`
   re-proved against the v4 contracts; `Valid.lean` composes all segments.
 
-Contract changes against the retarget (each approved by the lead):
+The full list of contract changes v3 → v4 (all three sets, each checked
+against the code that causes it) is in `MlDsaOpt44/PLAN.md`, "Contract
+changes v3 → v4". Contract changes against the retarget (each approved by the lead):
 
 * `trabs_call` gained `hlmL` (each lane of the mask is 0 or `M64`), as for 44;
 * `gfix_call`: the lanes of `ABUF[0, 256)` of slots not in `amask` are
