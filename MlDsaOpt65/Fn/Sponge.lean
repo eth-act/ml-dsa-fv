@@ -107,6 +107,8 @@ theorem mub_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (66 + mlenOf s.executionEnv.calldata < 136 * k → 136 * k ≤ 66 + mlenOf s.executionEnv.calldata + 136 →
         ∀ x, x < 8 → word m' (MU + 32 * x) =
           cpl x (compress (word m (KS + 32 * x) / 2 ^ sh &&& spread M64))) ∧
+      (66 + mlenOf s.executionEnv.calldata < 136 * k →
+        ∀ x, x < 25 → word m' (KS + 32 * x) = word m (KS + 32 * x)) ∧
       ((k = 5 ∧ 136 * k ≤ 66 + mlenOf s.executionEnv.calldata) ∨
         66 + mlenOf s.executionEnv.calldata + 136 < 136 * k → m' = m) ∧
       FrameExcept m m' [(KS, KS + 800), (MU, MU + 256)] ∧

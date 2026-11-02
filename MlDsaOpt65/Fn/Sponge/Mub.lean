@@ -63,6 +63,8 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (66 + mlenOf s.executionEnv.calldata < 136 * k → 136 * k ≤ 66 + mlenOf s.executionEnv.calldata + 136 →
         ∀ x, x < 8 → word m' (MU + 32 * x) =
           cpl x (compress (word m (KS + 32 * x) / 2 ^ sh &&& spread M64))) ∧
+      (66 + mlenOf s.executionEnv.calldata < 136 * k →
+        ∀ x, x < 25 → word m' (KS + 32 * x) = word m (KS + 32 * x)) ∧
       ((k = 5 ∧ 136 * k ≤ 66 + mlenOf s.executionEnv.calldata) ∨
         66 + mlenOf s.executionEnv.calldata + 136 < 136 * k → m' = m) ∧
       FrameExcept m m' [(KS, KS + 800), (MU, MU + 256)] ∧
@@ -80,7 +82,7 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       subst hk5'
       have r := mub_z hs hr m (sh := sh) hcd' hKP
       refine ⟨m, fun tr _ hk _ => absurd hk (by omega), fun h => absurd h (by omega),
-        fun _ => rfl, FrameExcept.refl _ _, (r.mono (by norm_num)).of_eq rfl rfl⟩
+        fun _ _ _ => rfl, fun _ => rfl, FrameExcept.refl _ _, (r.mono (by norm_num)).of_eq rfl rfl⟩
     · -- `trabs`
       have r0 := mub_t hs hr m (K := 136 * k) (sh := sh) (by omega) hcd' hKP
       obtain ⟨m9, h9post, h9frame, h9call⟩ := htrabs hs
@@ -114,7 +116,7 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · -- a full block
         have r1 := mub_tf hs hr m9 (K := 136 * k) (sh := sh) (by omega) hcd' hfull
         refine ⟨m9, fun tr htr _ _ x hx => ?_, fun h => absurd h (by omega),
-          fun h => absurd h (by omega), f9, ?_⟩
+          fun h => absurd h (by omega), fun h => absurd h (by omega), f9, ?_⟩
         · exact mub_value_full htr hcd' (by omega) (by omega) hfull h9 hx
         · exact (((r0.trans t9).trans r1).mono (by simp only [Gas.trabs]; norm_num)).of_eq rfl rfl
       · -- the last block: padding
@@ -130,7 +132,8 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (q := s.executionEnv.calldata.size - 5195 - 136 * k) (p := s.executionEnv.calldata.size - 5195)
           (K := 136 * k) hsh (by omega)
         have htot := (((r0.trans t9).trans r1).trans c1).trans r2
-        refine ⟨_, ?_, fun h => absurd h (by omega), fun h => absurd h (by omega), ?_,
+        refine ⟨_, ?_, fun h => absurd h (by omega), fun h => absurd h (by omega),
+          fun h => absurd h (by omega), ?_,
           (htot.mono (by simp only [Gas.trabs, Gas.spr]; norm_num)).of_eq rfl rfl⟩
         · intro tr htr _ _ x hx
           exact mub_value_last hsh htr hcd' (by omega) (by omega) hKP (by omega) h9 rfl rfl hx
@@ -156,8 +159,9 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (by simp [TOP])
       have t1 := call_iff.mp hccall
       have r1 := mub_cx2 hs hr mc (p := s.executionEnv.calldata.size - 5195) (K := 136 * k) (sh := sh)
-      refine ⟨mc, fun _ _ _ h => absurd h hKP, fun _ _ x hx => ?_, fun h => absurd h (by omega),
-        ?_, ?_⟩
+      refine ⟨mc, fun _ _ _ h => absurd h hKP, fun _ _ x hx => ?_,
+        fun _ x _ => FrameExcept.word hcframe (by simp only [avoids_cons, avoids_nil, and_true]; omega),
+        fun h => absurd h (by omega), ?_, ?_⟩
       · have h := hcpost x hx
         simp only [KS, Nat.zero_add] at h
         exact h
@@ -170,6 +174,6 @@ theorem mub_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     · -- `P + 136 < K`: nothing
       have r := mub_out hs hr m (K := 136 * k) (sh := sh) (by omega) hcd' (by omega)
       refine ⟨m, fun _ _ _ h => absurd h hKP, fun _ h => absurd h hle,
-        fun _ => rfl, FrameExcept.refl _ _, (r.mono (by norm_num)).of_eq rfl rfl⟩
+        fun _ _ _ => rfl, fun _ => rfl, FrameExcept.refl _ _, (r.mono (by norm_num)).of_eq rfl rfl⟩
 
 end MlDsaOpt65.Proofs.WP4
