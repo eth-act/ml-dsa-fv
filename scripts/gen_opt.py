@@ -1752,6 +1752,8 @@ class Gen:
         a.region("trabs")
         a.label("trabs")
         st = Stack(a, ["ret", "off", "sh", "n4", "lm", "kp"])
+        if self.v4:
+            return self.gen_trabs_zip(st)
         stages = self.spread_stages()
         for k, (_, m) in enumerate(stages):
             st.push(m, f"S{k}")
@@ -1818,6 +1820,117 @@ class Gen:
         st.s.pop()
         for k in reversed(range(len(stages))):
             st.pop(f"S{k}")
+        st.pop("kp")
+        for nm in ("lm", "n4", "sh", "off"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    # bswap64x4 then zip (bit 64 i + b -> 4 b + i) as one bit permutation of
+    # the CALLDATALOAD word: complement index bit 4, then the zip
+    # transpositions of index bits (unzip's in reverse order), the second
+    # one with complement (an index-bit map, found by search; checked below)
+    TRZIP = [('c', 4), ('t', 1, 3, 0), ('t', 1, 5, 1), ('t', 1, 7, 0),
+             ('t', 0, 2, 0), ('t', 0, 4, 0), ('t', 0, 6, 0)]
+
+    @classmethod
+    def trzip_stages(cls):
+        """Delta swaps (d, mask) of TRZIP: t = ((x >> d) ^ x) & mask;
+        x ^= t ^ (t << d) moves bit p to p + d for p in mask."""
+        out = []
+        for st_ in cls.TRZIP:
+            if st_[0] == 'c':
+                i = st_[1]
+                out.append((1 << i, sum(1 << p for p in range(256) if not (p >> i) & 1)))
+            else:
+                _, i, j, c = st_
+                if c:
+                    out.append(((1 << i) + (1 << j), sum(1 << p for p in range(256)
+                                                         if not (p >> i) & 1 and not (p >> j) & 1)))
+                else:
+                    out.append(((1 << j) - (1 << i), sum(1 << p for p in range(256)
+                                                         if (p >> i) & 1 and not (p >> j) & 1)))
+        # check: bit p of the word ends at 4 n + k, k = p >> 6, n = LE bit of byte-swapped lane
+        perm = list(range(256))
+        for d, m in out:
+            perm = [x + d if (m >> x) & 1 else (x - d if x >= d and (m >> (x - d)) & 1 else x) for x in perm]
+        for p in range(256):
+            k, q = p >> 6, p & 63
+            assert perm[p] == 4 * ((7 - (q >> 3)) << 3 | (q & 7)) + k
+        return out
+
+    def gen_trabs_zip(self, st):
+        """trabs body (v4): byte swap and zip of the four lanes of a calldata
+        word as one 7-stage delta-swap network (TRZIP): lane i of the
+        byte-swapped word lands in slot i (bit 64 i + b -> bit 4 b + i), so
+        KS[kp + 32 i] ^= ((Z >> (3 - i)) & slot0) << sh for calldata lane i."""
+        a = self.a
+        S0 = self.slotbits([0])
+        zs = self.trzip_stages()
+        for k, (_, m) in enumerate(zs):
+            st.push(m, f"U{k}")
+        st.push(S0, "S0")
+        loop, nomask = self.fresh("tal"), self.fresh("tanm")
+        layout = list(st.s)
+        a.label(loop)
+        st.dup("off", "w")
+        st.op("CALLDATALOAD", 1, "w")
+        st.dup("n4", "f")
+        st.push(1, "c")
+        st.op("EQ", 2, "f")
+        st.op("ISZERO", 1, "f")
+        a.jumpi(nomask)
+        st.s.pop()
+        st.dup("lm", "m")               # lane-aligned: same mask before the byte swap
+        st.op("AND", 2, "w")
+        a.label(nomask)
+        for k, (d, _) in enumerate(zs):
+            st.dup("w", "t")
+            st.push(d, "c")
+            st.op("SHR", 2, "t")
+            st.dup("w", "x2")
+            st.op("XOR", 2, "t")
+            st.dup(f"U{k}", "m")
+            st.op("AND", 2, "t")
+            st.dup("t", "t2")
+            st.push(d, "c")
+            st.op("SHL", 2, "t2")
+            st.op("XOR", 2, "t")
+            st.op("XOR", 2, "w")
+        for i in range(4):
+            # calldata lane i sits in word lane 3 - i -> slot 3 - i
+            s_ = 3 - i
+            if i < 3:
+                st.dup("w", "v")
+            else:
+                st.rename("w", "v")
+            if s_:
+                st.push(s_, "c")
+                st.op("SHR", 2, "v")
+            st.dup("S0", "m")
+            st.op("AND", 2, "v")
+            st.dup("sh", "s")
+            st.op("SHL", 2, "v")
+            st.dup("kp", "p")
+            if i:
+                st.push(32 * i, "c")
+                st.op("ADD", 2, "p")
+            st.dup("p", "p2")
+            st.op("MLOAD", 1, "k")
+            st.swap(1)
+            st.swap(2)
+            st.op("XOR", 2, "v")
+            st.swap(1)
+            st.op("MSTORE", 2)
+        st.add_const("off", 32)
+        st.add_const("kp", 128)
+        st.sub_const("n4", 1)
+        assert st.s == layout, (st.s, layout)
+        st.dup("n4", "f")
+        a.jumpi(loop)
+        st.s.pop()
+        st.pop("S0")
+        for k in reversed(range(len(zs))):
+            st.pop(f"U{k}")
         st.pop("kp")
         for nm in ("lm", "n4", "sh", "off"):
             st.pop(nm)

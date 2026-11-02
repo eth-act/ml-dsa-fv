@@ -1,4 +1,4 @@
-ML-DSA-44 optimised verifier: 22795 bytes (limit 24576)
+ML-DSA-44 optimised verifier: 22623 bytes (limit 24576)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   3430   3430 bytes  main
@@ -14,20 +14,20 @@ Subroutines / regions (pc ranges of the generated code):
    10272 ..  10492    220 bytes  pass3f4
    10492 ..  10822    330 bytes  gfix
    10822 ..  11235    413 bytes  ginit
-   11235 ..  11856    621 bytes  trabs
-   11856 ..  12130    274 bytes  cext
-   12130 ..  12345    215 bytes  spr
-   12345 ..  12710    365 bytes  mu0
-   12710 ..  13397    687 bytes  fix
-   13397 ..  13628    231 bytes  group
-   13628 ..  14436    808 bytes  tbuild
-   14436 ..  15161    725 bytes  csum
-   15161 ..  15443    282 bytes  usehint
-   15443 ..  16532   1089 bytes  pack
-   16532 ..  17799   1267 bytes  ntt
-   17799 ..  19280   1481 bytes  intt
-   19280 ..  21274   1994 bytes  kf1
-   21274 ..  22795   1521 bytes  kf4
+   11235 ..  11684    449 bytes  trabs
+   11684 ..  11958    274 bytes  cext
+   11958 ..  12173    215 bytes  spr
+   12173 ..  12538    365 bytes  mu0
+   12538 ..  13225    687 bytes  fix
+   13225 ..  13456    231 bytes  group
+   13456 ..  14264    808 bytes  tbuild
+   14264 ..  14989    725 bytes  csum
+   14989 ..  15271    282 bytes  usehint
+   15271 ..  16360   1089 bytes  pack
+   16360 ..  17627   1267 bytes  ntt
+   17627 ..  19108   1481 bytes  intt
+   19108 ..  21102   1994 bytes  kf1
+   21102 ..  22623   1521 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
