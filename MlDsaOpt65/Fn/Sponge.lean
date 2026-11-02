@@ -1,6 +1,8 @@
 import MlDsaOpt65.Fn.Sponge.Spr
 import MlDsaOpt65.Fn.Sponge.Cext
 import MlDsaOpt65.Fn.Sponge.Absorb
+import MlDsaOpt65.Fn.Sponge.Mub0
+import MlDsaOpt65.Fn.Sponge.Mub
 /-!
 # Sponge glue shared with ML-DSA-44: `spr`, `trabs`, `cext`, `absorb17` (ML-DSA-65)
 
@@ -88,7 +90,7 @@ theorem mub0_call {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
       Reach (callState s Entry.mub0 (wd sh :: wd rs :: wd rl :: tail) m)
         (if mlenOf s.executionEnv.calldata ≤ 69 then callState s rs (wd rl :: tail) m'
           else callState s rl tail m') Gas.mub0 :=
-  sorry
+  WP4.mub0_call_aux hs hrl hrs m hsh hcd trabs_call
 
 /-- **mub**: `[136 k, sh, ret]`, after the group's `k`-th `kf4` (`1 ≤ k ≤ 5`),
 `P = 66 + |M|`: for `k < 5` and `136 k ≤ P` slot `sh` absorbs block `k` of
@@ -109,6 +111,6 @@ theorem mub_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         66 + mlenOf s.executionEnv.calldata + 136 < 136 * k → m' = m) ∧
       FrameExcept m m' [(KS, KS + 800), (MU, MU + 256)] ∧
       Call s Entry.mub [wd (136 * k), wd sh] ret tail m [] m' Gas.mub :=
-  sorry
+  WP4.mub_call_aux hs hr m hsh hk1 hk5 hcd trabs_call
 
 end MlDsaOpt65.Proofs
