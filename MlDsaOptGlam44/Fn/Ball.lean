@@ -1,20 +1,22 @@
 import MlDsaOpt44.Fn.Ball.Defs
 import MlDsaOptGlam44.Fn.Keccak
-/-! # `sib` contract (WP9)
-Definitions (`codeOf`, `baseOf`, `negCount`, `CRep`, `SibFresh`) in `Fn/Ball/Defs.lean`.
+import MlDsaOptGlam44.Fn.Ball.Loop
+set_option linter.unusedVariables false
+/-! # `sib` contracts (glam)
+Definitions (`codeOf`, `baseOf`, `negCount`, `CRep`, `SibFresh`) in v4's `Fn/Ball/Defs.lean`.
 
-The stream `bs` (272 bytes): its first block (lanes 0 … 16) is in `CB`; the
-second block is lanes 0 … 16 of slot 0 of the saved kf4 states `S` (at `SC`)
-after one more permutation. `KS`, `KB` and `CB[17, 34)` are scratch.
+SampleInBall has two copies of v4's lane loop (R4-7 with the long-message switch):
+copy 0 scans lanes 1 … 16 of the stream `bs` (272 bytes) and stops at block 1's end,
+where `sibext` reads `FLAG`; copy 1 scans lanes 17 … 33.
 
-The proof is `sib_main` (`Fn/Ball/V4*.lean`). On the failure path `sibz`
-zeroes `BASES[cnt, τ)`, so every slot ends in range. -/
+* `sib_call` (`FLAG = 1`, packed schedule): `CB` holds block 1; block 2 is squeezed on
+  demand from the saved kf4 states `S` at `SC` (`MCOPY` to `KS`, `kf4`, `cext 17`).
+* `sib_call0` (`FLAG = 0`, long-message schedule): `CB` holds both blocks; `sibext`
+  jumps straight to copy 1.
 
-/-! Glamsterdam: SampleInBall has two copies of the lane loop (R4-7 with the long-message
-switch: the first stops at block 1's end, where c's second block is squeezed on demand
-if the packed schedule ran, `FLAG`). This is the contract of the packed schedule (`FLAG = 1`: c's second block is
-squeezed on demand from `SC`, as in v4). **Open item**: `sib_call`; its budget
-`Gas.sib` is v4's path count and has to be re-derived for the two loop copies. -/
+Both are `Ball4.sib_main_gen` (`Fn/Ball/{Blocks,Proof,Scan,Run,Loop}.lean`) with the
+frame `sibRegions4` resp. `sibRegions`. On the failure path `sibz` zeroes
+`BASES[cnt, τ)`, so every slot ends in range. `Gas.sib` bounds both paths. -/
 
 namespace MlDsaOptGlam44.Proofs
 
@@ -36,8 +38,16 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       (∀ i, i < Fips204.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
       FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (LIM, LIM + 32), (CW, CW + 8192),
         (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64), (CB + 544, CB + 1088)] ∧
-      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib := by
-  sorry  -- glam: open item
+      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib :=
+  Ball4.sib_main_gen hs hr (fl := 1) (rs := Ball4.sibRegions4) (S := S)
+    ⟨Or.inr rfl, hfl, fun a ha => Ball4.sub_regions ha,
+      by simp [Ball4.sibRegions4, KS, KB, LIM, CW, BASES, IDX, NNEG, CB, FLAG],
+      fun _ a ha r hr => by
+        simp only [Ball4.extRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl <;> exact ha _ (by simp),
+      fun _ => ⟨hS, hsc, by simp [Ball4.sibRegions4, KS, KB, LIM, CW, BASES, IDX, NNEG, CB, SC],
+        hc2⟩⟩
+    (fun x hx h => hcb x (by omega)) hz
 
 /-- **sib on the long-message schedule** (`FLAG = 0`): c's second block (stream
 bytes `136 … 271`) is already in `CB[17, 34)` (the alt schedule squeezes c's
@@ -53,7 +63,11 @@ theorem sib_call0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     ∃ m', (∀ c, Fips204.sampleInBallOf bs = some c → CRep m' c) ∧
       (∀ i, i < Fips204.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
       FrameExcept m m' [(CW, CW + 8192), (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64)] ∧
-      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib := by
-  sorry  -- glam: open item
+      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib :=
+  Ball4.sib_main_gen hs hr (fl := 0) (rs := Ball4.sibRegions) (S := fun _ => #[])
+    ⟨Or.inl rfl, hfl, fun a ha => ha,
+      by simp [Ball4.sibRegions, CW, BASES, IDX, NNEG, FLAG],
+      fun h => absurd h (by decide), fun h => absurd h (by decide)⟩
+    (fun x hx _ => hcb x hx) hz
 
 end MlDsaOptGlam44.Proofs
