@@ -11,6 +11,7 @@ set_option warningAsError true
   both ends share `s.activeWords`).
 * `reach_block_pot`: any straight-line block from a `Ctx0` state (memory may
   grow, the last instruction may halt): static sum plus memory-potential growth.
+* `reach_mcopy`: one `MCOPY` inside the sized memory.
 * `RetOK.callee`: discharge a callee's `RetOK` at a call site.
 * `glam87_reach path [with lemmas]`: `reach_block` + `glam87_block`.
 -/
@@ -99,6 +100,51 @@ theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 34160)) {c
     apply List.map_congr_left
     intro i _
     simp only [Function.comp, located_instruction_eq]
+
+/-- One `MCOPY` of `n` bytes from `src` to `d`, both inside the active memory. -/
+theorem reach_mcopy {s : State} (hs : Ctx s) (i : Fin 34160) {pc d src n : Nat}
+    {rest : List UInt256} {m : ByteArray}
+    (hi : instrAt i.val = .base (.op .MCOPY)) (hpc : pcAt i.val = pc)
+    (hd : d < 2 ^ 256) (hsrc : src < 2 ^ 256) (hn : n < 2 ^ 256) (hpc' : pc + 1 < 2 ^ 256)
+    (hdm : d + n ≤ 32 * s.activeWords.toNat) (hsm : src + n ≤ 32 * s.activeWords.toNat)
+    (hlen : rest.length ≤ 1000) :
+    Reach (callState s pc (wd d :: wd src :: wd n :: rest) m)
+      (callState s (pc + 1) rest
+        (MachineState.writeBytes m (MachineState.readPadded m src n) d))
+      (3 + 3 * ((n + 31) / 32)) := by
+  have hrun : runXLocatedBlock (locatedPath [i]) (callState s pc (wd d :: wd src :: wd n :: rest) m) =
+      some (callState s (pc + 1) rest
+        (MachineState.writeBytes m (MachineState.readPadded m src n) d)) := by
+    have hpcw : (UInt256.ofNat pc).toNat = pc := toNat_ofNat_of_lt (by omega)
+    simp only [locatedPath, List.map_cons, List.map_nil, runXLocatedBlock]
+    rw [show runXLocated (located i) (callState s pc (wd d :: wd src :: wd n :: rest) m) =
+        stepL (some (callState s pc (wd d :: wd src :: wd n :: rest) m)) (located i) by
+      rw [stepL_some, runIfRunning_of (s := callState s pc (wd d :: wd src :: wd n :: rest) m) _
+        hs.running]]
+    rw [stepL_located, hi, hpc]
+    simp only [callState, hs.running, guardHalt_running, hpcw, if_true, runXInstr, runInstr, wd,
+      List.length_cons, toNat_ofNat_of_lt hd, toNat_ofNat_of_lt hsrc, toNat_ofNat_of_lt hn,
+      State.activeWordsAfterUInt256_2, activeWordsAfter_of_le hdm, activeWordsAfter_of_le hsm,
+      ofNat_toNat, EvmProof.Word.succ_ofNat_mod]
+    rw [if_pos (by omega)]
+  have hcode : (callState s pc (wd d :: wd src :: wd n :: rest) m).executionEnv.code =
+      artifact.code := hs.code
+  let g := runXLocatedBlock_sound artifact .Amsterdam (locatedPath [i]) hcode hs.fork hrun
+    hs.running hs.notPrecompile
+  refine ⟨g, le_of_eq ?_⟩
+  have hpot := EvmProof.Meter.runXLocatedBlock_cost_potential (locatedPath [i]) hrun
+  change runXLocatedBlockCost (locatedPath [i]) _ = _
+  -- an opaque final memory keeps `change` from unfolding `writeBytes` (7 s)
+  generalize MachineState.writeBytes m (MachineState.readPadded m src n) d = mw at hpot
+  change _ + MachineState.memCost s.activeWords.toNat = _ + MachineState.memCost s.activeWords.toNat at hpot
+  have hw : EvmProof.Meter.runXLocatedBlockCostWithoutMemory (locatedPath [i])
+      (callState s pc (wd d :: wd src :: wd n :: rest) m) = 3 + 3 * ((n + 31) / 32) := by
+    simp only [locatedPath, List.map_cons, List.map_nil,
+      EvmProof.Meter.runXLocatedBlockCostWithoutMemory, located_instruction_eq, hi,
+      EvmProof.Meter.xinstrCostWithoutMemory, EvmProof.Meter.instrCostWithoutMemory, callState, Gas.copyWordCost, wd,
+      toNat_ofNat_of_lt hn, Nat.add_zero]
+    rfl
+  omega
 
 end MlDsaOptGlam87.Proofs.Infra
 

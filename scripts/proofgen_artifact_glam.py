@@ -13,7 +13,7 @@ instruction list is over `EvmProof.XInstr`, the artifact an
 `EvmProof.XArtifact`, paths `runXLocatedBlock` paths, the fork `Amsterdam`, and
 reflection runs `MlDsaOptCommon.Reflect.xrun`. JUMPDEST facts come from the
 whole-artifact certificate (`XAllWellFormed.isValidJumpDest`: every EIP-8024
-immediate is valid). `reach_mcopy` is left out.
+immediate is valid).
 """
 from __future__ import annotations
 
@@ -247,9 +247,7 @@ tactic is its fallback (a jump to a symbolic return address)."""),
      "@P@.Infra.guardHalt_running, EvmProof.Stepper.runXInstr, EvmProof.Stepper.runInstr,"),
 ])
 
-_reach_head, _reach_rest = pa.REACH.split("/-- One `MCOPY` of `n` bytes", 1)
-_reach_tail = "end @P@.Infra\n" + _reach_rest.split("end @P@.Infra\n", 1)[1]
-REACH = rep(_reach_head + _reach_tail, [
+REACH = rep(pa.REACH, [
     GEN,
     ("import MlDsaOptCommon.Reach\n", "import MlDsaOptCommon.Reach\nimport EvmProof.MeterX\n"),
     ("""* `reach_block`: a straight-line block proved by `@TAC@_block` between two
@@ -265,8 +263,16 @@ REACH = rep(_reach_head + _reach_tail, [
   both ends share `s.activeWords`).
 * `reach_block_pot`: any straight-line block from a `Ctx0` state (memory may
   grow, the last instruction may halt): static sum plus memory-potential growth.
+* `reach_mcopy`: one `MCOPY` inside the sized memory.
 * `RetOK.callee`: discharge a callee's `RetOK` at a call site.
 * `@TAC@_reach path [with lemmas]`: `reach_block` + `@TAC@_block`."""),
+    # `reach_mcopy`: MCOPY is a base instruction
+    ("(hi : instrAt i.val = .op .MCOPY)", "(hi : instrAt i.val = .base (.op .MCOPY))"),
+    ("rw [show runLocated (located i)", "rw [show runXLocated (located i)"),
+    ("simp only [callState, hs.running, guardHalt_running, hpcw, if_true, runInstr, wd,",
+     "simp only [callState, hs.running, guardHalt_running, hpcw, if_true, runXInstr, runInstr, wd,"),
+    ("EvmProof.Meter.instrCostWithoutMemory, callState,",
+     "EvmProof.Meter.xinstrCostWithoutMemory, EvmProof.Meter.instrCostWithoutMemory, callState,"),
     ("EvmProof.Meter.instrStaticCost .Osaka", "EvmProof.Meter.xinstrStaticCost .Amsterdam"),
     ("EvmProof.Meter.CopyFree", "EvmProof.Meter.XCopyFree"),
     ("(instructionList.getD i (.op .INVALID))", "(instructionList.getD i (.base (.op .INVALID)))"),
