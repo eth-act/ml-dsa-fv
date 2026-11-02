@@ -42,9 +42,11 @@ def gOk (cd : ByteArray) (amask col rb : Nat) : Bool :=
   (List.range 4).all fun r => !amask.testBit r || (aOf cd (4 * rb + r) col).isSome
 
 /-- Regions `group [amask, col, rb]` may write: the Keccak / ExpandA scratch
-and the accumulators of row group `rb`. -/
-def groupFrame (rb : Nat) : List (Nat × Nat) :=
-  [(KS, KS + 800), (KB, KB + 800), (ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (BK, BK + 800),
-    (ACC + 8192 * rb, ACC + 8192 * rb + 8192)]
+(v4: the caller accumulates, so no accumulator; `rb` is kept for the callers). -/
+def groupFrame (_rb : Nat) : List (Nat × Nat) :=
+  [(KS, KS + 800), (KB, KB + 800), (ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (BK, BK + 800)]
+
+/-- Lane `j % 4` of `ẑ`'s word `t` in table `j / 4`: `ẑ_j[t]`. -/
+def zl (m : ByteArray) (j t : Nat) : Nat := lane (word m (ZH + 8192 * (j / 4) + 32 * t)) (j % 4)
 
 end MlDsaOpt65.Proofs

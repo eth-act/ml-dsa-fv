@@ -7,9 +7,7 @@ import MlDsaOpt65.Fn.Fix
 import MlDsaOpt65.Fn.Group
 import MlDsaOpt65.Fn.Hint
 import MlDsaOpt65.Fn.Keccak
-import MlDsaOpt65.Fn.Mu0
 import MlDsaOpt65.Fn.Ntt
-import MlDsaOpt65.Fn.Pass3x
 import MlDsaOpt65.Fn.Sponge
 import MlDsaOpt65.Fn.TBuild
 import MlDsaOpt65.Math

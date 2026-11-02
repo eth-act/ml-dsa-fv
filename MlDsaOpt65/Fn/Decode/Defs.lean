@@ -19,11 +19,11 @@ open EvmSemantics
 open MlDsaOptCommon
 open MlDsa
 
-/-- The norm-flag bits checked by `flag_check` (`zbits + 32 = 52` and `25` of every lane). -/
-def zBits : Nat := pack4 fun _ => 2 ^ 52 + 2 ^ 25
+/-- The norm-flag bits checked by `flag_check` (`zbits + 32 = 52` and `27` of every lane, v4). -/
+def zBits : Nat := pack4 fun _ => 2 ^ 52 + 2 ^ 27
 
 /-- The norm-flag bits of lane `j` (`zBits = Σ_j zFlagBit j`). -/
-def zFlagBit (j : Nat) : Nat := (2 ^ 52 + 2 ^ 25) * 2 ^ (64 * j)
+def zFlagBit (j : Nat) : Nat := (2 ^ 52 + 2 ^ 27) * 2 ^ (64 * j)
 
 /-- Every 20-bit field of polynomial `k` of the z stream lies strictly between `β` and
 `2γ1 − β`, i.e. `|γ1 − raw| < γ1 − β` (for `k < ℓ`: `‖z_k‖∞ < γ1 − β`). -/

@@ -13,7 +13,7 @@ open MlDsaOpt65.Proofs.Infra
 `nttRec` to `TBL`, the same table as ML-DSA-44). -/
 theorem seg_tbl {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv1 cd m) (b : Bool) :
     ∃ m', Inv2 cd m' ∧
-      Reach (callState s 1110 [flag b] m) (callState s 3093 [flag b] m') Gas.pTbl := by
+      Reach (callState s 1101 [flag b] m) (callState s 3084 [flag b] m') Gas.pTbl := by
   exact S1.seg_tbl_proof hs hI b
 
 end MlDsaOpt65.Proofs

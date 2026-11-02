@@ -46,4 +46,3 @@ elab "#open_items" : command => do
 #open_items
 
 #print axioms MlDsaOpt44.Proofs.kf1_call
-#print axioms MlDsaOpt44.Proofs.usehint_call

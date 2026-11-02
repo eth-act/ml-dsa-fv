@@ -22,7 +22,7 @@ open MlDsaOptCommon
 open MlDsa
 
 /-- `CW` code of a coefficient of `c`. -/
-def codeOf (v : Int) : Nat := if v = 0 then 0 else if v = -1 then 1 else 2 ^ 256 - 1
+def codeOf (v : Int) : Nat := if v = 0 then 0 else if v = -1 then REP else 2 ^ 256 - REP
 
 /-- Window base of a nonzero coefficient at `p`. -/
 def baseOf (c : Fips204.Poly) (p : Nat) : Nat := 4064 + 8 * p - if c[p]! = -1 then 2048 else 0
@@ -40,6 +40,7 @@ def CRep (m : ByteArray) (c : Fips204.Poly) : Prop :=
 
 /-- `sib`'s scratch regions start zeroed. -/
 def SibFresh (m : ByteArray) : Prop :=
-  ZeroOn m CW (CW + 8192) ∧ ZeroOn m BASES (IDX + 256) ∧ ZeroOn m NNEG (NNEG + 64)
+  ZeroOn m CW (CW + 8192) ∧ ZeroOn m BASES (BASES + 2048) ∧ ZeroOn m IDX (IDX + 256) ∧
+    ZeroOn m NNEG (NNEG + 64)
 
 end MlDsaOpt87.Proofs

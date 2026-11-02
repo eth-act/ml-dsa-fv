@@ -54,17 +54,23 @@ M16 = bytepattern(0x0000FFFF, 4)
 M32 = bytepattern(0x00000000FFFFFFFF, 8)
 
 
-VERSIONS = ("v2", "v3")
-DEFAULT_VERSION = "v3"
+VERSIONS = ("v2", "v3", "v4")
+DEFAULT_VERSION = "v4"
 
 
 class Layout:
-    def __init__(self, nn, version=DEFAULT_VERSION):
+    # v4 R4-7: ML-DSA-65's 42-call schedule (glam only: v4 has no code room)
+    PACK65 = {"v4": False, "glam": True}
+    PACK65_SB = int(os.environ.get("OPT_PACK65_SB", "2"))    # extra side buffers (measured: see docs)
+
+    def __init__(self, nn, version=DEFAULT_VERSION, glam=False):
         assert version in VERSIONS, version
+        self.glam = glam
         p = derived(nn)
         self.nn = nn
         self.version = version
-        self.v3 = version == "v3"
+        self.v3 = version in ("v3", "v4")    # v4 extends v3
+        self.v4 = version == "v4"
         self.p = p
         self.k, self.l = p["k"], p["l"]
         self.PK, self.SIG = p["pklen"], p["siglen"]
@@ -116,6 +122,13 @@ class Layout:
         alloc("BK", 25 * 32)      # kf4 state backup (6th RejNTTPoly block)
         if self.v3:
             alloc("KZ", 25 * 32)  # kf1 third round buffer (v3: 3 rounds per iteration)
+        # 44: two extra 8 KB buffers let all 5 groups share one fused pass
+        # (+512 words of memory, -4k net); 65 and 87 do not gain
+        self.pack65 = (self.v4 and nn == 65 and self.PACK65["glam" if glam else "v4"]
+                       and os.environ.get("OPT_V4_PACK", "1") == "1")
+        self.NSB = 2 if self.v4 and nn == 44 else self.PACK65_SB if self.pack65 else 0
+        if self.NSB:
+            alloc("SB", self.NSB * 0x2000)  # v4: extra side buffers for the fused accumulation
         self.TOP = addr
         self.regions = regions
 
@@ -124,9 +137,45 @@ class Gen:
     def __init__(self, L: Layout):
         self.L = L
         self.v3 = L.v3
+        self.v4 = L.v4
         self.a = Asm()
         self.n = 0
         self.nttk = NttKernel(self.a, L.TBL)
+        self.nttk.biased = self.v4
+        self.ZFB = 27 if self.v4 else 25   # z norm flag bit: > K = g1 + q (+ 8q) > 2^(ZFB - 1)
+        # Round-5 changes to the data-dependent paths (v4 only; from branch
+        # gas/worstcase). OPT_V4_DATADEP=fix,mu,sib selects a subset, for
+        # measurement only; the shipped v4 has all three (87: fix only if
+        # sib does not fit EIP-170, see SIB87).
+        feats = os.environ.get("OPT_V4_DATADEP", "fix,mu,sib").split(",")
+        self.wc_fix = L.v4 and "fix" in feats      # cheaper fix-up compaction
+        self.wc_mu = L.v4 and "mu" in feats        # mu blocks 0..4 in the SIMD mu slot
+        self.wc_sib = L.v4 and "sib" in feats      # lane-unrolled SampleInBall loop
+        self.deferred = []       # (region, emitter) placed after main's code
+        self.tail = []           # (region, emitter) placed after all other code
+        # v4 44: SampleInBall's fail exit clears BASES[cnt..tau) (the window
+        # stages flag words there; csum reads them on every path)
+        self.sib_zero = self.wc_sib and L.nn == 44
+        # v4 (R4-7): ML-DSA-44 at the kf4 packing floor (23 calls); states
+        # pause and move between slots, see build_schedule / emit_window44
+        self.pack = (L.v4 and L.nn == 44 and os.environ.get("OPT_V4_PACK", "1") == "1") or L.pack65
+        # glam 44: below |M| = MSWITCH the packed schedule, from there on the
+        # previous one (its last group carries up to 5 mu blocks). 65's
+        # packed schedule is cheaper at every length (2 kf4 calls and 3
+        # accumulation terms more than pay for kf1 mu blocks).
+        self.mswitch = (self.pack and L.glam and L.nn == 44
+                        and os.environ.get("OPT_MSWITCH", "1") == "1")
+        if self.pack:
+            if not self.mswitch:
+                self.MU_SIMD_BLOCKS = 1      # mu's slot gets one squeeze; kf1 continues
+            F = L.FIN + 8 * 32               # FIN[8..] is dead until pack (w1Encode)
+            self.SAVE = [F, F + 25 * 32, F + 50 * 32]   # kf4 state images (25 words)
+            assert F + 75 * 32 <= L.FIN + 32 * (8 + L.w1lanes)
+            self.LIM = L.MISC + 0x180       # SampleInBall stream limit (c's 2nd block on demand)
+            self.FLAG = L.MISC + 0x160      # mswitch: 1 iff the packed schedule ran (else 0)
+        self.alt = None          # mswitch: (previous schedule, shared prefix length)
+        self.c_saved = None      # (state image, slot) of c's sponge after its only SIMD squeeze
+        self.mu_saved = None     # (state image, slot) of mu's sponge after its SIMD squeeze
 
     def fresh(self, base):
         self.n += 1
@@ -286,24 +335,84 @@ class Gen:
             a.op("MSTORE")
         a.op("POP")
 
+    def push_muoff(self, nb):
+        a, L = self.a, self.L
+        if self.mswitch:
+            # packed schedule (FLAG = 1): 1 SIMD block, else MU_SIMD_BLOCKS
+            a.push(self.FLAG)
+            a.op("MLOAD")
+            a.push(136 * (nb - 1))
+            a.op("MUL")
+            a.push(L.HDR - 66 + 136 * nb)
+            a.op("SUB")
+        else:
+            a.push(L.HDR - 66 + 136 * nb)
+
+    @property
+    def LIMV(self):
+        """SampleInBall's initial stream limit with c's second block on demand
+        (debug: squeeze it at the first lane, or never)."""
+        return (32 if getattr(self, "dbg_c2", False) else
+                34 * 32 if getattr(self, "dbg_c2_off", False) else 17 * 32)
+
     def hash_mu(self):
         """mu = H(tr || 0 || 0 || M, 64) with tr in KS[0..7]; mu -> FIN[0..7]."""
         a, L = self.a, self.L
         a.region("hash_mu")
-        self.zero_ks(8)
-        # block 0: lanes 8..16 = stream bytes 64..135 = 0,0,M[0..69]
-        self.absorb_inline(8, 9, L.HDR - 2, mask_first=M64 ^ 0xFFFF)
-        # nb = (66 + mlen) // 136 + 1 blocks; stack [mlen]
-        a.push(L.HDR)
-        a.op("CALLDATASIZE")
-        a.op("SUB")                      # mlen
-        a.push(66)
-        a.op("ADD")                      # P = 66 + mlen (padding position)
-        # loop: while P >= 136: kf1; absorb next block; P -= 136
         loop, done = self.fresh("muloop"), self.fresh("mudone")
-        # stack [P, off] where off = calldata offset of the next block
-        a.push(L.HDR - 66 + 136)
-        a.op("SWAP1")                    # [off, P]
+        if self.wc_mu and self.has_mu_slot():
+            # |M| >= 614: blocks 0..4 were absorbed and permuted in the SIMD
+            # mu slot of the last group; continue on kf1 from that state
+            if self.mu_saved:
+                # R4-7: mu's slot was squeezed once; its state image was saved
+                # (mswitch: only by the packed schedule; the previous one leaves
+                # mu in KS, in the same slot)
+                img, msl = self.mu_saved
+                skip = self.fresh("muimg")
+                if self.mswitch:
+                    a.push(self.FLAG)
+                    a.op("MLOAD")
+                    a.op("ISZERO")
+                    a.jumpi(skip)
+                self.mcopy(L.KS, img, 25)
+                a.label(skip)
+            else:
+                msl = [s_ for s_, r in enumerate(self.schedule[-1]['slots']) if r and r[0] == 'mu'][0]
+            nb = self.MU_SIMD_BLOCKS
+            assert L.KS == 0             # cext reads lane x at 32 x
+            self.call("cext", [L.KS, msl, 25])   # in place: plain lanes
+            a.push(REP)
+            for x in range(25):
+                a.push(L.KS + 32 * x)
+                a.op("MLOAD")
+                a.op("DUP2")
+                a.op("MUL")
+                if x in COMPLEMENTED:
+                    a.op("NOT")
+                a.push(L.KS + 32 * x)
+                a.op("MSTORE")
+            a.op("POP")
+            self.push_muoff(nb)
+            self.call_absorb17_top()     # block 5
+            a.push(136)
+            a.op("ADD")                  # [off] of block 6
+            self.push_muoff(nb)
+            a.op("CALLDATASIZE")
+            a.op("SUB")                  # [off, P], P = 66 + mlen - 680
+        else:
+            self.zero_ks(8)
+            # block 0: lanes 8..16 = stream bytes 64..135 = 0,0,M[0..69]
+            self.absorb_inline(8, 9, L.HDR - 2, mask_first=M64 ^ 0xFFFF)
+            # nb = (66 + mlen) // 136 + 1 blocks; stack [mlen]
+            a.push(L.HDR)
+            a.op("CALLDATASIZE")
+            a.op("SUB")                      # mlen
+            a.push(66)
+            a.op("ADD")                      # P = 66 + mlen (padding position)
+            # loop: while P >= 136: kf1; absorb next block; P -= 136
+            # stack [P, off] where off = calldata offset of the next block
+            a.push(L.HDR - 66 + 136)
+            a.op("SWAP1")                    # [off, P]
         a.label(loop)
         a.push(136)
         a.op("DUP2")
@@ -377,6 +486,8 @@ class Gen:
         st.op("SHL", 2, "x")
         st.op("OR", 2, x)
 
+    DZ_UNROLL = False   # glam: the gather loop of a chunk unrolled
+
     def gen_decode(self, name, stride, bits, post, flags=False):
         """Subroutine `name`: decode four little-endian `bits`-bit packed
         polynomials at calldata offsets off + stride*j (j = lane) into 256
@@ -423,58 +534,66 @@ class Gen:
             for _ in range(4):
                 st.swap(4)
                 st.pop()                 # drop the bswap masks (below the V words)
-            st.push(0, "gs")             # bit offset of the gather group
-            st.dup("dp", "gp")           # destination of its first coefficient
-            glayout = list(st.s)
-            gloop = self.fresh(name + "_g")
-            a.label(gloop)
-            # gather coefficients of every polynomial into lanes (G per lane)
-            for j in used:
-                st.dup(f"V{j}", "g")
-                st.dup("gs", "s")
-                st.op("SHR", 2, "g")
-                st.push((1 << (G * bits)) - 1, "m")
-                st.op("AND", 2, "g")
-                if j:
-                    st.push(64 * j, "s")
-                    st.op("SHL", 2, "g")
-                    st.op("OR", 2, "W")
-                else:
-                    st.rename("g", "W")
-            if flags:
-                st.push(0, "Lf")
-            for kk in range(G):
-                st.dup("W", "r")
-                if kk:
-                    st.push(bits * kk, "s")
-                    st.op("SHR", 2, "r")
-                st.dup("MB", "m")
-                st.op("AND", 2, "raw")
+            unroll = self.DZ_UNROLL
+            if not unroll:
+                st.push(0, "gs")             # bit offset of the gather group
+                st.dup("dp", "gp")           # destination of its first coefficient
+                glayout = list(st.s)
+                gloop = self.fresh(name + "_g")
+                a.label(gloop)
+            for it in range(ncoef // G if unroll else 1):
+                # gather coefficients of every polynomial into lanes (G per lane)
+                for j in used:
+                    st.dup(f"V{j}", "g")
+                    if not unroll:
+                        st.dup("gs", "s")
+                        st.op("SHR", 2, "g")
+                    elif it:
+                        st.push(it * G * bits, "s")
+                        st.op("SHR", 2, "g")
+                    st.push((1 << (G * bits)) - 1, "m")
+                    st.op("AND", 2, "g")
+                    if j:
+                        st.push(64 * j, "s")
+                        st.op("SHL", 2, "g")
+                        st.op("OR", 2, "W")
+                    else:
+                        st.rename("g", "W")
+                if flags:
+                    st.push(0, "Lf")
+                for kk in range(G):
+                    st.dup("W", "r")
+                    if kk:
+                        st.push(bits * kk, "s")
+                        st.op("SHR", 2, "r")
+                    st.dup("MB", "m")
+                    st.op("AND", 2, "raw")
 
-                def store(off=32 * kk):
-                    st.dup("gp", "p")
-                    if off:
-                        st.push(off, "c")
-                        st.op("ADD", 2, "p")
-                    st.op("MSTORE", 2)
-                post(st, store)
-            if flags:
-                st.dup("acc", "A")
-                st.op("OR", 2, "A")
-                st.to_top("acc")
-                st.pop()
-                st.rename("A", "acc")
-            st.pop("W")
-            st.add_const("gs", G * bits)
-            st.add_const("gp", 32 * G)
-            assert st.s == glayout, (st.s, glayout)
-            st.dup("gs", "x")
-            st.push(ncoef * bits, "e")
-            st.op("GT", 2, "f")
-            a.jumpi(gloop)
-            st.s.pop()
-            st.pop("gp")
-            st.pop("gs")
+                    def store(off=32 * (kk + G * it * unroll)):
+                        st.dup("dp" if unroll else "gp", "p")
+                        if off:
+                            st.push(off, "c")
+                            st.op("ADD", 2, "p")
+                        st.op("MSTORE", 2)
+                    post(st, store)
+                if flags:
+                    st.dup("acc", "A")
+                    st.op("OR", 2, "A")
+                    st.to_top("acc")
+                    st.pop()
+                    st.rename("A", "acc")
+                st.pop("W")
+            if not unroll:
+                st.add_const("gs", G * bits)
+                st.add_const("gp", 32 * G)
+                assert st.s == glayout, (st.s, glayout)
+                st.dup("gs", "x")
+                st.push(ncoef * bits, "e")
+                st.op("GT", 2, "f")
+                a.jumpi(gloop)
+                st.s.pop()
+                st.pop("gp")
+                st.pop("gs")
             for j in reversed(used):
                 st.pop(f"V{j}")
 
@@ -523,10 +642,27 @@ class Gen:
         L = self.L
         p = L.p
         Z = p["zbits"]
-        K = p["g1"] + Q
+        # v4: z carries a bias of 8q for the forward NTT (opt_ntt `biased`)
+        K = p["g1"] + Q + (8 * Q if self.v4 else 0)
         C2 = (1 << Z) - 2 * p["g1"] + p["beta"]      # bit Z set iff raw >= 2g1 - beta
-        C1 = (1 << 25) - (K - p["beta"])              # bit 25 set iff K - raw >= K - beta
+        C1 = (1 << self.ZFB) - (K - p["beta"])        # bit ZFB set iff K - raw >= K - beta
         lanes = lambda v: sum(v << (64 * j) for j in range(4))
+        if self.v4:
+            # v4: one multiply forms both halves of the flag word:
+            # raw (2^32 - 1) + (C2 2^32 + K + C1) = (raw + C2) 2^32 + (K + C1 - raw),
+            # no borrow since K + C1 - raw > 0, and both halves < 2^32
+            assert K + C1 >= 1 << Z and K + C1 < 1 << 32 and C2 + (1 << Z) < 1 << 32
+            st.dup("raw", "x")
+            st.push((1 << 32) - 1, "c")
+            st.op("MUL", 2, "x")
+            st.push(lanes(C2 << 32 | (K + C1)), "c")
+            st.op("ADD", 2, "f")       # [Lf, raw, f]
+            st.swap(1)
+            st.push(lanes(K), "k")
+            st.op("SUB", 2, "zv")      # [Lf, f, zv]
+            store()
+            st.op("OR", 2, "Lf")
+            return
         st.dup("raw", "x")
         st.push(lanes(C2), "c")
         st.op("ADD", 2, "x")
@@ -545,86 +681,15 @@ class Gen:
     def flag_check(self):
         """[acc] -> [ok]: in every lane, bits zbits+32 and 25 of the z flag word are clear."""
         a, L = self.a, self.L
-        bit = (1 << (L.p["zbits"] + 32)) | (1 << 25)
+        bit = (1 << (L.p["zbits"] + 32)) | (1 << self.ZFB)
         a.push(sum(bit << (64 * j) for j in range(4)))
         a.op("AND")
         a.op("ISZERO")
 
-    def gen_sample_in_ball(self):
-        """c = SampleInBall(c-tilde) into CW (lane 0: 0, 1 or q-1). Exit [ok]."""
+    def sib_accept(self, st):
+        """SampleInBall accept step for byte j (on top of st; names "signs",
+        "i", "j"): CW / NNEG / IDX / BASES / CNT updates. Leaves j on top."""
         a, L = self.a, self.L
-        p = L.p
-        tau = p["tau"]
-        a.region("sample_in_ball")
-        a.label("sib")
-        cb = self.simd_c()
-        if not cb:
-            self.zero_ks()
-            self.absorb_inline(0, p["ctb"] // 8, L.CT)
-            self.xor_ks_const(p["ctb"] // 8, 0x1F * REP)
-            self.xor_ks_const(16, (0x80 << 56) * REP)
-            self.call("kf1")
-            self.flip_ks([x for x in COMPLEMENTED if x < 17])
-            a.push(L.KS)
-            a.op("MLOAD")
-            a.push(M64)
-            a.op("AND")
-        else:
-            a.push(L.CB)                 # stream lanes squeezed in a SIMD slot
-            a.op("MLOAD")
-        # stack (bottom..top): [ret, signs, i, p]
-        a.push(256 - tau)
-        a.push(8)
-        loop, nok, skip, done, fail = (self.fresh(x) for x in ("sibloop", "sibnok", "sibskip", "sibdone", "sibfail"))
-        a.label(loop)
-        a.op("DUP1")
-        a.push(272)
-        a.op("EQ")
-        a.jumpi(fail)
-        if not cb:
-            a.op("DUP1")
-            a.push(136)
-            a.op("EQ")
-            a.op("ISZERO")
-            a.jumpi(nok)
-            self.flip_ks([x for x in COMPLEMENTED if x < 17])
-            self.call("kf1")
-            self.flip_ks([x for x in COMPLEMENTED if x < 17])
-            a.label(nok)
-            # j = byte (p mod 136) of the current block
-            a.push(136)
-            a.op("DUP2")
-            a.op("MOD")                 # pm
-        else:
-            a.op("DUP1")                # byte p of the 272-byte stream in CB
-        a.op("DUP1")
-        a.push(7)
-        a.op("AND")
-        a.push(3)
-        a.op("SHL")                     # [.., pm, 8(pm&7)]
-        a.op("SWAP1")
-        a.push(3)
-        a.op("SHR")
-        a.push(5)
-        a.op("SHL")
-        a.push(L.CB if cb else L.KS)
-        a.op("ADD")
-        a.op("MLOAD")
-        a.op("SWAP1")
-        a.op("SHR")
-        a.push(0xFF)
-        a.op("AND")                     # [signs, i, p, j]
-        a.op("SWAP1")
-        a.push(1)
-        a.op("ADD")
-        a.op("SWAP1")                   # [signs, i, p+1, j]
-        a.op("DUP3")
-        a.op("DUP2")
-        a.op("GT")                      # j > i
-        a.jumpi(skip)
-        # accept j (stack [ret, signs, i, p, j]); see docs: list of nonzero
-        # coefficients kept as window base offsets 4064 + 8 pos - 2048 neg
-        st = Stack(a, ["ret", "signs", "i", "p", "j"])
         CNT = L.MISC + 0x1C0
         # CW[i] = CW[j]
         st.dup("j", "aj")
@@ -651,9 +716,15 @@ class Gen:
         st.push(L.MISC + 0x1A0, "c")
         st.op("MSTORE", 2)
         st.dup("sg", "code")
-        st.push(1, "c")
-        st.op("SHL", 2, "code")
-        st.push(1, "c")
+        if self.v4:
+            # v4: codes pre-replicated over the 4 lanes (REP or -REP)
+            st.push(2 * REP, "c")
+            st.op("MUL", 2, "code")
+            st.push(REP, "c")
+        else:
+            st.push(1, "c")
+            st.op("SHL", 2, "code")
+            st.push(1, "c")
         st.swap(1)
         st.op("SUB", 2, "code")
         st.swap(1)
@@ -723,6 +794,278 @@ class Gen:
         st.push(L.BASES - 32, "c")
         st.op("ADD", 2, "cnt")
         st.op("MSTORE", 2)
+
+    def sib_iter(self, cb, loop, lim, target, acc):
+        """One copy of SampleInBall's lane loop: stop to `target` at v = lim
+        (None: v = MLOAD(LIM))."""
+        a, L = self.a, self.L
+        a.label(loop)
+        a.op("DUP1")
+        if lim is None:
+            a.push(self.LIM)
+            a.op("MLOAD")
+        else:
+            a.push(lim)
+        a.op("EQ")
+        a.jumpi(target)
+        if not cb:
+            assert L.KS == 0
+            nok = self.fresh("sibnok")
+            a.op("DUP1")
+            a.push(17 * 32)
+            a.op("EQ")
+            a.op("ISZERO")
+            a.jumpi(nok)
+            a.label(self.fresh("sibsq"))
+            self.flip_ks([x for x in COMPLEMENTED if x < 17])
+            self.call("kf1")
+            self.flip_ks([x for x in COMPLEMENTED if x < 17])
+            a.label(nok)
+            a.op("DUP1")
+            a.push(17 * 32)
+            a.op("SWAP1")
+            a.op("MOD")
+        else:
+            a.op("DUP1")
+            a.push(L.CB)
+            a.op("ADD")
+        a.op("MLOAD")                    # [ret, signs, i, v, w]
+        if getattr(self, "dbg_sib_or", None) is not None:
+            # debug (opt_selftest.test_sib_fail): force rejections so that
+            # SampleInBall fails
+            a.push(self.dbg_sib_or)
+            a.op("OR")
+        for k in range(8):
+            skip = self.fresh("sibskip")
+            a.op("DUP1")
+            if k:
+                a.push(8 * k)
+                a.op("SHR")
+            a.push(0xFF)
+            a.op("AND")                  # [.., w, j]
+            a.op("DUP4")
+            a.op("DUP2")
+            a.op("GT")                   # j > i
+            a.jumpi(skip)
+            a.pushl(skip)
+            a.op("SWAP1")
+            a.jump(acc)
+            a.label(skip)                # reject: [.., w, j]; return from acc: [.., w, skip]
+            a.op("POP")
+        a.op("POP")
+        a.push(32)
+        a.op("ADD")
+        a.jump(loop)
+
+    def sib_loop_wc(self, cb):
+        """SampleInBall byte loop (v4, R4-5), entry [ret, signs]: one iteration per
+        64-bit stream lane, its 8 bytes unrolled. v = 32 x for stream lane x
+        (byte 8 x), 1 <= x < 34; the lane word is at CB + v (SIMD stream) or
+        KS + v mod 544 (kf1: block 2 squeezed at v = 544). A rejected byte
+        costs one compare and a taken JUMPI; an accepted byte calls the
+        shared accept step `sibacc` with its return label (skip_k: POP)."""
+        a, L = self.a, self.L
+        tau = L.p["tau"]
+        a.push(256 - tau)
+        a.push(32)
+        loop, fail, done, acc = (self.fresh(x) for x in ("sibloop", "sibfail", "sibdone", "sibacc"))
+        dup = cb and self.c_saved and self.mswitch
+        if cb and self.c_saved:
+            ext = self.fresh("sibext")
+        if dup:
+            # R4-7, glam: two copies of the loop; the first stops at block 1's
+            # end, where c's second block is squeezed on demand from the
+            # saved state if the packed schedule ran (FLAG), the second at
+            # the 272-byte bound
+            loop2 = self.fresh("sibloop")
+            heads = [(loop, self.LIMV if self.LIMV < 34 * 32 else 17 * 32, ext), (loop2, 34 * 32, fail)]
+        elif cb and self.c_saved:
+            # R4-7: c's slot was squeezed once (CB lanes 0..16); the stream
+            # limit LIM starts at block 1's end, where its second block is
+            # squeezed from the saved state on demand
+            a.push(self.LIMV)
+            a.push(self.LIM)
+            a.op("MSTORE")
+            heads = [(loop, None, ext)]
+        else:
+            heads = [(loop, 34 * 32, fail)]
+        for lp, lim, target in heads:
+            self.sib_iter(cb, lp, lim, target, acc)
+        # accept step: [ret, signs, i, v, w, rk, j]
+        a.label(acc)
+        st = Stack(a, ["ret", "signs", "i", "v", "w", "rk", "j"])
+        self.sib_accept(st)
+        st.pop("j")
+        st.expect(["ret", "signs", "i", "v", "w", "rk"])
+        a.op("SWAP4")
+        a.push(1)
+        a.op("SHR")
+        a.op("SWAP4")                    # signs >>= 1
+        a.op("SWAP3")
+        a.push(1)
+        a.op("ADD")
+        a.op("SWAP3")                    # i += 1
+        a.op("DUP4")
+        a.push(256)
+        a.op("EQ")
+        a.jumpi(done)
+        a.op("DUP1")
+        a.op("JUMP")                     # back to skip_k, which pops rk
+        a.label(done)
+        for _ in range(5):
+            a.op("POP")
+        a.push(1)
+        a.op("SWAP1")
+        a.op("JUMP")
+        if cb and self.c_saved:
+            a.label(ext)
+            if dup:
+                a.push(self.FLAG)
+                a.op("MLOAD")
+                a.op("ISZERO")
+                a.jumpi(loop2)
+                if getattr(self, "dbg_c2_off", False):
+                    a.jump(loop2)
+            else:
+                a.push(self.LIM)
+                a.op("MLOAD")
+                a.push(34 * 32)
+                a.op("EQ")
+                a.jumpi(fail)
+                a.push(34 * 32)
+                a.push(self.LIM)
+                a.op("MSTORE")
+            img, csl = self.c_saved
+            self.mcopy(L.KS, img, 25)        # KS is dead here (mu is in FIN)
+            self.call("kf4")
+            self.call("cext", [L.CB + 17 * 32, csl, 17])
+            a.jump(loop2 if dup else loop)
+        a.label(fail)
+        if self.sib_zero:
+            # fail with BASES[cnt..tau) not known to be zero (44: the window
+            # stages flag words in BASES): clear them in `sibz`, placed after
+            # all other code so no other pc moves; same 7 bytes as below
+            a.op("POP")
+            a.op("POP")
+            a.jump("sibz")
+            self.tail.append(("sib_zero", self.gen_sib_zero))
+            return
+        for _ in range(3):
+            a.op("POP")
+        a.op("PUSH0")
+        a.op("SWAP1")
+        a.op("JUMP")
+
+    def gen_sib_zero(self):
+        """SampleInBall's fail exit when BASES may hold stale words: [ret, signs]
+        -> BASES[cnt..tau) = 0 (cnt = MLOAD(CNT) < tau), exit [0]. csum reads
+        BASES[0..tau) as window offsets whatever SampleInBall returned."""
+        a, L = self.a, self.L
+        loop, out = self.fresh("sibzl"), self.fresh("sibzx")
+        a.label("sibz")
+        a.op("POP")
+        a.push(L.MISC + 0x1C0)
+        a.op("MLOAD")
+        a.push(5)
+        a.op("SHL")
+        a.push(L.BASES)
+        a.op("ADD")                      # [ret, a = BASES + 32 cnt]
+        a.label(loop)
+        a.op("DUP1")
+        a.push(L.BASES + 32 * L.p["tau"])
+        a.op("GT")
+        a.op("ISZERO")
+        a.jumpi(out)                     # a >= BASES + 32 tau
+        a.op("PUSH0")
+        a.op("DUP2")
+        a.op("MSTORE")
+        a.push(32)
+        a.op("ADD")
+        a.jump(loop)
+        a.label(out)
+        a.op("POP")
+        a.op("PUSH0")
+        a.op("SWAP1")
+        a.op("JUMP")
+
+    def gen_sample_in_ball(self):
+        """c = SampleInBall(c-tilde) into CW (lane 0: 0, 1 or q-1). Exit [ok]."""
+        a, L = self.a, self.L
+        p = L.p
+        tau = p["tau"]
+        a.region("sample_in_ball")
+        a.label("sib")
+        cb = self.simd_c()
+        if not cb:
+            self.zero_ks()
+            self.absorb_inline(0, p["ctb"] // 8, L.CT)
+            self.xor_ks_const(p["ctb"] // 8, 0x1F * REP)
+            self.xor_ks_const(16, (0x80 << 56) * REP)
+            self.call("kf1")
+            self.flip_ks([x for x in COMPLEMENTED if x < 17])
+            a.push(L.KS)
+            a.op("MLOAD")
+            a.push(M64)
+            a.op("AND")
+        else:
+            a.push(L.CB)                 # stream lanes squeezed in a SIMD slot
+            a.op("MLOAD")
+        if self.wc_sib:
+            return self.sib_loop_wc(cb)
+        # stack (bottom..top): [ret, signs, i, p]
+        a.push(256 - tau)
+        a.push(8)
+        loop, nok, skip, done, fail = (self.fresh(x) for x in ("sibloop", "sibnok", "sibskip", "sibdone", "sibfail"))
+        a.label(loop)
+        a.op("DUP1")
+        a.push(272)
+        a.op("EQ")
+        a.jumpi(fail)
+        if not cb:
+            a.op("DUP1")
+            a.push(136)
+            a.op("EQ")
+            a.op("ISZERO")
+            a.jumpi(nok)
+            self.flip_ks([x for x in COMPLEMENTED if x < 17])
+            self.call("kf1")
+            self.flip_ks([x for x in COMPLEMENTED if x < 17])
+            a.label(nok)
+            # j = byte (p mod 136) of the current block
+            a.push(136)
+            a.op("DUP2")
+            a.op("MOD")                 # pm
+        else:
+            a.op("DUP1")                # byte p of the 272-byte stream in CB
+        a.op("DUP1")
+        a.push(7)
+        a.op("AND")
+        a.push(3)
+        a.op("SHL")                     # [.., pm, 8(pm&7)]
+        a.op("SWAP1")
+        a.push(3)
+        a.op("SHR")
+        a.push(5)
+        a.op("SHL")
+        a.push(L.CB if cb else L.KS)
+        a.op("ADD")
+        a.op("MLOAD")
+        a.op("SWAP1")
+        a.op("SHR")
+        a.push(0xFF)
+        a.op("AND")                     # [signs, i, p, j]
+        a.op("SWAP1")
+        a.push(1)
+        a.op("ADD")
+        a.op("SWAP1")                   # [signs, i, p+1, j]
+        a.op("DUP3")
+        a.op("DUP2")
+        a.op("GT")                      # j > i
+        a.jumpi(skip)
+        # accept j (stack [ret, signs, i, p, j]); see docs: list of nonzero
+        # coefficients kept as window base offsets 4064 + 8 pos - 2048 neg
+        st = Stack(a, ["ret", "signs", "i", "p", "j"])
+        self.sib_accept(st)
         st.pop("j")
         st.expect(["ret", "signs", "i", "p"])
         a.op("SWAP2")
@@ -920,11 +1263,25 @@ class Gen:
         a, L = self.a, self.L
         assert L.KS == 0
         a.region("blk")
-        a.label("blk")
+        if self.v4:
+            # v4 entries: blkh = lanes 0..11 only (candidates 0..31 of the
+            # block), blkt [ret] = the rest of the last block (lanes 12..20,
+            # candidates 256..279 and flag words 32..34), made by gfix only
+            # when a slot needs a fix-up; blk = all 21 lanes.
+            # (blk stays at offset 0 of the region; blkh / blkt follow the body)
+            body = self.fresh("blkb")
+            a.label("blk")
+            a.op("PUSH0")
+            a.push(21 * 32)
+            a.label(body)
+            st = Stack(a, ["ret", "abp", "flp", "xp", "xe"])
+        else:
+            a.label("blk")
         rate_c = [x for x in COMPLEMENTED if x < 21]
         self.flip_ks(rate_c)
-        st = Stack(a, ["ret", "abp", "flp"])
-        st.push(0, "xp")                    # KS address of the next lane
+        if not self.v4:
+            st = Stack(a, ["ret", "abp", "flp"])
+            st.push(0, "xp")                    # KS address of the next lane
         masks = []
         for n, (i, j) in enumerate(self.UNZIP):
             m = sum(1 << p for p in range(256) if (p >> i) & 1 and not (p >> j) & 1)
@@ -996,16 +1353,30 @@ class Gen:
         st.add_const("xp", 96)
         assert st.s == layout, (st.s, layout)
         st.dup("xp", "x")
-        st.push(21 * 32, "e")
+        if self.v4:
+            st.dup("xe", "e")
+        else:
+            st.push(21 * 32, "e")
         st.op("GT", 2, "f")
         a.jumpi(loop)
         st.s.pop()
         for n in reversed(range(len(masks))):
             st.pop(f"U{n}")
-        for nm in ("xp", "flp", "abp"):
+        for nm in (("xe",) if self.v4 else ()) + ("xp", "flp", "abp"):
             st.pop(nm)
         self.flip_ks(rate_c)
         a.op("JUMP")
+        if self.v4:
+            a.label("blkh")
+            a.op("PUSH0")
+            a.push(12 * 32)
+            a.jump(body)
+            a.label("blkt")
+            a.push(L.ABUF + 256 * 32)
+            a.push(L.FL + 32 * 32)
+            a.push(12 * 32)
+            a.push(21 * 32)
+            a.jump(body)
 
     def gen_pass3(self, masked=False):
         """pass3: ACC[t] += ABUF[t] * ((Z[t] >> zsh) & M64), t < 256 (lane-wise).
@@ -1201,6 +1572,8 @@ class Gen:
         group of 8 candidates by group: a group whose flag word has no
         rejection in lane s is 8 masked word copies, a flagged group is
         scanned candidate by candidate. Exit [ok]."""
+        if self.wc_fix:
+            return self.gen_fix_wc()
         a, L = self.a, self.L
         a.region("fix")
         a.label("fix")
@@ -1380,6 +1753,191 @@ class Gen:
         a.op("SWAP1")
         a.op("JUMP")
 
+    def gen_fix_wc(self):
+        """fix (v4, R4-5): same contract as v3's fix, entry [ret, sh], exit [ok].
+
+        Loop state [.., rlim, rp, wp] with wp on top; the lane value is kept
+        in place (x = word & lm), so a candidate is accepted iff x < q << sh.
+        The flag word of the group at rp is at (rp >> 3) + FL - ABUF / 8.
+        A flagged group writes every candidate at wp (read-merge-write of
+        lane s) and advances wp by 32 [x < q << sh]; a clean group is 8
+        masked copies. The loop runs while wp < END256 and rp < rlim; at
+        rp = rlim (candidates exhausted) the 6th block is squeezed once
+        (state saved and restored, as in v3), else fail."""
+        a, L = self.a, self.L
+        a.region("fix")
+        a.label("fix")
+        HAVE6 = L.MISC + 0x1E0
+        END256 = L.ABUF + 256 * 32
+        assert L.ABUF % 8 == 0 and L.FL > L.ABUF // 8
+        FK = L.FL - L.ABUF // 8
+        st = Stack(a, ["ret", "sh"])
+        st.push(M64, "lm")
+        st.dup("sh", "s")
+        st.op("SHL", 2, "lm")            # lane mask
+        st.dup("lm", "nm")
+        st.op("NOT", 1, "nm")
+        st.push(Q, "qs")
+        st.dup("sh", "s")
+        st.op("SHL", 2, "qs")            # q << sh
+        st.push(1 << 23, "fm")
+        st.dup("sh", "s")
+        st.op("SHL", 2, "fm")            # flag bit of lane s
+        st.push(L.ABUF + 280 * 32, "rlim")
+        # first flagged group (exists: the caller saw a flag among groups 0..31)
+        st.push(L.ABUF, "rp")
+        f1, f1d = self.fresh("fxf1"), self.fresh("fxf1d")
+        a.label(f1)
+        st.dup("rp", "x")
+        st.push(3, "c")
+        st.op("SHR", 2, "x")
+        st.push(FK, "c")
+        st.op("ADD", 2, "x")
+        st.op("MLOAD", 1, "x")
+        st.dup("fm", "m")
+        st.op("AND", 2, "x")
+        a.jumpi(f1d)
+        st.s.pop()
+        st.add_const("rp", 256)
+        a.jump(f1)
+        a.label(f1d)
+        st.dup("rp", "wp")               # candidates before this group are final
+        if getattr(self, "dbg_force6", False):
+            st.to_top("rlim")            # debug: squeeze the 6th block after one group
+            st.pop("rlim")
+            st.dup("rp", "rlim")
+            st.push(256, "c")
+            st.op("ADD", 2, "rlim")
+            st.to_top("wp")
+        layout = ["ret", "sh", "lm", "nm", "qs", "fm", "rlim", "rp", "wp"]
+        st.expect(layout)
+        gl, flagged, gnext, ext, fail, done, cont = (self.fresh(x) for x in
+            ("fxg", "fxfl", "fxn", "fxe", "fxf", "fxd", "fxc"))
+        a.label(gl)
+        st.dup("rp", "x")
+        st.push(3, "c")
+        st.op("SHR", 2, "x")
+        st.push(FK, "c")
+        st.op("ADD", 2, "x")
+        st.op("MLOAD", 1, "x")
+        st.dup("fm", "m")
+        st.op("AND", 2, "x")
+        a.jumpi(flagged)
+        st.s.pop()
+        # clean group: lane(wp + 32 i) := lane(rp + 32 i)
+        for i in range(8):
+            st.dup("wp", "p")
+            if i:
+                st.push(32 * i, "c")
+                st.op("ADD", 2, "p")
+            st.dup("p", "o")
+            st.op("MLOAD", 1, "o")
+            st.dup("nm", "m")
+            st.op("AND", 2, "o")
+            st.dup("rp", "x")
+            if i:
+                st.push(32 * i, "c")
+                st.op("ADD", 2, "x")
+            st.op("MLOAD", 1, "x")
+            st.dup("lm", "m")
+            st.op("AND", 2, "x")
+            st.op("OR", 2, "o")
+            st.swap(1)
+            st.op("MSTORE", 2)
+        st.expect(layout)
+        st.add_const("wp", 256)
+        a.label(gnext)
+        st.expect(layout)
+        st.add_const("rp", 256)
+        # continue while wp < END256 and rp < rlim
+        st.push(END256, "e")
+        st.dup("wp", "x")
+        st.op("LT", 2, "c1")
+        st.dup("rlim", "y")
+        st.dup("rp", "x")
+        st.op("LT", 2, "c2")
+        st.op("AND", 2, "c")
+        a.jumpi(gl)
+        st.s.pop()
+        st.push(END256 - 1, "e")
+        st.dup("wp", "x")
+        st.op("GT", 2, "f")              # wp > END256 - 1: 256 coefficients written
+        a.jumpi(done)
+        st.s.pop()
+        a.jump(ext)
+        # flagged group, branch-free: every candidate is written at wp, wp
+        # advances only on acceptance (writes stay behind rp; writes past
+        # position 255 are never read again)
+        a.label(flagged)
+        st.expect(layout)
+        for i in range(8):
+            st.dup("rp", "x")
+            if i:
+                st.push(32 * i, "c")
+                st.op("ADD", 2, "x")
+            st.op("MLOAD", 1, "x")
+            st.dup("lm", "m")
+            st.op("AND", 2, "x")             # [.., wp, x]
+            st.dup("wp", "o")
+            st.op("MLOAD", 1, "o")
+            st.dup("nm", "m")
+            st.op("AND", 2, "o")
+            st.dup("x", "x2")
+            st.op("OR", 2, "o")
+            st.dup("wp", "p")
+            st.op("MSTORE", 2)               # [.., wp, x]
+            st.dup("qs", "q")
+            st.op("GT", 2, "acc")            # q << sh > x
+            st.push(5, "c")
+            st.op("SHL", 2, "acc")
+            st.op("ADD", 2, "wp")
+        st.expect(layout)
+        a.jump(gnext)
+        a.label(ext)
+        # candidates exhausted: squeeze the 6th block once, else fail
+        st.expect(layout)
+        st.dup("rlim", "x")
+        st.push(L.ABUF + 336 * 32, "e")
+        st.op("EQ", 2, "x")
+        a.jumpi(fail)
+        st.s.pop()
+        st.push(HAVE6, "p")
+        st.op("MLOAD", 1, "h")
+        a.jumpi(cont)
+        st.s.pop()
+        st.push(1, "one")
+        st.push(HAVE6, "p")
+        st.op("MSTORE", 2)
+        a.push(25 * 32)
+        a.push(L.KS)
+        a.push(L.BK)
+        a.op("MCOPY")                    # keep the group state (slots may carry tr)
+        self.call("kf4")
+        self.call("blk", [L.ABUF + 280 * 32, L.FL + 35 * 32])
+        a.push(25 * 32)
+        a.push(L.BK)
+        a.push(L.KS)
+        a.op("MCOPY")
+        a.label(cont)
+        st.to_top("rlim")
+        st.pop("rlim")
+        st.push(L.ABUF + 336 * 32, "rlim")
+        st.to_top("wp")
+        st.expect(layout)
+        a.jump(gl)
+        a.label(done)
+        for _ in range(8):
+            a.op("POP")
+        a.push(1)
+        a.op("SWAP1")
+        a.op("JUMP")
+        a.label(fail)
+        for _ in range(8):
+            a.op("POP")
+        a.op("PUSH0")
+        a.op("SWAP1")
+        a.op("JUMP")
+
     def gen_gfix(self):
         """gfix: entry [ret, amask]: OR of the first 32 rejection-flag words;
         every active slot s (bit s of amask) that rejected a candidate among
@@ -1417,6 +1975,19 @@ class Gen:
             st.op("ISZERO", 1, "f")
             a.jumpi(skip)
             st.s.pop()
+            if self.v4:
+                # first fix-up of the group: make the last block's tail
+                # (candidates 256..279, flags 32..34); bit 0 of flags = done
+                tdone = self.fresh("gtd")
+                st.dup("flags", "f")
+                st.push(1, "one")
+                st.op("AND", 2, "f")
+                a.jumpi(tdone)
+                st.s.pop()
+                self.call("blkt")
+                st.push(1, "one")
+                st.op("OR", 2, "flags")
+                a.label(tdone)
             ret = self.fresh("ret")
             a.pushl(ret)
             a.push(64 * sl)
@@ -1493,13 +2064,21 @@ class Gen:
         st.expect(["ret", "rb", "col", "amask"])
         for blk in range(5):
             self.call("kf4")
-            self.call("blk", [L.ABUF + 56 * 32 * blk, L.FL + 7 * 32 * blk])
+            self.call("blkh" if self.v4 and blk == 4 else "blk", [L.ABUF + 56 * 32 * blk, L.FL + 7 * 32 * blk])
         ret = self.fresh("ret")
         a.pushl(ret)
         a.op("DUP2")                     # amask
         a.jump("gfix")
         a.label(ret)
         st.s.append("ok")
+        if self.v4:
+            # v4: the caller accumulates (deferred, fused passes)
+            for nm in ("amask", "col", "rb"):
+                st.swap(1)
+                st.pop()
+            st.swap(1)
+            a.op("JUMP")
+            return
         # pass3(ACC + 0x2000 rb, ZH + 0x2000 (col >> 2), 64 (col & 3))
         ret = self.fresh("ret")
         st.pushl(ret, "r2")
@@ -1532,6 +2111,15 @@ class Gen:
         a.op("JUMP")
 
     # ── schedule-driven SIMD groups (ExpandA + tr + c riding in slots) ──
+    MSWITCH = 342       # glam: |M| from which the previous schedule (5 SIMD mu blocks) is cheaper
+
+    def unpacked_schedule(self):
+        self.pack = False
+        try:
+            return self.build_schedule()
+        finally:
+            self.pack = True
+
     def build_schedule(self):
         """Groups of four SIMD slots, each running 5 squeezes. Roles:
         ('A', row, col) ExpandA instance, ('tr', run) a 5-block run of
@@ -1548,6 +2136,28 @@ class Gen:
             rows = [4 * rb + s if 4 * rb + s < k else None for s in range(4)]
             return dict(slots=[('A', r, j) if r is not None else None for r in rows],
                         p3=('aligned', rb, j), keep=None)
+        if self.pack and L.nn == 65:
+            # R4-7, 42 kf4 calls: columns 0..2 aligned; Kronecker rows 4, 5
+            # over columns 0..3 (slot s = column 3 - s, dot product moved to
+            # ACC_1 lane 0 / 1); columns 3, 4 rows 0..2 in slots 1..3 with
+            # tr in slot 0; then the tail (emit_window65): P = A33 / A34
+            # (Kronecker, row 3) and KX = A44 / A54 (lanes 0, 1)
+            for j in range(3):
+                groups.append(pure(0, j))
+            for r in (4, 5):
+                groups.append(dict(slots=[('A', r, 3 - s_) for s_ in range(4)], keep=None,
+                                   p3=('kron', 1, 0, 4, r - 4)))
+            for run, j in enumerate((3, 4)):
+                groups.append(dict(slots=[('tr', run)] + [('A', r, j) for r in range(3)],
+                                   keep=0 if run else None,
+                                   p3=('mix', 0, [(r + 1, r, j) for r in range(3)])))
+            groups.append(dict(slots=[None, ('tr', 2), ('A', 3, 4), ('A', 3, 3)], keep=None,
+                               p3=('kron', 0, 3, 2), win=65))
+            groups.append(dict(slots=[('A', 4, 4), ('A', 5, 4), ('mu',), ('c',)], keep=None,
+                               p3=('mix', 1, [(0, 0, 4), (1, 1, 4)]), win=65))
+            if self.mswitch:
+                self.alt = (self.unpacked_schedule(), 3)
+            return groups
         if L.nn == 65 and self.v3:
             # rows 0-3: 5 aligned groups. Rows 4, 5 (10 instances), tr (3 runs),
             # H(c-tilde) and mu share 4 groups (16 slot-runs); instances sit in
@@ -1575,6 +2185,22 @@ class Gen:
                 if j == trruns:
                     g['slots'][3] = ('mu',)
                 groups.append(g)
+            return groups
+        if self.pack and L.nn == 44:
+            # R4-7, 23 kf4 calls: columns 0, 1 aligned; column 2 rows 0..2 in
+            # slots 1..3 with tr in slot 0; then the window (emit_window44):
+            # B3 = column 3 rows 0..2 in lanes 1..3 and E = row 3 columns 2, 3
+            # (Kronecker), sharing 8 calls with tr's last run, c and mu
+            for j in range(2):
+                groups.append(pure(0, j))
+            groups.append(dict(slots=[('tr', 0)] + [('A', r, 2) for r in range(3)], keep=None,
+                               p3=('mix', 0, [(r + 1, r, 2) for r in range(3)])))
+            groups.append(dict(slots=[('c',), ('mu',), ('A', 3, 3), ('A', 3, 2)], keep=None,
+                               p3=('kron', 0, 2, 2), win=44))
+            groups.append(dict(slots=[('tr', 1)] + [('A', r, 3) for r in range(3)], keep=0,
+                               p3=('mix', 0, [(r + 1, r, 3) for r in range(3)]), win=44))
+            if self.mswitch:
+                self.alt = (self.unpacked_schedule(), 2)
             return groups
         # 44 / 87: tr runs in slot 3 of the last trruns groups of the last row
         # group; the displaced A instances (row 4 rb + 3) go to one extra group
@@ -1742,6 +2368,8 @@ class Gen:
         a.region("trabs")
         a.label("trabs")
         st = Stack(a, ["ret", "off", "sh", "n4", "lm", "kp"])
+        if self.v4:
+            return self.gen_trabs_zip(st)
         stages = self.spread_stages()
         for k, (_, m) in enumerate(stages):
             st.push(m, f"S{k}")
@@ -1808,6 +2436,117 @@ class Gen:
         st.s.pop()
         for k in reversed(range(len(stages))):
             st.pop(f"S{k}")
+        st.pop("kp")
+        for nm in ("lm", "n4", "sh", "off"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    # bswap64x4 then zip (bit 64 i + b -> 4 b + i) as one bit permutation of
+    # the CALLDATALOAD word: complement index bit 4, then the zip
+    # transpositions of index bits (unzip's in reverse order), the second
+    # one with complement (an index-bit map, found by search; checked below)
+    TRZIP = [('c', 4), ('t', 1, 3, 0), ('t', 1, 5, 1), ('t', 1, 7, 0),
+             ('t', 0, 2, 0), ('t', 0, 4, 0), ('t', 0, 6, 0)]
+
+    @classmethod
+    def trzip_stages(cls):
+        """Delta swaps (d, mask) of TRZIP: t = ((x >> d) ^ x) & mask;
+        x ^= t ^ (t << d) moves bit p to p + d for p in mask."""
+        out = []
+        for st_ in cls.TRZIP:
+            if st_[0] == 'c':
+                i = st_[1]
+                out.append((1 << i, sum(1 << p for p in range(256) if not (p >> i) & 1)))
+            else:
+                _, i, j, c = st_
+                if c:
+                    out.append(((1 << i) + (1 << j), sum(1 << p for p in range(256)
+                                                         if not (p >> i) & 1 and not (p >> j) & 1)))
+                else:
+                    out.append(((1 << j) - (1 << i), sum(1 << p for p in range(256)
+                                                         if (p >> i) & 1 and not (p >> j) & 1)))
+        # check: bit p of the word ends at 4 n + k, k = p >> 6, n = LE bit of byte-swapped lane
+        perm = list(range(256))
+        for d, m in out:
+            perm = [x + d if (m >> x) & 1 else (x - d if x >= d and (m >> (x - d)) & 1 else x) for x in perm]
+        for p in range(256):
+            k, q = p >> 6, p & 63
+            assert perm[p] == 4 * ((7 - (q >> 3)) << 3 | (q & 7)) + k
+        return out
+
+    def gen_trabs_zip(self, st):
+        """trabs body (v4): byte swap and zip of the four lanes of a calldata
+        word as one 7-stage delta-swap network (TRZIP): lane i of the
+        byte-swapped word lands in slot i (bit 64 i + b -> bit 4 b + i), so
+        KS[kp + 32 i] ^= ((Z >> (3 - i)) & slot0) << sh for calldata lane i."""
+        a = self.a
+        S0 = self.slotbits([0])
+        zs = self.trzip_stages()
+        for k, (_, m) in enumerate(zs):
+            st.push(m, f"U{k}")
+        st.push(S0, "S0")
+        loop, nomask = self.fresh("tal"), self.fresh("tanm")
+        layout = list(st.s)
+        a.label(loop)
+        st.dup("off", "w")
+        st.op("CALLDATALOAD", 1, "w")
+        st.dup("n4", "f")
+        st.push(1, "c")
+        st.op("EQ", 2, "f")
+        st.op("ISZERO", 1, "f")
+        a.jumpi(nomask)
+        st.s.pop()
+        st.dup("lm", "m")               # lane-aligned: same mask before the byte swap
+        st.op("AND", 2, "w")
+        a.label(nomask)
+        for k, (d, _) in enumerate(zs):
+            st.dup("w", "t")
+            st.push(d, "c")
+            st.op("SHR", 2, "t")
+            st.dup("w", "x2")
+            st.op("XOR", 2, "t")
+            st.dup(f"U{k}", "m")
+            st.op("AND", 2, "t")
+            st.dup("t", "t2")
+            st.push(d, "c")
+            st.op("SHL", 2, "t2")
+            st.op("XOR", 2, "t")
+            st.op("XOR", 2, "w")
+        for i in range(4):
+            # calldata lane i sits in word lane 3 - i -> slot 3 - i
+            s_ = 3 - i
+            if i < 3:
+                st.dup("w", "v")
+            else:
+                st.rename("w", "v")
+            if s_:
+                st.push(s_, "c")
+                st.op("SHR", 2, "v")
+            st.dup("S0", "m")
+            st.op("AND", 2, "v")
+            st.dup("sh", "s")
+            st.op("SHL", 2, "v")
+            st.dup("kp", "p")
+            if i:
+                st.push(32 * i, "c")
+                st.op("ADD", 2, "p")
+            st.dup("p", "p2")
+            st.op("MLOAD", 1, "k")
+            st.swap(1)
+            st.swap(2)
+            st.op("XOR", 2, "v")
+            st.swap(1)
+            st.op("MSTORE", 2)
+        st.add_const("off", 32)
+        st.add_const("kp", 128)
+        st.sub_const("n4", 1)
+        assert st.s == layout, (st.s, layout)
+        st.dup("n4", "f")
+        a.jumpi(loop)
+        st.s.pop()
+        st.pop("S0")
+        for k in reversed(range(len(zs))):
+            st.pop(f"U{k}")
         st.pop("kp")
         for nm in ("lm", "n4", "sh", "off"):
             st.pop(nm)
@@ -1919,6 +2658,198 @@ class Gen:
         st.pop("sh")
         a.op("JUMP")
 
+    MU_SIMD_BLOCKS = 5      # v4 (R4-5): mu blocks absorbed in the SIMD mu slot (one per kf4 call)
+
+    def mu_pad(self, st):
+        """[.., e] -> [..]: slot "sh" ^= padding of the last mu block: 0x1F at
+        byte e < 136, 0x80 at byte 135."""
+        st.dup("e", "bb")
+        st.push(7, "c")
+        st.op("AND", 2, "bb")
+        st.push(3, "c")
+        st.op("SHL", 2, "bb")
+        st.push(0x1F, "v")
+        st.swap(1)
+        st.op("SHL", 2, "v")
+        self.call_spr()
+        st.dup("sh", "s")
+        st.op("SHL", 2, "v")             # [.., e, v]
+        st.swap(1)
+        st.push(3, "c")
+        st.op("SHR", 2, "e")
+        st.push(5, "c")
+        st.op("SHL", 2, "e")
+        st.push(self.L.KS, "c")
+        st.op("ADD", 2, "e")             # [.., v, addr]
+        st.dup("e", "p2")
+        st.op("MLOAD", 1, "k")
+        st.swap(1)
+        st.swap(2)                       # [.., addr, k, v]
+        st.op("XOR", 2, "v")
+        st.swap(1)
+        st.op("MSTORE", 2)
+        st.push(spread(0x80 << 56), "v")
+        st.dup("sh", "s")
+        st.op("SHL", 2, "v")
+        st.push(self.L.KS + 16 * 32, "p")
+        st.op("MLOAD", 1, "k")
+        st.op("XOR", 2, "v")
+        st.push(self.L.KS + 16 * 32, "p")
+        st.op("MSTORE", 2)
+
+    def gen_mub(self):
+        """v4 (R4-5): mu = H(tr || 0 || 0 || M) in the SIMD mu slot sh of the last
+        group, one block per kf4 call (blocks 0..4); P = 66 + |M| is the
+        padding position, nb = P div 136 + 1 the block count.
+
+        mub0: entry [rlong, rshort, sh], before the group's first kf4: block 0
+        (tr || 0 || 0 || M[0..70)) into slot sh. If nb = 1 it is padded and
+        mub0 returns to rshort with [rlong] left on the stack (v3's block
+        loop: mu extracted after kf4 #0), else to rlong (mub after every kf4).
+
+        mub: entry [ret, sh, b], b = 136 k, after the group's k-th kf4
+        (k = 1..5, nb >= 2): if k < nb and k < 5, block k (M[136 k - 66 ..])
+        is absorbed, padded if k = nb - 1; if k = nb, the 8 mu lanes are
+        extracted to MU. Messages with nb > 5 continue on kf1 from the slot's
+        state (hash_mu)."""
+        a, L = self.a, self.L
+        a.region("mub")
+        a.label("mub0")
+        st = Stack(a, ["rl", "rs", "sh"])
+        for x in range(8):
+            st.push(L.TRL + 32 * x, "p")
+            st.op("MLOAD", 1, "v")
+            self.call_spr()
+            st.dup("sh", "s")
+            st.op("SHL", 2, "v")
+            st.push(L.KS + 32 * x, "p")
+            st.op("MLOAD", 1, "k")
+            st.op("XOR", 2, "v")
+            st.push(L.KS + 32 * x, "p")
+            st.op("MSTORE", 2)
+        # lanes 8..16: stream bytes 64..135 = calldata from HDR - 2 ...
+        ret = self.fresh("ret")
+        st.pushl(ret, "r")
+        st.push(L.HDR - 2, "o")
+        st.dup("sh", "s")
+        st.push(3, "n")
+        st.push(ALL ^ ((1 << 192) - 1), "lm")
+        st.push(L.KS + 8 * 32, "kp")
+        a.jump("trabs")
+        a.label(ret)
+        for _ in range(6):
+            st.s.pop()
+        # ... minus the two signature bytes in front of M (lane 8, bytes 0, 1)
+        st.push(L.HDR - 2, "o")
+        st.op("CALLDATALOAD", 1, "w")
+        st.dup("w", "v")
+        st.push(248, "c")
+        st.op("SHR", 2, "v")
+        st.swap(1)
+        st.push(232, "c")
+        st.op("SHR", 2, "w")
+        st.push(0xFF00, "c")
+        st.op("AND", 2, "w")
+        st.op("OR", 2, "v")
+        self.call_spr()
+        st.dup("sh", "s")
+        st.op("SHL", 2, "v")
+        st.push(L.KS + 8 * 32, "p")
+        st.op("MLOAD", 1, "k")
+        st.op("XOR", 2, "v")
+        st.push(L.KS + 8 * 32, "p")
+        st.op("MSTORE", 2)
+        st.push(L.HDR - 66, "h")
+        a.op("CALLDATASIZE")
+        st.s.append("cs")
+        st.op("SUB", 2, "e")             # P = 66 + |M|
+        lng = self.fresh("mub0l")
+        st.push(135, "c")
+        st.dup("e", "x")
+        st.op("GT", 2, "f")              # P > 135: more than one block
+        a.jumpi(lng)
+        st.s.pop()
+        self.mu_pad(st)
+        st.expect(["rl", "rs", "sh"])
+        a.op("POP")
+        a.op("JUMP")                     # -> rshort, which pops rlong
+        a.label(lng)
+        a.op("POP")
+        a.op("POP")
+        a.op("POP")
+        a.op("JUMP")                     # -> rlong
+        # mub
+        a.label("mub")
+        st = Stack(a, ["ret", "sh", "b"])
+        st.push(L.HDR - 66, "h")
+        a.op("CALLDATASIZE")
+        st.s.append("cs")
+        st.op("SUB", 2, "P")             # P = 66 + |M|
+        absorb, out = self.fresh("mubabs"), self.fresh("mubout")
+        st.dup("b", "y")
+        st.dup("P", "x")
+        st.op("LT", 2, "f")              # P < b: block k does not exist
+        st.op("ISZERO", 1, "f")
+        a.jumpi(absorb)
+        st.s.pop()
+        # k >= nb: extract mu after the last block's permutation (k = nb)
+        st.dup("b", "y")
+        st.dup("P", "x")
+        st.push(136, "c")
+        st.op("ADD", 2, "x")
+        st.op("LT", 2, "f")              # P + 136 < b: k > nb
+        a.jumpi(out)
+        st.s.pop()
+        ret = self.fresh("ret")
+        st.pushl(ret, "r")
+        st.push(L.MU, "d")
+        st.dup("sh", "s")
+        st.push(8, "n")
+        a.jump("cext")
+        a.label(ret)
+        for _ in range(4):
+            st.s.pop()
+        a.jump(out)
+        a.label(absorb)
+        st.expect(["ret", "sh", "b", "P"])
+        st.push(136 * self.MU_SIMD_BLOCKS, "c")
+        st.dup("b", "y")
+        st.op("EQ", 2, "f")              # k = 5 < nb: kf1 takes over
+        a.jumpi(out)
+        st.s.pop()
+        # block k >= 1: 17 lanes of M from calldata HDR - 66 + 136 k
+        ret = self.fresh("ret")
+        st.pushl(ret, "r")
+        st.dup("b", "o")
+        st.push(L.HDR - 66, "c")
+        st.op("ADD", 2, "o")
+        st.dup("sh", "s")
+        st.push(5, "n")
+        st.push(ALL ^ ((1 << 192) - 1), "lm")
+        st.push(L.KS, "kp")
+        a.jump("trabs")
+        a.label(ret)
+        for _ in range(6):
+            st.s.pop()
+        # last block (P < b + 136): pad at e = P - b
+        st.dup("b", "y")
+        st.push(136, "c")
+        st.op("ADD", 2, "y")
+        st.dup("P", "x")
+        st.op("LT", 2, "f")
+        st.op("ISZERO", 1, "f")
+        a.jumpi(out)
+        st.s.pop()
+        st.dup("b", "y")
+        st.dup("P", "e")
+        st.op("SUB", 2, "e")             # e = P - b < 136
+        self.mu_pad(st)
+        a.label(out)
+        st.expect(["ret", "sh", "b", "P"])
+        for nm in ("P", "b", "sh"):
+            st.pop(nm)
+        a.op("JUMP")
+
     def gen_cext(self):
         """cext: entry [ret, dst, sh, n]: dst[x] = lane x (64-bit value) of
         slot sh of the kf4 state, x < n (complemented lanes inverted)."""
@@ -1974,12 +2905,609 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    # ── v4: deferred, fused A * z accumulation ──────────────────────────
+    @staticmethod
+    def acc_items(g):
+        """Accumulation terms of one group's (fixed-up) ABUF: ('lane', j,
+        mask or None, d): ACC += ((X & mask) << 64 d) * z_hat_j lane-wise
+        (d < 0: >>), ('kron', j0, n): ACC lane 3 += Kronecker dot product."""
+        p3, slots = g['p3'], g['slots']
+        if p3[0] == 'aligned':
+            assert all(r and r[0] == 'A' for r in slots)
+            return [('lane', p3[2], None, 0)]
+        if p3[0] == 'masked':
+            lm = sum(M64 << (64 * s_) for s_, r in enumerate(slots) if r and r[0] == 'A')
+            return [('lane', p3[2], lm, 0)]
+        if p3[0] == 'mix':
+            terms = {}
+            for (sl, ln, j) in p3[2]:
+                terms.setdefault((j, ln - sl), []).append(sl)
+            out = []
+            for (j, d), sls in sorted(terms.items()):
+                m = sum(M64 << (64 * s_) for s_ in sls)
+                # the shift by 64 d drops lanes; no mask if it keeps only lanes of m
+                keep = sum(M64 << (64 * s_) for s_ in range(4) if 0 <= s_ + d < 4)
+                out.append(('lane', j, None if m & keep == keep else m, d))
+            return out
+        assert p3[0] == 'kron'
+        # optional p3[4]: ACC lane of the dot product (default 3, where it forms)
+        return [('kron', p3[2], p3[3]) + tuple(p3[4:])]
+
+    def plan_accumulation(self, sched, tag=""):
+        """v4: instead of one ACC read-modify-write pass per group, a group's
+        fixed-up candidates (ABUF[0, 256)) are copied (MCOPY) to a side
+        buffer that is dead during ExpandA, and one fused pass per batch
+        adds all of the batch's products into ACC_rb, reading and writing
+        each ACC word once. The first batch of a row group stores instead
+        of adding, so ACC needs no zero initialisation and a later row
+        group's ACC serves as a side buffer meanwhile. Side buffers: CW
+        (SampleInBall runs after ExpandA), HP (HintBitUnpack runs after
+        ExpandA), ACC_g for row groups g not yet started; CW and HP are
+        zeroed again after ExpandA.
+        Annotates every entry with g['acc'] = ('copy', buffer) / ('pass', name).
+        Row groups may interleave (65, R4-7): then each row group keeps its
+        own pending list, and ACC_rb serves rb's own items until rb's first
+        pass (the pass reads every buffer word before it stores ACC_rb)."""
+        L = self.L
+        rbs = [g['p3'][1] for g in sched]
+        last = {rb: gi for gi, rb in enumerate(rbs)}
+        if rbs != sorted(rbs):
+            return self.plan_interleaved(sched, tag)
+        pending, started = [], set()
+        for gi, g in enumerate(sched):
+            rb = rbs[gi]
+            pool = [L.CW] + [L.HP + 0x2000 * h for h in range(L.GR)] \
+                + [L.ACC + 0x2000 * h for h in range(rb + 1, L.GR)] \
+                + [L.SB + 0x2000 * h for h in range(L.NSB)]
+            free = [b for b in pool if b not in [x for x, _ in pending]]
+            if gi == last[rb] or not free:
+                bufs = pending + [(L.ABUF, self.acc_items(g))]
+                name = f"pass3f{gi}{tag}"
+                self.fused.append((name, rb, rb not in started, bufs))
+                g['acc'] = ('pass', name)
+                started.add(rb)
+                pending = []
+            else:
+                b = free[0]
+                pending.append((b, self.acc_items(g)))
+                g['acc'] = ('copy', b)
+                if b < L.ACC or L.HP <= b < L.HP + 0x2000 * L.GR:
+                    if b not in self.zeroed:
+                        self.zeroed.append(b)
+
+    def plan_interleaved(self, sched, tag):
+        L = self.L
+        rbs = [g['p3'][1] for g in sched]
+        last = {rb: gi for gi, rb in enumerate(rbs)}
+        pending = {rb: [] for rb in rbs}
+        started = set()
+        for gi, g in enumerate(sched):
+            rb = rbs[gi]
+            used = [x for p in pending.values() for x, _ in p]
+            pool = [L.CW] + [L.HP + 0x2000 * h for h in range(L.GR)] \
+                + ([L.ACC + 0x2000 * rb] if rb not in started else []) \
+                + [L.SB + 0x2000 * h for h in range(L.NSB)]
+            free = [b for b in pool if b not in used]
+            if gi == last[rb] or not free:
+                bufs = pending[rb] + [(L.ABUF, self.acc_items(g))]
+                name = f"pass3f{gi}{tag}"
+                self.fused.append((name, rb, rb not in started, bufs))
+                g['acc'] = ('pass', name)
+                started.add(rb)
+                pending[rb] = []
+            else:
+                b = free[0]
+                pending[rb].append((b, self.acc_items(g)))
+                g['acc'] = ('copy', b)
+                if (b < L.ACC or L.HP <= b < L.HP + 0x2000 * L.GR) and b not in self.zeroed:
+                    self.zeroed.append(b)
+
+    def accumulate(self, g):
+        a, L = self.a, self.L
+        kind, x = g['acc']
+        if kind == 'copy':
+            a.push(0x2000)
+            a.push(L.ABUF)
+            a.push(x)
+            a.op("MCOPY")
+        else:
+            self.call(x)
+
+    def zero_side_buffers(self):
+        """v4: zero the side buffers in CW / HP again (8 KB each): MSTORE one
+        word, then double the zero prefix with MCOPY; later buffers copy
+        from the first."""
+        a = self.a
+        z0 = None
+        for b in self.zeroed:
+            if z0 is None:
+                a.op("PUSH0")
+                a.push(b)
+                a.op("MSTORE")
+                n = 32
+                while n < 0x2000:
+                    a.push(n)
+                    a.push(b)
+                    a.push(b + n)
+                    a.op("MCOPY")
+                    n *= 2
+                z0 = b
+            else:
+                a.push(0x2000)
+                a.push(z0)
+                a.push(b)
+                a.op("MCOPY")
+
+    def gen_pass3f(self, name, rb, first, bufs, unroll):
+        """Fused accumulation (v4): for t < 256, ACC_rb[t] (+)= sum over the
+        side buffers B and their terms of the lane-wise products (see
+        acc_items); `first`: store instead of add. Per term, lanes are
+        < 2^23 * 2^32; the sum per ACC lane is the same as v3's (< 2^57).
+        Entry [ret]."""
+        a, L = self.a, self.L
+        a.region(name)
+        a.label(name)
+        acc = L.ACC + 0x2000 * rb
+        zuse = {}
+        masks = []
+        kron = False
+        for _, items in bufs:
+            for it in items:
+                if it[0] == 'lane':
+                    gs = [it[1] // 4]
+                    if it[2] is not None and it[2] not in masks:
+                        masks.append(it[2])
+                else:
+                    kron = True
+                    g0, s0 = divmod(it[1], 4)
+                    gs = [g0] + ([g0 + 1] if s0 + it[2] > 4 else [])
+                    if it[2] < 4:
+                        km = sum(M64 << (64 * (3 - i)) for i in range(it[2]))
+                        if km not in masks:
+                            masks.append(km)
+                for zg in gs:
+                    zuse[zg] = zuse.get(zg, 0) + 1
+        if kron and any(it[0] == 'kron' and (it[3] if len(it) > 3 else 3) for _, its in bufs for it in its):
+            masks.append(M64 << 192)
+        addrs = [acc] + [L.ZH + 0x2000 * zg for zg in zuse] + [b for b, _ in bufs]
+        base = min(addrs)
+        st = Stack(a, ["ret"])
+        st.push(M64, "M64")
+        for i, m in enumerate(masks):
+            st.push(m, f"m{i}")
+        mname = {m: f"m{i}" for i, m in enumerate(masks)}
+        st.push(base, "p")
+        layout = list(st.s)
+        loop = self.fresh("p3fl")
+        a.label(loop)
+
+        def addr(x, off, nm):
+            st.dup("p", nm)
+            if x - base + off:
+                st.push(x - base + off, "c")
+                st.op("ADD", 2, nm)
+
+        for u in range(unroll):
+            off = 32 * u
+            for zg in sorted(zuse):
+                if zuse[zg] >= 2:
+                    addr(L.ZH + 0x2000 * zg, off, f"Z{zg}")
+                    st.op("MLOAD", 1, f"Z{zg}")
+
+            def zget(zg, nm):
+                if zuse[zg] >= 2:
+                    st.dup(f"Z{zg}", nm)     # shared: popped after the store
+                else:
+                    addr(L.ZH + 0x2000 * zg, off, nm)
+                    st.op("MLOAD", 1, nm)
+
+            have = False
+            if not first:
+                addr(acc, off, "acc")
+                st.op("MLOAD", 1, "acc")
+                have = True
+            for b, items in bufs:
+                addr(b, off, "X")
+                st.op("MLOAD", 1, "X")
+                for k, it in enumerate(items):
+                    # z (the scalar or Kronecker multiplier) first, then x
+                    if it[0] == 'lane':
+                        _, j, m, d = it
+                        zget(j // 4, "z")
+                        s_ = j % 4
+                        if s_:
+                            st.push(64 * s_, "c")
+                            st.op("SHR", 2, "z")
+                        if s_ != 3:
+                            st.dup("M64", "mm")
+                            st.op("AND", 2, "z")
+                    else:
+                        j0, n = it[1], it[2]
+                        g0, s0 = divmod(j0, 4)
+                        zget(g0, "z")
+                        if s0:
+                            st.push(64 * s0, "c")
+                            st.op("SHR", 2, "z")
+                        if s0 + n > 4:
+                            zget(g0 + 1, "y")
+                            st.push(64 * (4 - s0), "c")
+                            st.op("SHL", 2, "y")
+                            st.op("OR", 2, "z")
+                    if k == len(items) - 1:
+                        assert st.s[-2] == "X", st.s
+                        st.to_top("X")
+                        st.rename("X", "x")
+                    else:
+                        st.dup("X", "x")
+                    if it[0] == 'lane':
+                        if m is not None:
+                            st.dup(mname[m], "mm")
+                            st.op("AND", 2, "x")
+                        if d > 0:
+                            st.push(64 * d, "c")
+                            st.op("SHL", 2, "x")
+                        elif d < 0:
+                            st.push(-64 * d, "c")
+                            st.op("SHR", 2, "x")
+                        st.op("MUL", 2, "x")
+                    else:
+                        if n < 4:
+                            st.dup(mname[sum(M64 << (64 * (3 - i)) for i in range(n))], "mm")
+                            st.op("AND", 2, "x")
+                        st.op("MUL", 2, "x")
+                        lane = it[3] if len(it) > 3 else 3
+                        if lane:
+                            st.dup(mname[M64 << 192], "mm")
+                            st.op("AND", 2, "x")
+                        if lane < 3:
+                            st.push(64 * (3 - lane), "c")
+                            st.op("SHR", 2, "x")
+                    # accumulate x; X (if still needed) stays on top
+                    if not have:
+                        st.rename("x", "acc")
+                        if st.s[-2] == "X":
+                            st.swap(1)           # [acc, X]
+                        have = True
+                    elif st.s[-2] == "acc":
+                        st.op("ADD", 2, "acc")
+                    else:
+                        assert st.s[-3:] == ["acc", "X", "x"], st.s
+                        st.swap(1)               # [acc, x, X]
+                        st.swap(2)               # [X, x, acc]
+                        st.op("ADD", 2, "acc")
+                        st.swap(1)               # [acc, X]
+            zs = [f"Z{zg}" for zg in sorted(zuse) if zuse[zg] >= 2]
+            assert st.s == layout + zs + ["acc"], st.s
+            addr(acc, off, "q")
+            st.op("MSTORE", 2)
+            for _ in zs:
+                st.op("POP", 1)
+        st.add_const("p", 32 * unroll)
+        assert st.s == layout
+        st.dup("p", "x")
+        st.push(base + 256 * 32, "e")
+        st.op("GT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in reversed(layout[1:]):
+            st.pop(nm)
+        a.op("JUMP")
+
+    def tr_absorb(self, b, sh):
+        """XOR block b of tr = H(pk) (padded if last) into slot sh."""
+        L = self.L
+        nb = L.PK // 136 + 1
+        if b < nb - 1:
+            self.call("trabs", [136 * b, sh, 5, ALL ^ ((1 << 192) - 1), L.KS])
+        else:
+            rem = (L.PK % 136) // 8
+            n4 = (rem + 3) // 4
+            keepl = rem - 4 * (n4 - 1)
+            self.call("trabs", [136 * b, sh, n4, ALL ^ ((1 << (256 - 64 * keepl)) - 1), L.KS])
+            self.xor_ks_const(rem, spread(0x1F) << sh)
+            self.xor_ks_const(16, spread(0x80 << 56) << sh)
+
+    # ── v4 R4-7: packed windows (states pause and move between slots) ──
+    @staticmethod
+    def seed(r, j):
+        return j | r << 8 | 0x1F << 16
+
+    def mcopy(self, dst, src, nwords):
+        a = self.a
+        a.push(32 * nwords)
+        a.push(src)
+        a.push(dst)
+        a.op("MCOPY")
+
+    def kmove(self, src, d, slots, keep):
+        """KS[x] = (KS[x] & keep) | ((src[x] shifted by d bits, d < 0: right)
+        & slots) for the 25 lanes: moves states between slots (bit 4 b + s
+        is bit b of slot s) or restores them from a saved image."""
+        m = self.slotbits(slots)
+        self.call("kmove", [src, max(d, 0), max(-d, 0), m, keep])
+
+    def gen_kmove(self):
+        """kmove: entry [ret, src, sl, sr, m, keep]; see Gen.kmove."""
+        a, L = self.a, self.L
+        assert L.KS == 0
+        a.region("kmove")
+        a.label("kmove")
+        st = Stack(a, ["ret", "src", "sl", "sr", "m", "keep"])
+        st.push(20 * 32, "x")
+        layout = list(st.s)
+        loop = self.fresh("kml")
+        a.label(loop)
+        for k in range(5):               # lanes x .. x + 4
+            st.dup("x", "p")
+            if k:
+                st.push(32 * k, "c")
+                st.op("ADD", 2, "p")
+            st.dup("src", "v")
+            st.dup("p", "c")
+            st.op("ADD", 2, "v")
+            st.op("MLOAD", 1, "v")
+            st.dup("sl", "c")
+            st.op("SHL", 2, "v")
+            st.dup("sr", "c")
+            st.op("SHR", 2, "v")
+            st.dup("m", "c")
+            st.op("AND", 2, "v")
+            st.dup("p", "o")
+            st.op("MLOAD", 1, "o")
+            st.dup("keep", "c")
+            st.op("AND", 2, "o")
+            st.op("OR", 2, "v")
+            st.swap(1)
+            st.op("MSTORE", 2)
+        st.sub_const("x", 5 * 32)        # wraps below 0
+        assert st.s == layout
+        st.push(25 * 32, "c")
+        st.dup("x", "y")
+        st.op("LT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in ("x", "keep", "m", "sr", "sl", "src"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    LM_UNROLL = {44: 11, 65: 14}
+
+    def lmerge(self, dst, src_a, ma, src_b, sl, n):
+        """dst[w] = lanes ma of src_a[w], the other lanes of src_b[w] << sl,
+        w < n words (dst may be src_a)."""
+        assert n % self.LM_UNROLL[self.L.nn] == 0
+        self.call("lmerge", [(dst - src_a) & ALL, ma, (src_b - src_a) & ALL, sl, src_a + 32 * n, src_a])
+
+    def gen_lmerge(self):
+        """lmerge: entry [ret, da, ma, db, sl, end, p]; p runs over
+        src_a .. end, dst = p + da, src_b = p + db (offsets mod 2^256)."""
+        a = self.a
+        a.region("lmerge")
+        a.label("lmerge")
+        st = Stack(a, ["ret", "da", "ma", "db", "sl", "end", "p"])
+        layout = list(st.s)
+        loop = self.fresh("lml")
+        a.label(loop)
+        for k in range(self.LM_UNROLL[self.L.nn]):
+            st.dup("p", "q")
+            if k:
+                st.push(32 * k, "c")
+                st.op("ADD", 2, "q")
+            st.dup("db", "w")
+            st.dup("q", "c")
+            st.op("ADD", 2, "w")
+            st.op("MLOAD", 1, "w")
+            st.dup("sl", "c")
+            st.op("SHL", 2, "w")         # b'
+            st.dup("q", "v")
+            st.op("MLOAD", 1, "v")
+            st.dup("w", "c")
+            st.op("XOR", 2, "v")
+            st.dup("ma", "c")
+            st.op("AND", 2, "v")
+            st.op("XOR", 2, "v")         # b' ^ ((a ^ b') & ma)
+            st.swap(1)
+            st.dup("da", "c")
+            st.op("ADD", 2, "q")
+            st.op("MSTORE", 2)
+        st.add_const("p", 32 * self.LM_UNROLL[self.L.nn])
+        assert st.s == layout
+        st.dup("end", "e")
+        st.dup("p", "x")
+        st.op("LT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in ("p", "end", "sl", "db", "ma", "da"):
+            st.pop(nm)
+        a.op("JUMP")
+
+    def gfix_acc(self, g, amask):
+        """HAVE6 = 0; gfix the ABUF of schedule entry gi (lanes amask, its
+        final states in KS); accumulate it. Stack [ok] -> [ok]."""
+        a, L = self.a, self.L
+        a.op("PUSH0")
+        a.push(L.MISC + 0x1E0)
+        a.op("MSTORE")
+        ret = self.fresh("ret")
+        a.pushl(ret)
+        a.push(amask)
+        a.jump("gfix")
+        a.label(ret)
+        a.op("AND")
+        self.accumulate(g)
+
+    def mu_start(self, sh):
+        """mu's block 0 into the fresh slot sh (padded if |M| <= 69)."""
+        a = self.a
+        join, short = self.fresh("muj"), self.fresh("mus")
+        a.pushl(join)
+        a.pushl(short)
+        a.push(sh)
+        a.jump("mub0")
+        a.label(short)
+        a.op("POP")
+        a.label(join)
+
+    def emit_window44(self, sched, gi):
+        """ML-DSA-44 calls 15..22 (8 kf4 calls, all 32 slot-permutations used).
+        slot 0: tr blocks 5..9 (15..19), c (20), A13 (21, 22)
+        slot 1: A03 (15..19), mu (20), A23 (21, 22)
+        slot 2: A13 (15..17), A33 (18..22);  slot 3: A23 (15..17), A32 (18..22)
+        E = (A33, A32) is written to ABUF blocks 0..4 by calls 18..22. B3 =
+        (A03, A13, A23) in lanes 1..3 is staged in ACC / BASES: blocks 0..2
+        from calls 15..17, blocks 3, 4 merged from A03's lane of calls 18, 19
+        and A13 / A23's lanes 0, 1 of calls 21, 22 (shifted to lanes 2, 3).
+        A13 / A23 pause after call 17 (state image SAVE[0]) and resume in
+        slots 0, 1; for B3's fix-up the state is rebuilt (A03 from SAVE[1])."""
+        a, L = self.a, self.L
+        gE, gB = sched[gi], sched[gi + 1]
+        S17, S19, SC = self.SAVE
+        R, RF = L.ACC, L.BASES                 # B3 staging: 256 + 32 words
+        assert L.GR == 1
+        sd = self.seed
+        self.call("ginit", [self.slotbits([0]), 0b1110, 0, interleave([0, sd(0, 3), sd(1, 3), sd(2, 3)])])
+        for t in range(8):
+            if t == 3:
+                self.mcopy(S17, L.KS, 25)
+                self.call("ginit", [self.slotbits([0, 1]), 0b1100, 0, interleave([0, 0, sd(3, 3), sd(3, 2)])])
+            elif t == 5:
+                self.mcopy(S19, L.KS, 25)
+                self.call("ginit", [self.slotbits([2, 3]), 0, 1, interleave([0x1F, 0, 0, 0])])
+                self.mu_start(1)
+            elif t == 6:
+                self.kmove(S17, -2, [0, 1], self.slotbits([2, 3]))
+            if t < 5:
+                self.tr_absorb(5 + t, 0)
+            self.call("kf4")
+            if t < 3:
+                self.call("blk", [R + 56 * 32 * t, RF + 7 * 32 * t])
+            else:
+                self.call("blkh" if t == 7 else "blk", [L.ABUF + 56 * 32 * (t - 3), L.FL + 7 * 32 * (t - 3)])
+            if t == 4:
+                self.call("cext", [L.TRL, 0, 8])
+            elif t == 5:
+                self.call("cext", [L.CB, 0, 17])
+                self.call("cext", [L.MU, 1, 8])
+                self.mcopy(SC, L.KS, 25)
+        self.c_saved = (SC, 0)
+        self.mu_saved = (SC, 1)
+        # B3 blocks 3, 4 (head: candidates 0..31 and 4 flag words of block 4)
+        l1 = M64 << 64
+        self.lmerge(R + 168 * 32, L.ABUF, l1, L.ABUF + 168 * 32, 128, 88)
+        self.lmerge(RF + 21 * 32, L.FL, l1, L.FL + 21 * 32, 128, 11)
+        self.gfix_acc(gE, 0b1100)
+        self.mcopy(L.ABUF, R, 256)
+        self.mcopy(L.FL, RF, 32)
+        self.kmove(L.KS, 2, [2, 3], ALL ^ self.slotbits([2, 3]))
+        self.kmove(S19, 0, [1], ALL ^ self.slotbits([1]))
+        self.gfix_acc(gB, 0b1110)
+
+    def emit_window65(self, sched, gi):
+        """ML-DSA-65 calls 35..41 (7 kf4 calls; one slot-permutation gives c
+        its second squeeze).
+        slot 0: A44 (35, 36), tr 12, 13 (37, 38), A44 (39..41)
+        slot 1: tr 10, 11 (35, 36), A54 (37..41)
+        slot 2: A34 (35..39), tr 14 (40), mu (41);  slot 3: A33 (35..39), c (40, 41)
+        P = (A34, A33) is written to ABUF blocks 0..4 by calls 35..39 and
+        fixed up first. KX = (A44, A54) in lanes 0, 1: its blocks 0, 1 are
+        merged in place (A44 from calls 35, 36 = blocks 0, 1, A54 from calls
+        37, 38 = blocks 2, 3; P's fix-up only touches lanes 2, 3), block 2 is
+        call 39's (block 4), blocks 3, 4 come from calls 40, 41. A44 pauses
+        for calls 37, 38 (image SAVE[0]), tr for call 39 (SAVE[1])."""
+        a, L = self.a, self.L
+        gP, gK = sched[gi], sched[gi + 1]
+        S0, S1, SC = self.SAVE
+        sd = self.seed
+        bits = self.slotbits
+        self.kmove(L.KS, 1, [1], 0)                       # tr: slot 0 -> 1, rest zero
+        self.call("ginit", [bits([1]), 0b1101, 0, interleave([sd(4, 4), 0, sd(3, 4), sd(3, 3)])])
+        for t in range(7):
+            if t == 2:
+                self.mcopy(S0, L.KS, 25)
+                self.kmove(L.KS, -1, [0], bits([1, 2, 3]))   # tr: slot 1 -> 0
+                self.call("ginit", [bits([0, 2, 3]), 0b0010, 0, interleave([0, sd(5, 4), 0, 0])])
+            elif t == 4:
+                self.mcopy(S1, L.KS, 25)
+                self.kmove(S0, 0, [0], bits([1, 2, 3]))      # A44 back
+            elif t == 5:
+                self.kmove(S1, 2, [2], bits([0, 1]))         # tr -> slot 2, slot 3 zero
+                self.call("ginit", [bits([0, 1, 2]), 0, 1 << 3, 0])
+            if t < 2:
+                self.tr_absorb(10 + t, 1)
+            elif t < 4:
+                self.tr_absorb(10 + t, 0)
+            elif t == 5:
+                self.tr_absorb(14, 2)
+            self.call("kf4")
+            if t == 6:
+                self.call("blkh", [L.ABUF + 56 * 32 * 4, L.FL + 7 * 32 * 4])
+            else:
+                i = t if t < 5 else 3
+                self.call("blk", [L.ABUF + 56 * 32 * i, L.FL + 7 * 32 * i])
+            if t == 4:
+                self.gfix_acc(gP, 0b1100)
+                l0 = M64
+                self.lmerge(L.ABUF, L.ABUF, l0, L.ABUF + 112 * 32, 0, 112)
+                self.lmerge(L.FL, L.FL, l0, L.FL + 14 * 32, 0, 14)
+                self.mcopy(L.ABUF + 112 * 32, L.ABUF + 224 * 32, 56)
+                self.mcopy(L.FL + 14 * 32, L.FL + 28 * 32, 7)
+            elif t == 5:
+                self.call("cext", [L.TRL, 2, 8])
+                self.call("cext", [L.CB, 3, 17])
+                self.call("ginit", [bits([0, 1, 3]), 0, 0, 0])    # slot 2 fresh for mu
+                self.mu_start(2)
+            elif t == 6:
+                self.call("cext", [L.CB + 17 * 32, 3, 17])
+                self.call("cext", [L.MU, 2, 8])
+                self.mcopy(SC, L.KS, 25)
+        self.mu_saved = (SC, 2)
+        self.gfix_acc(gK, 0b0011)
+
     def expand_a(self):
         """All SIMD groups of the schedule; stack [ok] -> [ok]."""
         a, L = self.a, self.L
         a.region("expand_a")
+        self.fused, self.zeroed = [], []
+        if self.v4:
+            self.plan_accumulation(self.schedule)
+        if not self.alt:
+            for gi in range(len(self.schedule)):
+                self.emit_entry(self.schedule, gi)
+            return
+        # glam (R4-7): the packed schedule for |M| < MSWITCH, the previous
+        # one from there on; both share their first `split` entries
+        alt, split = self.alt
+        self.plan_accumulation(alt, "b")
+        assert all(x['acc'] == y['acc'] for x, y in zip(self.schedule[:split], alt[:split]))
+        for gi in range(split):
+            self.emit_entry(self.schedule, gi)
+        lalt, ljoin = self.fresh("alt"), self.fresh("altj")
+        a.push(L.HDR + self.MSWITCH)
+        a.op("CALLDATASIZE")
+        a.op("LT")
+        a.op("ISZERO")
+        a.jumpi(lalt)
+        a.push(1)
+        a.push(self.FLAG)
+        a.op("MSTORE")
+        for gi in range(split, len(self.schedule)):
+            self.emit_entry(self.schedule, gi)
+        a.jump(ljoin)
+        a.label(lalt)
+        for gi in range(split, len(alt)):
+            self.emit_entry(alt, gi)
+        a.label(ljoin)
+
+    def emit_entry(self, sched, gi):
+        """One schedule entry (SIMD group, or a packed window at its first entry)."""
+        a, L = self.a, self.L
         nb = L.PK // 136 + 1
-        for gi, g in enumerate(self.schedule):
+        g = sched[gi]
+        if True:
+            if g.get('win'):
+                if gi == min(i for i, x in enumerate(sched) if x.get('win')):
+                    getattr(self, f"emit_window{g['win']}")(sched, gi)
+                return
             slots = g['slots']
             p3 = g['p3']
             Aslots = [s_ for s_, r in enumerate(slots) if r and r[0] == 'A']
@@ -2009,7 +3537,9 @@ class Gen:
                 a.jump("group")
                 a.label(ret)
                 a.op("AND")
-                continue
+                if self.v4:
+                    self.accumulate(sched[gi])
+                return
             # mixed group: explicit init, block loop with tr / c riders
             amult = sum(1 << s_ for s_ in range(4) if seeds[s_])
             cslot = cs[0] if cs else None
@@ -2021,36 +3551,55 @@ class Gen:
             a.push(L.MISC + 0x1E0)
             a.op("MSTORE")                   # HAVE6 = 0
             self.call("ginit", [keep, amult, (1 << cslot) if cslot is not None else 0, l4])
-            if mus:
+            gret = self.fresh("ret") if mus and self.wc_mu else None
+            if mus and self.wc_mu:
+                # mub0 absorbs mu's block 0 and returns to the short (|M| <= 69,
+                # v3's block loop, inline) or the long continuation (mub after
+                # every kf4; region mulong, out of line, rejoins at gfix)
+                assert gi == len(sched) - 1 and not trs   # hash_mu continues from this state
+                mlong = self.fresh("mulg")
+                ret = self.fresh("ret")
+                a.pushl(mlong)
+                a.pushl(ret)
+                a.push(mus[0])
+                a.jump("mub0")
+                a.label(ret)
+                a.op("POP")                      # rlong
+            elif mus:
                 self.call("mu0", [mus[0]])
-            for blk in range(5):
-                if trs:
-                    sh = trs[0]
-                    b = 5 * slots[sh][1] + blk
-                    if b < nb - 1:
-                        self.call("trabs", [136 * b, sh, 5, ALL ^ ((1 << 192) - 1), L.KS])
-                    else:
-                        rem = (L.PK % 136) // 8
-                        n4 = (rem + 3) // 4
-                        keepl = rem - 4 * (n4 - 1)
-                        self.call("trabs", [136 * b, sh, n4, ALL ^ ((1 << (256 - 64 * keepl)) - 1), L.KS])
-                        self.xor_ks_const(rem, spread(0x1F) << sh)
-                        self.xor_ks_const(16, spread(0x80 << 56) << sh)
-                self.call("kf4")
-                self.call("blk", [L.ABUF + 56 * 32 * blk, L.FL + 7 * 32 * blk])
-                if cslot is not None and blk < 2:
-                    self.call("cext", [L.CB + 17 * 32 * blk, cslot, 17])
-                if mus and blk == 0:
-                    self.call("cext", [L.MU, mus[0], 8])
+
+            def blocks(longmu):
+                for blk in range(5):
+                    if trs:
+                        self.tr_absorb(5 * slots[trs[0]][1] + blk, trs[0])
+                    self.call("kf4")
+                    self.call("blkh" if self.v4 and blk == 4 else "blk", [L.ABUF + 56 * 32 * blk, L.FL + 7 * 32 * blk])
+                    if cslot is not None and blk < 2:
+                        self.call("cext", [L.CB + 17 * 32 * blk, cslot, 17])
+                    if mus and longmu:
+                        self.call("mub", [mus[0], 136 * (blk + 1)])
+                    elif mus and blk == 0:
+                        self.call("cext", [L.MU, mus[0], 8])
+            blocks(False)
+            if mus and self.wc_mu:
+                def mulong(mlong=mlong, gret=gret, amask=amask, blocks=blocks):
+                    a.label(mlong)
+                    blocks(True)
+                    a.pushl(gret)
+                    a.push(amask)
+                    a.jump("gfix")
+                self.deferred.append(("mulong", mulong))
             if trs and 5 * slots[trs[0]][1] + 4 == nb - 1:
                 self.call("cext", [L.TRL, trs[0], 8])
-            ret = self.fresh("ret")
-            a.pushl(ret)
+            gret = gret or self.fresh("ret")
+            a.pushl(gret)
             a.push(amask)
             a.jump("gfix")
-            a.label(ret)
+            a.label(gret)
             a.op("AND")
-            if p3[0] == 'aligned':
+            if self.v4:
+                self.accumulate(sched[gi])
+            elif p3[0] == 'aligned':
                 rb, j = p3[1], p3[2]
                 self.call("pass3", [L.ACC + 0x2000 * rb, L.ZH + 0x2000 * (j // 4), 64 * (j % 4)])
             elif p3[0] == 'masked':
@@ -2213,6 +3762,8 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    CSUM_DEEP = False   # glam: all tau bases on the stack (DUPN)
+
     def gen_csum(self):
         """csum: entry [ret, tt, sp]: SP[t] = 2^13 S'(t) + n_neg(t) (all lanes)
         for t < 256 from the window table at tt and the BASES list."""
@@ -2220,19 +3771,38 @@ class Gen:
         tau = L.p["tau"]
         a.region("csum")
         a.label("csum")
-        st = Stack(a, ["ret", "tt", "sp"])
+        st = Stack(a, ["ret", "tt", "sp"], deep=self.CSUM_DEEP)
+        # v4: the first nb window bases stay on the stack (DUP instead of
+        # PUSH + MLOAD per term); without EIP-8024 DUP reaches 11 of them
+        nb = (tau if self.CSUM_DEEP else 11) if self.v4 else 0
+        for m in range(nb):
+            st.push(L.BASES + 32 * m, "c")
+            st.op("MLOAD", 1, f"B{m}")
+        if nb:
+            st.dup("sp", "spc")
         # g = n_neg(-1) = number of +1 coefficients; codes: CW = -1 for c = +1
         st.push(L.MISC + 0x1A0, "c")
         st.op("MLOAD", 1, "nn")
         st.push(tau, "c")
         st.op("SUB", 2, "g")             # g = n_neg(-1) = number of +1 coefficients
+        if self.v4:
+            # v4: g' = 128 q + g2 - 1 - g, replicated (CW codes are +-REP); SP
+            # gets 128 q + g2 - 1 - (2^13 S' + n_neg) (no borrow: 2^13 S' + n_neg
+            # < 2^30 < 128 q); the g2 - 1 is UseHint's rounding term (uh_word)
+            st.push(REP, "c")
+            st.op("MUL", 2, "g")
+            st.push((128 * Q + L.p["g2"] - 1) * REP, "c")
+            st.op("SUB", 2, "g")
         st.push(L.CW, "cw")
         st.dup("tt", "bu")                  # bu = tt - 32 u
         loop = self.fresh("csl")
         a.label(loop)
         for m in range(tau):
-            st.push(L.BASES + 32 * m, "c")
-            st.op("MLOAD", 1, "b")
+            if m < nb:
+                st.dup(f"B{m}", "b")
+            else:
+                st.push(L.BASES + 32 * m, "c")
+                st.op("MLOAD", 1, "b")
             st.dup("bu", "bb")
             st.op("ADD", 2, "b")
             st.op("MLOAD", 1, "b")
@@ -2249,30 +3819,43 @@ class Gen:
                 st.op("ADD", 2, "c")
             st.op("MLOAD", 1, "c")
             st.dup("g", "g2")
-            st.op("ADD", 2, "gn")
+            st.op("SUB" if self.v4 else "ADD", 2, "gn")
             st.to_top("g")
             st.pop()
             st.rename("gn", "g")
             st.dup("S", "e")
-            if k:
-                st.push(16 * k, "s")
-                st.op("SHR", 2, "e")
-            st.push(lanemask(16), "m")
-            st.op("AND", 2, "e")
-            st.push(13, "s")
-            st.op("SHL", 2, "e")
-            st.dup("g", "gl")
-            st.push(1 | 1 << 64 | 1 << 128 | 1 << 192, "c")
-            st.op("MUL", 2, "gl")
-            st.op("ADD", 2, "e")
-            st.dup("sp", "p")
+            if self.v4:
+                # cell k to bits [13, 29) of every lane with one shift
+                if k:
+                    st.push(16 * k - 13, "s")
+                    st.op("SHR", 2, "e")
+                else:
+                    st.push(13, "s")
+                    st.op("SHL", 2, "e")
+                st.push(lanemask(29) ^ lanemask(13), "m")
+                st.op("AND", 2, "e")
+                st.dup("g", "gl")
+                st.op("SUB", 2, "e")
+            else:
+                if k:
+                    st.push(16 * k, "s")
+                    st.op("SHR", 2, "e")
+                st.push(lanemask(16), "m")
+                st.op("AND", 2, "e")
+                st.push(13, "s")
+                st.op("SHL", 2, "e")
+                st.dup("g", "gl")
+                st.push(1 | 1 << 64 | 1 << 128 | 1 << 192, "c")
+                st.op("MUL", 2, "gl")
+                st.op("ADD", 2, "e")
+            st.dup("spc" if nb else "sp", "p")
             if k:
                 st.push(32 * k, "o")
                 st.op("ADD", 2, "p")
             st.op("MSTORE", 2)
         st.pop("S")
         st.add_const("cw", 128)
-        st.add_const("sp", 128)
+        st.add_const("spc" if nb else "sp", 128)
         st.to_top("bu")
         st.push(32, "c")
         st.swap(1)
@@ -2289,6 +3872,114 @@ class Gen:
     # ── NTT-domain glue ─────────────────────────────────────────────────
     DIVK = {190464: (39, 2886403), 523776: (42, 8396809)}
     DIVG2 = {95232: (38, 2886403), 261888: (42, 16793617)}   # exact floor(y / g2), y < q + g2
+    # v4: exact floor(y / g2) for y < 2^31 + g2, and v mod 44 for v < 2^15
+    DIVG2W = {95232: (46, 738919105), 261888: (49, 2149582851)}
+    MOD44W = (17, 2979)
+
+    # v4: UseHint fused into the inverse NTT's last pass (no usehint loop, no
+    # ACC reload); 87 keeps the subroutine (code size)
+    UH_FUSE = {44: True, 65: True, 87: False}
+
+    def uh_fused(self):
+        return self.v4 and self.UH_FUSE[self.L.nn]
+
+    def uh_word(self, st, x, ptr, off):
+        """v4 UseHint of the row-packed word x (on top, lanes < 2^32) stored at
+        ptr + off (ACC_g): x := UseHint(HP, (x - 2^13 c*t1) mod q) lane-wise,
+        with HP_g and SP_g at fixed offsets from ACC_g."""
+        L = self.L
+        p = L.p
+        g2, m = p["g2"], p["m"]
+        X4 = lambda v: sum(v << (64 * j) for j in range(4))
+        assert st.top() == x
+
+        def const(v):
+            # glam: the wide masks sit on the stack (uh_consts), DUPN instead of PUSH32
+            nm = f"UH{v:x}"
+            if st.has(nm):
+                st.dup(nm, "c")
+            else:
+                st.push(v, "c")
+        # x = W + 128 q + g2 - 1 - (2^13 S' + n_neg)   (csum stores all but W)
+        d = L.ACC - L.SP - off
+        assert d > 0
+        st.push(d, "c")
+        st.dup(ptr, "e")
+        st.op("SUB", 2, "e")
+        st.op("MLOAD", 1, "e")
+        st.op("ADD", 2, "x")
+        # k = x div q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
+        st.dup("x", "qq")
+        st.push(1074791297, "c")
+        st.op("MUL", 2, "qq")
+        st.push(53, "c")
+        st.op("SHR", 2, "qq")
+        const(lanemask(9))
+        st.op("AND", 2, "qq")
+        st.swap(1)
+        st.op("SUB", 2, "r")
+        # With x0 = x - (g2 - 1) (the value to decompose), D = (x0 mod q + g2 - 1)
+        # div g2. y = x - k instead of x mod q: since q - 1 = 2 g2 m,
+        # y = 2 g2 m k + (x mod q), and D' = y div g2 = D + 2 m k (also when
+        # x0 mod q + g2 - 1 wraps past q: k counts the wrap and q = 2 g2 m + 1
+        # never changes the quotient; checked in opt_selftest), so D' >> 1 = r1
+        # (mod m) and D' & 1 = D & 1; v below is reduced mod m anyway.
+        # D' is not masked: lane j + 1's product bits land at bits >= 64 - KD
+        # of lane j, and only bits [0, 15) of D' are used (h & D', (D' >> 1) & M14)
+        KD, MD = self.DIVG2W[g2]
+        assert 64 - KD >= 15 and ((1 << 31) + 2 * g2) // g2 < 1 << 15
+        # x < 2^31: W < 2^30 (inverse NTT bound, opt_selftest) plus SP
+        assert (1 << 30) + 128 * Q + g2 - 1 < 1 << 31
+        st.rename("r", "D")
+        st.push(MD, "c")
+        st.op("MUL", 2, "D")
+        st.push(KD, "c")
+        st.op("SHR", 2, "D")
+        st.dup(ptr, "h")
+        st.push(L.HP - L.ACC + off, "c")
+        st.op("ADD", 2, "h")
+        st.op("MLOAD", 1, "h")           # [D, h]
+        st.dup("D", "d2")
+        st.dup("h", "h2")
+        st.op("AND", 2, "hd")
+        st.dup("hd", "hd2")
+        st.op("ADD", 2, "hd")            # [D, h, 2 (h & D)]
+        st.swap(1)
+        const(X4(m))
+        st.op("SUB", 2, "mh")            # [D, 2hD, m - h]
+        st.op("ADD", 2, "t")             # [D, t]
+        st.swap(1)
+        st.push(1, "c")
+        st.op("SHR", 2, "r1")
+        const(lanemask(14))
+        st.op("AND", 2, "r1")
+        st.op("ADD", 2, "v")             # < 2^15
+        if m & (m - 1) == 0:
+            const(X4(m - 1))
+            st.op("AND", 2, "v")
+        else:
+            assert m == 44
+            K44, M44 = self.MOD44W
+            st.dup("v", "qq")
+            st.push(M44, "c")
+            st.op("MUL", 2, "qq")
+            st.push(K44, "c")
+            st.op("SHR", 2, "qq")
+            const(lanemask(10))
+            st.op("AND", 2, "qq")
+            st.push(44, "c")
+            st.op("MUL", 2, "qq")
+            st.swap(1)
+            st.op("SUB", 2, "v")
+        st.rename("v", x)
+
+    def uh_consts(self):
+        """Wide constants of uh_word, for callers that keep them on the stack."""
+        p = self.L.p
+        X4 = lambda v: sum(v << (64 * j) for j in range(4))
+        vs = [lanemask(9), X4(p["m"]), lanemask(14)]
+        vs.append(X4(p["m"] - 1) if p["m"] & (p["m"] - 1) == 0 else lanemask(10))
+        return [(f"UH{v:x}", v) for v in vs]
 
     def gen_usehint(self):
         """usehint: entry [ret, wp] (wp = ACC_g): for the 256 row-packed words
@@ -2309,121 +4000,129 @@ class Gen:
         assert L.HP - L.ACC > 0 and L.SP < L.ACC
         loop = self.fresh("uhloop")
         a.label(loop)
-        # x = W + 128 q - (2^13 S' + n_neg)   (subtracts c * t1 * 2^d mod q)
-        st.push(L.ACC - L.SP, "c")
-        st.dup("wp", "e")
-        st.op("SUB", 2, "e")
-        st.op("MLOAD", 1, "e")
-        st.dup("wp", "x")
-        st.op("MLOAD", 1, "x")
-        st.push(X4(128 * Q), "c")
-        st.op("ADD", 2, "x")
-        st.op("SUB", 2, "x")
-        # r = x mod q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
-        st.dup("x", "qq")
-        st.push(1074791297, "c")
-        st.op("MUL", 2, "qq")
-        st.push(53, "c")
-        st.op("SHR", 2, "qq")
-        st.push(lanemask(9), "c")
-        st.op("AND", 2, "qq")
-        st.push(Q, "c")
-        st.op("MUL", 2, "qq")
-        st.swap(1)
-        st.op("SUB", 2, "r")
-        if self.v3:
-            # D = (r + g2 - 1) div g2 (exact multiply-shift); r1 = D >> 1 and
-            # r0 > 0 iff D is odd, so h * pos = h & D and
-            # v = (D >> 1) + m - h + 2 (h & D), in [m - 1, 2m]
-            KD, MD = self.DIVG2[g2]
-            st.push(X4(g2 - 1), "c")
-            st.op("ADD", 2, "D")
-            st.push(MD, "c")
-            st.op("MUL", 2, "D")
-            st.push(KD, "c")
-            st.op("SHR", 2, "D")
-            st.push(lanemask(7), "c")
-            st.op("AND", 2, "D")
-            st.dup("wp", "h")
-            st.push(L.HP - L.ACC, "c")
-            st.op("ADD", 2, "h")
-            st.op("MLOAD", 1, "h")       # [D, h]
-            st.dup("D", "d2")
-            st.dup("h", "h2")
-            st.op("AND", 2, "hd")
-            st.dup("hd", "hd2")
-            st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
-            st.swap(1)
-            st.push(X4(m), "c")
-            st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
-            st.op("ADD", 2, "t")         # [D, t]
-            st.swap(1)
-            st.push(1, "c")
-            st.op("SHR", 2, "r1")
-            st.push(lanemask(6), "c")
-            st.op("AND", 2, "r1")
-            st.op("ADD", 2, "v")
+        if self.v4:
+            st.dup("wp", "w")
+            st.op("MLOAD", 1, "w")
+            self.uh_word(st, "w", "wp", 0)
+            st.dup("wp", "p")
+            st.op("MSTORE", 2)
         else:
-            # r1 = (r + g2 - 1) div 2g2
-            st.dup("r", "r1")
-            st.push(X4(g2 - 1), "c")
-            st.op("ADD", 2, "r1")
-            st.push(M, "c")
-            st.op("MUL", 2, "r1")
-            st.push(K, "c")
-            st.op("SHR", 2, "r1")
-            st.push(lanemask(6), "c")
-            st.op("AND", 2, "r1")
-            # pos = (r + g2 - r1 2g2) > g2
-            st.dup("r1", "e")
-            st.push(2 * g2, "c")
-            st.op("MUL", 2, "e")
-            st.dup("r", "rr")
-            st.push(X4(g2), "c")
-            st.op("ADD", 2, "rr")
+            # x = W + 128 q - (2^13 S' + n_neg)   (subtracts c * t1 * 2^d mod q)
+            st.push(L.ACC - L.SP, "c")
+            st.dup("wp", "e")
             st.op("SUB", 2, "e")
-            st.push(X4((1 << 24) - g2 - 1), "c")
-            st.op("ADD", 2, "e")
-            st.push(24, "c")
-            st.op("SHR", 2, "e")
-            st.push(lanemask(1), "c")
-            st.op("AND", 2, "pos")
-            # h
-            st.dup("wp", "h")
-            st.push(L.HP - L.ACC, "c")
-            st.op("ADD", 2, "h")
-            st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
-            st.swap(1)
-            st.dup("h", "hh")
-            st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
-            st.push(1, "c")
-            st.op("SHL", 2, "hpos")
-            st.swap(1)
-            st.push(X4(m), "c")
-            st.op("SUB", 2, "mh")            # m - h
-            st.op("ADD", 2, "v")
-            st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
-        if m & (m - 1) == 0:
-            st.push(X4(m - 1), "c")
-            st.op("AND", 2, "v")
-        else:
-            assert m == 44
-            st.dup("v", "qq")
-            st.push(94, "c")
+            st.op("MLOAD", 1, "e")
+            st.dup("wp", "x")
+            st.op("MLOAD", 1, "x")
+            st.push(X4(128 * Q), "c")
+            st.op("ADD", 2, "x")
+            st.op("SUB", 2, "x")
+            # r = x mod q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
+            st.dup("x", "qq")
+            st.push(1074791297, "c")
             st.op("MUL", 2, "qq")
-            st.push(12, "c")
+            st.push(53, "c")
             st.op("SHR", 2, "qq")
-            st.push(lanemask(2), "c")
+            st.push(lanemask(9), "c")
             st.op("AND", 2, "qq")
-            st.push(44, "c")
+            st.push(Q, "c")
             st.op("MUL", 2, "qq")
             st.swap(1)
-            st.op("SUB", 2, "v")
-        if not self.v3:
-            st.swap(1)
-            st.pop()                     # drop r
-        st.dup("wp", "p")
-        st.op("MSTORE", 2)
+            st.op("SUB", 2, "r")
+            if self.v3:
+                # D = (r + g2 - 1) div g2 (exact multiply-shift); r1 = D >> 1 and
+                # r0 > 0 iff D is odd, so h * pos = h & D and
+                # v = (D >> 1) + m - h + 2 (h & D), in [m - 1, 2m]
+                KD, MD = self.DIVG2[g2]
+                st.push(X4(g2 - 1), "c")
+                st.op("ADD", 2, "D")
+                st.push(MD, "c")
+                st.op("MUL", 2, "D")
+                st.push(KD, "c")
+                st.op("SHR", 2, "D")
+                st.push(lanemask(7), "c")
+                st.op("AND", 2, "D")
+                st.dup("wp", "h")
+                st.push(L.HP - L.ACC, "c")
+                st.op("ADD", 2, "h")
+                st.op("MLOAD", 1, "h")       # [D, h]
+                st.dup("D", "d2")
+                st.dup("h", "h2")
+                st.op("AND", 2, "hd")
+                st.dup("hd", "hd2")
+                st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
+                st.swap(1)
+                st.push(X4(m), "c")
+                st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
+                st.op("ADD", 2, "t")         # [D, t]
+                st.swap(1)
+                st.push(1, "c")
+                st.op("SHR", 2, "r1")
+                st.push(lanemask(6), "c")
+                st.op("AND", 2, "r1")
+                st.op("ADD", 2, "v")
+            else:
+                # r1 = (r + g2 - 1) div 2g2
+                st.dup("r", "r1")
+                st.push(X4(g2 - 1), "c")
+                st.op("ADD", 2, "r1")
+                st.push(M, "c")
+                st.op("MUL", 2, "r1")
+                st.push(K, "c")
+                st.op("SHR", 2, "r1")
+                st.push(lanemask(6), "c")
+                st.op("AND", 2, "r1")
+                # pos = (r + g2 - r1 2g2) > g2
+                st.dup("r1", "e")
+                st.push(2 * g2, "c")
+                st.op("MUL", 2, "e")
+                st.dup("r", "rr")
+                st.push(X4(g2), "c")
+                st.op("ADD", 2, "rr")
+                st.op("SUB", 2, "e")
+                st.push(X4((1 << 24) - g2 - 1), "c")
+                st.op("ADD", 2, "e")
+                st.push(24, "c")
+                st.op("SHR", 2, "e")
+                st.push(lanemask(1), "c")
+                st.op("AND", 2, "pos")
+                # h
+                st.dup("wp", "h")
+                st.push(L.HP - L.ACC, "c")
+                st.op("ADD", 2, "h")
+                st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
+                st.swap(1)
+                st.dup("h", "hh")
+                st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
+                st.push(1, "c")
+                st.op("SHL", 2, "hpos")
+                st.swap(1)
+                st.push(X4(m), "c")
+                st.op("SUB", 2, "mh")            # m - h
+                st.op("ADD", 2, "v")
+                st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
+            if m & (m - 1) == 0:
+                st.push(X4(m - 1), "c")
+                st.op("AND", 2, "v")
+            else:
+                assert m == 44
+                K44, M44 = 12, 94
+                st.dup("v", "qq")
+                st.push(M44, "c")
+                st.op("MUL", 2, "qq")
+                st.push(K44, "c")
+                st.op("SHR", 2, "qq")
+                st.push(lanemask(2), "c")
+                st.op("AND", 2, "qq")
+                st.push(44, "c")
+                st.op("MUL", 2, "qq")
+                st.swap(1)
+                st.op("SUB", 2, "v")
+            if not self.v3:
+                st.swap(1)
+                st.pop()                     # drop r
+            st.dup("wp", "p")
+            st.op("MSTORE", 2)
         st.add_const("wp", 32)
         st.expect(["ret", "end", "wp"])
         st.dup("end", "e")
@@ -2621,7 +4320,19 @@ class Gen:
     def gen_ntts(self):
         self.nttk.gen_ntt("ntt")
         self.nttk.premont = True
+        if self.uh_fused():
+            self.nttk.post = self.uh_word
         self.nttk.gen_intt("intt", self.R)
+
+    P3F_UNROLL = {44: 2, 65: 2, 87: 2}
+
+    def call_dhint(self):
+        a = self.a
+        ret = self.fresh("ret")
+        a.pushl(ret)
+        a.jump("dhint")
+        a.label(ret)
+        a.op("AND")
 
     def build(self, stop_after=None):
         a, L = self.a, self.L
@@ -2646,12 +4357,9 @@ class Gen:
             a.op("AND")
             a.op("OR")
         self.flag_check()
-        ret = self.fresh("ret")
-        a.pushl(ret)
-        a.jump("dhint")
-        a.label(ret)
-        a.op("AND")
-        if not self.simd_c():
+        if not self.v4:
+            self.call_dhint()
+        if not self.simd_c() and not self.v4:
             ret = self.fresh("ret")
             a.pushl(ret)
             a.jump("sib")
@@ -2662,10 +4370,23 @@ class Gen:
             self.call("ntt", [L.ZH + 0x2000 * g])
         self.init_rho1()
         self.expand_a()
+        if self.v4:
+            # CW and HP served as side buffers during ExpandA
+            self.zero_side_buffers()
+            self.call_dhint()
         # mu: squeezed in a SIMD slot for |M| <= 69, else a kf1 sponge from tr
         mulong, mudone = self.fresh("mulong"), self.fresh("mudone")
         if self.has_mu_slot():
-            a.push(L.HDR + 70)
+            # v4 (R4-5): up to 5 blocks (|M| <= 613) in the SIMD slot
+            if self.mswitch:
+                a.push(self.FLAG)
+                a.op("MLOAD")
+                a.push(136 * (self.MU_SIMD_BLOCKS - 1))
+                a.op("MUL")
+                a.push(L.HDR + 136 * self.MU_SIMD_BLOCKS - 66)
+                a.op("SUB")
+            else:
+                a.push(L.HDR + (136 * self.MU_SIMD_BLOCKS - 66 if self.wc_mu else 70))
             a.op("CALLDATASIZE")
             a.op("LT")
             a.op("ISZERO")
@@ -2679,7 +4400,7 @@ class Gen:
                 a.op("MSTORE")
             a.jump(mudone)
             a.label(mulong)
-        for x in range(8):
+        for x in range(8 if not (self.wc_mu and self.has_mu_slot()) else 0):
             a.push(L.TRL + 32 * x)
             a.op("MLOAD")
             a.push(REP)
@@ -2691,7 +4412,7 @@ class Gen:
         self.hash_mu()
         if self.has_mu_slot():
             a.label(mudone)
-        if self.simd_c():
+        if self.simd_c() or self.v4:
             ret = self.fresh("ret")
             a.pushl(ret)
             a.jump("sib")
@@ -2703,7 +4424,8 @@ class Gen:
         lpr = L.w1lanes // L.k
         for g in range(L.GR):
             self.call("intt", [L.ACC + 0x2000 * g])     # Montgomery-reduces ACC at load
-            self.call("usehint", [L.ACC + 0x2000 * g])
+            if not self.uh_fused():                     # v4: UseHint fused into intt
+                self.call("usehint", [L.ACC + 0x2000 * g])
             self.call("pack", [L.ACC + 0x2000 * g, L.FIN + 32 * (8 + lpr * 4 * g), min(4, L.k - 4 * g)])
         self.final_hash()
         a.op("PUSH0")
@@ -2718,35 +4440,52 @@ class Gen:
         a.push(32)
         a.op("PUSH0")
         a.op("RETURN")
+        for name, emit in self.deferred:
+            a.region(name)
+            emit()
         self.gen_absorb17()
         self.gen_sample_in_ball()
         self.gen_decode_hint()
         self.gen_decode("dz", L.p["zbytes"], L.p["zbits"], self.z_post, flags=True)
         self.gen_blk()
-        self.gen_pass3()
-        if any(g['p3'][0] == 'masked' for g in self.schedule):
-            self.gen_pass3(masked=True)
-        for gi, g in enumerate(self.schedule):
-            if g['p3'][0] == 'kron':
-                self.gen_pass3k(f"pass3k{gi}", *g['p3'][1:])
-            elif g['p3'][0] == 'mix':
-                self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
+        if self.v4:
+            for name, rb, first, bufs in self.fused:
+                self.gen_pass3f(name, rb, first, bufs, self.P3F_UNROLL[L.nn])
+        else:
+            self.gen_pass3()
+            if any(g['p3'][0] == 'masked' for g in self.schedule):
+                self.gen_pass3(masked=True)
+            for gi, g in enumerate(self.schedule):
+                if g['p3'][0] == 'kron':
+                    self.gen_pass3k(f"pass3k{gi}", *g['p3'][1:])
+                elif g['p3'][0] == 'mix':
+                    self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
         self.gen_gfix()
         self.gen_ginit()
+        if self.pack:
+            self.gen_kmove()
+            self.gen_lmerge()
         self.gen_trabs()
         self.gen_cext()
         self.gen_spr()
         if self.has_mu_slot():
-            self.gen_mu0()
+            if self.wc_mu:
+                self.gen_mub()
+            else:
+                self.gen_mu0()
         self.gen_fix()
         self.gen_group()
         self.gen_tbuild()
         self.gen_csum()
-        self.gen_usehint()
+        if not self.uh_fused():
+            self.gen_usehint()
         self.gen_pack()
         self.gen_ntts()
         gen_keccak_f(a, "kf1", L.KS, L.KB, L.RC1, unroll=2, scale=1, kz_addr=L.KZ if self.v3 else None)
         gen_keccak_f(a, "kf4", L.KS, L.KB, L.RC4, unroll=2, scale=4)
+        for name, emit in self.tail:
+            a.region(name)
+            emit()
         return a.assemble()
 
 
@@ -2770,11 +4509,11 @@ def layout_text(g, code):
 
 
 def main(argv):
-    """gen_opt.py [--version v2|v3] [--out DIR] [44|65|87 ...]
+    """gen_opt.py [--version v2|v3|v4] [--out DIR] [44|65|87 ...]
 
-    v2 = the formally verified artifacts (MlDsaOptNN/Bytecode.lean), written to
-    MlDsaOpt/NN/v2/ by default; v3 = the current design, written to MlDsaOpt/NN/.
-    --out DIR writes DIR/NN/ instead."""
+    v4 = round 4, the current design (MlDsaOptNN/Bytecode.lean), written to
+    MlDsaOpt/NN/; v2 and v3 = the earlier proved designs, written to
+    MlDsaOpt/NN/v2/ and MlDsaOpt/NN/v3/. --out DIR writes DIR/NN/ instead."""
     version, out, sets = DEFAULT_VERSION, None, []
     it = iter(argv)
     for x in it:
@@ -2793,8 +4532,8 @@ def main(argv):
         assert len(code) <= 24576, f"{nn}: {len(code)} bytes exceeds EIP-170"
         if out is not None:
             d = os.path.join(out, str(nn))
-        elif version == "v2":
-            d = os.path.join(root, str(nn), "v2")
+        elif version in ("v2", "v3"):
+            d = os.path.join(root, str(nn), version)
         else:
             d = os.path.join(root, str(nn))
         os.makedirs(d, exist_ok=True)

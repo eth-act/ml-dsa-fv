@@ -89,8 +89,8 @@ theorem pk_iter {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (wp fp : Nat) (hwp : 43264 ≤ wp) (hwp2 : wp + 1024 ≤ 51456)
     (hfp : 59904 ≤ fp) (hfp2 : fp + 96 ≤ 59904 + 768)
     (hlt : wp + 1024 < 51456) :
-    Reach (callState s 15748 (wd 4 :: wd fp :: wd wp :: wd 51456 :: wd ret :: tail) M)
-      (callState s 15748 (wd 4 :: wd (96 + fp) :: wd (1024 + wp) :: wd 51456 :: wd ret :: tail)
+    Reach (callState s 15468 (wd 4 :: wd fp :: wd wp :: wd 51456 :: wd ret :: tail) M)
+      (callState s 15468 (wd 4 :: wd (96 + fp) :: wd (1024 + wp) :: wd 51456 :: wd ret :: tail)
         (qm6 M wp fp)) 1384 :=
   (((((pk_b1 hs (ret := ret) htail (M) wp fp  hwp hwp2 hfp hfp2).trans (pk_b2 hs (ret := ret) htail (M) wp fp (q1o0 M wp fp) (q1o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b3 hs (ret := ret) htail (qm2 M wp fp) wp fp (q2o0 M wp fp) (q2o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b4 hs (ret := ret) htail (qm2 M wp fp) wp fp (q3o0 M wp fp) (q3o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b5 hs (ret := ret) htail (qm4 M wp fp) wp fp (q4o0 M wp fp) (q4o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b6 hs (ret := ret) htail (qm4 M wp fp) wp fp (q5o0 M wp fp) hwp hwp2 hfp hfp2 hlt)
 
@@ -98,8 +98,8 @@ theorem pk_iterx {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) (wp fp : Nat) (hwp : 43264 ≤ wp) (hwp2 : wp + 1024 ≤ 51456)
     (hfp : 59904 ≤ fp) (hfp2 : fp + 96 ≤ 59904 + 768)
     (hlt : wp + 1024 = 51456) :
-    Reach (callState s 15748 (wd 4 :: wd fp :: wd wp :: wd 51456 :: wd ret :: tail) M)
-      (callState s 16823 (wd 4 :: wd (96 + fp) :: wd (1024 + wp) :: wd 51456 :: wd ret :: tail)
+    Reach (callState s 15468 (wd 4 :: wd fp :: wd wp :: wd 51456 :: wd ret :: tail) M)
+      (callState s 16543 (wd 4 :: wd (96 + fp) :: wd (1024 + wp) :: wd 51456 :: wd ret :: tail)
         (qm6 M wp fp)) 1384 :=
   (((((pk_b1 hs (ret := ret) htail (M) wp fp  hwp hwp2 hfp hfp2).trans (pk_b2 hs (ret := ret) htail (M) wp fp (q1o0 M wp fp) (q1o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b3 hs (ret := ret) htail (qm2 M wp fp) wp fp (q2o0 M wp fp) (q2o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b4 hs (ret := ret) htail (qm2 M wp fp) wp fp (q3o0 M wp fp) (q3o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b5 hs (ret := ret) htail (qm4 M wp fp) wp fp (q4o0 M wp fp) (q4o1 M wp fp) hwp hwp2 hfp hfp2)).trans (pk_b6x hs (ret := ret) htail (qm4 M wp fp) wp fp (q5o0 M wp fp) hwp hwp2 hfp hfp2 hlt)
 

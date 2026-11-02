@@ -5,7 +5,7 @@ import MlDsaOpt87.Layout
 import MlDsaOpt87.Budget
 /- Ported from `MlDsaOpt44/Fn/Fix/Top.lean` by `scripts/proofgen_port.py 87` --sub 65280=90880 --sub 66080=91680; hand adjustments are marked `-- port:`. -/
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
--- port: pcs in `gst`/`(pc := _)`/`(ret := _)` and the `reach_mcopy` index relocated by hand
+-- port: pcs in `gst`/`G`/`cst`/`(pc := _)`/`(ret := _)`/`(rT := _)`/`(rF := _)` and the `reach_mcopy` index relocated by hand (`proofgen_port.maps 87`)
 set_option warningAsError true
 /-!
 # `fix`: first-flag scan, sixth squeeze, flag words
@@ -22,20 +22,23 @@ open MlDsa44
 
 /-! ## First-flag scan -/
 
+/-- Scan layout of slot `sl`. -/
+abbrev Sc (s : State) (ret : Nat) (tail : List UInt256) (sl rp : Nat) (M : ByteArray) : State :=
+  sst s ret tail (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl) rp M
+
 theorem scan_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
-    (lm nm : Nat) (M : ByteArray) (g0 : Nat) (hg0 : g0 < 32)
+    (htail : tail.length ≤ 960) (hsz : 2897 ≤ s.activeWords.toNat) {sl : Nat}
+    (M : ByteArray) (g0 : Nat) (hg0 : g0 < 32)
     (h0 : ∀ g, g < g0 → word M (31232 + 32 * g) / 2 ^ (23 + 64 * sl) % 2 = 0) :
     ∀ d g, g + d = g0 →
-      Reach (sst s ret tail (64 * sl) lm nm (31232 + 32 * g) M)
-        (sst s ret tail (64 * sl) lm nm (31232 + 32 * g0) M) (d * 55)
+      Reach (Sc s ret tail sl (20480 + 256 * g) M) (Sc s ret tail sl (20480 + 256 * g0) M) (d * 55)
   | 0, g, h => by
     rw [show g = g0 by omega]; exact (Reach.refl _).mono (by omega)
   | d + 1, g, h => by
-    have h1 := fx_scan_next (ret := ret) hs htail hsz M (64 * sl) lm nm (31232 + 32 * g) (by omega)
-      (by omega) (h0 g (by omega))
-    rw [show 32 + (31232 + 32 * g) = 31232 + 32 * (g + 1) by omega] at h1
-    exact (h1.trans (scan_reach hs htail hsz hsl lm nm M g0 hg0 h0 d (g + 1) (by omega))).mono
+    have h1 := fx_scan_next (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) (qsv sl)
+      (fmv sl) (20480 + 256 * g) (by omega) (by rw [flag_addr, fmv_and]; exact h0 g (by omega))
+    rw [show 256 + (20480 + 256 * g) = 20480 + 256 * (g + 1) by omega] at h1
+    exact (h1.trans (scan_reach hs htail hsz M g0 hg0 h0 d (g + 1) (by omega))).mono
       (by rw [Nat.succ_mul]; omega)
 
 /-! ## Memory facts -/
@@ -100,28 +103,27 @@ macro "fx_av" : tactic => `(tactic| (
 theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.fix ret tail) (htail : tail.length ≤ 960)
     (hsz : 2897 ≤ s.activeWords.toNat) (sl : Nat) (M : ByteArray) (hrc : RC4Table M)
-    (h6 : word M 4064 = 0) (rp wp fp : Nat) :
-    ∃ M5, Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 15003 32352 rp wp fp M)
-        (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14467 32576 rp wp fp M5) 48350 ∧
+    (h6 : word M 4064 = 0) (rp wp : Nat) :
+    ∃ M5, Reach (G s ret tail sl 15088 29440 rp wp M) (G s ret tail sl 14727 31232 rp wp M5) 48362 ∧
       FrameExcept M M5 sqRegions ∧ word M5 4064 = 1 ∧
       ∀ S, Sized4 S → KS4 M S →
         (∀ i, i < 56 → word M5 (29440 + 32 * i) =
           pack4 fun k => cand (EvmSemantics.Crypto.Keccak.permute (S k)) i) ∧
         (∀ g, g < 7 → word M5 (32352 + 32 * g) =
           flagWord (fun k => EvmSemantics.Crypto.Keccak.permute (S k)) g) := by
-  have hlen : ([wd 32352, wd rp, wd wp, wd fp, wd (nmask sl), wd (lmask sl), wd (64 * sl),
-    wd ret] ++ tail).length ≤ 1000 := by simp; omega
+  have hlen : ([wd wp, wd rp, wd 29440, wd (fmv sl), wd (qsv sl), wd (nmask sl), wd (lmask sl),
+    wd (64 * sl), wd ret] ++ tail).length ≤ 1000 := by simp; omega
   have hmem : 91680 ≤ 32 * s.activeWords.toNat := by omega
   have hrok : ∀ B', B' = Stack.leaf → ∀ r', Decode.isValidJumpDest optBytecode r' = true → r' < 2 ^ 16 →
-      RetOK B' r' ([wd 32352, wd rp, wd wp, wd fp, wd (nmask sl), wd (lmask sl), wd (64 * sl),
-        wd ret] ++ tail) := fun B' hB r' hj hr' =>
+      RetOK B' r' ([wd wp, wd rp, wd 29440, wd (fmv sl), wd (qsv sl), wd (nmask sl), wd (lmask sl),
+        wd (64 * sl), wd ret] ++ tail) := fun B' hB r' hj hr' =>
     hr.callee (by subst hB; simp [Stack.fix, Stack.kf4, Stack.blk, Stack.leaf]) hj hr'
   -- HAVE6 := 1, then KS → BK
   set M1 := MachineState.writeBytes M (Data.Bytes.natToBytesPadded 1 32) 4064 with hM1
-  have h1 := fx_sq_pre (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
-    (by decide) (by decide) h6
+  have h1 := fx_sq_pre (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
+    29440 rp wp (by decide) (by decide) h6
   set M2 := MachineState.writeBytes M1 (MachineState.readPadded M1 0 800) 90880 with hM2
-  have h2 := Infra.reach_mcopy hs ⟨6644, by decide⟩ (pc := 15035) (d := 90880) (src := 0) (n := 800)
+  have h2 := Infra.reach_mcopy hs ⟨6767, by decide⟩ (pc := 15120) (d := 90880) (src := 0) (n := 800)
     (m := M1) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
   have hf2 : FrameExcept M M2 [(4064, 4096), (90880, 91680)] :=
@@ -132,19 +134,24 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       rcases hr with rfl | rfl
       · exact ⟨(4064, 4096), by simp, by simp⟩
       · exact ⟨(90880, 91680), by simp, by simp⟩)
-  have h3 := fx_sq_kf4 (ret := ret) hs htail hsz M2 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
-  obtain ⟨M3, hk, hfk, hck⟩ := kf4_call hs (ret := 15043) (hrok _ rfl _
+  have h3 := fx_sq_kf4 (ret := ret) hs htail hsz M2 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
+    29440 rp wp
+  obtain ⟨M3, hk, hfk, hck⟩ := kf4_call hs (ret := 15128) (hrok _ rfl _
       (by simp only [Infra.isValidJumpDest_lit]) (by norm_num)) M2
     (rc4_frame hrc hf2 (by fx_av))
-  have h5 := fx_sq_blk (ret := ret) hs htail hsz M3 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
-  obtain ⟨M4, hb, hfb, hcb⟩ := blk_call hs (ret := 15057) (hrok _ rfl _
-      (by simp only [Infra.isValidJumpDest_lit]) (by norm_num)) M3 (b := 5) (by norm_num)
-  have h7 := fx_sq_post (ret := ret) hs htail hsz M4 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
+  have h5 := fx_sq_blk (ret := ret) hs htail hsz M3 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
+    29440 rp wp
+  obtain ⟨M4, hb, hfb, hcb⟩ := blk_call hs (ret := 15142) (hrok _ rfl _
+      (by simp only [Infra.isValidJumpDest_lit]) (by norm_num)) M3 (abp := 29440) (flp := 32352)
+    (by simp [KS]) (by simp [TOP]) (by simp [KS]) (by simp [TOP]) (by omega)
+  have h7 := fx_sq_post (ret := ret) hs htail hsz M4 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
+    29440 rp wp
   set M5 := MachineState.writeBytes M4 (MachineState.readPadded M4 90880 800) 0 with hM5
-  have h8 := Infra.reach_mcopy hs ⟨6658, by decide⟩ (pc := 15066) (d := 0) (src := 90880) (n := 800)
+  have h8 := Infra.reach_mcopy hs ⟨6781, by decide⟩ (pc := 15151) (d := 0) (src := 90880) (n := 800)
     (m := M4) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
-  have h9 := fx_cont (ret := ret) hs htail hsz M5 (64 * sl) (lmask sl) (nmask sl) 32352 rp wp fp
+  have h9 := fx_cont (ret := ret) hs htail hsz M5 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
+    29440 rp wp
   try rw [call_iff] at hck hcb
   have hreach := ((((((((h1.trans h2).trans h3).trans hck).trans h5).trans hcb).trans h7).trans
     h8).trans h9)
@@ -172,8 +179,8 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       fun k hk => permute_size' (hS k hk)
     obtain ⟨hc, hfl⟩ := hb _ hS' (hk S hS (ks4_frame hks hf2 (by fx_av)))
     refine ⟨fun i hi => ?_, fun g hg => ?_⟩
-    · rw [hw5 _ (by omega), ← hc i hi]; simp only [ABUF]
-    · rw [hw5 _ (by omega), ← hfl g hg]; simp only [FL]
+    · rw [hw5 _ (by omega), ← hc i hi]
+    · rw [hw5 _ (by omega), ← hfl g hg]
 
 /-! ## Flag words and candidate words -/
 

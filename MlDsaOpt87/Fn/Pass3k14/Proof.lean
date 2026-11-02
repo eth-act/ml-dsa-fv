@@ -39,7 +39,7 @@ theorem k14_body {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.le
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   opt87_reach [5326, 5327, 5328, 5329, 5330, 5331, 5332, 5333, 5334, 5335, 5336, 5337, 5338, 5339,
-    5340, 5341, 5342, 5343, 5344, 5345, 5346, 5347, 5348, 5349, 5350, 5351, 5352, 5353, 5354, 5355,
+    5340, 5341, 5342, 5343, 5344, 5345, 5346, 5347, 5348, 5349, 5350, 5351, 5341, 5353, 5354, 5355,
     5356, 5357, 5358, 5359, 5360, 5361]
     with [k14v, ACC, ABUF, ZH, ZH2, M64]
   simp only [Nat.add_comm, Nat.mul_comm, Nat.and_comm, Nat.or_comm, and_self]
@@ -52,7 +52,7 @@ theorem k14_last {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.le
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   opt87_reach [5326, 5327, 5328, 5329, 5330, 5331, 5332, 5333, 5334, 5335, 5336, 5337, 5338, 5339,
-    5340, 5341, 5342, 5343, 5344, 5345, 5346, 5347, 5348, 5349, 5350, 5351, 5352, 5353, 5354, 5355,
+    5340, 5341, 5342, 5343, 5344, 5345, 5346, 5347, 5348, 5349, 5350, 5351, 5341, 5353, 5354, 5355,
     5356, 5357, 5358, 5359, 5360, 5361, 5362]
     with [k14v, ACC, ABUF, ZH, ZH2, M64]
   simp only [Nat.add_comm, Nat.mul_comm, Nat.and_comm, Nat.or_comm, and_self]

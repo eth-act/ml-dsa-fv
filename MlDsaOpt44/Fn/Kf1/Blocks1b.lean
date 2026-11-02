@@ -13,39 +13,39 @@ set_option maxHeartbeats 0
 set_option linter.unusedVariables false
 
 theorem row1_2 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A D : Nat → UInt256) (rc : UInt256)
     (h1 : UInt256.ofNat (word M 32) = A 1) (h7 : UInt256.ofNat (word M 224) = A 7)
     (h13 : UInt256.ofNat (word M 416) = A 13) (h19 : UInt256.ofNat (word M 608) = A 19)
     (h20 : UInt256.ofNat (word M 640) = A 20) :
-    Reach (callState s 19917 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20002 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 20876 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 20961 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail)
         (mst (mst (mst (mst (mst M 1344 (outW A D rc 10)) 1376 (outW A D rc 11)) 1408 (outW A D rc 12)) 1440 (outW A D rc 13)) 1472 (outW A D rc 14))) 186 := by
-  opt44_reach [9541, 9542, 9543, 9544, 9545, 9546, 9547, 9548, 9549, 9550, 9551, 9552, 9553, 9554, 9555, 9556, 9557, 9558, 9559, 9560, 9561, 9562, 9563, 9564, 9565, 9566, 9567, 9568, 9569, 9570, 9571, 9572, 9573, 9574, 9575, 9576, 9577, 9578, 9579, 9580, 9581, 9582, 9583, 9584, 9585, 9586, 9587, 9588, 9589, 9590, 9591, 9592, 9593, 9594, 9595, 9596, 9597, 9598, 9599, 9600, 9601, 9602]
+  opt44_reach [9872, 9873, 9874, 9875, 9876, 9877, 9878, 9879, 9880, 9881, 9882, 9883, 9884, 9885, 9886, 9887, 9888, 9889, 9890, 9891, 9892, 9893, 9894, 9895, 9896, 9897, 9898, 9899, 9900, 9901, 9902, 9903, 9904, 9905, 9906, 9907, 9908, 9909, 9910, 9911, 9912, 9913, 9914, 9915, 9916, 9917, 9918, 9919, 9920, 9921, 9922, 9923, 9924, 9925, 9926, 9927, 9928, 9929, 9930, 9931, 9932, 9933]
     with [h1, h7, h13, h19, h20, mst, outW, chiW, Bw, shf, srcLane]
 
 theorem row1_3 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A D : Nat → UInt256) (rc : UInt256)
     (h4 : UInt256.ofNat (word M 128) = A 4) (h5 : UInt256.ofNat (word M 160) = A 5)
     (h11 : UInt256.ofNat (word M 352) = A 11) (h17 : UInt256.ofNat (word M 544) = A 17)
     (h23 : UInt256.ofNat (word M 736) = A 23) :
-    Reach (callState s 20002 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20087 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 20961 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21046 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail)
         (mst (mst (mst (mst (mst M 1504 (outW A D rc 15)) 1536 (outW A D rc 16)) 1568 (outW A D rc 17)) 1600 (outW A D rc 18)) 1632 (outW A D rc 19))) 186 := by
-  opt44_reach [9603, 9604, 9605, 9606, 9607, 9608, 9609, 9610, 9611, 9612, 9613, 9614, 9615, 9616, 9617, 9618, 9619, 9620, 9621, 9622, 9623, 9624, 9625, 9626, 9627, 9628, 9629, 9630, 9631, 9632, 9633, 9634, 9635, 9636, 9637, 9638, 9639, 9640, 9641, 9642, 9643, 9644, 9645, 9646, 9647, 9648, 9649, 9650, 9651, 9652, 9653, 9654, 9655, 9656, 9657, 9658, 9659, 9660, 9661, 9662, 9663, 9664]
+  opt44_reach [9934, 9935, 9936, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944, 9945, 9946, 9947, 9948, 9949, 9950, 9951, 9952, 9953, 9954, 9955, 9956, 9957, 9958, 9959, 9960, 9961, 9962, 9963, 9964, 9965, 9966, 9967, 9968, 9969, 9970, 9971, 9972, 9973, 9974, 9975, 9976, 9977, 9978, 9979, 9980, 9981, 9982, 9983, 9984, 9985, 9986, 9987, 9988, 9989, 9990, 9991, 9992, 9993, 9994, 9995]
     with [h4, h5, h11, h17, h23, mst, outW, chiW, Bw, shf, srcLane]
 
 theorem row1_4 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)
     (A D : Nat → UInt256) (rc : UInt256)
     (h2 : UInt256.ofNat (word M 64) = A 2) (h8 : UInt256.ofNat (word M 256) = A 8)
     (h14 : UInt256.ofNat (word M 448) = A 14) (h15 : UInt256.ofNat (word M 480) = A 15)
     (h21 : UInt256.ofNat (word M 672) = A 21) :
-    Reach (callState s 20087 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20178 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 21046 (D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21137 (REPw :: wd rp :: wd ret :: tail)
         (mst (mst (mst (mst (mst M 1664 (outW A D rc 20)) 1696 (outW A D rc 21)) 1728 (outW A D rc 22)) 1760 (outW A D rc 23)) 1792 (outW A D rc 24))) 196 := by
-  opt44_reach [9665, 9666, 9667, 9668, 9669, 9670, 9671, 9672, 9673, 9674, 9675, 9676, 9677, 9678, 9679, 9680, 9681, 9682, 9683, 9684, 9685, 9686, 9687, 9688, 9689, 9690, 9691, 9692, 9693, 9694, 9695, 9696, 9697, 9698, 9699, 9700, 9701, 9702, 9703, 9704, 9705, 9706, 9707, 9708, 9709, 9710, 9711, 9712, 9713, 9714, 9715, 9716, 9717, 9718, 9719, 9720, 9721, 9722, 9723, 9724, 9725, 9726, 9727, 9728, 9729, 9730, 9731]
+  opt44_reach [9996, 9997, 9998, 9999, 10000, 10001, 10002, 10003, 10004, 10005, 10006, 10007, 10008, 10009, 10010, 10011, 10012, 10013, 10014, 10015, 10016, 10017, 10018, 10019, 10020, 10021, 10022, 10023, 10024, 10025, 10026, 10027, 10028, 10029, 10030, 10031, 10032, 10033, 10034, 10035, 10036, 10037, 10038, 10039, 10040, 10041, 10042, 10043, 10044, 10045, 10046, 10047, 10048, 10049, 10050, 10051, 10052, 10053, 10054, 10055, 10056, 10057, 10058, 10059, 10060, 10061, 10062]
     with [h2, h8, h14, h15, h21, mst, outW, chiW, Bw, shf, srcLane]
 
 end MlDsaOpt44.Proofs.Kf1

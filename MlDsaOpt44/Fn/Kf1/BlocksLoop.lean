@@ -13,21 +13,21 @@ set_option maxHeartbeats 0
 set_option linter.unusedVariables false
 
 theorem prologue {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
-    Reach (callState s 19576 (wd ret :: tail) M)
-      (callState s 19606 (REPw :: wd 2816 :: wd ret :: tail) M) 7 := by
-  opt44_reach [9318, 9319, 9320] with [REPw]
+    (hsz : 2616 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
+    Reach (callState s 20535 (wd ret :: tail) M)
+      (callState s 20565 (REPw :: wd 2816 :: wd ret :: tail) M) 7 := by
+  opt44_reach [9649, 9650, 9651] with [REPw]
 
 theorem loopBack {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (hlt : 96 + rp < 3584) :
-    Reach (callState s 21553 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 19606 (REPw :: wd (96 + rp) :: wd ret :: tail) M) 34 := by
-  opt44_reach [10656, 10657, 10658, 10659, 10660, 10661, 10662, 10663, 10664]
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (hlt : 96 + rp < 3584) :
+    Reach (callState s 22512 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 20565 (REPw :: wd (96 + rp) :: wd ret :: tail) M) 34 := by
+  opt44_reach [10987, 10988, 10989, 10990, 10991, 10992, 10993, 10994, 10995]
 
 theorem loopExit {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (heq : 96 + rp = 3584) (hret : ret < 2 ^ 16)
+    (hsz : 2616 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (heq : 96 + rp = 3584) (hret : ret < 2 ^ 16)
     (hj : EVM.Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) :
-    Reach (callState s 21553 (REPw :: wd rp :: wd ret :: tail) M) (callState s ret tail M) 46 := by
-  opt44_reach [10656, 10657, 10658, 10659, 10660, 10661, 10662, 10663, 10664, 10665, 10666, 10667] with [hj]
+    Reach (callState s 22512 (REPw :: wd rp :: wd ret :: tail) M) (callState s ret tail M) 46 := by
+  opt44_reach [10987, 10988, 10989, 10990, 10991, 10992, 10993, 10994, 10995, 10996, 10997, 10998] with [hj]
 
 end MlDsaOpt44.Proofs.Kf1

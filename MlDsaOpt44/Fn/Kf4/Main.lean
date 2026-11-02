@@ -208,9 +208,9 @@ theorem memIter_frame (M : ByteArray) :
 
 theorem iter_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htl : tail.length ≤ 960) (haw : s.activeWords.toNat ≤ 18446744073709551616)
-    (hsz : 2097 ≤ s.activeWords.toNat) (M : ByteArray) (r : Nat) (hr : r ≤ 2752) :
-    Reach (callState s 21574 (wd r :: wd ret :: tail) M)
-      (callState s 23077 (wd r :: wd ret :: tail) (iterM M r)) 3324 := by
+    (hsz : 2616 ≤ s.activeWords.toNat) (M : ByteArray) (r : Nat) (hr : r ≤ 2752) :
+    Reach (callState s 22533 (wd r :: wd ret :: tail) M)
+      (callState s 24036 (wd r :: wd ret :: tail) (iterM M r)) 3324 := by
   have hr' : r ≤ 2784 := by omega
   have h1 := ((((((r1_cols (ret := ret) hs htl haw hsz M r hr').trans
     (r1_ds hs htl haw hsz M r hr' _ _ _ _ _)).trans
@@ -256,14 +256,14 @@ theorem kf4_spec {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have htl : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.kf4, Stack.leaf] at this; omega
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hsz : 2097 ≤ s.activeWords.toNat := hs.sized
+  have hsz : 2616 ≤ s.activeWords.toNat := hs.sized
   refine ⟨memIter m 12, ?_, ?_, ?_⟩
   · intro S hS hK
     have := (memIter_spec hS (ksw_of_ks4 hK) hrc 12 le_rfl).1
     apply ks4_of_ksw
     simpa only [permute_eq] using this
   · simpa only [KS, KB] using memIter_frame m 12
-  · let I : Nat → State := fun j => callState s 21574 (wd (2048 + 64 * j) :: wd ret :: tail) (memIter m j)
+  · let I : Nat → State := fun j => callState s 22533 (wd (2048 + 64 * j) :: wd ret :: tail) (memIter m j)
     have hbody : ∀ j, j < 11 → Reach (I j) (I (j + 1)) 3352 := by
       intro j hj
       have h := (iter_reach (ret := ret) hs htl haw hsz (memIter m j) (2048 + 64 * j) (by omega)).trans

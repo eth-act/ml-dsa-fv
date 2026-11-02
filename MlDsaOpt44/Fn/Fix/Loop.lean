@@ -5,12 +5,13 @@ set_option warningAsError true
 /-!
 # `fix`: the group loop
 
-One phase of the group loop (`fxg`, pc 13029) runs groups `g … lim − 1`
+One phase of the group loop (`fxg`, pc 13264) runs groups `g … lim − 1`
 (`lim = 35` before the sixth squeeze, `42` after). The invariant: lane `sl`
 of `ABUF[0, w)` is the accepted list `accL c (8 g)` (`AccAt`), the unread
 positions `[8 g, 8 lim)` still hold the candidates, and only lane `sl` of
-`ABUF[0, 8 g)` has changed (`LaneFrame`). Addresses are literal:
-`ABUF = 20480`, `FL = 31232`.
+`ABUF[0, 8 g)` has changed (`LaneFrame`). A flagged group writes every
+candidate at `w` (masked lane copy, as a clean group does) and advances `w`
+on acceptance only. Addresses are literal: `ABUF = 20480`, `FL = 31232`.
 -/
 
 namespace MlDsaOpt44.Proofs.Fix
@@ -86,8 +87,8 @@ theorem F_zero {c : Nat → Nat} {g : Nat} (h : F c g = 0) : ∀ i, i < 8 → c 
       Nat.not_le] at hh
     exact hh i hi
 
-theorem lv_eq (M : ByteArray) (a sl : Nat) : lv M a (64 * sl) = lane (word M a) sl := by
-  unfold lv lane; norm_num
+/-- Acceptance bit of a lane value. -/
+def ab (v : Nat) : Nat := if 8380417 > v then 1 else 0
 
 /-- Acceptance of one candidate (the bytecode's `q > v`). -/
 theorem accept_step {M M' : ByteArray} {sl : Nat} {c : Nat → Nat} {n w : Nat} {v : Nat}
@@ -113,50 +114,77 @@ theorem accept_step {M M' : ByteArray} {sl : Nat} {c : Nat → Nat} {n w : Nat} 
     rw [word_put M hV, if_neg (by omega)]
     exact hpre i hi
 
+/-! ## The lane test of the flagged path -/
+
+/-- `q << 64 sl`, the flagged path's acceptance bound. -/
+def qsv (sl : Nat) : Nat := 8380417 * 2 ^ (64 * sl)
+
+theorem land_lmask (sl W : Nat) :
+    lmask sl &&& W = lane W sl * 2 ^ (64 * sl) := by
+  apply Nat.eq_of_testBit_eq; intro j
+  rw [Nat.testBit_and, lmask_bit, Nat.testBit_mul_two_pow, testBit_lane]
+  by_cases h1 : 64 * sl ≤ j
+  · by_cases h2 : j < 64 * sl + 64
+    · simp [h1, h2, show j - 64 * sl < 64 by omega, show 64 * sl + (j - 64 * sl) = j by omega]
+    · simp [h1, h2, show ¬ j - 64 * sl < 64 by omega]
+  · simp [h1]
+
+theorem acc_eq (sl W : Nat) :
+    acc (qsv sl) (lmask sl &&& W) = ab (lane W sl) := by
+  unfold acc ab qsv
+  rw [land_lmask]
+  have hp : 0 < 2 ^ (64 * sl) := by positivity
+  by_cases h : 8380417 > lane W sl
+  · rw [if_pos (Nat.mul_lt_mul_of_pos_right h hp), if_pos h]
+  · rw [if_neg (fun h' => h (Nat.lt_of_mul_lt_mul_right h')), if_neg h]
+
 /-! ## Flagged groups: eight branch-free steps -/
 
-/-- One flagged step: the block's write and pointer update. -/
+/-- One flagged step: the masked write at `wp` and the pointer update. -/
 def fs (sl rp : Nat) (p : ByteArray × Nat) (i : Nat) : ByteArray × Nat :=
-  (fw p.1 p.2 (32 * i + rp) (64 * sl) (nmask sl), p.2 + ab (lv p.1 (32 * i + rp) (64 * sl)) * 32)
+  (cw p.1 p.2 (32 * i + rp) (lmask sl) (nmask sl),
+    p.2 + acc (qsv sl) (lmask sl &&& word p.1 (32 * i + rp)) * 32)
 
 def fsN (sl rp : Nat) (p : ByteArray × Nat) : Nat → ByteArray × Nat
   | 0 => p
   | n + 1 => fs sl rp (fsN sl rp p n) n
 
-theorem ab_le (v : Nat) : ab v ≤ 1 := by unfold ab; split <;> omega
+theorem acc_le (qs v : Nat) : acc qs v ≤ 1 := by unfold acc; split <;> omega
 
 theorem fsN_le (sl rp : Nat) (p : ByteArray × Nat) : ∀ n, (fsN sl rp p n).2 ≤ p.2 + 32 * n
   | 0 => by simp [fsN]
   | n + 1 => by
     have := fsN_le sl rp p n
-    have := ab_le (lv (fsN sl rp p n).1 (32 * n + rp) (64 * sl))
+    have := acc_le (qsv sl) (lmask sl &&& word (fsN sl rp p n).1 (32 * n + rp))
     simp only [fsN, fs]; omega
 
 theorem flagged_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2097 ≤ s.activeWords.toNat) {sl : Nat} (hsl : sl < 4)
-    (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 66080) (hwp : wp + 256 ≤ 66080) :
-    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13052 flim rp wp fp M)
-      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13369 flim rp (fsN sl rp (M, wp) 8).2 fp
-        (fsN sl rp (M, wp) 8).1) 634 := by
-  have hsh : 64 * sl ≤ 192 := by omega
+    (htail : tail.length ≤ 960) (hsz : 2616 ≤ s.activeWords.toNat) {sl : Nat}
+    (sh fm rlim : Nat) (M : ByteArray) (rp wp : Nat) (hqs : qsv sl < 2 ^ 256) (hrp : rp + 256 ≤ 66080)
+    (hwp : wp + 256 ≤ 66080) :
+    Reach (gst s ret tail sh (lmask sl) (nmask sl) (qsv sl) fm 13455 rlim rp wp M)
+      (gst s ret tail sh (lmask sl) (nmask sl) (qsv sl) fm 13422 rlim rp (fsN sl rp (M, wp) 8).2
+        (fsN sl rp (M, wp) 8).1) 462 := by
   have b := fun i => fsN_le sl rp (M, wp) i
   simp only at b
-  have h0 := fx_cand0 (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hsh hrp (by omega)
-  have h1 := fx_cand1 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 1).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 1).2 fp hsh hrp (by have := b 1; omega)
-  have h2 := fx_cand2 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 2).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 2).2 fp hsh hrp (by have := b 2; omega)
-  have h3 := fx_cand3 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 3).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 3).2 fp hsh hrp (by have := b 3; omega)
-  have h4 := fx_cand4 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 4).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 4).2 fp hsh hrp (by have := b 4; omega)
-  have h5 := fx_cand5 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 5).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 5).2 fp hsh hrp (by have := b 5; omega)
-  have h6 := fx_cand6 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 6).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 6).2 fp hsh hrp (by have := b 6; omega)
-  have h7 := fx_cand7 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 7).1 (64 * sl) (lmask sl) (nmask sl) flim rp
-    (fsN sl rp (M, wp) 7).2 fp hsh hrp (by have := b 7; omega)
-  exact (((((((h0.trans h1).trans h2).trans h3).trans h4).trans h5).trans h6).trans h7)
+  have h0 := fx_cand0 (ret := ret) hs htail hsz M sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp wp hqs hrp (by omega)
+  have h1 := fx_cand1 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 1).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 1).2 hqs hrp (by have := b 1; omega)
+  have h2 := fx_cand2 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 2).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 2).2 hqs hrp (by have := b 2; omega)
+  have h3 := fx_cand3 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 3).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 3).2 hqs hrp (by have := b 3; omega)
+  have h4 := fx_cand4 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 4).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 4).2 hqs hrp (by have := b 4; omega)
+  have h5 := fx_cand5 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 5).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 5).2 hqs hrp (by have := b 5; omega)
+  have h6 := fx_cand6 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 6).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 6).2 hqs hrp (by have := b 6; omega)
+  have h7 := fx_cand7 (ret := ret) hs htail hsz (fsN sl rp (M, wp) 7).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim rp
+    (fsN sl rp (M, wp) 7).2 hqs hrp (by have := b 7; omega)
+  have h8 := fx_ftail (ret := ret) hs htail hsz (fsN sl rp (M, wp) 8).1 sh (lmask sl) (nmask sl) (qsv sl) fm rlim
+    rp (fsN sl rp (M, wp) 8).2
+  exact ((((((((h0.trans h1).trans h2).trans h3).trans h4).trans h5).trans h6).trans h7).trans h8)
 
 /-- Semantics of the flagged steps over the group at `8 g`. -/
 theorem fsN_inv {sl : Nat} (hsl : sl < 4) (c : Nat → Nat) (g w : Nat) (M : ByteArray)
@@ -171,25 +199,22 @@ theorem fsN_inv {sl : Nat} (hsl : sl < 4) (c : Nat → Nat) (g w : Nat) (M : Byt
     have hwle : wn ≤ 8 * g + n := hA.1 ▸ accL_length_le c _
     set p := fsN sl (20480 + 256 * g) (M, 20480 + 32 * w) n with hp
     have haddr : 32 * n + (20480 + 256 * g) = 20480 + 32 * (8 * g + n) := by omega
-    have hv : lv p.1 (32 * n + (20480 + 256 * g)) (64 * sl) = c (8 * g + n) := by
-      rw [lv_eq, haddr, hL.word_hi (le_refl _)]; exact hcand n (by omega)
-    have hVlt : ((nmask sl &&& word p.1 p.2 ||| lv p.1 (32 * n + (20480 + 256 * g)) (64 * sl) *
-        2 ^ (64 * sl)) % 2 ^ 256) < 2 ^ 256 := Nat.mod_lt _ (by positivity)
+    have hv : lane (word p.1 (32 * n + (20480 + 256 * g))) sl = c (8 * g + n) := by
+      rw [haddr, hL.word_hi (le_refl _)]; exact hcand n (by omega)
+    have hVlt : ((lmask sl &&& word p.1 (32 * n + (20480 + 256 * g)) ||| nmask sl &&& word p.1 p.2) %
+        2 ^ 256) < 2 ^ 256 := Nat.mod_lt _ (by positivity)
     have hfw : (fsN sl (20480 + 256 * g) (M, 20480 + 32 * w) (n + 1)).1 =
-        MachineState.writeBytes p.1 (Data.Bytes.natToBytesPadded ((nmask sl &&& word p.1 p.2 |||
-          lv p.1 (32 * n + (20480 + 256 * g)) (64 * sl) * 2 ^ (64 * sl)) % 2 ^ 256) 32)
+        MachineState.writeBytes p.1 (Data.Bytes.natToBytesPadded ((lmask sl &&&
+          word p.1 (32 * n + (20480 + 256 * g)) ||| nmask sl &&& word p.1 p.2) % 2 ^ 256) 32)
           (20480 + 32 * wn) := by
-      simp only [fsN, fs, fw, ← hp, hwn]; rfl
-    have hlv : lv p.1 (32 * n + (20480 + 256 * g)) (64 * sl) < 2 ^ 64 := by
-      unfold lv; exact Nat.mod_lt _ (by decide)
+      simp only [fsN, fs, cw, ← hp, hwn]; rfl
     refine ⟨wn + ab (c (8 * g + n)), ?_, ?_, ?_⟩
-    · simp only [fsN, fs, ← hp, hwn, hv]; omega
+    · simp only [fsN, fs, ← hp, hwn, acc_eq, hv]; omega
     · rw [hfw, show 8 * g + (n + 1) = 8 * g + n + 1 by omega]
-      exact accept_step hA rfl hVlt rfl (by
-        rw [lane_fw hlv hsl hsl, if_pos rfl, hv])
+      exact accept_step hA rfl hVlt rfl (by rw [lane_cw hsl hsl, if_pos rfl, hv])
     · rw [hfw]
       refine hL.trans (laneFrame_put p.1 hVlt (fun k hk hks => ?_) (by omega)) (by omega)
-      rw [lane_fw hlv hsl hk, if_neg hks, hwn]
+      rw [lane_cw hsl hk, if_neg hks, hwn]
 
 /-! ## Clean groups: eight masked copies -/
 
@@ -198,19 +223,22 @@ def cwN (sl rp wp : Nat) (M : ByteArray) : Nat → ByteArray
   | n + 1 => cw (cwN sl rp wp M n) (32 * n + wp) (32 * n + rp) (lmask sl) (nmask sl)
 
 theorem clean_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (htail : tail.length ≤ 960) (hsz : 2097 ≤ s.activeWords.toNat) {sl : Nat}
-    (M : ByteArray) (flim rp wp fp : Nat) (hrp : rp + 256 ≤ 66080) (hwp : wp + 256 ≤ 66080) :
-    Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13379 flim rp wp fp M)
-      (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13534 flim rp wp fp (cwN sl rp wp M 8)) 421 := by
-  have h0 := fx_copy0 (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h1 := fx_copy1 (ret := ret) hs htail hsz (cwN sl rp wp M 1) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h2 := fx_copy2 (ret := ret) hs htail hsz (cwN sl rp wp M 2) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h3 := fx_copy3 (ret := ret) hs htail hsz (cwN sl rp wp M 3) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h4 := fx_copy4 (ret := ret) hs htail hsz (cwN sl rp wp M 4) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h5 := fx_copy5 (ret := ret) hs htail hsz (cwN sl rp wp M 5) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h6 := fx_copy6 (ret := ret) hs htail hsz (cwN sl rp wp M 6) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  have h7 := fx_copy7 (ret := ret) hs htail hsz (cwN sl rp wp M 7) (64 * sl) (lmask sl) (nmask sl) flim rp wp fp hrp hwp
-  exact (((((((h0.trans h1).trans h2).trans h3).trans h4).trans h5).trans h6).trans h7)
+    (htail : tail.length ≤ 960) (hsz : 2616 ≤ s.activeWords.toNat) {sl : Nat}
+    (sh qs fm rlim : Nat) (M : ByteArray) (rp wp : Nat) (hrp : rp + 256 ≤ 66080)
+    (hwp : wp + 256 ≤ 66080) :
+    Reach (gst s ret tail sh (lmask sl) (nmask sl) qs fm 13280 rlim rp wp M)
+      (gst s ret tail sh (lmask sl) (nmask sl) qs fm 13422 rlim rp (256 + wp) (cwN sl rp wp M 8)) 378 := by
+  have h0 := fx_copy0 (ret := ret) hs htail hsz M sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h1 := fx_copy1 (ret := ret) hs htail hsz (cwN sl rp wp M 1) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h2 := fx_copy2 (ret := ret) hs htail hsz (cwN sl rp wp M 2) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h3 := fx_copy3 (ret := ret) hs htail hsz (cwN sl rp wp M 3) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h4 := fx_copy4 (ret := ret) hs htail hsz (cwN sl rp wp M 4) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h5 := fx_copy5 (ret := ret) hs htail hsz (cwN sl rp wp M 5) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h6 := fx_copy6 (ret := ret) hs htail hsz (cwN sl rp wp M 6) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h7 := fx_copy7 (ret := ret) hs htail hsz (cwN sl rp wp M 7) sh (lmask sl) (nmask sl) qs fm rlim rp wp hrp hwp
+  have h8 := fx_ctail (ret := ret) hs htail hsz (cwN sl rp wp M 8) sh (lmask sl) (nmask sl) qs fm rlim rp wp
+    (by omega)
+  exact ((((((((h0.trans h1).trans h2).trans h3).trans h4).trans h5).trans h6).trans h7).trans h8)
 
 theorem cwN_inv {sl : Nat} (hsl : sl < 4) (c : Nat → Nat) (g w : Nat) (M : ByteArray)
     (hacc : AccAt M sl c (8 * g) w)

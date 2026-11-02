@@ -12,6 +12,8 @@ analysis and proof plan are in `docs/opt.md`.
 | `NN/opt.asm` | readable intermediate form: annotated listing (pc, mnemonic, immediate, subroutine, generator comments) |
 | `NN/layout.txt` | subroutine pc ranges, memory map, SIMD slot schedule |
 | `NN/v2/` | the same three files for v2 (the proved bytes) |
+| `NN/v4/` | the same three files for v4 (round 4, not yet proved; `gen_opt.py --version v4`) |
+| `NN/glam/` | Glamsterdam prototype (EIP-8024 DUPN/SWAPN, EIP-7954 64 KiB code), not proved: v4 with stack-resident Keccak kernels, `scripts/gen_glam.py`, see `docs/glam.md` |
 
 Gas for a valid signature over an empty message, frame gas as measured by
 `mldsa44tool run-file` and foundry's GasProbe:
@@ -21,6 +23,17 @@ Gas for a valid signature over an empty message, frame gas as measured by
 | 44 | 2,105,097 | 2,864,301 | 23,091 B | 2,136,608 | 22,553 B | 12,953,021 |
 | 65 | 3,701,979 | 5,073,355 | 23,422 B | 3,930,640 | 22,512 B | 21,334,964 |
 | 87 | 5,424,737 | 7,954,105 | 23,982 B | 5,478,088 | 23,443 B | 35,708,719 |
+
+v4 (round 4, `NN/v4/`, not yet proved; see "Round 4 (v4)" in `docs/opt.md`).
+For 44 and 65, v4 computes μ in a SIMD slot for messages up to 613 bytes, so
+messages of 70 bytes or more save a further 64k–160k over v3 on top of the
+empty-message saving:
+
+| set | v4 gas | v4 worst case | v4 size |
+|---|---:|---:|---:|
+| 44 | 2,035,355 | 2,642,702 | 22,470 B |
+| 65 | 3,552,170 | 4,652,942 | 23,140 B |
+| 87 | 5,249,518 | 7,283,210 | 23,934 B |
 
 There is no Yul source. Every component is hand-written bytecode generated
 from Python (`scripts/gen_opt.py`, `opt_keccak.py`, `opt_ntt.py`,

@@ -1,8 +1,7 @@
 import MlDsaOpt87.Fn.Sponge.Spr
-import MlDsaOpt87.Fn.Sponge.Trabs
 import MlDsaOpt87.Fn.Sponge.Cext
 import MlDsaOpt87.Fn.Sponge.Absorb
-set_option warningAsError true
+import MlDsaOpt87.Fn.Sponge.TrabsRun
 /-!
 # Sponge glue shared with ML-DSA-44: `spr`, `trabs`, `cext`, `absorb17` (ML-DSA-87)
 
@@ -11,7 +10,8 @@ targets, and the statements are the ML-DSA-44 ones (with this artifact's
 `Entry`, `Gas`, `TOP`). The proofs are the 44 proofs ported to this artifact
 by `scripts/proofgen_port.py 87` (`Fn/Sponge/{Spr,Trabs,Cext,Absorb}.lean`;
 the pure lemmas are the 44 modules `Fn/Sponge/{Bits,Lanes,Fold,Mem,Defs}`).
-`ginit` and `mu0` differ from 44 and live in their own files.
+`ginit` lives in `Fn/Ginit`. v4: `trabs` is a new delta-swap network
+(`Fn/Sponge/TrabsRun.lean`, ported from 44; lane-aligned mask hypothesis `hlmL`).
 -/
 
 namespace MlDsaOpt87.Proofs
@@ -33,6 +33,7 @@ from `kp` absorbs the spread calldata lanes. -/
 theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.trabs ret tail) (m : ByteArray) {off sh n4 lm kp : Nat}
     (hoff : off < 2 ^ 64) (hsh : sh < 4) (hn4 : 1 ≤ n4) (hlm : lm < 2 ^ 256)
+    (hlmL : ∀ k, k < 4 → lane lm k = 0 ∨ lane lm k = M64)
     (hkp : kp + 128 * n4 ≤ KS + 800) (hkp' : KS ≤ kp) (hkp32 : kp % 32 = 0) :
     ∃ m', (∀ x, x < 25 → word m' (KS + 32 * x) =
         if kp ≤ KS + 32 * x ∧ KS + 32 * x < kp + 128 * n4 then
@@ -41,7 +42,7 @@ theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         else word m (KS + 32 * x)) ∧
       FrameExcept m m' [(kp, kp + 128 * n4)] ∧
       Call s Entry.trabs [wd kp, wd lm, wd n4, wd sh, wd off] ret tail m [] m' (Gas.trabs n4) :=
-  WP4.trabs_call_aux hs hr m hoff hsh hn4 hlm hkp hkp' hkp32
+  WP4.trabs_call_v4 hs hr m hoff hsh hn4 hlm hlmL hkp hkp' hkp32
 
 /-- **cext**: `[n, sh, dst, ret]`; `dst[x] := lane x of slot sh`, de-interleaved and
 un-complemented, `x < n`. -/

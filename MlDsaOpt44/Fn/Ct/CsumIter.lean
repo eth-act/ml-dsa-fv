@@ -36,8 +36,8 @@ theorem cs_iter {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480)
     (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) (hlt : cw + 128 < 20480) :
-    Reach (callState s 14744 (wd bu :: wd cw :: g :: wd sp :: wd 20480 :: wd ret :: tail) M)
-      (callState s 14744 (wd (bu - 32) :: wd (128 + cw) :: gN M bu cw sp g :: wd (128 + sp) :: wd 20480 ::
+    Reach (callState s 14876 (wd bu :: wd cw :: g :: wd sp :: wd 20480 :: wd ret :: tail) M)
+      (callState s 14876 (wd (bu - 32) :: wd (128 + cw) :: gN M bu cw sp g :: wd (128 + sp) :: wd 20480 ::
         wd ret :: tail) (csMem M bu cw sp g)) 1091 :=
   ((((cs_b1 hs htail M bu cw sp g hbu hbu2 hcw hcw2 hsp hsp2 hB).trans
     (cs_b2 hs htail M bu cw sp g _ hbu hbu2 hcw hcw2 hsp hsp2 hB)).trans
@@ -50,8 +50,8 @@ theorem cs_iterx {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hbu : 20480 - 2016 ≤ bu) (hbu2 : bu ≤ 20480) (hcw : 12288 ≤ cw) (hcw2 : cw + 128 ≤ 20480)
     (hsp : 26624 ≤ sp) (hsp2 : sp + 128 ≤ 26624 + 8192)
     (hB : ∀ m, m < 39 → word M (40960 + 32 * m) ≤ 6112) (hlt : cw + 128 = 20480) :
-    Reach (callState s 14744 (wd bu :: wd cw :: g :: wd sp :: wd 20480 :: wd ret :: tail) M)
-      (callState s 15451 (wd (bu - 32) :: wd (128 + cw) :: gN M bu cw sp g :: wd (128 + sp) :: wd 20480 ::
+    Reach (callState s 14876 (wd bu :: wd cw :: g :: wd sp :: wd 20480 :: wd ret :: tail) M)
+      (callState s 15441 (wd (bu - 32) :: wd (128 + cw) :: gN M bu cw sp g :: wd (128 + sp) :: wd 20480 ::
         wd ret :: tail) (csMem M bu cw sp g)) 1091 :=
   ((((cs_b1 hs htail M bu cw sp g hbu hbu2 hcw hcw2 hsp hsp2 hB).trans
     (cs_b2 hs htail M bu cw sp g _ hbu hbu2 hcw hcw2 hsp hsp2 hB)).trans
@@ -91,34 +91,34 @@ theorem stU_byte (m : ByteArray) {a : Nat} (h : a < 26624 ∨ 26624 + 8192 ≤ a
 
 theorem cs_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) :
-    Reach (callState s 14732 (wd 26624 :: wd 20480 :: wd ret :: tail) M)
-      (callState s 14744 (wd 20480 :: wd 12288 :: (UInt256.ofNat 39 - UInt256.ofNat (word M 4000)) ::
+    Reach (callState s 14762 (wd 26624 :: wd 20480 :: wd ret :: tail) M)
+      (callState s 14876 (wd 20480 :: wd 12288 :: (UInt256.ofNat 39 - UInt256.ofNat (word M 4000)) ::
         wd 26624 :: wd 20480 :: wd ret :: tail) M) 19 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6560, 6561, 6562, 6563, 6564, 6565, 6566]
+  opt44_reach [6667, 6691, 6692, 6693, 6694, 6699, 6564]
 
 set_option maxRecDepth 100000 in
 theorem cs_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)
     (hret : ret < 2 ^ 16) (M : ByteArray) (a b c : Nat) (g : UInt256) :
-    Reach (callState s 15451 (wd a :: wd b :: g :: wd c :: wd 20480 :: wd ret :: tail) M)
+    Reach (callState s 15441 (wd a :: wd b :: g :: wd c :: wd 20480 :: wd ret :: tail) M)
       (callState s ret tail M) 18 := by
-  opt44_reach [6928, 6929, 6930, 6931, 6932, 6933] with [hj]
+  opt44_reach [7037, 7038, 7039, 7040, 7041, 7054] with [hj]
 
 theorem cs_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)
     (hret : ret < 2 ^ 16) (m : ByteArray)
     (hB : ∀ i, i < 39 → word m (40960 + 32 * i) ≤ 6112) :
-    Reach (callState s 14732 (wd 26624 :: wd 20480 :: wd ret :: tail) m)
+    Reach (callState s 14762 (wd 26624 :: wd 20480 :: wd ret :: tail) m)
       (callState s ret tail (stU m 64).1) (19 + (63 * 1091 + 1091) + 18) := by
   have hBu : ∀ u, u ≤ 64 → ∀ i, i < 39 → word (stU m u).1 (40960 + 32 * i) ≤ 6112 := fun u hu i hi => by
     rw [stU_other m (by omega) u hu]; exact hB i hi
   have hstep : ∀ u, u < 63 → Reach
-      (callState s 14744 (wd (20480 - 32 * u) :: wd (12288 + 128 * u) :: (stU m u).2 :: wd (26624 + 128 * u) ::
+      (callState s 14876 (wd (20480 - 32 * u) :: wd (12288 + 128 * u) :: (stU m u).2 :: wd (26624 + 128 * u) ::
         wd 20480 :: wd ret :: tail) (stU m u).1)
-      (callState s 14744 (wd (20480 - 32 * (u + 1)) :: wd (12288 + 128 * (u + 1)) :: (stU m (u + 1)).2 ::
+      (callState s 14876 (wd (20480 - 32 * (u + 1)) :: wd (12288 + 128 * (u + 1)) :: (stU m (u + 1)).2 ::
         wd (26624 + 128 * (u + 1)) :: wd 20480 :: wd ret :: tail) (stU m (u + 1)).1) 1091 := by
     intro u hu
     have h := cs_iter hs (ret := ret) htail (stU m u).1 (20480 - 32 * u) (12288 + 128 * u) (26624 + 128 * u)
@@ -127,7 +127,7 @@ theorem cs_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       show 128 + (12288 + 128 * u) = 12288 + 128 * (u + 1) by omega,
       show 128 + (26624 + 128 * u) = 26624 + 128 * (u + 1) by omega] at h
     exact h
-  have hloop := Reach.loop (I := fun u => callState s 14744 (wd (20480 - 32 * u) :: wd (12288 + 128 * u) ::
+  have hloop := Reach.loop (I := fun u => callState s 14876 (wd (20480 - 32 * u) :: wd (12288 + 128 * u) ::
     (stU m u).2 :: wd (26624 + 128 * u) :: wd 20480 :: wd ret :: tail) (stU m u).1) 63 hstep
   have hlast := cs_iterx hs (ret := ret) htail (stU m 63).1 (20480 - 32 * 63) (12288 + 128 * 63)
     (26624 + 128 * 63) (stU m 63).2 (by omega) (by omega) (by omega) (by omega) (by omega) (by omega)

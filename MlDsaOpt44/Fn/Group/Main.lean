@@ -1,14 +1,17 @@
+import MlDsaOpt44.Fn.Fix
 import MlDsaOpt44.Fn.Sponge
+import MlDsaOpt44.Fn.Group.Defs
 import MlDsaOpt44.Fn.Group.Squeeze
-import MlDsaOpt44.Fn.Group.Pass3
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
 /-!
-# `group`: one pure ExpandA SIMD group (WP6)
+# `group`: one pure ExpandA SIMD group (WP C)
 
-`ginit` with lane 4 computed in the prologue (`gL4n`), five `kf4` + `blk`
-(`squeezes`), `gfix 15`, `pass3`; the seed states are
+`HAVE6 := 0`, `ginit` with lane 4 computed in the prologue (`gL4n`), five
+`kf4` with `blk` (`blkh` for block 4, `squeezes`, `squeeze_last`), `gfix 15`
+(`SlotHead` from `slotHead_of_blocks`); the seed states are
 `seedState 168 (aSeed cd k col)` (`ginit_group`, `aI_seedState`).
+`group_call_aux` is `group_call` of `Fn/Group.lean` (`gsFrame = groupFrame`).
 -/
 
 namespace MlDsaOpt44.Proofs.GroupP
@@ -33,60 +36,59 @@ theorem gL4n_lt {col : Nat} (hcol : col < 4) : gL4n col < 2 ^ 256 := by
 
 theorem g_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (hcol : col < 4) (M : ByteArray) :
-    Reach (callState s 13659 (gB col ret tail) M)
-      (callState s 11084 (wd (gL4n col) :: wd 0 :: wd 15 :: wd 0 :: wd 13762 :: gB col ret tail)
+    Reach (callState s 13723 (gB col ret tail) M)
+      (callState s 10911 (wd (gL4n col) :: wd 0 :: wd 15 :: wd 0 :: wd 13826 :: gB col ret tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 0 32) HAVE6)) 179 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   interval_cases col <;>
-  opt44_reach [6040, 6041, 6042, 6043, 6044, 6045, 6046, 6047, 6048, 6049, 6050, 6051, 6052, 6053,
-    6054, 6055, 6056, 6057, 6058, 6059, 6060, 6061, 6062, 6063, 6064, 6065, 6066, 6067, 6068, 6069,
-    6070, 6071, 6072, 6073, 6074, 6075, 6076, 6077, 6078, 6079, 6080, 6081, 6082, 6083, 6084, 6085,
-    6086, 6087, 6088, 6089, 6090, 6091, 6092, 6093, 6094, 6095, 6096] with [HAVE6, gL4n]
+  opt44_reach [6168, 6169, 6170, 6171, 6172, 6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180, 6181,
+    6182, 6183, 6184, 6185, 6186, 6187, 6188, 6189, 6190, 6191, 6192, 6193, 6194, 6195, 6196, 6197,
+    6198, 6199, 6200, 6201, 6202, 6203, 6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213,
+    6214, 6215, 6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224] with [HAVE6, gL4n]
 
 theorem g_K {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
-    {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13762 + 22 * b) (gB col ret tail) M)
-      (callState s 21570 (wd (13770 + 22 * b) :: gB col ret tail) M) 15 := by
+    {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13826 + 22 * b) (gB col ret tail) M)
+      (callState s 22529 (wd (13834 + 22 * b) :: gB col ret tail) M) 15 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6097, 6098, 6099, 6100]
-  · opt44_reach [6107, 6108, 6109, 6110]
-  · opt44_reach [6117, 6118, 6119, 6120]
-  · opt44_reach [6127, 6128, 6129, 6130]
-  · opt44_reach [6137, 6138, 6139, 6140]
+  · opt44_reach [6225, 6226, 6227, 6228]
+  · opt44_reach [6235, 6236, 6237, 6238]
+  · opt44_reach [6245, 6246, 6247, 6248]
+  · opt44_reach [6255, 6256, 6257, 6258]
+  · opt44_reach [6265, 6266, 6267, 6268]
 
 theorem g_L {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
-    {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13770 + 22 * b) (gB col ret tail) M)
-      (callState s 8887 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13784 + 22 * b) ::
+    {col ret : Nat} : ∀ b, b < 4 → ∀ M, Reach (callState s (13834 + 22 * b) (gB col ret tail) M)
+      (callState s 9025 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (13848 + 22 * b) ::
         gB col ret tail) M) 21 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6101, 6102, 6103, 6104, 6105, 6106] with [FL, ABUF]
-  · opt44_reach [6111, 6112, 6113, 6114, 6115, 6116] with [FL, ABUF]
-  · opt44_reach [6121, 6122, 6123, 6124, 6125, 6126] with [FL, ABUF]
-  · opt44_reach [6131, 6132, 6133, 6134, 6135, 6136] with [FL, ABUF]
-  · opt44_reach [6141, 6142, 6143, 6144, 6145, 6146] with [FL, ABUF]
+  · opt44_reach [6229, 6230, 6231, 6232, 6233, 6234] with [FL, ABUF]
+  · opt44_reach [6239, 6240, 6241, 6242, 6243, 6244] with [FL, ABUF]
+  · opt44_reach [6249, 6250, 6251, 6252, 6253, 6254] with [FL, ABUF]
+  · opt44_reach [6259, 6260, 6261, 6262, 6263, 6264] with [FL, ABUF]
+
+theorem g_L4 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
+    {col ret : Nat} (M : ByteArray) : Reach (callState s (13834 + 22 * 4) (gB col ret tail) M)
+      (callState s 10203 (wd (FL + 224 * 4) :: wd (ABUF + 1792 * 4) :: wd 13936 ::
+        gB col ret tail) M) 21 := by
+  opt44_reach [6269, 6270, 6271, 6272, 6273, 6274] with [FL, ABUF]
 
 theorem g_G {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (M : ByteArray) :
-    Reach (callState s 13872 (gB col ret tail) M)
-      (callState s 10754 (wd 15 :: wd 13881 :: gB col ret tail) M) 18 := by
-  opt44_reach [6147, 6148, 6149, 6150, 6151]
+    Reach (callState s 13936 (gB col ret tail) M)
+      (callState s 10501 (wd 15 :: wd 13945 :: gB col ret tail) M) 18 := by
+  opt44_reach [6275, 6276, 6277, 6278, 6279]
 
-theorem g_P {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
-    {col ret : Nat} {ok : UInt256} (hcol : col < 4) (M : ByteArray) :
-    Reach (callState s 13881 (ok :: gB col ret tail) M)
-      (callState s 10062 (wd (64 * col) :: wd ZH :: wd ACC :: wd 13915 :: ok :: gB col ret tail) M) 66 := by
-  opt44_reach [6152, 6153, 6154, 6155, 6156, 6157, 6158, 6159, 6160, 6161, 6162, 6163, 6164, 6165,
-    6166, 6167, 6168, 6169, 6170, 6171, 6172] with [ZH, ACC]
-  rw [Nat.and_comm, show (3 : Nat) = 2 ^ 2 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    Nat.mod_eq_of_lt hcol, Nat.div_eq_of_lt hcol, Nat.mul_comm]
-  simp
-
-theorem g_E {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
-    {col ret : Nat} {ok : UInt256} (M : ByteArray) :
-    Reach (callState s 13915 (ok :: gB col ret tail) M) (callState s 13923 (wd ret :: ok :: tail) M) 19 := by
-  opt44_reach [6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180]
+theorem g_E {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.group ret tail) {col : Nat} {ok : UInt256} (M : ByteArray) :
+    Reach (callState s 13945 (ok :: gB col ret tail) M) (callState s ret (ok :: tail) M) 27 := by
+  have := hr.depth
+  have e : Stack.group = 256 := by decide
+  have hret := hr.small
+  have hj := hr.jumpdest
+  opt44_reach [6280, 6281, 6282, 6283, 6284, 6285, 6286, 6287, 6288] with [hj]
 
 theorem pack4_lane {x : Nat} (hx : x < 2 ^ 256) : pack4 (fun k => lane x k) = x := by
   unfold pack4 lane
@@ -114,17 +116,26 @@ theorem gfix_flag {cd : ByteArray} (h32 : 32 ≤ cd.size) (col : Nat) :
   simp only [List.all_cons, List.all_nil, testBit15 (show 0 < 4 by norm_num), testBit15 (show 1 < 4 by norm_num),
     testBit15 (show 2 < 4 by norm_num), testBit15 (show 3 < 4 by norm_num), Bool.not_true, Bool.false_or]
 
-theorem group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+end MlDsaOpt44.Proofs.GroupP
+
+namespace MlDsaOpt44.Proofs
+
+open EvmSemantics
+open EvmSemantics.EVM
+open MlDsaOptCommon
+open MlDsa44
+open MlDsaOpt44.Proofs.Infra
+open MlDsaOpt44.Proofs.GroupP
+
+/-- **group** (`group_call` of `Fn/Group.lean`; `GroupP.gsFrame` is `groupFrame`). -/
+theorem group_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) (m : ByteArray) (hrc : RC4Table m)
-    (hrho : ∀ x, x < 4 → word m (RHO1 + 32 * x) = spread (le64 s.executionEnv.calldata (8 * x)) ∧
-      word m (RHO1 + 32 * (4 + x)) = spread (le64 s.executionEnv.calldata (CTOFF + 8 * x)))
-    {col : Nat} (hcol : col < 4) (hcd : HDR ≤ s.executionEnv.calldata.size) :
+    (hrho : Rho1At m s.executionEnv.calldata) {col : Nat} (hcol : col < 4)
+    (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', (((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome) = true →
-        ∀ t, t < 256 → word m' (ACC + 32 * t) =
-          (word m (ACC + 32 * t) +
-            pack4 (fun r => ((aD s.executionEnv.calldata r col)[t]!).toNat) *
-              lane (word m (ZH + 32 * t)) col) % 2 ^ 256) ∧
-      FrameExcept m m' (gsFrame ++ [(ACC, ACC + 8192)]) ∧
+        ∀ t, t < 256 → word m' (ABUF + 32 * t) =
+          pack4 (fun r => ((aD s.executionEnv.calldata r col)[t]!).toNat)) ∧
+      FrameExcept m m' gsFrame ∧
       Call s Entry.group [wd 15, wd col, wd 0] ret tail m
         [flag ((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome)] m'
         Gas.group := by
@@ -139,13 +150,15 @@ theorem group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hf1 := FrameExcept.mstore m HAVE6 0
   have h61 : word (MachineState.writeBytes m (Data.Bytes.natToBytesPadded 0 32) HAVE6) HAVE6 = 0 :=
     word_mstore m HAVE6 0 (by norm_num)
-  obtain ⟨m2, hks2, hf2, hc2⟩ := ginit_call hs (hr.callee (B' := Stack.ginit) (ret' := 13762)
-    (extra := [wd 15, wd col, wd 0, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide) (by simp only [isValidJumpDest_lit]) (by norm_num))
+  obtain ⟨m2, hks2, hf2, hc2⟩ := ginit_call hs (hr.callee (B' := Stack.ginit) (ret' := 13826)
+    (extra := [wd 15, wd col, wd 0, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide)
+    (by simp only [isValidJumpDest_lit]) (by norm_num))
     (MachineState.writeBytes m (Data.Bytes.natToBytesPadded 0 32) HAVE6) (keep := 0) (amult := 15) (cmult := 0)
     (l4 := gL4n col) (by norm_num) (by norm_num) (by norm_num) (gL4n_lt hcol)
   have hI : Sized4 (gI s.executionEnv.calldata col) := sized4_seedState 168 _
   have hinv0 : SqInv m m2 (gI s.executionEnv.calldata col) 0 := by
-    refine ⟨fun x hx => ?_, rc4_frame hf2 (fun i hi => by grp_avoids) (rc4_frame hf1 (fun i hi => by grp_avoids) hrc),
+    refine ⟨fun x hx => ?_, rc4_frame hf2 (fun i hi => by grp_avoids)
+      (rc4_frame hf1 (fun i hi => by grp_avoids) hrc),
       ?_, FrameExcept.of_avoid (hf1.trans hf2) (by grp_sub), fun b' hb' => absurd hb' (Nat.not_lt_zero _)⟩
     · rw [hks2 x hx, gL4n_eq hcol]
       exact ginit_group (fun y hy => by
@@ -153,31 +166,26 @@ theorem group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         h32 hcol hx
     · rw [FrameExcept.word hf2 (by grp_avoids)]; exact h61
   -- five squeezes
-  obtain ⟨m7, ⟨hks7, hrc7, h67, hfr7, hblk7⟩, hR7⟩ := squeezes hs hr (col := col) hI hinv0
+  obtain ⟨m6, hinv6, hR6⟩ := squeezes hs hr (col := col) hI hinv0
     (g_K hs (by omega)) (g_L hs (by omega))
     (fun b hb => by interval_cases b <;> simp only [Nat.reduceMul, Nat.reduceAdd, isValidJumpDest_lit])
     (fun b hb => by interval_cases b <;> simp only [Nat.reduceMul, Nat.reduceAdd, isValidJumpDest_lit])
-    5 le_rfl
-  have hp := pending_of_blocks' (m := m7) (I := gI s.executionEnv.calldata col)
-    (fun b hb => (hblk7 b hb).1) (fun b hb => (hblk7 b hb).2) h67
+    4 le_rfl
+  obtain ⟨m7, ⟨hks7, hrc7, h67, hfr7, hblk7⟩, hR7⟩ := squeeze_last hs hr (col := col) hI hinv6
+    (g_K hs (by omega) 4 (by omega) m6) (g_L4 hs (by omega))
+    (by simp only [Nat.reduceMul, Nat.reduceAdd, isValidJumpDest_lit])
+    (by simp only [isValidJumpDest_lit])
   -- `gfix 15`
-  obtain ⟨m8, hpost8, -, hf8, hc8⟩ := gfix_call hs (hr.callee (B' := Stack.gfix) (ret' := 13881)
+  obtain ⟨m8, hpost8, -, hf8, hc8⟩ := gfix_call hs (hr.callee (B' := Stack.gfix) (ret' := 13945)
     (extra := [wd 15, wd col, wd 0, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide)
     (by simp only [isValidJumpDest_lit]) (by norm_num)) m7 hrc7 (amask := 15) (by norm_num) 4 (by decide)
     (fun k => permN 5 (gI s.executionEnv.calldata col k)) (fun k hk => permN_size (hI k hk) 5) hks7
-    (gI s.executionEnv.calldata col) h67 (fun sl hsl _ => hp sl hsl)
+    (gI s.executionEnv.calldata col) h67
+    (fun sl hsl _ => ⟨slotHead_of_blocks (St := fun b k => permN (b + 1) (gI s.executionEnv.calldata col k))
+      hsl (fun _ _ => rfl) (fun b hb => (hblk7 b hb).1) (fun b hb => (hblk7 b hb).2), rfl⟩)
   rw [gfix_flag h32 col] at hc8
-  -- `pass3`
-  obtain ⟨m9, hpost9, hf9, hc9⟩ := pass3_reach hs (hr.callee (B' := Stack.pass3) (ret' := 13915)
-    (extra := [flag ((List.range 4).all fun r => (aOf s.executionEnv.calldata r col).isSome),
-      wd 15, wd col, wd 0, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide)
-    (by simp only [isValidJumpDest_lit]) (by norm_num)) m8 hcol
-  have hfr8 : FrameExcept m m8 gsFrame := FrameExcept.of_avoid (hfr7.trans hf8) (by grp_sub)
-  refine ⟨m9, fun hall t ht => ?_, FrameExcept.of_avoid (hfr8.trans hf9) (by grp_sub), ?_⟩
-  · rw [hpost9 t ht, FrameExcept.word hfr8 (a := ACC + 32 * t) (by grp_avoids),
-      FrameExcept.word hfr8 (a := ZH + 32 * t) (by grp_avoids),
-      ← pack4_lane (word_lt m8 (ABUF + 32 * t))]
-    congr 3
+  refine ⟨m8, fun hall t ht => ?_, FrameExcept.of_avoid (hfr7.trans hf8) (by grp_sub), ?_⟩
+  · rw [← pack4_lane (word_lt m8 (ABUF + 32 * t))]
     apply pack4_congr
     intro r hr4
     obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp (List.all_eq_true.mp hall r (List.mem_range.mpr hr4))
@@ -185,14 +193,12 @@ theorem group_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     rw [hD]
     exact hpost8 r hr4 (testBit15 hr4) a (by rw [aI_gI h32]; exact ha) t ht
   · rw [call_iff, Entry.group]
-    have hfin := reach_ret hs 6181 m9 (pc := 13923) (tail := flag ((List.range 4).all fun r =>
-        (aOf s.executionEnv.calldata r col).isSome) :: tail)
-      (by decide +kernel) (by simp only [finVal_lit, instrAt_lit]) (by simp only [finVal_lit, pcAt_lit])
-      (by norm_num) hr.jumpdest hret (by simp only [List.length_cons]; omega)
-    have h := (((((((hb0.trans hc2).trans hR7).trans (g_G hs (tail := tail) (by omega) m7)).trans hc8).trans
-      (g_P hs (tail := tail) (by omega) hcol m8)).trans hc9).trans (g_E hs (tail := tail) (by omega) m9)).trans hfin
+    have h := (((((hb0.trans (call_iff.mp hc2)).trans hR6).trans hR7).trans
+      (g_G hs (tail := tail) (by omega) m7)).trans (call_iff.mp hc8)).trans (g_E hs hr m8)
     refine (h.mono ?_).of_eq rfl rfl
     unfold Gas.group
+    generalize Gas.ginit = a; generalize Gas.kf4 = b; generalize Gas.blk = c
+    generalize Gas.blkh = d; generalize Gas.gfix 4 = e
     omega
 
-end MlDsaOpt44.Proofs.GroupP
+end MlDsaOpt44.Proofs

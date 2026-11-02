@@ -40,4 +40,15 @@ def Pending (m : ByteArray) (S : Nat → Fips202.SpongeState) (s : Nat)
   (word m HAVE6 = 0 → S s = permN 5 I) ∧
   (word m HAVE6 ≠ 0 → SlotBlocks m s I 6)
 
+/-- v4: slot `s`'s candidates `[0, 256)` and flag words `[0, 32)` are in
+`ABUF` / `FL` (blocks 0 … 3 and the head of block 4; `gfix` makes the tail of
+block 4 with `blkt` before the first fix-up). -/
+def SlotHead (m : ByteArray) (s : Nat) (I : Fips202.SpongeState) : Prop :=
+  (∀ t, t < 256 → lane (word m (ABUF + 32 * t)) s = candI I t) ∧
+  (∀ g, g < 32 → flagBit (word m (FL + 32 * g)) s =
+    if ((List.range 8).any fun i => decide (Fips204.q ≤ candI I (8 * g + i))) then 1 else 0)
+
+/-- Number of active slots of a slot mask. -/
+def popcnt (a : Nat) : Nat := (List.range 4).countP (a.testBit ·)
+
 end MlDsaOpt44.Proofs

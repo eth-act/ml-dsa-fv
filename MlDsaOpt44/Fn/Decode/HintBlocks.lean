@@ -51,166 +51,166 @@ section
 variable {s : State} {ret : Nat} {tail : List UInt256}
 
 theorem h_entry (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) :
-    Reach (callState s 7530 (wd ret :: tail) M) (callState s 7534 (wd 0 :: wd 1 :: wd ret :: tail) M) 6 := by
-  opt44_reach [2923, 2924, 2925]
+    Reach (callState s 7740 (wd ret :: tail) M) (callState s 7744 (wd 0 :: wd 1 :: wd ret :: tail) M) 6 := by
+  opt44_reach [3001, 3002, 3003]
 
 theorem h0_hok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat}
     (hB : byteAt s.executionEnv.calldata 3728 = B) (hab : a ≤ B) (hB80 : B ≤ 80) :
-    Reach (callState s 7534 (wd a :: G :: wd ret :: tail) M) (callState s 7561 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
-  opt44_reach [2926, 2927, 2928, 2929, 2930, 2931, 2932, 2933, 2934, 2935, 2936, 2937, 2938, 2939, 2945, 2946] with [word_shr248, hB]
+    Reach (callState s 7744 (wd a :: G :: wd ret :: tail) M) (callState s 7771 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
+  opt44_reach [3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3023, 3024] with [word_shr248, hB]
 
 theorem h0_hbad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat} (ha : a ≤ 80)
     (hB : byteAt s.executionEnv.calldata 3728 = B) (hB256 : B < 256) (hbad : B < a ∨ 80 < B) :
-    Reach (callState s 7534 (wd a :: G :: wd ret :: tail) M) (callState s 7561 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
+    Reach (callState s 7744 (wd a :: G :: wd ret :: tail) M) (callState s 7771 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
   by_cases h1 : B < a <;> by_cases h2 : 80 < B
-  · opt44_reach [2926, 2927, 2928, 2929, 2930, 2931, 2932, 2933, 2934, 2935, 2936, 2937, 2938, 2939, 2940, 2941, 2942, 2943, 2944, 2945, 2946] with [word_shr248, hB]
-  · opt44_reach [2926, 2927, 2928, 2929, 2930, 2931, 2932, 2933, 2934, 2935, 2936, 2937, 2938, 2939, 2940, 2941, 2942, 2943, 2944, 2945, 2946] with [word_shr248, hB]
-  · opt44_reach [2926, 2927, 2928, 2929, 2930, 2931, 2932, 2933, 2934, 2935, 2936, 2937, 2938, 2939, 2940, 2941, 2942, 2943, 2944, 2945, 2946] with [word_shr248, hB]
+  · opt44_reach [3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024] with [word_shr248, hB]
+  · opt44_reach [3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024] with [word_shr248, hB]
+  · opt44_reach [3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018, 3019, 3020, 3021, 3022, 3023, 3024] with [word_shr248, hB]
   · omega
 
 theorem h0_iexit (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 : Nat} (hb : b0 ≤ 80) :
-    Reach (callState s 7561 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7631 (wd b0 :: G :: wd ret :: tail) M) 34 := by
-  opt44_reach [2947, 2948, 2949, 2950, 2951, 2952, 2953, 2994, 2995, 2996, 2997]
+    Reach (callState s 7771 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7841 (wd b0 :: G :: wd ret :: tail) M) 34 := by
+  opt44_reach [3025, 3026, 3027, 3028, 3029, 3030, 3031, 3072, 3073, 3074, 3075]
 
 theorem h0_ifirst (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 Y : Nat} (hab : a < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + a) = Y) (hY256 : Y < 256) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7561 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7561 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
-  opt44_reach [2947, 2948, 2949, 2950, 2951, 2952, 2953, 2954, 2955, 2956, 2957, 2958, 2959, 2960, 2961, 2962, 2963, 2964, 2965, 2979, 2980, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 2993] with [word_shr248, hY, or_word_mod]
+    Reach (callState s 7771 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7771 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
+  opt44_reach [3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065, 3066, 3067, 3068, 3069, 3070, 3071] with [word_shr248, hY, or_word_mod]
 
 theorem h0_iok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hPY : P < Y) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7561 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7561 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
-  opt44_reach [2947, 2948, 2949, 2950, 2951, 2952, 2953, 2954, 2955, 2956, 2957, 2958, 2959, 2960, 2961, 2962, 2963, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2971, 2972, 2973, 2974, 2975, 2979, 2980, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 2993] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7771 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7771 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
+  opt44_reach [3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3044, 3045, 3046, 3047, 3048, 3049, 3050, 3051, 3052, 3053, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065, 3066, 3067, 3068, 3069, 3070, 3071] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h0_ibad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hP256 : P < 256) (hPY : Y ≤ P) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7561 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7561 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
-  opt44_reach [2947, 2948, 2949, 2950, 2951, 2952, 2953, 2954, 2955, 2956, 2957, 2958, 2959, 2960, 2961, 2962, 2963, 2964, 2965, 2966, 2967, 2968, 2969, 2970, 2971, 2972, 2973, 2974, 2975, 2976, 2977, 2978, 2979, 2980, 2981, 2982, 2983, 2984, 2985, 2986, 2987, 2988, 2989, 2990, 2991, 2992, 2993] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7771 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7771 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (1 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
+  opt44_reach [3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3044, 3045, 3046, 3047, 3048, 3049, 3050, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065, 3066, 3067, 3068, 3069, 3070, 3071] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h1_hok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat}
     (hB : byteAt s.executionEnv.calldata 3729 = B) (hab : a ≤ B) (hB80 : B ≤ 80) :
-    Reach (callState s 7631 (wd a :: G :: wd ret :: tail) M) (callState s 7658 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
-  opt44_reach [2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3017, 3018] with [word_shr248, hB]
+    Reach (callState s 7841 (wd a :: G :: wd ret :: tail) M) (callState s 7868 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
+  opt44_reach [3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3095, 3096] with [word_shr248, hB]
 
 theorem h1_hbad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat} (ha : a ≤ 80)
     (hB : byteAt s.executionEnv.calldata 3729 = B) (hB256 : B < 256) (hbad : B < a ∨ 80 < B) :
-    Reach (callState s 7631 (wd a :: G :: wd ret :: tail) M) (callState s 7658 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
+    Reach (callState s 7841 (wd a :: G :: wd ret :: tail) M) (callState s 7868 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
   by_cases h1 : B < a <;> by_cases h2 : 80 < B
-  · opt44_reach [2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018] with [word_shr248, hB]
-  · opt44_reach [2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018] with [word_shr248, hB]
-  · opt44_reach [2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 3011, 3012, 3013, 3014, 3015, 3016, 3017, 3018] with [word_shr248, hB]
+  · opt44_reach [3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096] with [word_shr248, hB]
+  · opt44_reach [3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096] with [word_shr248, hB]
+  · opt44_reach [3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090, 3091, 3092, 3093, 3094, 3095, 3096] with [word_shr248, hB]
   · omega
 
 theorem h1_iexit (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 : Nat} (hb : b0 ≤ 80) :
-    Reach (callState s 7658 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7736 (wd b0 :: G :: wd ret :: tail) M) 34 := by
-  opt44_reach [3019, 3020, 3021, 3022, 3023, 3024, 3025, 3066, 3067, 3068, 3069]
+    Reach (callState s 7868 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7946 (wd b0 :: G :: wd ret :: tail) M) 34 := by
+  opt44_reach [3097, 3098, 3099, 3100, 3101, 3102, 3103, 3144, 3145, 3146, 3147]
 
 theorem h1_ifirst (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 Y : Nat} (hab : a < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + a) = Y) (hY256 : Y < 256) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7658 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7658 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
-  opt44_reach [3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065] with [word_shr248, hY, or_word_mod]
+    Reach (callState s 7868 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7868 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
+  opt44_reach [3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3113, 3114, 3115, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137, 3138, 3139, 3140, 3141, 3142, 3143] with [word_shr248, hY, or_word_mod]
 
 theorem h1_iok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hPY : P < Y) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7658 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7658 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
-  opt44_reach [3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3044, 3045, 3046, 3047, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7868 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7868 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
+  opt44_reach [3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137, 3138, 3139, 3140, 3141, 3142, 3143] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h1_ibad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hP256 : P < 256) (hPY : Y ≤ P) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7658 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7658 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
-  opt44_reach [3019, 3020, 3021, 3022, 3023, 3024, 3025, 3026, 3027, 3028, 3029, 3030, 3031, 3032, 3033, 3034, 3035, 3036, 3037, 3038, 3039, 3040, 3041, 3042, 3043, 3044, 3045, 3046, 3047, 3048, 3049, 3050, 3051, 3052, 3053, 3054, 3055, 3056, 3057, 3058, 3059, 3060, 3061, 3062, 3063, 3064, 3065] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7868 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7868 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (18446744073709551616 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
+  opt44_reach [3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137, 3138, 3139, 3140, 3141, 3142, 3143] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h2_hok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat}
     (hB : byteAt s.executionEnv.calldata 3730 = B) (hab : a ≤ B) (hB80 : B ≤ 80) :
-    Reach (callState s 7736 (wd a :: G :: wd ret :: tail) M) (callState s 7763 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
-  opt44_reach [3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3089, 3090] with [word_shr248, hB]
+    Reach (callState s 7946 (wd a :: G :: wd ret :: tail) M) (callState s 7973 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
+  opt44_reach [3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3167, 3168] with [word_shr248, hB]
 
 theorem h2_hbad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat} (ha : a ≤ 80)
     (hB : byteAt s.executionEnv.calldata 3730 = B) (hB256 : B < 256) (hbad : B < a ∨ 80 < B) :
-    Reach (callState s 7736 (wd a :: G :: wd ret :: tail) M) (callState s 7763 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
+    Reach (callState s 7946 (wd a :: G :: wd ret :: tail) M) (callState s 7973 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
   by_cases h1 : B < a <;> by_cases h2 : 80 < B
-  · opt44_reach [3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090] with [word_shr248, hB]
-  · opt44_reach [3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090] with [word_shr248, hB]
-  · opt44_reach [3070, 3071, 3072, 3073, 3074, 3075, 3076, 3077, 3078, 3079, 3080, 3081, 3082, 3083, 3084, 3085, 3086, 3087, 3088, 3089, 3090] with [word_shr248, hB]
+  · opt44_reach [3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162, 3163, 3164, 3165, 3166, 3167, 3168] with [word_shr248, hB]
+  · opt44_reach [3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162, 3163, 3164, 3165, 3166, 3167, 3168] with [word_shr248, hB]
+  · opt44_reach [3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162, 3163, 3164, 3165, 3166, 3167, 3168] with [word_shr248, hB]
   · omega
 
 theorem h2_iexit (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 : Nat} (hb : b0 ≤ 80) :
-    Reach (callState s 7763 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7849 (wd b0 :: G :: wd ret :: tail) M) 34 := by
-  opt44_reach [3091, 3092, 3093, 3094, 3095, 3096, 3097, 3138, 3139, 3140, 3141]
+    Reach (callState s 7973 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 8059 (wd b0 :: G :: wd ret :: tail) M) 34 := by
+  opt44_reach [3169, 3170, 3171, 3172, 3173, 3174, 3175, 3216, 3217, 3218, 3219]
 
 theorem h2_ifirst (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 Y : Nat} (hab : a < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + a) = Y) (hY256 : Y < 256) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7763 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7763 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
-  opt44_reach [3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3123, 3124, 3125, 3126, 3127, 3128, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137] with [word_shr248, hY, or_word_mod]
+    Reach (callState s 7973 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7973 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
+  opt44_reach [3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3182, 3183, 3184, 3185, 3186, 3187, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209, 3210, 3211, 3212, 3213, 3214, 3215] with [word_shr248, hY, or_word_mod]
 
 theorem h2_iok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hPY : P < Y) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7763 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7763 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
-  opt44_reach [3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3123, 3124, 3125, 3126, 3127, 3128, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7973 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7973 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
+  opt44_reach [3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3182, 3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3192, 3193, 3194, 3195, 3196, 3197, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209, 3210, 3211, 3212, 3213, 3214, 3215] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h2_ibad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hP256 : P < 256) (hPY : Y ≤ P) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7763 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7763 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
-  opt44_reach [3091, 3092, 3093, 3094, 3095, 3096, 3097, 3098, 3099, 3100, 3101, 3102, 3103, 3104, 3105, 3106, 3107, 3108, 3109, 3110, 3111, 3112, 3113, 3114, 3115, 3116, 3117, 3118, 3119, 3120, 3121, 3122, 3123, 3124, 3125, 3126, 3127, 3128, 3129, 3130, 3131, 3132, 3133, 3134, 3135, 3136, 3137] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 7973 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7973 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (340282366920938463463374607431768211456 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
+  opt44_reach [3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3182, 3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3192, 3193, 3194, 3195, 3196, 3197, 3198, 3199, 3200, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209, 3210, 3211, 3212, 3213, 3214, 3215] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h3_hok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat}
     (hB : byteAt s.executionEnv.calldata 3731 = B) (hab : a ≤ B) (hB80 : B ≤ 80) :
-    Reach (callState s 7849 (wd a :: G :: wd ret :: tail) M) (callState s 7876 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
-  opt44_reach [3142, 3143, 3144, 3145, 3146, 3147, 3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3161, 3162] with [word_shr248, hB]
+    Reach (callState s 8059 (wd a :: G :: wd ret :: tail) M) (callState s 8086 (wd a :: wd B :: wd a :: G :: wd ret :: tail) M) 53 := by
+  opt44_reach [3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232, 3233, 3239, 3240] with [word_shr248, hB]
 
 theorem h3_hbad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a B : Nat} (ha : a ≤ 80)
     (hB : byteAt s.executionEnv.calldata 3731 = B) (hB256 : B < 256) (hbad : B < a ∨ 80 < B) :
-    Reach (callState s 7849 (wd a :: G :: wd ret :: tail) M) (callState s 7876 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
+    Reach (callState s 8059 (wd a :: G :: wd ret :: tail) M) (callState s 8086 (wd a :: wd a :: wd a :: wd 0 :: wd ret :: tail) M) 65 := by
   by_cases h1 : B < a <;> by_cases h2 : 80 < B
-  · opt44_reach [3142, 3143, 3144, 3145, 3146, 3147, 3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162] with [word_shr248, hB]
-  · opt44_reach [3142, 3143, 3144, 3145, 3146, 3147, 3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162] with [word_shr248, hB]
-  · opt44_reach [3142, 3143, 3144, 3145, 3146, 3147, 3148, 3149, 3150, 3151, 3152, 3153, 3154, 3155, 3156, 3157, 3158, 3159, 3160, 3161, 3162] with [word_shr248, hB]
+  · opt44_reach [3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232, 3233, 3234, 3235, 3236, 3237, 3238, 3239, 3240] with [word_shr248, hB]
+  · opt44_reach [3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232, 3233, 3234, 3235, 3236, 3237, 3238, 3239, 3240] with [word_shr248, hB]
+  · opt44_reach [3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232, 3233, 3234, 3235, 3236, 3237, 3238, 3239, 3240] with [word_shr248, hB]
   · omega
 
 theorem h3_iexit (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 : Nat} (hb : b0 ≤ 80) :
-    Reach (callState s 7876 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7970 (wd b0 :: G :: wd ret :: tail) M) 34 := by
-  opt44_reach [3163, 3164, 3165, 3166, 3167, 3168, 3169, 3210, 3211, 3212, 3213]
+    Reach (callState s 8086 (wd b0 :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 8180 (wd b0 :: G :: wd ret :: tail) M) 34 := by
+  opt44_reach [3241, 3242, 3243, 3244, 3245, 3246, 3247, 3288, 3289, 3290, 3291]
 
 theorem h3_ifirst (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 Y : Nat} (hab : a < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + a) = Y) (hY256 : Y < 256) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7876 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7876 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
-  opt44_reach [3163, 3164, 3165, 3166, 3167, 3168, 3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3195, 3196, 3197, 3198, 3199, 3200, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209] with [word_shr248, hY, or_word_mod]
+    Reach (callState s 8086 (wd a :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 8086 (wd (1 + a) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 117 := by
+  opt44_reach [3241, 3242, 3243, 3244, 3245, 3246, 3247, 3248, 3249, 3250, 3251, 3252, 3253, 3254, 3255, 3256, 3257, 3258, 3259, 3273, 3274, 3275, 3276, 3277, 3278, 3279, 3280, 3281, 3282, 3283, 3284, 3285, 3286, 3287] with [word_shr248, hY, or_word_mod]
 
 theorem h3_iok (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hPY : P < Y) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7876 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7876 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
-  opt44_reach [3163, 3164, 3165, 3166, 3167, 3168, 3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3182, 3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3195, 3196, 3197, 3198, 3199, 3200, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 8086 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 8086 (wd (1 + idx) :: wd b0 :: wd a :: G :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 154 := by
+  opt44_reach [3241, 3242, 3243, 3244, 3245, 3246, 3247, 3248, 3249, 3250, 3251, 3252, 3253, 3254, 3255, 3256, 3257, 3258, 3259, 3260, 3261, 3262, 3263, 3264, 3265, 3266, 3267, 3268, 3269, 3273, 3274, 3275, 3276, 3277, 3278, 3279, 3280, 3281, 3282, 3283, 3284, 3285, 3286, 3287] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h3_ibad (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {a b0 idx P Y : Nat} (hai : a < idx) (hib : idx < b0) (hb : b0 ≤ 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256)
     (hP : byteAt s.executionEnv.calldata (3647 + idx) = P) (hP256 : P < 256) (hPY : Y ≤ P) (haw : s.activeWords.toNat ≤ 18446744073709551616) (hmem : 59648 ≤ 32 * s.activeWords.toNat) :
-    Reach (callState s 7876 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 7876 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
-  opt44_reach [3163, 3164, 3165, 3166, 3167, 3168, 3169, 3170, 3171, 3172, 3173, 3174, 3175, 3176, 3177, 3178, 3179, 3180, 3181, 3182, 3183, 3184, 3185, 3186, 3187, 3188, 3189, 3190, 3191, 3192, 3193, 3194, 3195, 3196, 3197, 3198, 3199, 3200, 3201, 3202, 3203, 3204, 3205, 3206, 3207, 3208, 3209] with [word_shr248, hY, hP, or_word_mod]
+    Reach (callState s 8086 (wd idx :: wd b0 :: wd a :: G :: wd ret :: tail) M) (callState s 8086 (wd (1 + idx) :: wd b0 :: wd a :: wd 0 :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (6277101735386680763835789423207666416102355444464034512896 ||| word M (51456 + Y * 32)) 32) (51456 + Y * 32))) 161 := by
+  opt44_reach [3241, 3242, 3243, 3244, 3245, 3246, 3247, 3248, 3249, 3250, 3251, 3252, 3253, 3254, 3255, 3256, 3257, 3258, 3259, 3260, 3261, 3262, 3263, 3264, 3265, 3266, 3267, 3268, 3269, 3270, 3271, 3272, 3273, 3274, 3275, 3276, 3277, 3278, 3279, 3280, 3281, 3282, 3283, 3284, 3285, 3286, 3287] with [word_shr248, hY, hP, or_word_mod]
 
 theorem h_texit (hs : Ctx s) (hr : RetOK Stack.dhint ret tail) (htl : tail.length ≤ 960) (M : ByteArray)
     (G : UInt256) :
-    Reach (callState s 7970 (wd 80 :: G :: wd ret :: tail) M) (callState s ret (G :: tail) M) 40 := by
+    Reach (callState s 8180 (wd 80 :: G :: wd ret :: tail) M) (callState s ret (G :: tail) M) 40 := by
   have := hr.small
-  opt44_reach [3214, 3215, 3216, 3217, 3218, 3219, 3220, 3238, 3239, 3240, 3241] with [hr.jumpdest]
+  opt44_reach [3292, 3293, 3294, 3295, 3296, 3297, 3298, 3316, 3317, 3318, 3319] with [hr.jumpdest]
 
 theorem h_tzero (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {idx : Nat} (hidx : idx < 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = 0) :
-    Reach (callState s 7970 (wd idx :: G :: wd ret :: tail) M)
-      (callState s 7970 (wd (1 + idx) :: G :: wd ret :: tail) M) 78 := by
-  opt44_reach [3214, 3215, 3216, 3217, 3218, 3219, 3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3233, 3234, 3235, 3236, 3237] with [word_shr248, hY]
+    Reach (callState s 8180 (wd idx :: G :: wd ret :: tail) M)
+      (callState s 8180 (wd (1 + idx) :: G :: wd ret :: tail) M) 78 := by
+  opt44_reach [3292, 3293, 3294, 3295, 3296, 3297, 3298, 3299, 3300, 3301, 3302, 3303, 3304, 3305, 3306, 3307, 3311, 3312, 3313, 3314, 3315] with [word_shr248, hY]
 
 theorem h_tnz (hs : Ctx s) (htl : tail.length ≤ 960) (M : ByteArray) (G : UInt256) {idx Y : Nat} (hidx : idx < 80)
     (hY : byteAt s.executionEnv.calldata (3648 + idx) = Y) (hY256 : Y < 256) (hY0 : Y ≠ 0) :
-    Reach (callState s 7970 (wd idx :: G :: wd ret :: tail) M)
-      (callState s 7970 (wd (1 + idx) :: wd 0 :: wd ret :: tail) M) 85 := by
-  opt44_reach [3214, 3215, 3216, 3217, 3218, 3219, 3220, 3221, 3222, 3223, 3224, 3225, 3226, 3227, 3228, 3229, 3230, 3231, 3232, 3233, 3234, 3235, 3236, 3237] with [word_shr248, hY]
+    Reach (callState s 8180 (wd idx :: G :: wd ret :: tail) M)
+      (callState s 8180 (wd (1 + idx) :: wd 0 :: wd ret :: tail) M) 85 := by
+  opt44_reach [3292, 3293, 3294, 3295, 3296, 3297, 3298, 3299, 3300, 3301, 3302, 3303, 3304, 3305, 3306, 3307, 3308, 3309, 3310, 3311, 3312, 3313, 3314, 3315] with [word_shr248, hY]
 
 end
 

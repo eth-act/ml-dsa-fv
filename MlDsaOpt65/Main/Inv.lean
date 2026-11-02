@@ -21,26 +21,21 @@ higher: `ZH` / `ZH2 = ZH + 0x2000` (`ẑ`), `ACC` / `ACC + 0x2000` (`Â ẑ`),
 | boundary | pc | stack | invariant |
 |---|---|---|---|
 | sized, tables | 992 | `[]` | `Inv0` |
-| z, hints | 1110 | `[ok1]` | `Inv1` |
-| NTT records | 3093 | `[ok1]` | `Inv2` |
-| ẑ (both tables) | 3115 | `[ok1]` | `Inv3` |
-| ρ, c̃ spread | 3565 | `[ok1]` | `Inv4` |
-| group `[15, s, 0]`, `s < 5` | 3578, 3592, 3606, 3620, 3634 | `[ok1 ∧ A₀·0 … A₀·s]` | `InvG cd m (s + 1)` |
-| group 5 (instances 0–2: A(4,0), A(5,0), A(4,1); tr blocks 0–4) | 4033 | `[… ∧ I·0 ∧ I·1 ∧ I·2]` | `InvT cd m 1` |
-| group 6 (instances 3–5: A(5,1), A(4,2), A(5,2); tr blocks 5–9) | 4468 | `[… ∧ I·3 ∧ I·4 ∧ I·5]` | `InvT cd m 2` |
-| group 7 (instances 6–8: A(4,3), A(5,3), A(4,4); tr blocks 10–14, `TRL`) | 4972 | `[… ∧ I·6 ∧ I·7 ∧ I·8]` | `InvTr cd m` |
-| group 8 (instance 9: A(5,4); c̃ stream `CB`, μ rider `MU`) | 5190 | `[ok2]` | `Inv5` |
-| μ | 6499 | `[ok2]` | `Inv6` |
-| c | 6509 | `[ok3]` | `Inv7` |
-| c · t1 | 6564 | `[ok3]` | `Inv8` |
-| w1Encode | 6642 | `[ok3]` | `Inv9` |
+| z | 1101 | `[okZ]` | `Inv1` |
+| NTT records | 3084 | `[okZ]` | `Inv2` |
+| ẑ (both tables) | 3105 | `[okZ]` | `Inv3` |
+| ρ, c̃ spread | 3556 | `[okZ]` | `Inv4` |
+| ExpandA done (`pass3f8`) | 5242 | `[okZ ∧ okA]` | `InvW` |
+| hints | 5356 | `[… ∧ okH]` | `InvH` |
+| μ | 6172 | `[ok2]` | `Inv6` |
+| c | 6182 | `[ok3]` | `Inv7` |
+| c · t1 | 6237 | `[ok3]` | `Inv8` |
+| w1Encode | 6293 | `[ok3]` | `Inv9` |
 
-with `ok1 = okZ ∧ okH`, `ok2 = ok1 ∧ okA`, `ok3 = ok2 ∧ okC`; `A₀·s` is
-`okCol0 cd s` (rows `0 … 3` of column `s`), `I·i` is `okI cd i` (row-group-1
-instance `i`: row `4 + i % 2`, column `i / 2`; the v3 schedule runs the ten
-instances three per group in groups 5–7 and the last one in group 8, see
-`MlDsaOpt/65/layout.txt`). The flag after group 8 is `ok2` by `flags_eq`
-(`Main/Valid.lean`).
+with `ok2 = (okZ ∧ okA) ∧ okH`, `ok3 = ok2 ∧ okC` (v4: hints are decoded
+after ExpandA). The ExpandA segment (`Main/SegExp.lean`) is one segment for
+now; the v3 group definitions (`okCol0`, `okI`, `AccCols*`, `AccInst1`,
+`TrSlot`) are kept for its proof.
 -/
 
 namespace MlDsaOpt65.Proofs
@@ -50,8 +45,7 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
 
-def ok1 (cd : ByteArray) : Bool := okZ cd && okH cd
-def ok2 (cd : ByteArray) : Bool := ok1 cd && okA cd
+def ok2 (cd : ByteArray) : Bool := (okZ cd && okA cd) && okH cd
 def ok3 (cd : ByteArray) : Bool := ok2 cd && okC cd
 
 /-! ## Flags of the ExpandA groups -/
@@ -154,7 +148,7 @@ exists; every lane of both tables is `< 2^58` (the `intt` precondition). -/
 def AccAt (m : ByteArray) (cd : ByteArray) : Prop :=
   okA cd = true →
     (∀ g, g < 2 → ∀ k, k < 4 → ∀ t, t < 256 →
-      lane (word m (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 58) ∧
+      lane (word m (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 57) ∧
     ∀ r, r < 6 → ∀ t, t < 256 →
       ((lane (word m (accAddr r t)) (r % 4) : Int) - (azRow cd r)[t]!) % (Fips204.q : Int) = 0
 
@@ -175,9 +169,19 @@ def CbAt (m : ByteArray) (cd : ByteArray) : Prop :=
 def TrlAt (m : ByteArray) (cd : ByteArray) : Prop :=
   ∀ x, x < 8 → word m (TRL + 32 * x) = le64 (trOf cd) (8 * x)
 
-/-- μ (8 lanes) in `MU` for short messages (group 8's `mu0` rider). -/
+/-- μ (8 lanes) in `MU` for messages of at most five blocks (v4: group 8's μ
+slot, `mub`). -/
 def MuAt (m : ByteArray) (cd : ByteArray) : Prop :=
-  mlenOf cd ≤ 69 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
+  mlenOf cd ≤ 613 → ∀ x, x < 8 → word m (MU + 32 * x) = le64 (muOf cd) (8 * x)
+
+/-- μ's padded sponge input `tr ‖ 0 ‖ 0 ‖ M`. -/
+def padMu (cd : ByteArray) : ByteArray :=
+  MlDsa44.Fips202.pad 136 0x1F (trOf cd ++ (ByteArray.mk #[0, 0] ++ msgOf cd))
+
+/-- For longer messages μ's sponge after blocks `0 … 4` is slot 2 of `KS`. -/
+def MuKs (m : ByteArray) (cd : ByteArray) : Prop :=
+  613 < mlenOf cd → ∃ S : Nat → MlDsa44.Fips202.SpongeState, Sized4 S ∧ KS4 m S ∧
+    S 2 = MlDsaOpt44.Proofs.absorbPre 136 (padMu cd) 5
 
 /-- The 8 + 96 replicated stream lanes of the final hash input in `FIN`. -/
 def FinAt (m : ByteArray) (X : ByteArray) : Prop :=
@@ -198,80 +202,46 @@ structure Inv1 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   z : ZAt m cd
-  hp : HPAt m cd
   zLow : ZeroOn m MISC ZH
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv2 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   z : ZAt m cd
-  hp : HPAt m cd
   zMisc : ZeroOn m MISC TBL
   zCw : ZeroOn m CW ABUF
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv3 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   zhat : ZHatAt m cd
-  hp : HPAt m cd
   zMisc : ZeroOn m MISC TBL
   zCw : ZeroOn m CW ABUF
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv4 (cd m : ByteArray) : Prop extends Inv3 cd m where
   rho : Rho1At m cd
 
-/-- Between the row-group-0 groups: columns `s < n` accumulated in `ACC`. -/
-structure InvG (cd m : ByteArray) (n : Nat) : Prop where
-  rc4 : RC4Table m
+/-- After ExpandA (`pass3f8`). -/
+structure InvW (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
   tbl : TblAt m
-  zhat : ZHatAt m cd
-  hp : HPAt m cd
-  rho : Rho1At m cd
-  acc : AccCols0 m cd n
-  zMisc : ZeroOn m MISC (MISC + 0x1e0)
-  zCw : ZeroOn m CW ABUF
-  zIdx : ZeroOn m BASES ACC
-  zAcc1 : ZeroOn m (ACC + 0x2000) HP
-
-/-- Between the row-group-1 groups: row group 0 complete, the row-group-1
-instances `i < n` accumulated in `ACC + 0x2000` (`AccInst1`). -/
-structure InvR (cd m : ByteArray) (n : Nat) : Prop where
-  rc4 : RC4Table m
-  rc1 : RC1Table m
-  tbl : TblAt m
-  zhat : ZHatAt m cd
-  hp : HPAt m cd
-  rho : Rho1At m cd
-  acc0 : AccCols0 m cd 5
-  acc1 : AccInst1 m cd n
-  zMisc : ZeroOn m MISC (MISC + 0x1e0)
-  zCw : ZeroOn m CW ABUF
-  zIdx : ZeroOn m BASES ACC
-
-/-- After groups 5 (`n = 1`) and 6 (`n = 2`): instances `i < 3 n`, the `tr`
-sponge after `5 n` blocks in slot 3 of `KS`. -/
-structure InvT (cd m : ByteArray) (n : Nat) : Prop extends InvR cd m (3 * n) where
-  tr : TrSlot m cd (5 * n)
-
-/-- After group 7: instances `i < 9`, `tr` in `TRL`. -/
-structure InvTr (cd m : ByteArray) : Prop extends InvR cd m 9 where
-  trl : TrlAt m cd
-
-structure Inv5 (cd m : ByteArray) : Prop where
-  rc1 : RC1Table m
-  tbl : TblAt m
-  hp : HPAt m cd
   acc : AccAt m cd
-  trl : TrlAt m cd
   mu : MuAt m cd
+  muks : MuKs m cd
   cb : CbAt m cd
-  fresh : SibFresh m
+  zBases : ZeroOn m BASES (BASES + 2048)
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
+
+/-- After the side buffers are zeroed and the hints decoded. -/
+structure InvH (cd m : ByteArray) : Prop extends InvW cd m where
+  hp : HPAt m cd
+  zCw : ZeroOn m CW (CW + 8192)
 
 structure Inv6 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
@@ -301,7 +271,7 @@ structure Inv8 (cd m : ByteArray) : Prop where
   acc : AccAt m cd
   fmu : FinMu m cd
   sp : okC cd = true → ∀ g, g < 2 → ∀ t, t < 256 → word m (SP + 0x2000 * g + 32 * t) =
-    pack4 fun r => 2 ^ 13 * sPrime (cD cd) cd (32 + 1280 * g) r t + nNeg (cD cd) t
+    pack4 fun r => spOff - (2 ^ 13 * sPrime (cD cd) cd (32 + 1280 * g) r t + nNeg (cD cd) t)
 
 structure Inv9 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m

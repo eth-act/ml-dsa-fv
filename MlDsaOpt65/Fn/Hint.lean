@@ -1,6 +1,5 @@
 import MlDsaOpt65.Layout
 import MlDsaOpt65.Budget
-import MlDsaOpt65.Fn.Hint.G5UseHint
 import MlDsaOpt65.Fn.Hint.G5Pack
 /-!
 # `usehint`, `pack` (ML-DSA-65)
@@ -30,23 +29,6 @@ open EvmSemantics
 open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
-
-/-- **usehint**: `[ACC + 0x2000 g, ret]`, `g < 2`. Exact on words whose lanes are in range;
-every output lane is below `m = 16` unconditionally (the result is masked by `AND 15`). -/
-theorem usehint_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.usehint ret tail) (m : ByteArray) {g : Nat} (hg : g < 2) :
-    ∃ m', (∀ t, t < 256 →
-        (∀ r, r < 4 → lane (word m (ACC + 0x2000 * g + 32 * t)) r < 2 ^ 27 ∧
-          lane (word m (SP + 0x2000 * g + 32 * t)) r < 2 ^ 29 ∧
-          lane (word m (HP + 0x2000 * g + 32 * t)) r ≤ 1) →
-        ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r =
-          (Fips204.useHint P (lane (word m (HP + 0x2000 * g + 32 * t)) r)
-            ((lane (word m (ACC + 0x2000 * g + 32 * t)) r : Int) -
-              lane (word m (SP + 0x2000 * g + 32 * t)) r)).toNat) ∧
-      (∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r < 16) ∧
-      FrameExcept m m' [(ACC + 0x2000 * g, ACC + 0x2000 * g + 8192)] ∧
-      Call s Entry.usehint [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.usehint :=
-  G5UH.usehint_main hs hr m hg
 
 /-- **pack**: `[nr, FIN + 256 + 2048 g, ACC + 0x2000 g, ret]`, `g < 2`, `nr ∈ {2, 4}`.
 Row `r < nr` of row group `g` (lane `r` of `ACC_g`) is 4-bit packed; its stream lane

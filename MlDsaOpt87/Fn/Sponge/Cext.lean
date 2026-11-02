@@ -93,15 +93,15 @@ set_option maxHeartbeats 1000000 in
 theorem cext_body {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (M : ByteArray) {x n sh dst : Nat}
     (hx : x + 1 < n) (hn : n ≤ 25) (hsh : sh < 4) (_hdst : 800 ≤ dst) (hdm : dst + 32 * n ≤ TOP) :
-    Reach (callState s 13923 (wd x :: wd n :: wd sh :: wd dst :: wd ret :: tail) M)
-      (callState s 13923 (wd (x + 1) :: wd n :: wd sh :: wd dst :: wd ret :: tail)
+    Reach (callState s 14182 (wd x :: wd n :: wd sh :: wd dst :: wd ret :: tail) M)
+      (callState s 14182 (wd (x + 1) :: wd n :: wd sh :: wd dst :: wd ret :: tail)
         (MachineState.writeBytes M
           (Data.Bytes.natToBytesPadded (cextOut x (word M (x * 32) / 2 ^ sh)) 32) (dst + x * 32)))
       205 := by
   have := hr.depth; simp only [Stack.cext, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords, TOP] at hsz hdm
-  opt87_reach [6087, 6088, 6089, 6090, 6091, 6092, 6093, 6094, 6095, 6096, 6097, 6098, 6099, 6100, 6101, 6102, 6103, 6104, 6105, 6106, 6107, 6108, 6109, 6110, 6111, 6112, 6113, 6114, 6115, 6116, 6117, 6118, 6119, 6120, 6121, 6122, 6123, 6124, 6125, 6126, 6127, 6128, 6129, 6130, 6131, 6132, 6133, 6134, 6135, 6136, 6137, 6138, 6139, 6140, 6141, 6142, 6143, 6144, 6145, 6146, 6147, 6148, 6149, 6150, 6151, 6152] with []
+  opt87_reach [6299, 6300, 6301, 6302, 6303, 6304, 6305, 6306, 6307, 6308, 6309, 6310, 6311, 6312, 6313, 6314, 6315, 6316, 6317, 6318, 6319, 6320, 6321, 6322, 6323, 6324, 6325, 6326, 6327, 6328, 6329, 6330, 6331, 6332, 6333, 6334, 6335, 6336, 6337, 6338, 6339, 6340, 6341, 6342, 6343, 6344, 6345, 6346, 6347, 6348, 6349, 6350, 6351, 6352, 6353, 6354, 6355, 6356, 6357, 6358, 6359, 6360, 6361, 6362, 6363, 6364] with []
   exact ⟨rfl, by rw [Nat.add_comm]⟩
 
 set_option maxRecDepth 100000 in
@@ -109,7 +109,7 @@ set_option maxHeartbeats 1000000 in
 theorem cext_last {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (M : ByteArray) {x n sh dst : Nat}
     (hx : x + 1 = n) (hn : n ≤ 25) (hsh : sh < 4) (hdst : 800 ≤ dst) (hdm : dst + 32 * n ≤ TOP) :
-    Reach (callState s 13923 (wd x :: wd n :: wd sh :: wd dst :: wd ret :: tail) M)
+    Reach (callState s 14182 (wd x :: wd n :: wd sh :: wd dst :: wd ret :: tail) M)
       (callState s ret tail
         (MachineState.writeBytes M
           (Data.Bytes.natToBytesPadded (cextOut x (word M (x * 32) / 2 ^ sh)) 32) (dst + x * 32)))
@@ -119,15 +119,15 @@ theorem cext_last {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hsz := hs.sized; simp only [memWords, TOP] at hsz hdm
   have hret := hr.small
   have hj := hr.jumpdest
-  opt87_reach [6087, 6088, 6089, 6090, 6091, 6092, 6093, 6094, 6095, 6096, 6097, 6098, 6099, 6100, 6101, 6102, 6103, 6104, 6105, 6106, 6107, 6108, 6109, 6110, 6111, 6112, 6113, 6114, 6115, 6116, 6117, 6118, 6119, 6120, 6121, 6122, 6123, 6124, 6125, 6126, 6127, 6128, 6129, 6130, 6131, 6132, 6133, 6134, 6135, 6136, 6137, 6138, 6139, 6140, 6141, 6142, 6143, 6144, 6145, 6146, 6147, 6148, 6149, 6150, 6151, 6152, 6153, 6154, 6155, 6156, 6157] with [hj]
+  opt87_reach [6299, 6300, 6301, 6302, 6303, 6304, 6305, 6306, 6307, 6308, 6309, 6310, 6311, 6312, 6313, 6314, 6315, 6316, 6317, 6318, 6319, 6320, 6321, 6322, 6323, 6324, 6325, 6326, 6327, 6328, 6329, 6330, 6331, 6332, 6333, 6334, 6335, 6336, 6337, 6338, 6339, 6340, 6341, 6342, 6343, 6344, 6345, 6346, 6347, 6348, 6349, 6350, 6351, 6352, 6353, 6354, 6355, 6356, 6357, 6358, 6359, 6360, 6361, 6362, 6363, 6364, 6365, 6366, 6367, 6368, 6369] with [hj]
   rfl
 
 theorem cext_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (M : ByteArray) (n sh dst : Nat) :
-    Reach (callState s 13921 (wd n :: wd sh :: wd dst :: wd ret :: tail) M)
-      (callState s 13923 (wd 0 :: wd n :: wd sh :: wd dst :: wd ret :: tail) M) 3 := by
+    Reach (callState s 14180 (wd n :: wd sh :: wd dst :: wd ret :: tail) M)
+      (callState s 14182 (wd 0 :: wd n :: wd sh :: wd dst :: wd ret :: tail) M) 3 := by
   have := hr.depth; simp only [Stack.cext, Stack.leaf] at this
-  opt87_reach [6085, 6086] with []
+  opt87_reach [6297, 6298] with []
 
 theorem cext_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.cext ret tail) (m : ByteArray) {dst sh n : Nat}
@@ -146,7 +146,7 @@ theorem cext_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   refine ⟨storeWords m dst g n, fun x hx => word_storeWords_get (hg x) hx,
     FrameExcept.storeWords m dst g n, ?_⟩
   let I : Nat → State := fun k =>
-    callState s 13923 (wd k :: wd n :: wd sh :: wd dst :: wd ret :: tail) (storeWords m dst g k)
+    callState s 14182 (wd k :: wd n :: wd sh :: wd dst :: wd ret :: tail) (storeWords m dst g k)
   have hstep : ∀ k, k < 25 → MachineState.writeBytes (storeWords m dst g k)
       (Data.Bytes.natToBytesPadded (cextOut k (word (storeWords m dst g k) (k * 32) / 2 ^ sh)) 32)
       (dst + k * 32) = storeWords m dst g (k + 1) := by

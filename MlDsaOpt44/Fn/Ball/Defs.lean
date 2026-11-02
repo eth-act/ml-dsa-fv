@@ -5,9 +5,12 @@ import MlDsaOpt44.Budget
 
 `sib [ret] ↦ [ok]` scans bytes `8 … 271` of the 272-byte stream (34 lanes in
 `CB`, squeezed by `cext` from a SIMD slot) as FIPS 204 Algorithm 29 with the
-Appendix C limit. Instead of the coefficient array it keeps:
+Appendix C limit, one 64-bit lane per iteration (8 unrolled byte tests). v4
+(44): only the first block (lanes 0 … 16) is in `CB` on entry; at lane 17 the
+second is squeezed on demand from `c`'s saved kf4 state (`SC`, slot 0:
+`MCOPY` to `KS`, `kf4`, `cext`). Instead of the coefficient array it keeps:
 
-* `CW[t]`: a code word per position (`0`; `1` for `c_t = −1`; `2^256 − 1`
+* `CW[t]`: a code word per position (`0`; `REP` for `c_t = −1`; `−REP`
   for `c_t = +1`), read by `csum` as the running `n_neg` correction;
 * `BASES[i]`, `i < τ`: the window base `4064 + 8 p − 2048 [c_p = −1]` of
   every nonzero position `p` (moved when SampleInBall moves a coefficient);
@@ -21,8 +24,8 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa44
 
-/-- `CW` code of a coefficient of `c`. -/
-def codeOf (v : Int) : Nat := if v = 0 then 0 else if v = -1 then 1 else 2 ^ 256 - 1
+/-- `CW` code of a coefficient of `c` (v4: replicated over the four lanes). -/
+def codeOf (v : Int) : Nat := if v = 0 then 0 else if v = -1 then REP else 2 ^ 256 - REP
 
 /-- Window base of a nonzero coefficient at `p`. -/
 def baseOf (c : Fips204.Poly) (p : Nat) : Nat := 4064 + 8 * p - if c[p]! = -1 then 2048 else 0
@@ -38,8 +41,9 @@ def CRep (m : ByteArray) (c : Fips204.Poly) : Prop :=
     (∀ p, p ∈ ps ↔ p < 256 ∧ c[p]! ≠ 0) ∧
     ∀ i, i < Fips204.tau → word m (BASES + 32 * i) = baseOf c ps[i]!
 
-/-- `sib`'s scratch regions start zeroed. -/
+/-- `sib`'s scratch regions start zeroed (`BASES` needs no initialisation:
+entry `i` is written before it is read). -/
 def SibFresh (m : ByteArray) : Prop :=
-  ZeroOn m CW (CW + 8192) ∧ ZeroOn m BASES (IDX + 256) ∧ ZeroOn m NNEG (NNEG + 64)
+  ZeroOn m CW (CW + 8192) ∧ ZeroOn m IDX (IDX + 256) ∧ ZeroOn m NNEG (NNEG + 64)
 
 end MlDsaOpt44.Proofs

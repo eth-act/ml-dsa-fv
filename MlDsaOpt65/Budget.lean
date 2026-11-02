@@ -1,71 +1,68 @@
 /-!
-# Gas budgets of the subroutine contracts (ML-DSA-65)
+# Gas budgets of the subroutine contracts (ML-DSA-65, v4)
 
 Same conventions as `MlDsaOpt44/Budget.lean`: every budget is the exact
 worst-case cost of its contract, from the entry `JUMPDEST` up to and including
-the returning `JUMP`; memory never grows after the entry store.
-
-Numbers: `python3 scripts/proofgen_gas_param.py 65 --analyse` (constant-cost
+the returning `JUMP`; memory never grows after the entry store. Constant-cost
 subroutines measured in the Python EVM, data-dependent ones as longest static
-paths with the loop trip counts documented below). Kernels shared with
-ML-DSA-44 (`kf4`, `kf1`, `blk`, `ntt`, `intt`, `pass3`, `tbuild`, `dz`, `spr`,
-`absorb17`, `trabs`, `cext`, `fix`, `gfix`) have the ML-DSA-44 budgets.
+paths. Kernels shared with ML-DSA-44 have the ML-DSA-44 budgets.
 -/
 
 namespace MlDsaOpt65.Proofs.Gas
 
 /-! ## Constant-cost subroutines -/
 
+def ginit : Nat := 792
 def kf4 : Nat := 40238
 def kf1 : Nat := 32571
-def blk : Nat := 7836
-def ntt : Nat := 99705
-def intt : Nat := 119593
-def pass3 : Nat := 17780
-/-- `pass3x5 … pass3x8`: the mixed row-group-1 accumulations of groups 5–8 (v3). -/
-def pass3x5 : Nat := 38413
-def pass3x6 : Nat := 41485
-def pass3x7 : Nat := 36877
-def pass3x8 : Nat := 25613
+def blk : Nat := 7842
+def blkh : Nat := 4592
+def blkt : Nat := 3512
+def ntt : Nat := 92404
 def tbuild : Nat := 28511
-def csum : Nat := 81381
-def usehint : Nat := 48153
-def dz : Nat := 46156
+def dz : Nat := 43516
 def spr : Nat := 120
-def ginit : Nat := 792
 def absorb17 : Nat := 1160
-/-- `pack` with `nr` rows (rows `≥ nr` take a cheaper skip branch); ML-DSA-65
-calls it with 4 and 2 rows. -/
+/-- `pack` with `nr` rows (rows `≥ nr` take a cheaper skip branch). -/
 def pack (nr : Nat) : Nat := if nr ≤ 2 then 8227 else 9251
-/-- `trabs` with `n4` groups of four lanes: 826 per group (one of them masked). -/
-def trabs (n4 : Nat) : Nat := 55 + 826 * n4
+/-- `trabs` with `n4` groups of four lanes. -/
+def trabs (n4 : Nat) : Nat := 65 + 529 * n4
 /-- `cext` extracting `n` lanes. -/
 def cext (n : Nat) : Nat := 19 + 205 * n
 
 /-! ## Data-dependent subroutines (worst cases) -/
 
-/-- `mu0`: the absorbing path (`|M| ≤ 69`); the skipping path is cheaper. -/
-def mu0 : Nat := 4359
+/-- `fix` without a sixth squeeze (as ML-DSA-44). -/
+def fixNo : Nat := 40 + 32 * 55 + 4 + 42 * 580 + 65 + 53
 
-/-- `fix` without a sixth squeeze (as ML-DSA-44): first-flag scan 1810, at most
-44 group-loop visits of at most 784, continue path 59, exit 51. -/
-def fixNo : Nat := 1810 + 44 * 784 + 59 + 51
-
-/-- `fix` performing the sixth squeeze (48350 instead of the continue path). -/
-def fixSq : Nat := 1810 + 44 * 784 + 48350 + 51
+/-- `fix` performing the sixth squeeze (as ML-DSA-44). -/
+def fixSq : Nat := 40 + 32 * 55 + 4 + 42 * 580 + 48362 + 53
 
 /-- `gfix` own instructions with all four slots taking the `fix` call path. -/
-def gfix0 : Nat := 630
+def gfix0 : Nat := 806
 
-/-- `gfix` with at most `n` active slots (at most one sixth squeeze). -/
-def gfix (n : Nat) : Nat := gfix0 + n * fixNo + (fixSq - fixNo)
+/-- `gfix` with at most `n` active slots: one `blkt`, at most one sixth squeeze. -/
+def gfix (n : Nat) : Nat := gfix0 + blkt + n * fixNo + (fixSq - fixNo)
 
-/-- `group`: glue 470, `ginit`, five `kf4` + `blk`, `gfix 4`, `pass3`. -/
-def group : Nat := 470 + ginit + 5 * (kf4 + blk) + gfix 4 + pass3
+/-- `group`: glue 404, `ginit`, five `kf4`, four `blk` and one `blkh`, `gfix 4`. -/
+def group : Nat := 404 + ginit + 5 * kf4 + 4 * blk + blkh + gfix 4
 
-/-- `sib`: entry 13; 265 loop visits (positions `8 … 271` and the exit visit),
-at most `τ = 49` accepted ones (454 each), the others rejected (125 each). -/
-def sib : Nat := 13 + 216 * 125 + 49 * 454
+/-- The inverse NTT with UseHint fused into its last pass. -/
+def intt : Nat := 147497
+def pass3f4 : Nat := 55187
+def pass3f8 : Nat := 88999
+def csum : Nat := 76176
+
+/-- `mub0`: the longer of its two exits. -/
+def mub0 : Nat := 3466
+/-- `mub`: the longest of its paths (absorb a block, pad it, or extract μ). -/
+def mub : Nat := 3090
+
+/-- `sib` (`Fn/Ball/V4Loop.lean`): entry 13; the 264 stream bytes as rejected
+(each lane: byte 0 with the loop head 66, bytes 1 … 6 40 each, byte 7 with the
+lane epilogue 62, so 33 × 368); 353 more per accepted byte (49); the failure
+exit 43. -/
+def sib : Nat := 13 + 33 * 368 + 49 * 353 + 43
 
 /-- `dhint`: fixed part 458 plus at most `ω + k + 1 = 62` loop visits of at
 most 161 each (55 hint indices, 6 row exits, the trailing scan exit). -/

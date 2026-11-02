@@ -1,14 +1,16 @@
 import MlDsaOpt87.Fn.Csum.Iter
 import MlDsaOpt87.Fn.Csum.Spec
 import MlDsaOpt65.Math.G4.CsumCore
-import MlDsaOpt44.Fn.Ct.CsumMain
+import MlDsaOpt44.Fn.Ct.Csum4Main
 set_option warningAsError true
 /-!
-# `csum` (WP G4): the stored words and the contract body (ML-DSA-87)
+# `csum` (v4): the stored words and the contract body (ML-DSA-87)
 
-As `MlDsaOpt44/Fn/Ct/CsumMain.lean` with `τ = 60` loads per word, the table at `T`
-(rows from calldata offset `off`) and the output at `S`. The 16-bit cell lemmas, the
-transpose (`CS.extract`) and the emitted word (`CS.emit_val`) are the 44 lemmas.
+As `MlDsaOpt44/Fn/Ct/Csum4Main.lean` with `τ = 60` loads per word, the table at `T`
+(rows from calldata offset `off`) and the output at `S`. The count word before position
+`t` is `pack4 (spOff − N c t)` (`g_zero`, `g_step`: each `CW` code `±REP` is subtracted),
+and every emitted word is the count word minus `pack4 (2^13 S'_r(t))` (the 44 transpose
+and mask-13 lemmas `CS4.tp_bits`, `CS4.extract`), lane-wise without borrow (`emit_sub`).
 -/
 
 set_option linter.unusedVariables false
@@ -22,8 +24,9 @@ open MlDsaOptCommon
 open MlDsa
 open MlDsaOpt87.Proofs
 open MlDsaOpt87.Proofs.Infra
-open MlDsaOpt44.Proofs.CS (cs4o0 cs5g cs5w0 cs5w1 cs5w2 cs5w3 cell cell_lt cell_add cell_word
-  ut_lt extract extract0 emit_val pack4_congr N N_lt)
+open MlDsaOpt44.Proofs.CS (cell cell_lt cell_add cell_word)
+open MlDsaOpt44.Proofs.CS4 (c4T c4g1 c4g2 c4g3 c4g4 c4w0 c4w1 c4w2 c4w3 tp tp_bits ut_lt extract
+  extract0 pack4_congr REP_val N N_le)
 
 /-! ## Window entries are 10-bit -/
 
@@ -51,12 +54,26 @@ theorem csn_succ (M : ByteArray) (bu f n : Nat) :
 
 theorem wsum_tau (M : ByteArray) (bu : Nat) : wsum M bu 60 = 0 + W M bu 0 + W M bu 1 + W M bu 2 + W M bu 3 + W M bu 4 + W M bu 5 + W M bu 6 + W M bu 7 + W M bu 8 + W M bu 9 + W M bu 10 + W M bu 11 + W M bu 12 + W M bu 13 + W M bu 14 + W M bu 15 + W M bu 16 + W M bu 17 + W M bu 18 + W M bu 19 + W M bu 20 + W M bu 21 + W M bu 22 + W M bu 23 + W M bu 24 + W M bu 25 + W M bu 26 + W M bu 27 + W M bu 28 + W M bu 29 + W M bu 30 + W M bu 31 + W M bu 32 + W M bu 33 + W M bu 34 + W M bu 35 + W M bu 36 + W M bu 37 + W M bu 38 + W M bu 39 + W M bu 40 + W M bu 41 + W M bu 42 + W M bu 43 + W M bu 44 + W M bu 45 + W M bu 46 + W M bu 47 + W M bu 48 + W M bu 49 + W M bu 50 + W M bu 51 + W M bu 52 + W M bu 53 + W M bu 54 + W M bu 55 + W M bu 56 + W M bu 57 + W M bu 58 + W M bu 59 := rfl
 
-theorem sW_toNat (M : ByteArray) (bu : Nat) : (sW M bu).toNat = wsum M bu 60 % 2 ^ 256 := by
-  simp only [sW, ld0, ld1, ld2, ld3, EvmProof.Word.ofNat_add_mod, EvmProof.Word.word_toNat_ofNat]
+theorem sW_toNat (m0 M : ByteArray) (bu : Nat)
+    (hm0 : ∀ i, i < 11 → word m0 (49152 + 32 * i) = word M (49152 + 32 * i)) :
+    (sW m0 M bu).toNat = wsum M bu 60 % 2 ^ 256 := by
+  have e0 : word m0 49152 = word M 49152 := by simpa using hm0 0 (by norm_num)
+  have e1 : word m0 49184 = word M 49184 := by simpa using hm0 1 (by norm_num)
+  have e2 : word m0 49216 = word M 49216 := by simpa using hm0 2 (by norm_num)
+  have e3 : word m0 49248 = word M 49248 := by simpa using hm0 3 (by norm_num)
+  have e4 : word m0 49280 = word M 49280 := by simpa using hm0 4 (by norm_num)
+  have e5 : word m0 49312 = word M 49312 := by simpa using hm0 5 (by norm_num)
+  have e6 : word m0 49344 = word M 49344 := by simpa using hm0 6 (by norm_num)
+  have e7 : word m0 49376 = word M 49376 := by simpa using hm0 7 (by norm_num)
+  have e8 : word m0 49408 = word M 49408 := by simpa using hm0 8 (by norm_num)
+  have e9 : word m0 49440 = word M 49440 := by simpa using hm0 9 (by norm_num)
+  have e10 : word m0 49472 = word M 49472 := by simpa using hm0 10 (by norm_num)
+  simp only [sW, ld0, ld1, ld2, ld3, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10,
+    EvmProof.Word.ofNat_add_mod, EvmProof.Word.word_toNat_ofNat]
   rw [wsum_tau]
   simp only [W, Nat.reduceMul, Nat.reduceAdd]
   apply congrArg (· % 2 ^ 256)
-  omega
+  ring
 
 theorem wsum_cells (M : ByteArray) (bu : Nat)
     (hc : ∀ m f, m < 60 → f < 16 → cell (W M bu m) f ≤ 1023) :
@@ -71,6 +88,64 @@ theorem wsum_cells (M : ByteArray) (bu : Nat)
     · show cell (wsum M bu n + W M bu n) f = _
       rw [csn_succ, hadd.2 f hf, h2 f hf]
     · rw [csn_succ]; have := h3 f hf; have := hc n f (by omega) hf; omega
+
+/-! ## The running count -/
+
+theorem spOff_eq : spOff = 1072955263 := by
+  unfold spOff; norm_num [Fips204.q]
+
+theorem gval_lt' (n : Nat) : pack4 (fun _ => 1072955263 - n) < 2 ^ 256 := by
+  simp only [pack4]; omega
+
+theorem g_zero {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) {M : ByteArray}
+    (hnn : word M 4000 = negCount c) :
+    cse M = UInt256.ofNat (pack4 fun _ => spOff - N c 0) := by
+  have hz := N_zero h
+  unfold cse
+  rw [hnn, ofNat_sub (by omega) (by norm_num), ofNat_mul, ofNat_sub]
+  · congr 1; rw [spOff_eq]; simp only [pack4]; omega
+  · omega
+  · norm_num
+
+theorem g_step {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) {t' : Nat} (ht : t' < 256) :
+    UInt256.ofNat (pack4 fun _ => spOff - N c t') - UInt256.ofNat (codeOf c[t']!) =
+      UInt256.ofNat (pack4 fun _ => spOff - N c (t' + 1)) := by
+  have hs := N_step h ht
+  have h1 := N_le c t'
+  have h2 := N_le c (t' + 1)
+  rw [spOff_eq] at *
+  rcases h.coeff t' ht with hc | hc | hc
+  · simp only [hc, codeOf, if_true] at hs ⊢
+    simp at hs
+    rw [ofNat_sub (by omega) (gval_lt' _), hs]; simp
+  · have hne : (1 : Int) ≠ 0 := by decide
+    have hne' : (1 : Int) ≠ -1 := by decide
+    simp only [hc, codeOf, hne, hne', if_false, if_true] at hs ⊢
+    simp at hs
+    apply EvmProof.Word.word_ext
+    rw [EvmProof.Word.word_toNat_sub, toNat_ofNat_of_lt (gval_lt' _),
+      toNat_ofNat_of_lt (by rw [REP_val]; norm_num), toNat_ofNat_of_lt (gval_lt' _), REP_val]
+    simp only [pack4]; omega
+  · have hne : (-1 : Int) ≠ 0 := by decide
+    have hne' : (-1 : Int) ≠ 1 := by decide
+    simp only [hc, codeOf, hne, hne', if_false, if_true] at hs ⊢
+    simp at hs
+    rw [REP_val]
+    have hle : 6277101735386680764176071790128604879584176795969512275969 ≤
+        pack4 (fun _ => 1072955263 - N c t') := by simp only [pack4]; omega
+    have heq : pack4 (fun _ => 1072955263 - N c t') - 6277101735386680764176071790128604879584176795969512275969 =
+        pack4 (fun _ => 1072955263 - N c (t' + 1)) := by simp only [pack4]; omega
+    rw [ofNat_sub hle (gval_lt' _), heq]
+
+/-- An emitted word: the count word minus the shifted window sums, lane-wise without borrow. -/
+theorem emit_sub {n : Nat} {S : Nat → Nat} (hS : ∀ r, r < 4 → S r ≤ 1023 * 60) (hn : n ≤ 256) :
+    (UInt256.ofNat (pack4 fun _ => spOff - n) - UInt256.ofNat (pack4 fun r => S r * 2 ^ 13)).toNat =
+      pack4 fun r => spOff - (2 ^ 13 * S r + n) := by
+  have h0 := hS 0 (by omega); have h1 := hS 1 (by omega)
+  have h2 := hS 2 (by omega); have h3 := hS 3 (by omega)
+  rw [spOff_eq, ofNat_sub (by simp only [pack4]; omega) (gval_lt' _),
+    toNat_ofNat_of_lt (by simp only [pack4]; omega)]
+  simp only [pack4]; omega
 
 /-! ## One iteration, in terms of the input memory `m` -/
 
@@ -96,21 +171,20 @@ theorem code_word (h : Pre m c cd ps T S off) {u k a : Nat} (hu : u < 64) (hk : 
   rw [stU_other m T S (by omega) u (by omega), ← h.cw (4 * u + k) (by omega)]
   congr 1; unfold CW; omega
 
-theorem g_iter (h : Pre m c cd ps T S off) : ∀ u, u ≤ 64 → (stU m T S u).2 = UInt256.ofNat (N c (4 * u))
-  | 0, _ => by
-    show UInt256.ofNat 60 - UInt256.ofNat (word m 4000) = _
-    rw [show word m 4000 = negCount c from h.nn, g_zero h.facts]
+/-- The count word after `u` iterations. -/
+theorem g_iter (h : Pre m c cd ps T S off) : ∀ u, u ≤ 64 →
+    (stU m T S u).2 = UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u))
+  | 0, _ => g_zero h.facts h.nn
   | u + 1, hu => by
-    show cs5g (stU m T S u).1 (T - 32 * u) (12288 + 128 * u) (S + 128 * u) (stU m T S u).2
-      (sT (stU m T S u).1 (T - 32 * u) (12288 + 128 * u) (S + 128 * u) (stU m T S u).2) = _
-    unfold cs5g
+    show c4g4 (stU m T S u).1 (12288 + 128 * u) (stU m T S u).2 = _
+    unfold c4g4 c4g3 c4g2 c4g1
     rw [g_iter h u (by omega), code_word h (k := 0) (by omega) (by omega) (by omega),
       code_word h (k := 1) (by omega) (by omega) (by omega),
       code_word h (k := 2) (by omega) (by omega) (by omega),
       code_word h (k := 3) (by omega) (by omega) (by omega), Nat.add_zero,
       g_step h.facts (t' := 4 * u) (by omega), g_step h.facts (t' := 4 * u + 1) (by omega),
       g_step h.facts (t' := 4 * u + 2) (by omega), g_step h.facts (t' := 4 * u + 3) (by omega)]
-    congr 2
+    congr 3
 
 theorem be16_frame (u : Nat) (hu : u ≤ 64) {a : Nat} (ha : a + 2 ≤ S) :
     be16 (stU m T S u).1 a = be16 m a := by
@@ -140,61 +214,78 @@ theorem cell_W_le (h : Pre m c cd ps T S off) {u : Nat} (hu : u < 64) :
     ∀ i f, i < 60 → f < 16 → cell (W (stU m T S u).1 (T - 32 * u) i) f ≤ 1023 := fun i f hi hf => by
   rw [cell_W h hu hi hf]; exact tEntry_le _ _ _ _
 
+theorem base_stU (h : Pre m c cd ps T S off) {u : Nat} (hu : u ≤ 64) :
+    ∀ i, i < 11 → word m (49152 + 32 * i) = word (stU m T S u).1 (49152 + 32 * i) := fun i hi => by
+  have := h.hS2
+  exact (stU_other m T S (by omega) u hu).symm
+
 /-- The window sums of iteration `u`. -/
-theorem sum_cells (h : Pre m c cd ps T S off) {u k r : Nat} (hu : u < 64) (hk : k < 4) (hr : r < 4)
-    (cw sp : Nat) (g : UInt256) :
-    cell (sW (stU m T S u).1 (T - 32 * u)).toNat (4 * k + r) = sPrime c cd off r (4 * u + k) := by
-  obtain ⟨h1, h2, -⟩ := wsum_cells _ _ (fun i f hi hf => cell_W_le h hu i f hi hf) 60 le_rfl
-  rw [sW_toNat, Nat.mod_eq_of_lt h1, h2 _ (by omega), sPrime_ps h.facts, csn]
+theorem sum_cells (h : Pre m c cd ps T S off) {u k r : Nat} (hu : u < 64) (hk : k < 4) (hr : r < 4) :
+    cell (sW m (stU m T S u).1 (T - 32 * u)).toNat (4 * k + r) = sPrime c cd off r (4 * u + k) ∧
+      cell (sW m (stU m T S u).1 (T - 32 * u)).toNat (4 * k + r) ≤ 1023 * 60 := by
+  obtain ⟨h1, h2, h3⟩ := wsum_cells _ _ (fun i f hi hf => cell_W_le h hu i f hi hf) 60 le_rfl
+  rw [sW_toNat _ _ _ (base_stU h (by omega)), Nat.mod_eq_of_lt h1, h2 _ (by omega)]
+  refine ⟨?_, h3 _ (by omega)⟩
+  rw [sPrime_ps h.facts, csn]
   congr 1
   apply List.map_congr_left
   intro i hi
   rw [List.mem_range] at hi
   rw [cell_W h hu hi (by omega), show (4 * k + r) % 4 = r by omega, show (4 * k + r) / 4 = k by omega]
 
+theorem emit_lanes (h : Pre m c cd ps T S off) {u k : Nat} (hu : u < 64) (hk : k < 4) {G : UInt256}
+    (hg : UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u + k + 1)) = G) :
+    (G - UInt256.ofNat (pack4 fun r => cell (sW m (stU m T S u).1 (T - 32 * u)).toNat (4 * k + r) * 2 ^ 13)).toNat =
+      pack4 fun r => spOff - (2 ^ 13 * sPrime c cd off r (4 * u + k) + nNeg c (4 * u + k)) := by
+  rw [← hg, emit_sub (fun r hr => (sum_cells h hu hk hr).2) (N_le _ _), nNeg_eq]
+  exact pack4_congr fun r hr => by rw [(sum_cells h hu hk hr).1]
+
 /-- The word stored for `t = 4 u + k`. -/
 theorem store_val (h : Pre m c cd ps T S off) {u k : Nat} (hu : u < 64) (hk : k < 4) :
     word (stU m T S (u + 1)).1 (S + 128 * u + 32 * k) =
-      pack4 fun r => 2 ^ 13 * sPrime c cd off r (4 * u + k) + nNeg c (4 * u + k) := by
-  show word (csMem (stU m T S u).1 (T - 32 * u) (12288 + 128 * u) (S + 128 * u) (stU m T S u).2) _ = _
-  have hg := g_iter h u (by omega)
+      pack4 fun r => spOff - (2 ^ 13 * sPrime c cd off r (4 * u + k) + nNeg c (4 * u + k)) := by
+  show word (csMem m (stU m T S u).1 (T - 32 * u) (12288 + 128 * u) (S + 128 * u) (stU m T S u).2) _ = _
   have hS := h.hS; have hS2 := h.hS2
+  have hg := g_iter h u (by omega)
+  have hT := fun i (hi : i < 256) => tp_bits (stU m T S u).1 (T - 32 * u) (12288 + 128 * u) (S + 128 * u)
+    (stU m T S u).2 (sW m (stU m T S u).1 (T - 32 * u)) hi
+  have c0 := code_word h (k := 0) (a := 12288 + 128 * u) hu (by omega) (by omega)
+  have c1 := code_word h (k := 1) (a := 32 + (12288 + 128 * u)) hu (by omega) (by omega)
+  have c2 := code_word h (k := 2) (a := 64 + (12288 + 128 * u)) hu (by omega) (by omega)
+  have c3 := code_word h (k := 3) (a := 96 + (12288 + 128 * u)) hu (by omega) (by omega)
+  have g1 : c4g1 (stU m T S u).1 (12288 + 128 * u) (stU m T S u).2 =
+      UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u + 0 + 1)) := by
+    unfold c4g1; rw [hg, c0, Nat.add_zero, g_step h.facts (by omega)]
+  have g2 : c4g2 (stU m T S u).1 (12288 + 128 * u) (stU m T S u).2 =
+      UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u + 1 + 1)) := by
+    unfold c4g2; rw [g1, c1, Nat.add_zero, g_step h.facts (by omega)]
+  have g3 : c4g3 (stU m T S u).1 (12288 + 128 * u) (stU m T S u).2 =
+      UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u + 2 + 1)) := by
+    unfold c4g3; rw [g2, c2, g_step h.facts (by omega)]
+  have g4 : c4g4 (stU m T S u).1 (12288 + 128 * u) (stU m T S u).2 =
+      UInt256.ofNat (pack4 fun _ => spOff - N c (4 * u + 3 + 1)) := by
+    unfold c4g4; rw [g3, c3, g_step h.facts (by omega)]
   interval_cases k
   · rw [show S + 128 * u + 32 * 0 = S + 128 * u by omega]
     simp (disch := first | omega | exact ut_lt _) only [csMem, word_mstore_disjoint, word_mstore]
-    unfold cs5w0 sT
-    rw [hg, code_word h (k := 0) hu (by omega) (by omega), Nat.add_zero, g_step h.facts (by omega),
-      extract0, emit_val (N_lt _ _) _ (fun r _ => cell_lt _ _)]
-    apply pack4_congr; intro r hr
-    rw [sum_cells h hu (k := 0) (by omega) hr 0 0 0, nNeg_eq, Nat.add_zero]
+    unfold c4w0 sT
+    rw [extract0 _ _ hT]
+    exact emit_lanes h hu (k := 0) (by omega) g1.symm
   · rw [show S + 128 * u + 32 * 1 = 32 + (S + 128 * u) by omega]
     simp (disch := first | omega | exact ut_lt _) only [csMem, word_mstore_disjoint, word_mstore]
-    unfold cs5w1 sT
-    rw [hg, code_word h (k := 0) hu (by omega) (by omega), code_word h (k := 1) hu (by omega) (by omega),
-      Nat.add_zero, g_step h.facts (t' := 4 * u) (by omega), g_step h.facts (t' := 4 * u + 1) (by omega),
-      extract _ _ _ _ _ _ (k := 1) (by omega) rfl (by omega), emit_val (N_lt _ _) _ (fun r _ => cell_lt _ _)]
-    apply pack4_congr; intro r hr
-    rw [sum_cells h hu (k := 1) (by omega) hr 0 0 0, nNeg_eq]
+    unfold c4w1 sT
+    rw [extract _ _ hT (k := 1) (by omega) (by omega) (by norm_num)]
+    exact emit_lanes h hu (k := 1) (by omega) g2.symm
   · rw [show S + 128 * u + 32 * 2 = 64 + (S + 128 * u) by omega]
     simp (disch := first | omega | exact ut_lt _) only [csMem, word_mstore_disjoint, word_mstore]
-    unfold cs5w2 sT
-    rw [hg, code_word h (k := 0) hu (by omega) (by omega), code_word h (k := 1) hu (by omega) (by omega),
-      code_word h (k := 2) hu (by omega) (by omega),
-      Nat.add_zero, g_step h.facts (t' := 4 * u) (by omega), g_step h.facts (t' := 4 * u + 1) (by omega),
-      g_step h.facts (t' := 4 * u + 2) (by omega),
-      extract _ _ _ _ _ _ (k := 2) (by omega) rfl (by omega), emit_val (N_lt _ _) _ (fun r _ => cell_lt _ _)]
-    apply pack4_congr; intro r hr
-    rw [sum_cells h hu (k := 2) (by omega) hr 0 0 0, nNeg_eq]
+    unfold c4w2 sT
+    rw [extract _ _ hT (k := 2) (by omega) (by omega) (by norm_num)]
+    exact emit_lanes h hu (k := 2) (by omega) g3.symm
   · rw [show S + 128 * u + 32 * 3 = 96 + (S + 128 * u) by omega]
     simp (disch := first | omega | exact ut_lt _) only [csMem, word_mstore_disjoint, word_mstore]
-    unfold cs5w3 sT
-    rw [hg, code_word h (k := 0) hu (by omega) (by omega), code_word h (k := 1) hu (by omega) (by omega),
-      code_word h (k := 2) hu (by omega) (by omega), code_word h (k := 3) hu (by omega) (by omega),
-      Nat.add_zero, g_step h.facts (t' := 4 * u) (by omega), g_step h.facts (t' := 4 * u + 1) (by omega),
-      g_step h.facts (t' := 4 * u + 2) (by omega), g_step h.facts (t' := 4 * u + 3) (by omega),
-      extract _ _ _ _ _ _ (k := 3) (by omega) rfl (by omega), emit_val (N_lt _ _) _ (fun r _ => cell_lt _ _)]
-    apply pack4_congr; intro r hr
-    rw [sum_cells h hu (k := 3) (by omega) hr 0 0 0, nNeg_eq]
+    unfold c4w3 sT
+    rw [extract _ _ hT (k := 3) (by omega) (by omega) (by norm_num)]
+    exact emit_lanes h hu (k := 3) (by omega) g4.symm
 
 end
 
@@ -204,8 +295,8 @@ theorem stU_later (m : ByteArray) (T S : Nat) {a u : Nat} (ha : a + 32 ≤ S + 1
   | u' + 1, h1, h2 => by
     by_cases he : u + 1 = u' + 1
     · rw [he]
-    · show word (csMem _ _ _ _ _) a = _
-      rw [csMem_other _ _ _ _ _ (by omega), stU_later m T S ha u' (by omega) (by omega)]
+    · show word (csMem _ _ _ _ _ _) a = _
+      rw [csMem_other _ _ _ _ _ _ (by omega), stU_later m T S ha u' (by omega) (by omega)]
 
 /-- The contract body of `csum_call`. -/
 theorem csum_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -215,7 +306,7 @@ theorem csum_main {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (∀ t, t < 256 → c[t]! = 0 ∨ c[t]! = 1 ∨ c[t]! = -1) →
         CRep m c → TTable m (TT + 0x1800 * g) off s.executionEnv.calldata →
         ∀ t, t < 256 → word m' (SP + 0x2000 * g + 32 * t) =
-          pack4 fun r => 2 ^ 13 * sPrime c s.executionEnv.calldata off r t + nNeg c t) ∧
+          pack4 fun r => spOff - (2 ^ 13 * sPrime c s.executionEnv.calldata off r t + nNeg c t)) ∧
       FrameExcept m m' [(SP + 0x2000 * g, SP + 0x2000 * g + 8192)] ∧
       Call s Entry.csum [wd (SP + 0x2000 * g), wd (TT + 0x1800 * g)] ret tail m [] m' Gas.csum := by
   have htail : tail.length ≤ 960 := by have := hr.depth; simp only [Stack.csum, Stack.leaf] at this; omega

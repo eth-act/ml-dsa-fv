@@ -21,7 +21,7 @@ theorem spr_at {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (ret' : Nat) (extra : List UInt256) (hext : extra.length ≤ 4)
     (hj : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret' = true) (hsm : ret' < 2 ^ 16)
     (M : ByteArray) (v : Nat) :
-    Reach (callState s 12392 (wd v :: wd ret' :: (extra ++ tail)) M)
+    Reach (callState s 12425 (wd v :: wd ret' :: (extra ++ tail)) M)
       (callState s ret' (wd (sprNet v) :: (extra ++ tail)) M) 120 :=
   call_iff.mp (spr_call_any hs (hr.callee (B' := Stack.spr) (extra := extra)
     (by simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf]; omega) hj hsm) M v)

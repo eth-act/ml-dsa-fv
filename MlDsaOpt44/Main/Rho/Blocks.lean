@@ -3,7 +3,7 @@ import MlDsaOpt44.Math.Bswap
 import MlDsaOpt44.Math.SpongeBits
 import MlDsaOpt44.Fn.Sponge
 set_option warningAsError true
-/-! # Segment `3078 … 3439`: `RHO1` (spread ρ and c̃ lanes, eight `spr` calls).
+/-! # Segment `3069 … 3439`: `RHO1` (spread ρ and c̃ lanes, eight `spr` calls).
 
 The byte-swapped calldata word `Y = bswapNet (word cd a)` (`a = 0`, then
 `CTOFF`) stays on the stack; its lanes, top first, are spread by `spr` and
@@ -37,103 +37,103 @@ theorem laneK_eq (Y k : Nat) : 18446744073709551615 &&& Y / 2 ^ (64 * k) = lane 
 
 
 theorem rho_b0 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
-    Reach (callState s 3078 [flag b] M)
-      (callState s 3247 (wd (bswapNet (word s.executionEnv.calldata 0)) :: rhoK b) M) 120 := by
+    Reach (callState s 3069 [flag b] M)
+      (callState s 3238 (wd (bswapNet (word s.executionEnv.calldata 0)) :: rhoK b) M) 120 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem rho_b1 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
-    Reach (callState s 3247 (wd Y :: rhoK b) M)
-      (callState s 12392 (wd (Y / 2 ^ 192) :: wd 3259 :: wd Y :: rhoK b) M) 26 := by
+    Reach (callState s 3238 (wd Y :: rhoK b) M)
+      (callState s 12425 (wd (Y / 2 ^ 192) :: wd 3250 :: wd Y :: rhoK b) M) 26 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1009, 1010, 1011, 1012, 1013, 1014, 1015] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1004, 1005, 1006, 1007, 1008, 1009, 1010] with [rhoK]
 
 theorem rho_b6 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
-    Reach (callState s 3362 (wd Y :: rhoK b) M)
-      (callState s 12392 (wd (Y / 2 ^ 192) :: wd 3374 :: wd Y :: rhoK b) M) 26 := by
+    Reach (callState s 3353 (wd Y :: rhoK b) M)
+      (callState s 12425 (wd (Y / 2 ^ 192) :: wd 3365 :: wd Y :: rhoK b) M) 26 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1089, 1090, 1091, 1092, 1093, 1094, 1095] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1084, 1085, 1086, 1087, 1088, 1089, 1090] with [rhoK]
 
 theorem rho_b2 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 0 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3259 (wd (w 0) :: wd Y :: rhoK b) (storeWords m RHO1 w 0))
-      (callState s 12392 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3278 :: wd Y :: rhoK b)
+    Reach (callState s 3250 (wd (w 0) :: wd Y :: rhoK b) (storeWords m RHO1 w 0))
+      (callState s 12425 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3269 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 1)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022] with [rhoK]
   rfl
 
 theorem rho_b3 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 1 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3278 (wd (w 1) :: wd Y :: rhoK b) (storeWords m RHO1 w 1))
-      (callState s 12392 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3297 :: wd Y :: rhoK b)
+    Reach (callState s 3269 (wd (w 1) :: wd Y :: rhoK b) (storeWords m RHO1 w 1))
+      (callState s 12425 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3288 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 2)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034] with [rhoK]
   rfl
 
 theorem rho_b4 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (_hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 2 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3297 (wd (w 2) :: wd Y :: rhoK b) (storeWords m RHO1 w 2))
-      (callState s 12392 (wd (18446744073709551615 &&& Y) :: wd 3313 :: wd Y :: rhoK b)
+    Reach (callState s 3288 (wd (w 2) :: wd Y :: rhoK b) (storeWords m RHO1 w 2))
+      (callState s 12425 (wd (18446744073709551615 &&& Y) :: wd 3304 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 3)) 33 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1048, 1049] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044] with [rhoK]
   rfl
 
 theorem rho_b7 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 4 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3374 (wd (w 4) :: wd Y :: rhoK b) (storeWords m RHO1 w 4))
-      (callState s 12392 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3393 :: wd Y :: rhoK b)
+    Reach (callState s 3365 (wd (w 4) :: wd Y :: rhoK b) (storeWords m RHO1 w 4))
+      (callState s 12425 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3384 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 5)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1096, 1097, 1098, 1099, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1091, 1092, 1093, 1094, 1095, 1096, 1097, 1098, 1099, 1100, 1101, 1102] with [rhoK]
   rfl
 
 theorem rho_b8 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 5 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3393 (wd (w 5) :: wd Y :: rhoK b) (storeWords m RHO1 w 5))
-      (callState s 12392 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3412 :: wd Y :: rhoK b)
+    Reach (callState s 3384 (wd (w 5) :: wd Y :: rhoK b) (storeWords m RHO1 w 5))
+      (callState s 12425 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3403 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 6)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1108, 1109, 1110, 1111, 1112, 1113, 1114, 1115, 1116, 1117, 1118, 1119] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1103, 1104, 1105, 1106, 1107, 1108, 1109, 1110, 1111, 1112, 1113, 1114] with [rhoK]
   rfl
 
 theorem rho_b9 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (_hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 6 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3412 (wd (w 6) :: wd Y :: rhoK b) (storeWords m RHO1 w 6))
-      (callState s 12392 (wd (18446744073709551615 &&& Y) :: wd 3428 :: wd Y :: rhoK b)
+    Reach (callState s 3403 (wd (w 6) :: wd Y :: rhoK b) (storeWords m RHO1 w 6))
+      (callState s 12425 (wd (18446744073709551615 &&& Y) :: wd 3419 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 7)) 33 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1120, 1121, 1122, 1123, 1124, 1125, 1126, 1127, 1128, 1129] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1115, 1116, 1117, 1118, 1119, 1120, 1121, 1122, 1123, 1124] with [rhoK]
   rfl
 
 theorem rho_b5 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (m : ByteArray)
     (w : Nat → Nat) (hw : w 3 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3313 (wd (w 3) :: wd Y :: rhoK b) (storeWords m RHO1 w 3))
-      (callState s 3362 (wd (bswapNet (word s.executionEnv.calldata 1312)) :: rhoK b)
+    Reach (callState s 3304 (wd (w 3) :: wd Y :: rhoK b) (storeWords m RHO1 w 3))
+      (callState s 3353 (wd (bswapNet (word s.executionEnv.calldata 1312)) :: rhoK b)
         (storeWords m RHO1 w 4)) 114 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068, 1069, 1070, 1071, 1072, 1073, 1074, 1075, 1076, 1077, 1078, 1079, 1080, 1081, 1082, 1083, 1084, 1085, 1086, 1087, 1088] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1045, 1046, 1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068, 1069, 1070, 1071, 1072, 1073, 1074, 1075, 1076, 1077, 1078, 1079, 1080, 1081, 1082, 1083] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
   rfl
 
 theorem rho_b10 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (m : ByteArray)
     (w : Nat → Nat) (hw : w 7 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3428 (wd (w 7) :: wd Y :: rhoK b) (storeWords m RHO1 w 7))
-      (callState s 3439 [flag b] (storeWords m RHO1 w 8)) 19 := by
+    Reach (callState s 3419 (wd (w 7) :: wd Y :: rhoK b) (storeWords m RHO1 w 7))
+      (callState s 3430 [flag b] (storeWords m RHO1 w 8)) 19 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  have hfw : 2097 ≤ s.activeWords.toNat := hs.sized
-  opt44_reach [1130, 1131, 1132, 1133, 1134, 1135, 1136, 1137, 1138] with [rhoK]
+  have hfw : 2616 ≤ s.activeWords.toNat := hs.sized
+  opt44_reach [1125, 1126, 1127, 1128, 1129, 1130, 1131, 1132, 1133] with [rhoK]
   rfl
 
 theorem lane0_eq (Y : Nat) : 18446744073709551615 &&& Y = lane Y 0 := by
@@ -149,7 +149,7 @@ theorem rhoW_hi (cd : ByteArray) {k : Nat} (hk : k < 4) :
 theorem seg_rho_proof {s : State} (hs : Ctx s) {m : ByteArray}
     (hI : Inv3 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv4 s.executionEnv.calldata m' ∧
-      Reach (callState s 3078 [flag b] m) (callState s 3439 [flag b] m') Gas.pRho := by
+      Reach (callState s 3069 [flag b] m) (callState s 3430 [flag b] m') Gas.pRho := by
   generalize hcd : s.executionEnv.calldata = cd at hI
   have hY0 := bswapNet_lt (word cd 0)
   have hY1 := bswapNet_lt (word cd 1312)
@@ -182,21 +182,21 @@ theorem seg_rho_proof {s : State} (hs : Ctx s) {m : ByteArray}
   let Y0 := bswapNet (word s.executionEnv.calldata 0)
   let Y1 := bswapNet (word s.executionEnv.calldata 1312)
   let W := rhoW s.executionEnv.calldata
-  have c0 := spr_call hs (hr 3259 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c0 := spr_call hs (hr 3250 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 0) (v := Y0 / 2 ^ 192) (by omega)
-  have c1 := spr_call hs (hr 3278 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c1 := spr_call hs (hr 3269 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 1) (v := 18446744073709551615 &&& Y0 / 2 ^ (64 * 2)) (by rw [laneK_eq]; unfold lane; omega)
-  have c2 := spr_call hs (hr 3297 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c2 := spr_call hs (hr 3288 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 2) (v := 18446744073709551615 &&& Y0 / 2 ^ (64 * 1)) (by rw [laneK_eq]; unfold lane; omega)
-  have c3 := spr_call hs (hr 3313 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c3 := spr_call hs (hr 3304 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 3) (v := 18446744073709551615 &&& Y0) (by rw [lane0_eq]; unfold lane; omega)
-  have c4 := spr_call hs (hr 3374 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c4 := spr_call hs (hr 3365 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 4) (v := Y1 / 2 ^ 192) (by omega)
-  have c5 := spr_call hs (hr 3393 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c5 := spr_call hs (hr 3384 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 5) (v := 18446744073709551615 &&& Y1 / 2 ^ (64 * 2)) (by rw [laneK_eq]; unfold lane; omega)
-  have c6 := spr_call hs (hr 3412 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c6 := spr_call hs (hr 3403 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 6) (v := 18446744073709551615 &&& Y1 / 2 ^ (64 * 1)) (by rw [laneK_eq]; unfold lane; omega)
-  have c7 := spr_call hs (hr 3428 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c7 := spr_call hs (hr 3419 Y1 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 7) (v := 18446744073709551615 &&& Y1) (by rw [lane0_eq]; unfold lane; omega)
   rw [call_iff, e0] at c0
   rw [call_iff, e1] at c1
@@ -220,7 +220,7 @@ theorem seg_rho_proof {s : State} (hs : Ctx s) {m : ByteArray}
   refine ⟨storeWords m RHO1 W 8,
     ⟨⟨hI.rc4.frame hfr (by avoids_tac), hI.rc1.frame hfr (by avoids_tac),
       hI.tbl.frame hfr (by avoids_tac), hI.zhat.frame hfr (by avoids_tac),
-      hI.hp.frame hfr (by avoids_tac), hI.zMisc.frame hfr (by avoids_tac),
+      hI.zMisc.frame hfr (by avoids_tac),
       hI.zCw.frame hfr (by avoids_tac), hI.zHigh.frame hfr (by avoids_tac)⟩,
       fun x hx => ⟨?_, ?_⟩⟩, h.mono (by unfold Gas.pRho; omega)⟩
   · rw [word_storeWords (hW x) 8 (by omega), rhoW_lo _ hx]

@@ -11,8 +11,8 @@ set_option linter.unusedSimpArgs false
 
 * `zR_gW`: the raw word of step `kk` holds `20` bits of `V_k` from bit
   `gs + 20 kk` in lane `k`;
-* `zv_pack`, `zf_lane`: the stored word is `K − raw` lane-wise, and the flag word
-  has no `zFlagBit j` bit iff the lane-`j` raw value is in `(β, 2γ1 − β)`;
+* `zv_pack`, `zf_lane`: the stored word is `K − raw` lane-wise (`K = γ1 + 9q`), and the
+  flag word (v4: `C + (2^32 − 1) raw`) has no `zFlagBit j` bit iff the lane-`j` raw value is in `(β, 2γ1 − β)`;
 * `le_rawZ`: the bits of the little-endian windows are the packed fields `rawZ`
   (no calldata-size hypothesis: past the end both read zero bytes).
 The lane lemmas `pack4_*` are the 44 ones.
@@ -74,62 +74,64 @@ theorem zR_gW (V : Nat → Nat) (gs kk : Nat) (hkk : kk ≤ 2) :
 /-! ## Stored and flag words -/
 
 theorem zv_pack {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) :
-    zv (pack4 r) = pack4 (fun k => 8904705 - r k) := by
+    zv (pack4 r) = pack4 (fun k => 75948041 - r k) := by
   have h0 := h 0 (by omega); have h1 := h 1 (by omega)
   have h2 := h 2 (by omega); have h3 := h 3 (by omega)
   simp only [zv, pack4]; omega
 
 theorem and_bits_eq_zero (y : Nat) :
-    y &&& (2 ^ 52 + 2 ^ 25) = 0 ↔ y.testBit 52 = false ∧ y.testBit 25 = false := by
+    y &&& (2 ^ 52 + 2 ^ 27) = 0 ↔ y.testBit 52 = false ∧ y.testBit 27 = false := by
   constructor
   · intro h
     have e52 := congrArg (Nat.testBit · 52) h
-    have e25 := congrArg (Nat.testBit · 25) h
-    simp only [Nat.testBit_and, Nat.zero_testBit, Nat.reducePow, Nat.reduceAdd, testBit_lit, Bool.and_true] at e52 e25
-    exact ⟨e52, e25⟩
-  · rintro ⟨h52, h25⟩
+    have e27 := congrArg (Nat.testBit · 27) h
+    simp only [Nat.testBit_and, Nat.zero_testBit, Nat.reducePow, Nat.reduceAdd, testBit_lit, Bool.and_true] at e52 e27
+    exact ⟨e52, e27⟩
+  · rintro ⟨h52, h27⟩
     apply Nat.eq_of_testBit_eq; intro j
     rw [Nat.testBit_and, Nat.zero_testBit]
     by_cases hj : j = 52
     · subst hj; rw [h52, Bool.false_and]
-    by_cases hj' : j = 25
-    · subst hj'; rw [h25, Bool.false_and]
-    have : (2 ^ 52 + 2 ^ 25 : Nat).testBit j = false := by
-      rw [show (2 ^ 52 + 2 ^ 25 : Nat) = 2 ^ 52 ||| 2 ^ 25 by decide, Nat.testBit_or,
+    by_cases hj' : j = 27
+    · subst hj'; rw [h27, Bool.false_and]
+    have : (2 ^ 52 + 2 ^ 27 : Nat).testBit j = false := by
+      rw [show (2 ^ 52 + 2 ^ 27 : Nat) = 2 ^ 52 ||| 2 ^ 27 by decide, Nat.testBit_or,
         Nat.testBit_two_pow, Nat.testBit_two_pow]
       simp only [Bool.or_eq_false_iff, decide_eq_false_iff_not]; omega
     rw [this, Bool.and_false]
 
-/-- One lane of the flag word. -/
+/-- One lane of the flag word (v4): `(r + 120) 2^32 + (2^27 + 120 − r)`. -/
 theorem lane_flag {r : Nat} (hr : r < 2 ^ 20) :
-    ((24649847 + (8904705 - r)) ||| (120 + r) * 4294967296) &&& (2 ^ 52 + 2 ^ 25) = 0 ↔
-      120 < r ∧ r < 1048456 := by
-  rw [and_bits_eq_zero, Nat.testBit_or, Nat.testBit_or, Bool.or_eq_false_iff, Bool.or_eq_false_iff,
-    Nat.testBit_eq_decide_div_mod_eq, Nat.testBit_eq_decide_div_mod_eq,
-    Nat.testBit_eq_decide_div_mod_eq, Nat.testBit_eq_decide_div_mod_eq]
+    (515530293368 + 4294967295 * r) &&& (2 ^ 52 + 2 ^ 27) = 0 ↔ 120 < r ∧ r < 1048456 := by
+  rw [and_bits_eq_zero, Nat.testBit_eq_decide_div_mod_eq, Nat.testBit_eq_decide_div_mod_eq]
   simp only [decide_eq_false_iff_not, Nat.reducePow]
-  omega
+  have e : 515530293368 + 4294967295 * r = (r + 120) * 4294967296 + (134217848 - r) := by omega
+  have e27 : (515530293368 + 4294967295 * r) / 134217728 = (r + 120) * 32 + (134217848 - r) / 134217728 := by
+    rw [e]; omega
+  have e52 : (515530293368 + 4294967295 * r) / 4503599627370496 = (r + 120) / 1048576 := by
+    rw [e]; omega
+  rw [e27, e52]
+  have : (134217848 - r) / 134217728 = if r ≤ 120 then 1 else 0 := by split <;> omega
+  rw [this]
+  have : (r + 120) / 1048576 = if 1048456 ≤ r then 1 else 0 := by split <;> omega
+  rw [this]
+  split <;> split <;> omega
 
 theorem zf_pack {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) :
-    zf (pack4 r) = pack4 (fun k => (24649847 + (8904705 - r k)) ||| (120 + r k) * 4294967296) := by
+    zf (pack4 r) = pack4 (fun k => 515530293368 + 4294967295 * r k) := by
   have h0 := h 0 (by omega); have h1 := h 1 (by omega)
   have h2 := h 2 (by omega); have h3 := h 3 (by omega)
-  have ea : 154729597380716166674783250687686220605203381641598694267257626743 + zv (pack4 r) =
-      pack4 (fun k => 24649847 + (8904705 - r k)) := by simp only [zv, pack4]; omega
-  have eb : (753252208246401691701128614815432585550101215516341473116280 + pack4 r) * 4294967296 =
-      pack4 (fun k => (120 + r k) * 4294967296) := by simp only [pack4]; omega
-  unfold zf
-  rw [ea, eb, pack4_or (fun k hk => by have := h k hk; omega) (fun k hk => by have := h k hk; omega)]
+  simp only [zf, pack4]; omega
 
 theorem zFlagBit_pack {j : Nat} (hj : j < 4) :
-    zFlagBit j = pack4 (fun k => if k = j then 2 ^ 52 + 2 ^ 25 else 0) := by
+    zFlagBit j = pack4 (fun k => if k = j then 2 ^ 52 + 2 ^ 27 else 0) := by
   unfold zFlagBit pack4; interval_cases j <;> simp
 
 /-- Lane `j` of the flag word: no `zFlagBit j` bit iff the lane-`j` raw value passes. -/
 theorem zf_lane {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) {j : Nat} (hj : j < 4) :
     zf (pack4 r) &&& zFlagBit j = 0 ↔ 120 < r j ∧ r j < 1048456 := by
-  have hl : ∀ k, k < 4 → (24649847 + (8904705 - r k)) ||| (120 + r k) * 4294967296 < 2 ^ 64 :=
-    fun k hk => Nat.or_lt_two_pow (by have := h k hk; omega) (by have := h k hk; omega)
+  have hl : ∀ k, k < 4 → 515530293368 + 4294967295 * r k < 2 ^ 64 :=
+    fun k hk => by have := h k hk; omega
   rw [zf_pack h, zFlagBit_pack hj, pack4_and hl (fun k _ => by split <;> norm_num), pack4_eq_zero]
   constructor
   · intro hh
@@ -143,8 +145,7 @@ theorem zf_lane {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) {j : Nat} 
 
 theorem zf_lt {R : Nat} (hR : R ≤ 6582011952183088782295924477334101861609978183833731334774194175) :
     zf R < 2 ^ 256 := by
-  unfold zf zv
-  exact Nat.or_lt_two_pow (by omega) (by omega)
+  unfold zf; omega
 
 theorem zf_zR_lt (x : Nat) : zf (zR x) < 2 ^ 256 := zf_lt Nat.and_le_left
 

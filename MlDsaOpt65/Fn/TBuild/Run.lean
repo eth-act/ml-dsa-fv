@@ -31,11 +31,11 @@ theorem tb_inner (hs : Ctx s) (htl : tail.length ≤ 960) (hT : T + 6144 ≤ 655
     {m M : ByteArray} {n v0 off : Nat} (hI : Inv s.executionEnv.calldata m M T off0 n)
     (hoff : off = off0 + 5 * v0) (hn : v0 ≤ n) (hn64 : n ≤ 64) (hv : v0 + 6 ≤ 64) :
     ∀ j, j ≤ 5 → ∃ M', Inv s.executionEnv.calldata m M' T off0 (max n (v0 + j)) ∧
-      Reach (callState s 15296 (wd 0 :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
+      Reach (callState s 15095 (wd 0 :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata (320 + off) 32) ::
           wd (leNat s.executionEnv.calldata off 32) :: wd (T + 4064 - 32 * v0) :: wd T :: wd off ::
           wd (T + 2208) :: wd ret :: tail) M)
-        (callState s 15296 (wd (40 * j) :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
+        (callState s 15095 (wd (40 * j) :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata (320 + off) 32) ::
           wd (leNat s.executionEnv.calldata off 32) :: wd (T + 4064 - 32 * (v0 + j)) :: wd T :: wd off ::
           wd (T + 2208) :: wd ret :: tail) M') (302 * j)
@@ -68,8 +68,8 @@ theorem tb_chunk (hs : Ctx s) (htl : tail.length ≤ 960) (hT : T + 6144 ≤ 655
     {m M : ByteArray} {n v0 off : Nat} (hI : Inv s.executionEnv.calldata m M T off0 n)
     (hoff : off = off0 + 5 * v0) (hn : v0 ≤ n) (hn64 : n ≤ 64) (hv : v0 + 6 ≤ 64) :
     ∃ M', Inv s.executionEnv.calldata m M' T off0 (max n (v0 + 6)) ∧
-      Reach (callState s 14905 (wd (T + 4064 - 32 * v0) :: wd T :: wd off :: wd (T + 2208) :: wd ret :: tail) M)
-        (callState s 15622 (wd 240 :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
+      Reach (callState s 14704 (wd (T + 4064 - 32 * v0) :: wd T :: wd off :: wd (T + 2208) :: wd ret :: tail) M)
+        (callState s 15421 (wd 240 :: wd (leNat s.executionEnv.calldata (960 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata (320 + off) 32) ::
           wd (leNat s.executionEnv.calldata off 32) :: wd (T + 4064 - 32 * v0 - 192) :: wd T :: wd off ::
           wd (T + 2208) :: wd ret :: tail) M') 2501 := by
@@ -108,8 +108,8 @@ theorem tb_chunk (hs : Ctx s) (htl : tail.length ≤ 960) (hT : T + 6144 ≤ 655
 theorem tb_outer (hs : Ctx s) (htl : tail.length ≤ 960) (hT : T + 6144 ≤ 65536)
     (hcd : off0 + 1280 ≤ s.executionEnv.calldata.size) (m : ByteArray) :
     ∀ c, c ≤ 9 → ∃ M, Inv s.executionEnv.calldata m M T off0 (6 * c) ∧
-      Reach (callState s 14905 (wd (T + 4064) :: wd T :: wd off0 :: wd (T + 2208) :: wd ret :: tail) m)
-        (callState s 14905 (wd (T + 4064 - 192 * c) :: wd T :: wd (off0 + 30 * c) :: wd (T + 2208) ::
+      Reach (callState s 14704 (wd (T + 4064) :: wd T :: wd off0 :: wd (T + 2208) :: wd ret :: tail) m)
+        (callState s 14704 (wd (T + 4064 - 192 * c) :: wd T :: wd (off0 + 30 * c) :: wd (T + 2208) ::
           wd ret :: tail) M) (2591 * c)
   | 0, _ => ⟨m, inv_zero _ _ _ _, ((Reach.refl _).mono (by omega)).of_eq rfl (by simp)⟩
   | c + 1, hc => by

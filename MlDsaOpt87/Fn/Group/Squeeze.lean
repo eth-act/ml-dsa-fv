@@ -4,7 +4,7 @@ import MlDsaOpt44.Math.SpongeBytes
 import MlDsaOpt87.Fn.Group.Common
 import MlDsaOpt87.Fn.Group.Defs
 /- Ported from `MlDsaOpt44/Fn/Group/Squeeze.lean` by `scripts/proofgen_port.py 87`; hand adjustments are marked `-- port:`. -/
--- port: `gB` carries `amask col rb`; the return pcs of the five squeezes are 15202 + 22 b (kf4) / 15210 + 22 b (blk)
+-- port: `gB` carries `amask col rb`; the return pcs of the five squeezes are 15291 + 22 b (kf4) / 15299 + 22 b (blk)
 set_option maxHeartbeats 0  -- port: re-elaboration headroom
 set_option warningAsError true
 set_option linter.unusedSimpArgs false
@@ -73,19 +73,19 @@ abbrev gB (amask col rb ret : Nat) (tail : List UInt256) : List UInt256 :=  -- p
 theorem squeeze_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {amask col rb b : Nat} (hb : b < 5) {m M : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M I b)
-    (hK : Reach (callState s (15202 + 22 * b) (gB amask col rb ret tail) M)
-      (callState s 22461 (wd (15210 + 22 * b) :: gB amask col rb ret tail) M) 15)
-    (hL : ∀ M, Reach (callState s (15210 + 22 * b) (gB amask col rb ret tail) M)
-      (callState s 10772 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (15224 + 22 * b) ::
+    (hK : Reach (callState s (15291 + 22 * b) (gB amask col rb ret tail) M)
+      (callState s 22277 (wd (15299 + 22 * b) :: gB amask col rb ret tail) M) 15)
+    (hL : ∀ M, Reach (callState s (15299 + 22 * b) (gB amask col rb ret tail) M)
+      (callState s 10997 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (15313 + 22 * b) ::
         gB amask col rb ret tail) M) 21)
-    (hjK : Decode.isValidJumpDest optBytecode (15210 + 22 * b) = true)
-    (hjL : Decode.isValidJumpDest optBytecode (15224 + 22 * b) = true) :
+    (hjK : Decode.isValidJumpDest optBytecode (15299 + 22 * b) = true)
+    (hjL : Decode.isValidJumpDest optBytecode (15313 + 22 * b) = true) :
     ∃ M', SqInv m M' I (b + 1) ∧
-      Reach (callState s (15202 + 22 * b) (gB amask col rb ret tail) M)
-        (callState s (15202 + 22 * (b + 1)) (gB amask col rb ret tail) M') (36 + Gas.kf4 + Gas.blk) := by
+      Reach (callState s (15291 + 22 * b) (gB amask col rb ret tail) M)
+        (callState s (15291 + 22 * (b + 1)) (gB amask col rb ret tail) M') (36 + Gas.kf4 + Gas.blk) := by
   obtain ⟨hks, hrc, h6, hfr, hblocks⟩ := hinv
   obtain ⟨M1, hk1, hf1, hc1⟩ := MlDsaOpt87.Proofs.kf4_call hs (hr.callee (B' := Stack.kf4)
-    (ret' := 15210 + 22 * b)
+    (ret' := 15299 + 22 * b)
     (extra := [wd amask, wd col, wd rb, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide)
     hjK (by omega)) M hrc
   have hS : Sized4 fun k => permN b (I k) := fun k hk => permN_size (hI k hk) b
@@ -95,7 +95,7 @@ theorem squeeze_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       funext fun k => permN_succ b (I k)
     rw [e]; exact hk1 _ hS hks
   obtain ⟨M2, hb2, hf2, hc2⟩ := MlDsaOpt87.Proofs.blk_call hs (hr.callee (B' := Stack.blk)
-    (ret' := 15224 + 22 * b)
+    (ret' := 15313 + 22 * b)
     (extra := [wd amask, wd col, wd rb, wd ret]) (by simp only [List.length_cons, List.length_nil]; decide)
     hjL (by omega)) M1 (b := b) (by omega)
   obtain ⟨hA, hF⟩ := hb2 _ hS1 hks1
@@ -112,22 +112,22 @@ theorem squeeze_step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · rw [FrameExcept.word hf2 (by grp_avoids), FrameExcept.word hf1 (by grp_avoids)]; exact hA' i hi
       · rw [FrameExcept.word hf2 (by grp_avoids), FrameExcept.word hf1 (by grp_avoids)]; exact hF' g hg
   · have h := hK.trans (hc1.trans ((hL M1).trans hc2))
-    rw [show 15202 + 22 * (b + 1) = 15224 + 22 * b by ring]
+    rw [show 15291 + 22 * (b + 1) = 15313 + 22 * b by ring]
     exact h.mono (by omega)
 
 theorem squeezes {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {amask col rb : Nat} {m M0 : ByteArray}
     {I : Nat → Fips202.SpongeState} (hI : Sized4 I) (hinv : SqInv m M0 I 0)
-    (hK : ∀ b, b < 5 → ∀ M, Reach (callState s (15202 + 22 * b) (gB amask col rb ret tail) M)
-      (callState s 22461 (wd (15210 + 22 * b) :: gB amask col rb ret tail) M) 15)
-    (hL : ∀ b, b < 5 → ∀ M, Reach (callState s (15210 + 22 * b) (gB amask col rb ret tail) M)
-      (callState s 10772 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (15224 + 22 * b) ::
+    (hK : ∀ b, b < 5 → ∀ M, Reach (callState s (15291 + 22 * b) (gB amask col rb ret tail) M)
+      (callState s 22277 (wd (15299 + 22 * b) :: gB amask col rb ret tail) M) 15)
+    (hL : ∀ b, b < 5 → ∀ M, Reach (callState s (15299 + 22 * b) (gB amask col rb ret tail) M)
+      (callState s 10997 (wd (FL + 224 * b) :: wd (ABUF + 1792 * b) :: wd (15313 + 22 * b) ::
         gB amask col rb ret tail) M) 21)
-    (hjK : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (15210 + 22 * b) = true)
-    (hjL : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (15224 + 22 * b) = true) :
+    (hjK : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (15299 + 22 * b) = true)
+    (hjL : ∀ b, b < 5 → Decode.isValidJumpDest optBytecode (15313 + 22 * b) = true) :
     ∀ n, n ≤ 5 → ∃ M', SqInv m M' I n ∧
-      Reach (callState s 15202 (gB amask col rb ret tail) M0)
-        (callState s (15202 + 22 * n) (gB amask col rb ret tail) M') (n * (36 + Gas.kf4 + Gas.blk))
+      Reach (callState s 15291 (gB amask col rb ret tail) M0)
+        (callState s (15291 + 22 * n) (gB amask col rb ret tail) M') (n * (36 + Gas.kf4 + Gas.blk))
   | 0, _ => ⟨M0, hinv, (Reach.refl _).of_eq rfl rfl⟩
   | n + 1, hn => by
     obtain ⟨M', hinv', hR⟩ := squeezes hs hr hI hinv hK hL hjK hjL n (by omega)

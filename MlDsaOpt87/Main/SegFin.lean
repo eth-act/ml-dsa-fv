@@ -1,5 +1,5 @@
 import MlDsaOpt87.Main.S1.Fin
-/-! # Segment `6724 … RETURN`: the final hash, the c̃ comparison and the return -/
+/-! # Segment `6805 … RETURN`: the final hash, the c̃ comparison and the return -/
 
 namespace MlDsaOpt87.Proofs
 
@@ -8,7 +8,7 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
 
-/-- `6724 … RETURN` (proved in `Main/S1/{FinBlocks,Fin}.lean`): zero `KS`, eight visits of the 17-lane loop over
+/-- `6805 … RETURN` (proved in `Main/S1/{FinBlocks,Fin}.lean`): zero `KS`, eight visits of the 17-lane loop over
 `FIN` (136 lanes, `kf1` each), the padding block (`0x1F` in lane 0, `0x80` in
 lane 16) and `kf1`, then compare the first 8 output lanes with `c̃` (two
 32-byte `CALLDATALOAD`s) and `mstore(0, ok); return(0, 32)`. The comparison
@@ -19,7 +19,7 @@ theorem seg_fin {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     ∃ E : Bool, ∃ pc stk m',
       (∀ X : ByteArray, X.size = 1088 → FinAt m X →
         E = (ctOf s.executionEnv.calldata == Fips204.H X 64)) ∧
-      Reach (callState s 6724 [flag b] m)
+      Reach (callState s 6805 [flag b] m)
         (finalState s pc stk m' (if (b && E) = true then 1 else 0)) Gas.pFin := by
   exact S1.seg_fin_proof hs hcd hrc b
 

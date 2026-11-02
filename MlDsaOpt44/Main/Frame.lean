@@ -18,9 +18,10 @@ open MlDsa44
 
 /-- Close `Avoids rs lo hi` for literal layout ranges. -/
 macro "avoids_tac" : tactic => `(tactic| (
-  simp only [MlDsaOptCommon.avoids_cons, MlDsaOptCommon.avoids_nil, and_true,
+  simp only [MlDsaOptCommon.avoids_cons, MlDsaOptCommon.avoids_nil, MlDsaOptCommon.avoids_append,
+    List.cons_append, List.nil_append, and_true,
     KS, KB, RC4, RC1, MISC, NNEG, CNT, HAVE6, TBL, CW, ABUF, FL, ZH, BASES, IDX, ACC, HP, FIN,
-    RHO1, CB, TRL, MU, BK, TT, SP, TOP, KZ]
+    RHO1, CB, TRL, MU, BK, TT, SP, TOP, KZ, SB, LIM, SC, SAVE0, SAVE1]
   omega))
 
 theorem word_frame {m m' : ByteArray} {rs : List (Nat × Nat)} (h : FrameExcept m m' rs)
@@ -87,8 +88,28 @@ theorem CRep.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {c : Fips204.Poly
     rw [word_frame h hb (a := BASES + 32 * i) (by omega) (by omega)]; exact h6 i hi
 
 theorem SibFresh.frame {m m' : ByteArray} {rs : List (Nat × Nat)} (hr : SibFresh m)
-    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hb : Avoids rs BASES (IDX + 256))
+    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hb : Avoids rs IDX (IDX + 256))
     (hn : Avoids rs NNEG (NNEG + 64)) : SibFresh m' :=
   ⟨hr.1.frame h ha, hr.2.1.frame h hb, hr.2.2.frame h hn⟩
+
+theorem ColAt.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {base : Nat} {cd : ByteArray} {col : Nat}
+    (hr : ColAt m base cd col) (h : FrameExcept m m' rs) (ha : Avoids rs base (base + 8192)) :
+    ColAt m' base cd col := fun hc t ht => by
+  rw [word_frame h ha (a := base + 32 * t) (by omega) (by omega)]; exact hr hc t ht
+
+theorem Col3At.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {base : Nat} {cd : ByteArray} {col : Nat}
+    (hr : Col3At m base cd col) (h : FrameExcept m m' rs) (ha : Avoids rs base (base + 8192)) :
+    Col3At m' base cd col := fun hc t ht r hr' => by
+  rw [word_frame h ha (a := base + 32 * t) (by omega) (by omega)]; exact hr hc t ht r hr'
+
+theorem St4At.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {base : Nat}
+    {S : Nat → Fips202.SpongeState} (hr : St4At m base S) (h : FrameExcept m m' rs)
+    (ha : Avoids rs base (base + 800)) : St4At m' base S := fun x hx => by
+  rw [word_frame h ha (a := base + 32 * x) (by omega) (by omega)]; exact hr x hx
+
+theorem ScAt.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {cd : ByteArray} (hr : ScAt m cd)
+    (h : FrameExcept m m' rs) (ha : Avoids rs SC (SC + 800)) : ScAt m' cd := by
+  obtain ⟨S, h1, h2, h3, h4⟩ := hr
+  exact ⟨S, h1, h2.frame h ha, h3, h4⟩
 
 end MlDsaOpt44.Proofs

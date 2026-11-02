@@ -18,8 +18,8 @@ open MlDsaOpt65.Proofs.Infra
 
 theorem g1_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {amask col rb ret : Nat} (ha : amask < 16) (hcol : col < 8) (hrb : rb < 2) (M : ByteArray) :
-    Reach (callState s 14627 (gB amask col rb ret tail) M)
-      (callState s 12015 (wd (gL4 amask col rb) :: wd 0 :: wd 15 :: wd 0 :: wd 14730 ::
+    Reach (callState s 14460 (gB amask col rb ret tail) M)
+      (callState s 11987 (wd (gL4 amask col rb) :: wd 0 :: wd 15 :: wd 0 :: wd 14563 ::
         gB amask col rb ret tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 0 32) HAVE6)) 179 := by
   have hsz := hs.sized; simp only [memWords] at hsz
@@ -27,9 +27,9 @@ theorem g1_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
   have ha' : amask % 2 ^ 256 = amask := Nat.mod_eq_of_lt (by omega)
   have hc' : col % 2 ^ 256 = col := Nat.mod_eq_of_lt (by omega)
   have hr' : rb % 2 ^ 256 = rb := Nat.mod_eq_of_lt (by omega)
-  opt65_reach [6433, 6434, 6435, 6436, 6437, 6438, 6439, 6440, 6441, 6442, 6443, 6444, 6445, 6446,
-    6447, 6448, 6449, 6450, 6451, 6452, 6453, 6454, 6455, 6456, 6457, 6458, 6459, 6460, 6461, 6462,
-    6463, 6464, 6465, 6466, 6467, 6468, 6469, 6470, 6471, 6472, 6473, 6474, 6475, 6476, 6477, 6478,
-    6479, 6480, 6481, 6482, 6483, 6484, 6485, 6486, 6487, 6488, 6489] with [HAVE6]
+  opt65_reach [6515, 6516, 6517, 6518, 6519, 6520, 6521, 6522, 6523, 6524, 6525, 6526, 6527, 6528,
+    6529, 6530, 6531, 6532, 6533, 6534, 6535, 6536, 6537, 6538, 6539, 6540, 6541, 6542, 6543, 6544,
+    6545, 6546, 6547, 6548, 6549, 6550, 6551, 6552, 6553, 6554, 6555, 6556, 6557, 6558, 6559, 6560,
+    6561, 6562, 6563, 6564, 6565, 6566, 6567, 6568, 6569, 6570, 6571] with [HAVE6]
 
 end MlDsaOpt65.Proofs.GroupP

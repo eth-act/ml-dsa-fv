@@ -75,8 +75,30 @@ theorem w1Of_get (cd : ByteArray) {r t : Nat} (hr : r < 4) (ht : t < 256) :
     (w1Of cd)[r]![t]! = Fips204.useHint (hintD cd)[r]![t]! (wRow cd r)[t]! := by
   rw [w1Of_row cd hr]; exact getElem!_map_range 256 t _ ht
 
-theorem zLane_lt (cd : ByteArray) (k t : Nat) : zLane cd k t < 2 ^ 25 := by
+theorem fipsBits_lt (v : ByteArray) (s : Nat) : ∀ c, Fips204.bitsToInteger v s c < 2 ^ c
+  | 0 => by simp [Fips204.bitsToInteger]
+  | c + 1 => by
+    have ih := fipsBits_lt v s c
+    unfold Fips204.bitsToInteger at ih ⊢
+    rw [List.range_succ, List.map_append, List.sum_append]
+    have hb : Fips204.bit v (s + c) ≤ 1 := by
+      unfold Fips204.bit; have := Nat.mod_lt (v[(s + c) / 8]!.toNat / 2 ^ ((s + c) % 8)) (by decide : 0 < 2)
+      omega
+    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil, Nat.add_zero, Nat.pow_succ]
+    have : Fips204.bit v (s + c) * 2 ^ c ≤ 2 ^ c := by
+      calc _ ≤ 1 * 2 ^ c := Nat.mul_le_mul_right _ hb
+        _ = 2 ^ c := Nat.one_mul _
+    omega
+
+theorem rawZ_lt' (cd : ByteArray) (k t : Nat) : rawZ cd k t < 2 ^ 18 := by
+  unfold rawZ; exact fipsBits_lt _ _ _
+
+theorem zLane_lt (cd : ByteArray) (k t : Nat) : zLane cd k t < 2 ^ 27 := by
   unfold zLane Fips204.q; omega
+
+theorem zLane_range (cd : ByteArray) (k t : Nat) : zLo ≤ zLane cd k t ∧ zLane cd k t ≤ zHi := by
+  have := rawZ_lt' cd k t
+  unfold zLane zLo zHi Fips204.q; omega
 
 /-! ## Spec-level facts
 

@@ -12,7 +12,7 @@ theorem rhoW_hi (cd : ByteArray) {k : Nat} (hk : k < 4) :
 theorem seg_rho_proof {s : State} (hs : Ctx s) {m : ByteArray}
     (hI : Inv3 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv4 s.executionEnv.calldata m' ∧
-      Reach (callState s 3078 [flag b] m) (callState s 3439 [flag b] m') Gas.pRho := by
+      Reach (callState s 3069 [flag b] m) (callState s 3430 [flag b] m') Gas.pRho := by
   generalize hcd : s.executionEnv.calldata = cd at hI
   have hY0 := bswapNet_lt (word cd 0)
   have hY1 := bswapNet_lt (word cd 1312)
