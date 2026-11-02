@@ -206,7 +206,7 @@ theorem group_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256
     (by simp only [Nat.reduceMul, Nat.reduceAdd, isValidJumpDest_lit])
     (by simp only [isValidJumpDest_lit])
   -- `gfix amask`
-  obtain ⟨m8, hpost8, -, hkeep8, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call hs (hr.callee (B' := Stack.gfix)
+  obtain ⟨m8, hpost8, -, hkeep8, -, hf8, hc8⟩ := MlDsaOptGlam65.Proofs.gfix_call hs (hr.callee (B' := Stack.gfix)
     (ret' := 20797) (extra := [wd amask, wd col, wd rb, wd ret])
     (by simp only [List.length_cons, List.length_nil]; decide)
     (by simp only [isValidJumpDest_lit]) (by norm_num)) m7 hrc7 hamask 4 (g_popcnt hamask)

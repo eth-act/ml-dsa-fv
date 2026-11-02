@@ -514,6 +514,9 @@ structure GInv (m M : ByteArray) (S I : Nat → Fips202.SpongeState) (amask k t 
     lane (word M (ABUF + 32 * t')) j = (a[t']!).toNat
   keep : ∀ j, j < 4 → amask.testBit j = false → ∀ t', t' < 256 →
     lane (word M (ABUF + 32 * t')) j = lane (word m (ABUF + 32 * t')) j
+  -- glam: inactive slots with all five blocks in place stay pending
+  keepB : ∀ j J, j < 4 → amask.testBit j = false → S j = permN 5 J → SlotBlocks m j J 5 →
+    Pending M S j J
 
 /-- Slot-check state of `gfix`. -/
 abbrev cst (s : State) (ret : Nat) (tail : List UInt256) (pc f ok amask : Nat) (M : ByteArray) :
@@ -611,7 +614,8 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       refine ⟨M', 1, ⟨by omega, Fix.rc4_frame hI.rc (fixRegions_trans hfrT' hfr') (by fx_av), hks',
         fixRegions_trans hfrT' hfr', fun h => absurd h (by omega),
         fun _ j h1 h2 h3 => hpend' j (I j) h2 (by omega) (hpT j h2 h3),
-        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_⟩, _, ((((hcallT (hc1 0 (by omega))).trans hcT).trans
+        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+        ((((hcallT (hc1 0 (by omega))).trans hcT).trans
           (htret MT)).trans hcl).trans (hr2.of_eq rfl (by rw [okv_succ_and amask I hact])), ?_⟩
       · by_cases hjk : j = k
         · subst hjk; exact hval a ha t' ht'
@@ -621,6 +625,10 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · -- port: inactive lanes kept
         rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega),
           hfrT.word (by simp only [avoids_cons, avoids_nil, and_true, ABUF, FL]; omega)]
+      · -- glam: inactive slots stay pending (`blkt` rewrites block 4's tail with the same words)
+        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
+          (pend_blkt hS hI.ks h6 hfrT hpostT hj ⟨fun t' ht' => hB.1 t' (by omega),
+            fun g hg => hB.2 g (by omega)⟩ hSj)
       · unfold gbud
         rw [cntA_succ, if_pos hact, if_pos h6, hH6T]
         by_cases h1 : word M' HAVE6 = 0
@@ -637,7 +645,8 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       refine ⟨M', 1, ⟨by omega, Fix.rc4_frame hI.rc hfr' (by fx_av), hks', fixRegions_trans hI.fr hfr',
         fun h => absurd h (by omega),
         fun _ j h1 h2 h3 => hpend' j (I j) h2 (by omega) (hI.pend rfl j (by omega) h2 h3),
-        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_⟩, _, ((hcallF (hc1 1 (by omega))).trans hcl).trans
+        fun j h1 h2 a ha t' ht' => ?_, fun j hj hna t' ht' => ?_, fun j J hj hna hSj hB => ?_⟩, _,
+        ((hcallF (hc1 1 (by omega))).trans hcl).trans
           (hr2.of_eq rfl (by rw [okv_succ_and amask I hact])), ?_⟩
       · by_cases hjk : j = k
         · subst hjk; exact hval a ha t' ht'
@@ -645,6 +654,9 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       · -- port: inactive lanes kept
         rw [hlanes' j hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide)) t' (by omega)]
         exact hI.keep j hj hna t' ht'
+      · -- glam: inactive slots stay pending
+        exact hpend' j J hj (by rintro rfl; rw [hact] at hna; exact absurd hna (by decide))
+          (hI.keepB j J hj hna hSj hB)
       · unfold gbud
         rw [cntA_succ, if_pos hact]
         by_cases h0 : word M HAVE6 = 0
@@ -663,7 +675,7 @@ theorem gstep {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           · exact (hI.pend rfl k (le_refl _) hk hact).1.1 t' (by omega))
         (fun g hg h1 => hc (by rw [hact, (gflags_bit m hk).mpr ⟨g, hg, h1⟩]; rfl))
     refine ⟨M, t, ⟨ht2, hI.rc, hI.ks, hI.fr, hI.head, fun h j h1 h2 h3 => hI.pend h j (by omega) h2 h3,
-      fun j h1 h2 a ha t' ht' => ?_, hI.keep⟩, sk, ?_, ?_⟩
+      fun j h1 h2 a ha t' ht' => ?_, hI.keep, hI.keepB⟩, sk, ?_, ?_⟩
     · by_cases hjk : j = k
       · subst hjk; exact (hres h2).2 a ha t' ht'
       · exact hI.done j (by omega) h2 a ha t' ht'
@@ -699,6 +711,8 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       KS4 m' S ∧
       (∀ sl, sl < 4 → amask.testBit sl = false → ∀ t, t < 256 →
         lane (word m' (ABUF + 32 * t)) sl = lane (word m (ABUF + 32 * t)) sl) ∧
+      (∀ sl, sl < 4 → amask.testBit sl = false → ∀ J, S sl = permN 5 J →  -- glam
+        SlotBlocks m sl J 5 → SlotBlocks m' sl J 5) ∧
       FrameExcept m m' [(ABUF, FL + 1344), (HAVE6, HAVE6 + 32), (KB, KB + 800), (BK, BK + 800)] ∧
       Call s Entry.gfix [wd amask] ret tail m
         [flag ((List.range 4).all fun sl => !amask.testBit sl || (aI (I sl)).isSome)] m'
@@ -725,7 +739,7 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       cases hact : amask.testBit sl
       · exact Or.inl rfl
       · exact Or.inr (hall sl hsl hact).1
-    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl,
+    refine ⟨m, fun sl hsl hact => (hall sl hsl hact).2, hks, fun _ _ _ _ _ => rfl, fun _ _ _ _ _ hB => hB,
       FrameExcept.refl _ _, ?_⟩
     rw [call_iff, hok]
     exact (Fix.gx_fast (ret := ret) hs htail hsz m amask hf0 hr.jumpdest hret).mono (by
@@ -736,7 +750,8 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       hpre.of_eq rfl (by rw [fv_zero]; rfl)
     have hI0 : GInv m m S I amask 0 0 :=
       ⟨by omega, hrc, hks, FrameExcept.refl _ _, fun _ => rfl, fun h => absurd h (by omega),
-        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl⟩
+        fun j hj => absurd hj (by omega), fun _ _ _ _ _ => rfl,
+        fun _ _ _ _ hSj hB => ⟨hB, fun _ => hSj, fun h => absurd h6 h⟩⟩
     have hH := hp
     obtain ⟨M1, t1, hI1, c0, hr0, hb0⟩ := gstep hs hr m S hS I hH h6 (k := 0) (by omega) (pc := 17447)
       (pc' := 17496) (rT := 17478) (rF := 17491) (by simp only [Infra.isValidJumpDest_lit])
@@ -787,7 +802,8 @@ theorem gfix_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         (fv_mod2 m (by omega)))
       (fun M' r hr' => Fix.gx_ret3 (ret := ret) hs htail hsz M' amask _ _ r (by unfold okv; split <;> omega) hr')
     have hex := Fix.gx_exit (ret := ret) hs htail hsz M4 amask (fv m t4) (okv amask I 4) hr.jumpdest hret
-    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep, hI4.fr, ?_⟩
+    refine ⟨M4, fun sl hsl hact => hI4.done sl hsl hact, hI4.ks, hI4.keep,
+      fun sl hsl hna J hSj hB => (hI4.keepB sl J hsl hna hSj hB).1, hI4.fr, ?_⟩
     rw [call_iff]
     have hb4 : gbud amask 4 M4 t4 ≤ popcnt amask * Gas.fixNo + (Gas.fixSq - Gas.fixNo) + Gas.blkt := by
       have := hI4.t2
