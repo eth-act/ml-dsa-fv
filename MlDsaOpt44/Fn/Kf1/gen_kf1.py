@@ -4,12 +4,15 @@ Writes `Tables.lean` (the per-lane shift / chi tables of the word model and its
 lane mirror), `Blocks*.lean` (one `Reach` lemma per straight-line block of a
 `kf1` loop iteration: three rounds `KS → KB → KZ → KS`), `BlocksLoop.lean`
 (entry, loop-back, exit) and `Rounds.lean` (the three rounds composed). Block
-boundaries and costs come from `MlDsaOpt44/listing.tsv` (v3 bytes); the chi
+boundaries and costs come from `MlDsaOpt44/listing.tsv`; the entry pc, `KZ` and
+the memory size are read from `MlDsaOpt/44/layout.txt` and
+`MlDsaOpt44/Infra/Ctx.lean`, so the files follow the current bytes. The chi
 table is `CHI` of `scripts/opt_keccak.py`.
 
     python3 MlDsaOpt44/Fn/Kf1/gen_kf1.py
 """
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..', '..'))
@@ -110,11 +113,15 @@ def op(i):
     return INS[i][1]
 
 
-# kf1 index ranges (entry pc 19576 = index 9318)
-ENTRY = 9318
-assert pc(ENTRY) == 19576 and op(ENTRY) == "JUMPDEST"
+LAYOUT = open(os.path.join(ROOT, "MlDsaOpt", "44", "layout.txt")).read()
+ENTRY_PC = int(re.search(r"^\s*(\d+) \.\.\s+\d+\s+\d+ bytes\s+kf1$", LAYOUT, re.M).group(1))
+KZ = int(re.search(r"^\s*KZ\s+0x([0-9a-f]+)", LAYOUT, re.M).group(1), 16)
+MEMW = int(re.search(r"def memWords : Nat := (\d+)",
+                     open(os.path.join(ROOT, "MlDsaOpt44", "Infra", "Ctx.lean")).read()).group(1))
+# kf1 index ranges, from the entry pc of the `kf1` region
+ENTRY = next(i for i, (p, _) in INS.items() if p == ENTRY_PC)
+assert op(ENTRY) == "JUMPDEST"
 PRO = (ENTRY, ENTRY + 2)                         # JUMPDEST, PUSH2 RC1, PUSH25 REP
-KZ = 0x10300
 SRC = {1: 0, 2: 1024, 3: KZ}
 DST = {1: 1024, 2: KZ, 3: 0}
 RCADDR = {1: "rp", 2: "(32 + rp)", 3: "(64 + rp)"}
@@ -171,7 +178,7 @@ def src_lane(y, k):
 STK = "REPw :: wd rp :: wd ret :: tail"
 DSTK = "D 1 :: D 2 :: D 3 :: D 0 :: D 4 :: " + STK
 CTX = ("{s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)\n"
-       "    (hsz : 2097 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)")
+       "    (hsz : " + str(MEMW) + " ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584)")
 
 
 def path(a, b):
@@ -257,7 +264,7 @@ set_option maxHeartbeats 0
 set_option linter.unusedVariables false
 
 theorem prologue {{s : State}} (hs : Ctx s) {{tail : List UInt256}} (htl : tail.length ≤ 960)
-    (hsz : 2097 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
+    (hsz : {MEMW} ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
     Reach (callState s {pc0} (wd ret :: tail) M)
       (callState s {pc1} (REPw :: wd 2816 :: wd ret :: tail) M) {c0} := by
   opt44_reach {p0} with [REPw]
@@ -279,7 +286,7 @@ end MlDsaOpt44.Proofs.Kf1
 def loop():
     txt = LOOP.format(hdr=HEADER, pc0=pc(PRO[0]), pc1=pc(RND[1][0]), pc2=pc(TAIL[0]),
                       c0=cost(*PRO), c1=cost(*TAIL), c2=cost(*EXIT), p0=path(*PRO),
-                      p1=path(*TAIL), p2=path(*EXIT), CTX=CTX, STK=STK)
+                      p1=path(*TAIL), p2=path(*EXIT), CTX=CTX, STK=STK, MEMW=MEMW)
     with open(os.path.join(HERE, "BlocksLoop.lean"), "w") as f:
         f.write(txt)
 

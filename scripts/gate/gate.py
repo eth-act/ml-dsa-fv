@@ -80,7 +80,7 @@ GENERATORS = (
        ("gen_opt.py --version v2", ["python3", "scripts/gen_opt.py", "--version", "v2"], None)]
     + [(f"proofgen_artifact.py {n}", ["python3", "scripts/proofgen_artifact.py", f"MlDsaOpt/{n}/opt.hex",
         f"MlDsaOpt{n}", f"MlDsaOpt{n}", f"opt{n}", str(m)], None)
-       for n, m in ((44, 2097), (65, 2865), (87, 2897))]
+       for n, m in ((44, 2616), (65, 2865), (87, 2897))]
     + [(f"mldsa44tool compile {n}", [TOOL, "compile", f"MlDsa{n}/Reference/reference.yul",
         f"MlDsa{n}/Reference/reference.hex"], None) for n in (44, 65, 87)]
     + [("mldsa44tool bytes", [TOOL, "bytes", "MlDsa44/Reference/reference.hex", "MlDsa44"],
@@ -92,7 +92,9 @@ GENERATORS = (
        ("gen_kf1.py", ["python3", "MlDsaOpt44/Fn/Kf1/gen_kf1.py"], None),
        ("Csum gen_blocks.py 87", ["python3", "MlDsaOpt65/Fn/Csum/gen_blocks.py", "87"], None),
        ("Ginit gen_lanes.py 87", ["python3", "MlDsaOpt65/Fn/Ginit/gen_lanes.py", "87"],
-        "MlDsaOpt87/Fn/Ginit/Lanes.lean")]
+        "MlDsaOpt87/Fn/Ginit/Lanes.lean"),
+       ("Ginit gen_lanes.py 65", ["python3", "MlDsaOpt65/Fn/Ginit/gen_lanes.py", "65"],
+        "MlDsaOpt65/Fn/Ginit/Lanes.lean")]
     # Glamsterdam variants (MlDsaOpt/NN/glam/): artifact infrastructure and kernel blocks
     + [(f"proofgen_artifact_glam.py {n}", ["python3", "scripts/proofgen_artifact_glam.py",
         f"MlDsaOpt/{n}/glam/opt.hex", f"MlDsaOptGlam{n}", f"MlDsaOptGlam{n}", f"glam{n}", str(m)], None)
@@ -108,8 +110,7 @@ GENERATORS = (
     + [(f"glam alt gen.py {g}", ["python3", "MlDsaOptGlam44/Main/Alt/gen.py", str(g)],
         f"MlDsaOptGlam44/Main/Alt/Grp{f}.lean") for g, f in ((0, "A"), (1, "B"))]
 # Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,
-# gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65,
-# Ginit gen_lanes.py 65.
+# gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65.
 )
 PORT_HEADER = re.compile(r"/- Ported from `([^`\s]+)` by `scripts/proofgen_port.py (\d+)`([^;\n]*);")
 # Lean files outside every lean_lib that must still compile (rule 4).

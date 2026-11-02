@@ -3,12 +3,13 @@ import MlDsaOpt44.Layout
 /-!
 # `blk`: straight-line blocks (WP3, v4)
 
-The three entries `blk` (pc 9025), `blkh` (10203) and `blkt` (10212) push the
-lane range `[xp, xe)` (and `blkt` its `abp`, `flp`) and enter the shared body at
-pc 9030: prologue (lane flips, masks), the loop body in two parts (de-interleave
-plus candidate extraction, then flag store and loop test, taken or not), and the
-epilogue (lane flips back, return). Every block is stated for abstract stack
-values and memory; `Blk/Proof.lean` composes them.
+The three entries `blk`, `blkh` and `blkt` (`Entry.blk`, `Entry.blkh`,
+`Entry.blkt`) push the lane range `[xp, xe)` (and `blkt` its `abp`, `flp`) and
+enter the shared body just after `blk`'s pushes: prologue (lane flips, masks),
+the loop body in two parts (de-interleave plus candidate extraction, then flag
+store and loop test, taken or not), and the epilogue (lane flips back, return).
+Every block is stated for abstract stack values and memory; `Blk/Proof.lean`
+composes them.
 -/
 
 namespace MlDsaOpt44.Proofs.Blk

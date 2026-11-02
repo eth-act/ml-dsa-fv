@@ -6,12 +6,13 @@ set_option maxHeartbeats 0  -- port: re-elaboration headroom
 /-!
 # `blk`: straight-line blocks (WP3, v4)
 
-The three entries `blk` (pc 9815), `blkh` (10993) and `blkt` (11002) push the
-lane range `[xp, xe)` (and `blkt` its `abp`, `flp`) and enter the shared body at
-pc 9820: prologue (lane flips, masks), the loop body in two parts (de-interleave
-plus candidate extraction, then flag store and loop test, taken or not), and the
-epilogue (lane flips back, return). Every block is stated for abstract stack
-values and memory; `Blk/Proof.lean` composes them.
+The three entries `blk`, `blkh` and `blkt` (`Entry.blk`, `Entry.blkh`,
+`Entry.blkt`) push the lane range `[xp, xe)` (and `blkt` its `abp`, `flp`) and
+enter the shared body just after `blk`'s pushes: prologue (lane flips, masks),
+the loop body in two parts (de-interleave plus candidate extraction, then flag
+store and loop test, taken or not), and the epilogue (lane flips back, return).
+Every block is stated for abstract stack values and memory; `Blk/Proof.lean`
+composes them.
 -/
 
 namespace MlDsaOpt65.Proofs.Blk

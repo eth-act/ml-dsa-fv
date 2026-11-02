@@ -49,6 +49,90 @@ The work packages (all done, merged from the branches proof/v4-ab, -gh,
 but 33,796 above the code's path (n − 1 visits + a 23-gas exit check would be
 exact).
 
+### Contract changes v3 → v4 (all three sets)
+
+Every contract statement that differs from master (v3), checked against the v4
+code that causes it (`docs/opt.md`, R4-1 … R4-8). The four final theorems in
+`Main.lean` are byte-identical to master; they change only through
+`optBytecode` and `Gas.schedule`. None of the changes below weakens what the
+final theorems guarantee; where a postcondition got weaker (87 `intt_call`),
+the consumer's precondition was widened to match.
+
+Changed contracts:
+
+* `ntt_call` (44/65/87): input `zLo ≤ lane ≤ zHi` instead of `< 2^25`: `dz`
+  stores `z + 8q` (R4-3), and the forward NTT is biased (R4-6, interval
+  bounds in `opt_selftest.py`). Output unchanged.
+* `intt_call` 44/65: input `< 2^57` (was `< 2^58`) plus `SP ≤ spOff`, `HP ≤ 1`;
+  output `useHint(HP, nttInv + SP − spOff)` instead of `nttInv mod q`: UseHint
+  is fused into the inverse NTT's last pass (R4-6), and `SP` holds
+  `spOff − s'` (R4-4). The input bound is what the fused accumulation
+  delivers (`pass3f*`).
+* `intt_call` 87: input `< 2^57`, output `< 2^30` (was `< 2^27`): the lazy
+  inverse NTT leaves its outputs partially reduced (R4-6); weaker
+  postcondition, matched by `usehint_call`'s wider precondition.
+* `usehint_call` 87: accepts `ACC < 2^30` and `SP ≤ spOff` (was `< 2^27`,
+  `< 2^29`), computes `useHint(HP, ACC + SP − spOff)`: pre-negated `SP`
+  (R4-4) and the lazy intt above. Output and the `< 16` clause unchanged.
+* `blk_call`, `blkh_call`, `blkt_call` (44/65/87): free placement `abp`/`flp`
+  (bounds and disjointness) instead of `ABUF + 1792 b`, `FL + 224 b`: v4 `blk`
+  takes its destination pointers on the stack (R4-7: 44's window stages blocks
+  in ACC and flags in BASES; `blkt` writes block 4 at its own offset).
+* `csum_call` (44/65/87): stores `spOff − (2^13 s' + nNeg)` instead of
+  `2^13 s' + nNeg`: pre-negated count (R4-4), consumed by the fused UseHint.
+* `group_call` (44/65/87): writes `pack4 aD` to `ABUF` instead of
+  `ACC += pack4 aD · ẑ`: v4 `group` only squeezes and fixes up; the
+  accumulation moved into the fused passes `pass3f*` (R4-1).
+* `sib_call` 44: new hypotheses `RC4Table`, `Sized4 S`, `St4At m SC S`,
+  17 CB words plus `hc2` (block 2 = lanes of c's saved state after one more
+  permutation) instead of 34 CB words; frame adds `KS`, `KB`, `LIM`,
+  `CB + 544 … CB + 1088`: c gets one SIMD squeeze and SampleInBall squeezes
+  the second block on demand (R4-7). Postcondition unchanged.
+* `SibFresh` 44: `CW`, `IDX`, `NNEG` zero; `BASES` no longer required: the
+  accept path writes BASES[0 … cnt) and the fail exit `sibz` clears
+  BASES[cnt … τ) (R4-8). Weaker precondition, same postcondition.
+* `SibFresh` 65/87: `BASES` is now its own conjunct, `ZeroOn BASES (BASES +
+  2048)` (v3: `ZeroOn BASES (IDX + 256)`, which also covered IDX): their fail
+  exit does not clear BASES, so it must start zero; `InvW.zBases` carries it.
+  `SibFresh.frame` (44/65/87) takes one `Avoids` per conjunct accordingly.
+* `gfix_call` 44: per active slot `SlotHead m sl (I sl) ∧ S sl = permN 5 (I sl)`
+  instead of `Pending` (five blocks parsed): v4 `gfix` runs `blkt` for the
+  slot's block 4 itself before the first fix-up.
+* `gfix_call` 65/87: same `SlotHead` form, plus the conjunct that inactive
+  lanes of ABUF[0, 256) are kept (v3 65 had it; `group_call` needs it).
+* `fix_call` 65/87: statement text unchanged; `Pending`, `aI`, `flagBit`
+  now come from `MlDsaOpt44/Fn/Fix/Defs.lean`. Their definitions are textually
+  identical to the old 65/87 ones and use the same constants (65/87 `Layout`
+  re-exports 44's `ABUF`, `FL`, `HAVE6`), so the meaning is unchanged.
+* `trabs_call` (44/65/87): new hypothesis `hlmL` (each 64-bit lane of the mask
+  is 0 or all ones): v4 applies the mask before the byte-swap network (R4-2);
+  all call sites pass such masks.
+* `mub_call` 65 (new in v4): KS unchanged when only `cext` runs (needed by
+  group 8's squeeze after μ).
+* `valid_cost` (44/65/87): sums the v4 segment budgets (`pZ`, `pG2`, `pWin`,
+  `pZd`, `pExp`, … instead of `pZh`, `pG234`, …).
+* `short_block` (44/65/87): same block, v4 instruction indices and pcs.
+* `flags_eq` 65: `gFlags cd 9 = (okZ && okA)` instead of `= ok2 cd`: in v4
+  `ok2 = (okZ && okA) && okH` also carries the hint decode, which runs after
+  ExpandA (`seg_zd`), so ExpandA's flags give only the first two.
+* `init_run`, `initM0` 44: v4 memory size (2616 words) and side buffers
+  (R4-4); `zLane_lt` 44: the `8q` bias of `zLane` (R4-3).
+* `Entry.*`, `Stack.*` (68 definitions in the three `Layout.lean`): pcs and
+  return-stack shapes of the v4 bytes.
+
+New contracts: `pass3f4_call` (44/65/87), `pass3f8_call` (65),
+`pass3f6_call`, `pass3f10_call`, `pass3f14_call` (87), `mub0_call` (44/65),
+`mub_call` (65), `kmove_call`, `lmerge_call` (44), `cext_inplace_call`
+(44 `Main/Mu/Cext.lean`, 65 `S6Mu` in `Main/Mu/Cext.lean`: `hash_mu` calls
+`cext` with dst = `KS`, outside `cext_call`'s `KS + 800 ≤ dst`; same blocks).
+
+Removed contracts (their code is gone from the v4 bytes; see `layout.txt`):
+`mu0_call` (44 and 65; replaced by `mub0` / `mub`), `pass3_call`,
+`pass3k4_call`, `pass3m_call` (44), `pass3_call`, `pass3x5_call`,
+`pass3x6_call`, `pass3x7_call`, `pass3x8_call` (65), `pass3_call`,
+`pass3m_call`, `pass3k14_call` (87) (all replaced by the fused `pass3f*`),
+`usehint_call` 44/65 (fused into `intt`).
+
 | WP | open item | code | notes |
 |---|---|---|---|
 | A | `blk_call`, `blkh_call`, `blkt_call` (`Fn/Blk.lean`) | `blk` | v3 loop body over lanes `[xp, xe)`, any `abp`/`flp` (v3 proof: `Fn/Blk/*`) |
@@ -301,6 +385,26 @@ annotated listing with labels: `MlDsaOpt/44/opt.asm`;
 * `&&` binds weaker than `=`: parenthesise Bool equations.
 * `Avoids [(ZH, …)] MISC TOP` is false: shrink a `ZeroOn` with `.mono` before
   transporting it.
+* **Importing a 44 `Main.*` module from 65/87** (directly or through a 44
+  file such as `Main/Mu/Lemmas.lean`, which imports `MlDsaOpt44.Main.Base`)
+  brings in 44's `avoids_tac` macro (44 layout names). In importers it shadows
+  the set's own `avoids_tac` (`MlDsaOptNN/Main/Frame.lean`) under `lake build`
+  but not under `lake env lean`, so a file can check alone and fail in the
+  build (seen in 87 `Main/SegSib.lean`: `omega could not prove the goal` in
+  the `(by avoids_tac)` frame obligations; the shadowing mechanism is an
+  explanation, not verified). Fix: copy the few facts needed into a 65/87
+  module (87 `Fn/Ball/V4Rep.lean`, `f231eb6`) and keep 44 `Main.*` out of the
+  65/87 imports.
+* 65's `Fn/Sponge/Mub0Math` and `MubMath` import the v3 modules
+  `MlDsaOpt65/Fn/Mu0/{Defs,MuMath,MuVal,MuFinal}`, so these are part of the v4
+  build and must not be deleted as dead code (`Fn/Mu0/{Mu0,MuBlocks}` are not
+  imported).
+* With those imports, 65's `Fn/Sponge/Mub*` (namespace `MlDsaOpt65.Proofs.WP4`)
+  see `WP4.muPad` and `WP4.byteAt_extract` from `Fn/Mu0/MuMath.lean`; similar
+  short names exist in other namespaces (`S6Mu.muPad` in `Main/Mu/Spec.lean`,
+  `DecodeZ.byteAt_extract'` in 65, `DecodeZ.byteAt_extract` in 44). Nothing
+  clashes now, but a file that opens both namespaces gets ambiguous names: use
+  qualified names there.
 
 ## Reuse for ML-DSA-65/87
 

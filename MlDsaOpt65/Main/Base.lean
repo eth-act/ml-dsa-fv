@@ -35,8 +35,11 @@ def pRho : Nat := 705 + 10 * spr
 `CW`, `HP`, `HP + 0x2000`, `ACC + 0x2000`, then `pass3f4`), the mixed groups
 5 … 7 (row group 1 instances, `tr`; copies to `CW`, `HP`, `HP + 0x2000`), group
 8 (`A[5][4]`, c̃ stream, μ's blocks 0 … 4 in slot 2, `mub0`/`mub`, the `mulong`
-region), `pass3f8`. Longest static path (`scripts/proofgen_gas_param.py`). -/
-def pExp : Nat := 3609680
+region), `pass3f8`. Longest static path: row group 0 2038895
+(`Exp.exp_pure`), groups 5–7 1152470 (`Exp.gG57`), group 8 and `pass3f8` on the
+`mulong` path (`|M| ≥ 70`: five `mub` instead of `cext [MU, 2, 8]`) 432185
+(the short-μ path is 13870 cheaper). -/
+def pExp : Nat := 3623550
 /-- `5242 … 5356`: zero the side buffers in `CW`, `HP`, `HP + 0x2000`, `dhint`, `AND`. -/
 def pZd : Nat := 2448 + dhint
 /-- `5356 … 6172`: μ, from `MU` (`|M| ≤ 613`, 195) or by `kf1` from slot 2's
