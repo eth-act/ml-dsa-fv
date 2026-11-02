@@ -126,6 +126,8 @@ GENERATORS = (
        ("glam gen_dz.py 87", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py", "87"], None)]
     + [(f"glam alt gen.py {g}", ["python3", "MlDsaOptGlam44/Main/Alt/gen.py", str(g)],
         f"MlDsaOptGlam44/Main/Alt/Grp{f}.lean") for g, f in ((0, "A"), (1, "B"))]
+    + [(f"glam 65 exp gen.py {g}", ["python3", "MlDsaOptGlam65/Main/Exp/G/gen.py", str(g)],
+        f"MlDsaOptGlam65/Main/Exp/G/Grp{g}.lean") for g in (3, 4, 5, 6)]
 # Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,
 # gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65.
 )

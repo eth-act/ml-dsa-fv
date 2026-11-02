@@ -153,6 +153,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py` | `MlDsaOptGlam44/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py 65`, `87` (`gen_dz_nn.py`) | `MlDsaOptGlamNN/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
 | `MlDsaOptGlam44/Main/Alt/gen.py {0,1}` | stdout = `MlDsaOptGlam44/Main/Alt/Grp{A,B}.lean` |
+| `MlDsaOptGlam65/Main/Exp/G/gen.py {3,4,5,6}` | stdout = `MlDsaOptGlam65/Main/Exp/G/Grp{3,4,5,6}.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 46 of the 69 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 23 ported files (all carry hand adjustments
