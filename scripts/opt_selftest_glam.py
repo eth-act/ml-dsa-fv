@@ -7,7 +7,8 @@
 2. Stack-resident Keccak-f kernels (kf4 interleaved, kf1 replicated) vs the
    reference permutation on random and all-ones states, with their gas per
    call next to the v3 kernels'.
-3. v2 / v3 (SHA-256 pins) and v4 artifacts are still byte-identical.
+3. The 4 + 4 NTT's forward bias bounds (Shoup on layers 1-4); v2 / v3
+   (SHA-256 pins) and v4 artifacts are still byte-identical.
 4. Every vector of all three sets on MlDsaOpt/NN/glam/opt.hex.
 5. Forced sixth squeeze (debug build, as in opt_selftest.py).
 "quick" skips 4 and 5.
@@ -106,6 +107,22 @@ def test_keccak():
               f"(v3 {gas['v3']:,}, {100 * (gas['glam'] - gas['v3']) / gas['v3']:+.1f}%)")
 
 
+def test_ntt_bounds():
+    """v4's forward-NTT bias bounds (opt_selftest.test_constants) with the
+    glam pass split: Shoup (immediate zetas) on layers 1-4, Montgomery on 5-8."""
+    Q = opt_ref.Q
+    for nn in (44, 65, 87):
+        p = opt_ref.derived(nn)
+        lo, hi = p["g1"] + 9 * Q - (1 << p["zbits"]) + 1, p["g1"] + 9 * Q
+        for layer in range(8):
+            t = hi * (Q - 1)
+            assert t < 1 << 64 and hi < 1 << 32
+            umax = Q + (hi * Q >> 32) + 1 if layer < 4 else (t >> 32) + Q
+            lo, hi = lo - umax, hi + umax
+            assert lo >= 0 and hi < 1 << 28
+    print("ntt 4+4: forward bias bounds hold with Shoup on layers 1-4")
+
+
 def test_base_unchanged():
     opt_selftest.test_proved_reproducible()
     for nn in (44, 65, 87):
@@ -134,6 +151,7 @@ def main():
     quick = sys.argv[1:] == ["quick"]
     test_eip8024()
     test_keccak()
+    test_ntt_bounds()
     test_base_unchanged()
     if not quick:
         test_bytecode()
