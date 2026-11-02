@@ -8,11 +8,8 @@ The stream `bs` (272 bytes): its first block (lanes 0 … 16) is in `CB`; the
 second block is lanes 0 … 16 of slot 0 of the saved kf4 states `S` (at `SC`)
 after one more permutation. `KS`, `KB` and `CB[17, 34)` are scratch.
 
-The proof is `sib_main` (`Fn/Ball/V4*.lean`) under one more hypothesis, `BASES[i] ≤ 6112`
-for `i < τ` on entry: v4 leaves `BASES` uninitialised (expand_a uses it as a
-`blk` flag buffer), so when SampleInBall fails the unwritten slots keep their
-old contents, and `csum` (which runs unconditionally) would read from
-`TT + BASES[i]` (code issue, open). -/
+The proof is `sib_main` (`Fn/Ball/V4*.lean`). On the failure path `sibz`
+zeroes `BASES[cnt, τ)`, so every slot ends in range. -/
 
 namespace MlDsaOpt44.Proofs
 
@@ -33,6 +30,6 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (LIM, LIM + 32), (CW, CW + 8192),
         (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64), (CB + 544, CB + 1088)] ∧
       Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib :=
-  sib_main hs hr m hrc S hS hsc bs hbs hcb hc2 hz sorry
+  sib_main hs hr m hrc S hS hsc bs hbs hcb hc2 hz
 
 end MlDsaOpt44.Proofs

@@ -275,15 +275,26 @@ theorem b_ext4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   opt44_reach [2993, 2994, 2995]
 
-set_option warningAsError false in
+/-- The fail exit (`o = LIM = 1088`) to `sibz`: `a = BASES + 32 CNT`. -/
 theorem b_fail {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960) (hsized : 2616 ≤ s.activeWords.toNat) (M : ByteArray)
-    (hjd : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
-    (i sg : Nat) (hlim : word M 3968 = 1088) :
-    Reach (headSt s ret tail 1088 i sg M) (callState s ret (wd 0 :: tail) M) 72 := by
+    (i sg : Nat) (hlim : word M 3968 = 1088) (cnt : Nat) (hcnt : word M 4032 = cnt) (hc : cnt < 39) :
+    Reach (headSt s ret tail 1088 i sg M) (callState s 24063 (wd (40960 + cnt * 32) :: wd ret :: tail) M) 89 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  -- R4-8 (2342c7d): the fail exit now jumps to `sibz` (indices 12123–12149),
-  -- which zeroes BASES[cnt … τ); this statement (memory unchanged) no longer
-  -- holds and is re-proved by WP J.
-  sorry
+  opt44_reach [2711, 2712, 2713, 2714, 2715, 2716, 2717, 2969, 2970, 2971, 2972, 2973, 2974, 2975, 2996, 2997, 2998, 2999, 3000, 12123, 12124, 12125, 12126, 12127, 12128, 12129, 12130] with [hlim, hcnt]
+
+/-- One `sibz` iteration: `mstore(a, 0); a += 32`. -/
+theorem b_zbody {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960) (hsized : 2616 ≤ s.activeWords.toNat) (M : ByteArray) (a : Nat) (ha : a < 42208) :
+    Reach (callState s 24063 (wd a :: wd ret :: tail) M)
+      (callState s 24063 (wd (32 + a) :: wd ret :: tail) (MachineState.writeBytes M (Data.Bytes.natToBytesPadded 0 32) a)) 51 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  opt44_reach [12131, 12132, 12133, 12134, 12135, 12136, 12137, 12138, 12139, 12140, 12141, 12142, 12143, 12144]
+
+/-- `sibz` done: return `0`. -/
+theorem b_zexit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960) (hsized : 2616 ≤ s.activeWords.toNat) (M : ByteArray)
+    (hjd : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
+    (a : Nat) (ha : 42208 ≤ a) (ha' : a < 2 ^ 64) :
+    Reach (callState s 24063 (wd a :: wd ret :: tail) M) (callState s ret (wd 0 :: tail) M) 42 := by
+  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
+  opt44_reach [12131, 12132, 12133, 12134, 12135, 12136, 12137, 12145, 12146, 12147, 12148, 12149] with [hjd]
 
 end MlDsaOpt44.Proofs.Ball4

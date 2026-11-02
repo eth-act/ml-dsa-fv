@@ -180,13 +180,11 @@ structure SInv (m M : ByteArray) (c : Fips204.Poly) (i : Nat) : Prop where
     (∀ p, (∃ s, s < i - 217 ∧ f s = p) ↔ p < 256 ∧ c[p]! ≠ 0) ∧
     ∀ s, s < i - 217 → word M (BASES + 32 * s) = baseOf c (f s) ∧ byteAt M (IDX + f s) = s + 1
   idx0 : ∀ t, t < 256 → c[t]! = 0 → byteAt M (IDX + t) = 0
-  free : ∀ s, i - 217 ≤ s → s < 39 → word M (BASES + 32 * s) ≤ 6112
 
 theorem baseOf_le (c : Fips204.Poly) (p : Nat) (hp : p < 256) : baseOf c p ≤ 6104 := by
   unfold baseOf; split <;> omega
 
-theorem sinv_init (m : ByteArray) (hz : SibFresh m)
-    (hb0 : ∀ i, i < 39 → word m (BASES + 32 * i) ≤ 6112) : SInv m m Fips204.zeroPoly 217 := by
+theorem sinv_init (m : ByteArray) (hz : SibFresh m) : SInv m m Fips204.zeroPoly 217 := by
   obtain ⟨hcw, hbi, hnn⟩ := hz
   have hz0 : ∀ t : Nat, Fips204.zeroPoly[t]! = (0 : Int) := fun t => by
     simp only [Fips204.zeroPoly, getElem!_def, Array.getElem?_replicate]
@@ -194,7 +192,7 @@ theorem sinv_init (m : ByteArray) (hz : SibFresh m)
     split at h <;> simp_all
   refine ⟨FrameExcept.refl _ _, fun t ht => ?_, ?_, ?_, ⟨id, fun _ _ h => absurd h (by omega),
     fun p => ⟨fun ⟨_, h, _⟩ => absurd h (by omega), fun ⟨_, h⟩ => absurd (hz0 p) h⟩,
-    fun _ h => absurd h (by omega)⟩, fun t ht _ => ?_, fun s _ hs => ?_⟩
+    fun _ h => absurd h (by omega)⟩, fun t ht _ => ?_⟩
   · rw [hz0, word_zero (fun k hk => hcw _ (by simp only [CW]; omega) (by simp only [CW]; omega))]
     rfl
   · rw [word_zero (fun k hk => hnn _ (by simp only [NNEG]; omega) (by simp only [NNEG]; omega)),
@@ -207,7 +205,6 @@ theorem sinv_init (m : ByteArray) (hz : SibFresh m)
   · exact word_zero (fun k hk => hnn _ (by simp only [NNEG, CNT]; omega)
       (by simp only [NNEG, CNT]; omega))
   · exact hbi _ (by simp only [IDX]; omega) (by simp only [IDX]; omega)
-  · exact hb0 s hs
 
 /-- Read-after-write on the `sib` memory terms. -/
 macro "memsimp" : tactic => `(tactic| simp (disch := omega) only [memA, memB, memC, word_mstore_ite,
@@ -284,7 +281,7 @@ theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
     FrameExcept M (memC (sibMB M c i j nn sg code) j sg (i - 217)) sibRegions ∧
     SInv m (memC (sibMB M c i j nn sg code) j sg (i - 217))
       ((c.set! i c[j]!).set! j (sgnOf sg)) (i + 1) := by
-  obtain ⟨hfr, hcw, hnneg, hcnt, ⟨f, finj, fmem, fslot⟩, hidx0, hfree⟩ := h
+  obtain ⟨hfr, hcw, hnneg, hcnt, ⟨f, finj, fmem, fslot⟩, hidx0⟩ := h
   have hn : i - 217 < 39 := by omega
   have hj256 : j < 256 := by omega
   have hci : c[i]! = 0 := hhigh i le_rfl
@@ -361,7 +358,7 @@ theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
     refine ⟨fun h0 => absurd hk h0, hA_cnt, fun a ha => by rw [hC_fr _ a ha, hA_fr a ha],
       ⟨fun a ha => by rw [hC_fr _ a (sub_regions ha), hA_fr a (sub_regions ha), hfr a ha],
       hcwC _ (fun _ _ => rfl), by rw [hC_nn, hA_nn, hnc], by rw [hC_cnt]; omega,
-      ⟨fun s => if s = i - 217 then j else f s, ?_, ?_, ?_⟩, ?_, ?_⟩⟩
+      ⟨fun s => if s = i - 217 then j else f s, ?_, ?_, ?_⟩, ?_⟩⟩
     · intro s s' hs hs' he
       simp only at he
       by_cases hsn : s = i - 217 <;> by_cases hs'n : s' = i - 217
@@ -408,9 +405,6 @@ theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
       by_cases hti : t = i
       · rw [hti]; exact hci
       · rw [if_neg hti] at hz; exact hz
-    · intro s hs1 hs2
-      rw [hC_bases _ s hs2, if_neg (by omega), hA_bases s hs2]
-      exact hfree s (by omega) hs2
   · -- `j` held a coefficient (slot `s0`): block `B` moves it to `i`
     obtain ⟨s0, hs0, hfs0⟩ := (fmem j).2 ⟨hj256, hcj⟩
     have hk : byteAt M (IDX + j) = s0 + 1 := by rw [← hfs0]; exact (fslot s0 hs0).2
@@ -464,7 +458,7 @@ theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
     refine ⟨fun a ha => by rw [hC_fr _ a ha, hB_fr _ a ha, hA_fr a ha], fun a ha => by
         rw [hC_fr _ a (sub_regions ha), hB_fr _ a (sub_regions ha), hA_fr a (sub_regions ha), hfr a ha],
       hcwC _ (hB_cw _), by rw [hC_nn, hB_nn, hA_nn, hnc], by rw [hC_cnt]; omega,
-      ⟨f', ?_, ?_, ?_⟩, ?_, ?_⟩
+      ⟨f', ?_, ?_, ?_⟩, ?_⟩
     · intro s s' hs hs' he
       have hs1 : s < i - 217 + 1 := by omega
       have hs1' : s' < i - 217 + 1 := by omega
@@ -526,10 +520,6 @@ theorem sinv_accept {m M : ByteArray} {c : Fips204.Poly} {i j sg nn code : Nat}
       rw [if_neg hti] at hz
       rw [hC_idx _ t ht, if_neg htj, hB_idx _ t ht, if_neg hti, hA_idx t ht]
       exact hidx0 t ht hz
-    · intro s hs1 hs2
-      rw [hC_bases _ s hs2, if_neg (by omega), hB_bases _ s hs2, if_neg (by omega),
-        hA_bases s hs2]
-      exact hfree s (by omega) hs2
 
 /-! ## The scan -/
 
