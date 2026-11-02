@@ -122,13 +122,16 @@ Changed contracts:
 
 New contracts: `pass3f4_call` (44/65/87), `pass3f8_call` (65),
 `pass3f6_call`, `pass3f10_call`, `pass3f14_call` (87), `mub0_call` (44/65),
-`mub_call` (65), `kmove_call`, `lmerge_call` (44).
+`mub_call` (65), `kmove_call`, `lmerge_call` (44), `cext_inplace_call`
+(44 `Main/Mu/Cext.lean`, 65 `S6Mu` in `Main/Mu/Cext.lean`: `hash_mu` calls
+`cext` with dst = `KS`, outside `cext_call`'s `KS + 800 ≤ dst`; same blocks).
 
 Removed contracts (their code is gone from the v4 bytes; see `layout.txt`):
-`mu0_call` (44; replaced by `mub`), `pass3_call`, `pass3k4_call`,
-`pass3m_call` (44), `pass3_call` (65), `pass3_call`, `pass3m_call` (87)
-(all replaced by the fused `pass3f*`), `usehint_call` 44/65 (fused into
-`intt`).
+`mu0_call` (44 and 65; replaced by `mub0` / `mub`), `pass3_call`,
+`pass3k4_call`, `pass3m_call` (44), `pass3_call`, `pass3x5_call`,
+`pass3x6_call`, `pass3x7_call`, `pass3x8_call` (65), `pass3_call`,
+`pass3m_call`, `pass3k14_call` (87) (all replaced by the fused `pass3f*`),
+`usehint_call` 44/65 (fused into `intt`).
 
 | WP | open item | code | notes |
 |---|---|---|---|
