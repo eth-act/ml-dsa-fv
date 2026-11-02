@@ -1502,6 +1502,14 @@ class Gen:
         a.jump("gfix")
         a.label(ret)
         st.s.append("ok")
+        if self.v4:
+            # v4: the caller accumulates (deferred, fused passes)
+            for nm in ("amask", "col", "rb"):
+                st.swap(1)
+                st.pop()
+            st.swap(1)
+            a.op("JUMP")
+            return
         # pass3(ACC + 0x2000 rb, ZH + 0x2000 (col >> 2), 64 (col & 3))
         ret = self.fresh("ret")
         st.pushl(ret, "r2")
@@ -1976,10 +1984,263 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    # ── v4: deferred, fused A * z accumulation ──────────────────────────
+    @staticmethod
+    def acc_items(g):
+        """Accumulation terms of one group's (fixed-up) ABUF: ('lane', j,
+        mask or None, d): ACC += ((X & mask) << 64 d) * z_hat_j lane-wise
+        (d < 0: >>), ('kron', j0, n): ACC lane 3 += Kronecker dot product."""
+        p3, slots = g['p3'], g['slots']
+        if p3[0] == 'aligned':
+            assert all(r and r[0] == 'A' for r in slots)
+            return [('lane', p3[2], None, 0)]
+        if p3[0] == 'masked':
+            lm = sum(M64 << (64 * s_) for s_, r in enumerate(slots) if r and r[0] == 'A')
+            return [('lane', p3[2], lm, 0)]
+        if p3[0] == 'mix':
+            terms = {}
+            for (sl, ln, j) in p3[2]:
+                terms.setdefault((j, ln - sl), []).append(sl)
+            out = []
+            for (j, d), sls in sorted(terms.items()):
+                m = sum(M64 << (64 * s_) for s_ in sls)
+                out.append(('lane', j, None if m == ALL else m, d))
+            return out
+        assert p3[0] == 'kron'
+        return [('kron', p3[2], p3[3])]
+
+    def plan_accumulation(self):
+        """v4: instead of one ACC read-modify-write pass per group, a group's
+        fixed-up candidates (ABUF[0, 256)) are copied (MCOPY) to a side
+        buffer that is dead during ExpandA, and one fused pass per batch
+        adds all of the batch's products into ACC_rb, reading and writing
+        each ACC word once. The first batch of a row group stores instead
+        of adding, so ACC needs no zero initialisation and a later row
+        group's ACC serves as a side buffer meanwhile. Side buffers: CW
+        (SampleInBall runs after ExpandA), HP (HintBitUnpack runs after
+        ExpandA), ACC_g for row groups g not yet started; CW and HP are
+        zeroed again after ExpandA."""
+        L = self.L
+        sched = self.schedule
+        rbs = [g['p3'][1] for g in sched]
+        assert rbs == sorted(rbs), rbs
+        last = {rb: gi for gi, rb in enumerate(rbs)}
+        self.acc_plan = {}
+        self.fused = []
+        self.zeroed = []
+        pending, started = [], set()
+        for gi, g in enumerate(sched):
+            rb = rbs[gi]
+            pool = [L.CW] + [L.HP + 0x2000 * h for h in range(L.GR)] \
+                + [L.ACC + 0x2000 * h for h in range(rb + 1, L.GR)]
+            free = [b for b in pool if b not in [x for x, _ in pending]]
+            if gi == last[rb] or not free:
+                bufs = pending + [(L.ABUF, self.acc_items(g))]
+                name = f"pass3f{gi}"
+                self.fused.append((name, rb, rb not in started, bufs))
+                self.acc_plan[gi] = ('pass', name)
+                started.add(rb)
+                pending = []
+            else:
+                b = free[0]
+                pending.append((b, self.acc_items(g)))
+                self.acc_plan[gi] = ('copy', b)
+                if b < L.ACC or b >= L.HP:
+                    if b not in self.zeroed:
+                        self.zeroed.append(b)
+
+    def accumulate(self, gi):
+        a, L = self.a, self.L
+        kind, x = self.acc_plan[gi]
+        if kind == 'copy':
+            a.push(0x2000)
+            a.push(L.ABUF)
+            a.push(x)
+            a.op("MCOPY")
+        else:
+            self.call(x)
+
+    def zero_side_buffers(self):
+        """v4: zero the side buffers in CW / HP again (8 KB each): MSTORE one
+        word, then double the zero prefix with MCOPY; later buffers copy
+        from the first."""
+        a = self.a
+        z0 = None
+        for b in self.zeroed:
+            if z0 is None:
+                a.op("PUSH0")
+                a.push(b)
+                a.op("MSTORE")
+                n = 32
+                while n < 0x2000:
+                    a.push(n)
+                    a.push(b)
+                    a.push(b + n)
+                    a.op("MCOPY")
+                    n *= 2
+                z0 = b
+            else:
+                a.push(0x2000)
+                a.push(z0)
+                a.push(b)
+                a.op("MCOPY")
+
+    def gen_pass3f(self, name, rb, first, bufs, unroll):
+        """Fused accumulation (v4): for t < 256, ACC_rb[t] (+)= sum over the
+        side buffers B and their terms of the lane-wise products (see
+        acc_items); `first`: store instead of add. Per term, lanes are
+        < 2^23 * 2^32; the sum per ACC lane is the same as v3's (< 2^57).
+        Entry [ret]."""
+        a, L = self.a, self.L
+        a.region(name)
+        a.label(name)
+        acc = L.ACC + 0x2000 * rb
+        zuse = {}
+        masks = []
+        kron = False
+        for _, items in bufs:
+            for it in items:
+                if it[0] == 'lane':
+                    gs = [it[1] // 4]
+                    if it[2] is not None and it[2] not in masks:
+                        masks.append(it[2])
+                else:
+                    kron = True
+                    g0, s0 = divmod(it[1], 4)
+                    gs = [g0] + ([g0 + 1] if s0 + it[2] > 4 else [])
+                    if it[2] < 4:
+                        km = sum(M64 << (64 * (3 - i)) for i in range(it[2]))
+                        if km not in masks:
+                            masks.append(km)
+                for zg in gs:
+                    zuse[zg] = zuse.get(zg, 0) + 1
+        if kron:
+            masks.append(M64 << 192)
+        addrs = [acc] + [L.ZH + 0x2000 * zg for zg in zuse] + [b for b, _ in bufs]
+        base = min(addrs)
+        st = Stack(a, ["ret"])
+        st.push(M64, "M64")
+        for i, m in enumerate(masks):
+            st.push(m, f"m{i}")
+        mname = {m: f"m{i}" for i, m in enumerate(masks)}
+        st.push(base, "p")
+        layout = list(st.s)
+        loop = self.fresh("p3fl")
+        a.label(loop)
+
+        def addr(x, off, nm):
+            st.dup("p", nm)
+            if x - base + off:
+                st.push(x - base + off, "c")
+                st.op("ADD", 2, nm)
+
+        for u in range(unroll):
+            off = 32 * u
+            for zg in sorted(zuse):
+                if zuse[zg] >= 2:
+                    addr(L.ZH + 0x2000 * zg, off, f"Z{zg}")
+                    st.op("MLOAD", 1, f"Z{zg}")
+
+            def zget(zg, nm):
+                if zuse[zg] >= 2:
+                    st.dup(f"Z{zg}", nm)     # shared: popped after the store
+                else:
+                    addr(L.ZH + 0x2000 * zg, off, nm)
+                    st.op("MLOAD", 1, nm)
+
+            have = False
+            if not first:
+                addr(acc, off, "acc")
+                st.op("MLOAD", 1, "acc")
+                have = True
+            for b, items in bufs:
+                addr(b, off, "X")
+                st.op("MLOAD", 1, "X")
+                for k, it in enumerate(items):
+                    # z (the scalar or Kronecker multiplier) first, then x
+                    if it[0] == 'lane':
+                        _, j, m, d = it
+                        zget(j // 4, "z")
+                        s_ = j % 4
+                        if s_:
+                            st.push(64 * s_, "c")
+                            st.op("SHR", 2, "z")
+                        if s_ != 3:
+                            st.dup("M64", "mm")
+                            st.op("AND", 2, "z")
+                    else:
+                        _, j0, n = it
+                        g0, s0 = divmod(j0, 4)
+                        zget(g0, "z")
+                        if s0:
+                            st.push(64 * s0, "c")
+                            st.op("SHR", 2, "z")
+                        if s0 + n > 4:
+                            zget(g0 + 1, "y")
+                            st.push(64 * (4 - s0), "c")
+                            st.op("SHL", 2, "y")
+                            st.op("OR", 2, "z")
+                    if k == len(items) - 1:
+                        assert st.s[-2] == "X", st.s
+                        st.to_top("X")
+                        st.rename("X", "x")
+                    else:
+                        st.dup("X", "x")
+                    if it[0] == 'lane':
+                        if m is not None:
+                            st.dup(mname[m], "mm")
+                            st.op("AND", 2, "x")
+                        if d > 0:
+                            st.push(64 * d, "c")
+                            st.op("SHL", 2, "x")
+                        elif d < 0:
+                            st.push(-64 * d, "c")
+                            st.op("SHR", 2, "x")
+                        st.op("MUL", 2, "x")
+                    else:
+                        if n < 4:
+                            st.dup(mname[sum(M64 << (64 * (3 - i)) for i in range(n))], "mm")
+                            st.op("AND", 2, "x")
+                        st.op("MUL", 2, "x")
+                        st.dup(mname[M64 << 192], "mm")
+                        st.op("AND", 2, "x")
+                    # accumulate x; X (if still needed) stays on top
+                    if not have:
+                        st.rename("x", "acc")
+                        if st.s[-2] == "X":
+                            st.swap(1)           # [acc, X]
+                        have = True
+                    elif st.s[-2] == "acc":
+                        st.op("ADD", 2, "acc")
+                    else:
+                        assert st.s[-3:] == ["acc", "X", "x"], st.s
+                        st.swap(1)               # [acc, x, X]
+                        st.swap(2)               # [X, x, acc]
+                        st.op("ADD", 2, "acc")
+                        st.swap(1)               # [acc, X]
+            zs = [f"Z{zg}" for zg in sorted(zuse) if zuse[zg] >= 2]
+            assert st.s == layout + zs + ["acc"], st.s
+            addr(acc, off, "q")
+            st.op("MSTORE", 2)
+            for _ in zs:
+                st.op("POP", 1)
+        st.add_const("p", 32 * unroll)
+        assert st.s == layout
+        st.dup("p", "x")
+        st.push(base + 256 * 32, "e")
+        st.op("GT", 2, "f")
+        a.jumpi(loop)
+        st.s.pop()
+        for nm in reversed(layout[1:]):
+            st.pop(nm)
+        a.op("JUMP")
+
     def expand_a(self):
         """All SIMD groups of the schedule; stack [ok] -> [ok]."""
         a, L = self.a, self.L
         a.region("expand_a")
+        if self.v4:
+            self.plan_accumulation()
         nb = L.PK // 136 + 1
         for gi, g in enumerate(self.schedule):
             slots = g['slots']
@@ -2011,6 +2272,8 @@ class Gen:
                 a.jump("group")
                 a.label(ret)
                 a.op("AND")
+                if self.v4:
+                    self.accumulate(gi)
                 continue
             # mixed group: explicit init, block loop with tr / c riders
             amult = sum(1 << s_ for s_ in range(4) if seeds[s_])
@@ -2052,7 +2315,9 @@ class Gen:
             a.jump("gfix")
             a.label(ret)
             a.op("AND")
-            if p3[0] == 'aligned':
+            if self.v4:
+                self.accumulate(gi)
+            elif p3[0] == 'aligned':
                 rb, j = p3[1], p3[2]
                 self.call("pass3", [L.ACC + 0x2000 * rb, L.ZH + 0x2000 * (j // 4), 64 * (j % 4)])
             elif p3[0] == 'masked':
@@ -2625,6 +2890,16 @@ class Gen:
         self.nttk.premont = True
         self.nttk.gen_intt("intt", self.R)
 
+    P3F_UNROLL = {44: 2, 65: 2, 87: 2}
+
+    def call_dhint(self):
+        a = self.a
+        ret = self.fresh("ret")
+        a.pushl(ret)
+        a.jump("dhint")
+        a.label(ret)
+        a.op("AND")
+
     def build(self, stop_after=None):
         a, L = self.a, self.L
         self.schedule = self.build_schedule()
@@ -2648,12 +2923,9 @@ class Gen:
             a.op("AND")
             a.op("OR")
         self.flag_check()
-        ret = self.fresh("ret")
-        a.pushl(ret)
-        a.jump("dhint")
-        a.label(ret)
-        a.op("AND")
-        if not self.simd_c():
+        if not self.v4:
+            self.call_dhint()
+        if not self.simd_c() and not self.v4:
             ret = self.fresh("ret")
             a.pushl(ret)
             a.jump("sib")
@@ -2664,6 +2936,10 @@ class Gen:
             self.call("ntt", [L.ZH + 0x2000 * g])
         self.init_rho1()
         self.expand_a()
+        if self.v4:
+            # CW and HP served as side buffers during ExpandA
+            self.zero_side_buffers()
+            self.call_dhint()
         # mu: squeezed in a SIMD slot for |M| <= 69, else a kf1 sponge from tr
         mulong, mudone = self.fresh("mulong"), self.fresh("mudone")
         if self.has_mu_slot():
@@ -2693,7 +2969,7 @@ class Gen:
         self.hash_mu()
         if self.has_mu_slot():
             a.label(mudone)
-        if self.simd_c():
+        if self.simd_c() or self.v4:
             ret = self.fresh("ret")
             a.pushl(ret)
             a.jump("sib")
@@ -2725,14 +3001,18 @@ class Gen:
         self.gen_decode_hint()
         self.gen_decode("dz", L.p["zbytes"], L.p["zbits"], self.z_post, flags=True)
         self.gen_blk()
-        self.gen_pass3()
-        if any(g['p3'][0] == 'masked' for g in self.schedule):
-            self.gen_pass3(masked=True)
-        for gi, g in enumerate(self.schedule):
-            if g['p3'][0] == 'kron':
-                self.gen_pass3k(f"pass3k{gi}", *g['p3'][1:])
-            elif g['p3'][0] == 'mix':
-                self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
+        if self.v4:
+            for name, rb, first, bufs in self.fused:
+                self.gen_pass3f(name, rb, first, bufs, self.P3F_UNROLL[L.nn])
+        else:
+            self.gen_pass3()
+            if any(g['p3'][0] == 'masked' for g in self.schedule):
+                self.gen_pass3(masked=True)
+            for gi, g in enumerate(self.schedule):
+                if g['p3'][0] == 'kron':
+                    self.gen_pass3k(f"pass3k{gi}", *g['p3'][1:])
+                elif g['p3'][0] == 'mix':
+                    self.gen_pass3x(f"pass3x{gi}", *g['p3'][1:])
         self.gen_gfix()
         self.gen_ginit()
         self.gen_trabs()
