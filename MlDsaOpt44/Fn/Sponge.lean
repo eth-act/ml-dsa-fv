@@ -2,6 +2,7 @@ import MlDsaOpt44.Fn.Sponge.Ginit
 import MlDsaOpt44.Fn.Sponge.Cext
 import MlDsaOpt44.Fn.Sponge.Absorb
 import MlDsaOpt44.Fn.Sponge.Spr
+import MlDsaOpt44.Fn.Sponge.TrabsRun
 /-!
 # Sponge glue: `spr`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`, `kmove`, `lmerge` (WP4)
 
@@ -39,10 +40,12 @@ theorem ginit_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   WP4.ginit_call_aux hs hr m hk ha hc hl
 
 /-- **trabs**: `[kp, lm, n4, sh, off, ret]`; slot `sh` of the `4 n4` state words
-from `kp` absorbs the spread calldata lanes. -/
+from `kp` absorbs the spread calldata lanes. v4 masks the calldata word before
+the byte swap, so `lm` must be lane-aligned (`hlmL`; proof in `Fn/Sponge/TrabsRun.lean`). -/
 theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.trabs ret tail) (m : ByteArray) {off sh n4 lm kp : Nat}
     (hoff : off < 2 ^ 64) (hsh : sh < 4) (hn4 : 1 ≤ n4) (hlm : lm < 2 ^ 256)
+    (hlmL : ∀ k, k < 4 → lane lm k = 0 ∨ lane lm k = M64)
     (hkp : kp + 128 * n4 ≤ KS + 800) (hkp' : KS ≤ kp) (hkp32 : kp % 32 = 0) :
     ∃ m', (∀ x, x < 25 → word m' (KS + 32 * x) =
         if kp ≤ KS + 32 * x ∧ KS + 32 * x < kp + 128 * n4 then
@@ -51,7 +54,7 @@ theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         else word m (KS + 32 * x)) ∧
       FrameExcept m m' [(kp, kp + 128 * n4)] ∧
       Call s Entry.trabs [wd kp, wd lm, wd n4, wd sh, wd off] ret tail m [] m' (Gas.trabs n4) :=
-  sorry
+  WP4.trabs_call_v4 hs hr m hoff hsh hn4 hlm hlmL hkp hkp' hkp32
 
 /-- **cext**: `[n, sh, dst, ret]`; `dst[x] := lane x of slot sh`, de-interleaved and
 un-complemented, `x < n`. -/
