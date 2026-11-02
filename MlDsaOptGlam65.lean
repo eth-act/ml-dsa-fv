@@ -11,6 +11,7 @@ import MlDsaOptGlam65.Fn.Group
 import MlDsaOptGlam65.Fn.Hint
 import MlDsaOptGlam65.Fn.Keccak
 import MlDsaOptGlam65.Fn.Ntt
+import MlDsaOptGlam65.Fn.Pack65
 import MlDsaOptGlam65.Fn.Sponge
 import MlDsaOptGlam65.Fn.TBuild
 /-! Proofs about the Glamsterdam variant of the gas-optimised ML-DSA-65

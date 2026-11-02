@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate the `dz` proof of the Glamsterdam ML-DSA-44 bytecode.
 
-  python3 MlDsaOptGlam44/Fn/Decode/gen_dz.py
+  python3 MlDsaOptGlam44/Fn/Decode/gen_dz.py        # 44
+  python3 MlDsaOptGlam44/Fn/Decode/gen_dz.py 65|87  # gen_dz_nn.py
 
 Writes `Z4GBlocks.lean` and `Z4GLoop.lean` next to this script, from
 `MlDsaOptGlam44/listing.tsv` only. The code is v4's `dz` (`MlDsaOpt44/Fn/Decode/
@@ -14,8 +15,14 @@ lane algebra (`gW`, `zR`, `zv4`, `zf4`, `raw_pack`, `ZInvM`, `ZInvA`) is reused.
 from __future__ import annotations
 
 import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] != "44":
+    sys.path.insert(0, HERE)
+    from gen_dz_nn import main
+    main(int(sys.argv[1]))
+    sys.exit(0)
 ROOT = os.path.join(HERE, "..", "..", "..")
 
 ROWS = [l.rstrip("\n").split("\t") for l in open(os.path.join(ROOT, "MlDsaOptGlam44", "listing.tsv"))][1:]
