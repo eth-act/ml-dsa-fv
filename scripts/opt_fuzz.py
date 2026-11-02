@@ -5,7 +5,8 @@ itself cross-checked against dilithium-py on every case (dilithium-py's known
 divergence: it accepts a repeated hint index inside a row; only a strict
 mismatch outside that case is an error).
 
-Usage: python3 scripts/opt_fuzz.py NN COUNT SEED [OUT.tsv]
+Usage: python3 scripts/opt_fuzz.py [--glam] NN COUNT SEED [OUT.tsv]
+--glam fuzzes the Glamsterdam variant MlDsaOpt/NN/glam/opt.hex with EIP-8024.
 Each case: fresh or reused key, random message length, then one mutation
 (none, bit flip in pk / c-tilde / z / hint / message, hint byte set, z
 coefficient at the norm boundary, truncation, extension).
@@ -52,12 +53,15 @@ def repeated_hint(nn, cd):
 
 
 def main():
+    glam = sys.argv[1:2] == ["--glam"]
+    if glam:
+        del sys.argv[1]
     nn, count, seed = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])
     out = sys.argv[4] if len(sys.argv) > 4 else None
     rng = random.Random(seed)
     lib = LIBS[nn]
     p = opt_ref.derived(nn)
-    code = bytes.fromhex(open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), "opt.hex")).read().strip())
+    code = bytes.fromhex(open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), *(["glam"] if glam else []), "opt.hex")).read().strip())
     keys = []
     bad = 0
     acc = 0
@@ -106,7 +110,7 @@ def main():
             if dpy != exp and not (dpy == 1 and repeated_hint(nn, cd)):
                 print(f"MODEL/DPY DISAGREE case {case} kind {kind}", flush=True)
                 bad += 1
-        r = opt_evm.run(code, cd)
+        r = opt_evm.run(code, cd, fork="glamsterdam" if glam else "osaka")
         got = int.from_bytes(r["ret"], "big") if r["status"] == "return" and len(r["ret"]) == 32 else None
         acc += exp
         rows.append(f"{nn}\t{case}\t{kind}\t{len(cd)}\t{exp}\t{got}\t{r['gas_used']}")

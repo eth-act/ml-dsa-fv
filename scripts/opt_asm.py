@@ -6,7 +6,9 @@ instruction per line with pc, mnemonic, immediate, the enclosing region
 """
 from __future__ import annotations
 
-from opt_evm import OPS
+from opt_evm import OPS, EIP8024, encode_pair, encode_single
+
+IMM_OPS = {v: k for k, v in EIP8024.items()}   # EIP-8024 name -> opcode
 
 
 class Asm:
@@ -53,6 +55,18 @@ class Asm:
         self.pushl(label)
         self.op("JUMPI")
 
+    def dupn(self, n, comment=None):
+        """EIP-8024 DUPN n (17 <= n <= 235): duplicate the n-th stack item."""
+        self.items.append(("opi", "DUPN", encode_single(n), n, comment))
+
+    def swapn(self, n, comment=None):
+        """EIP-8024 SWAPN n (17 <= n <= 235): swap the top with item n + 1."""
+        self.items.append(("opi", "SWAPN", encode_single(n), n, comment))
+
+    def exchange(self, n, m, comment=None):
+        """EIP-8024 EXCHANGE n m: swap items n + 1 and m + 1."""
+        self.items.append(("opi", "EXCHANGE", encode_pair(n, m), (n, m), comment))
+
     def raw(self, items):
         self.items.extend(items)
 
@@ -65,6 +79,8 @@ class Asm:
             pcs.append(pc)
             if it[0] == "op":
                 pc += 1
+            elif it[0] == "opi":
+                pc += 2
             elif it[0] == "push":
                 pc += 1 + it[2]
             elif it[0] == "pushl":
@@ -86,6 +102,11 @@ class Asm:
             if kind == "op":
                 out.append(OPS[it[1]][0])
                 lines.append(f"{pcs[idx]:6d}  {it[1]:<14}{'':<20} ; {region}" + (f"  {it[2]}" if it[2] else ""))
+            elif kind == "opi":
+                out.append(IMM_OPS[it[1]])
+                out.append(it[2])
+                arg = " ".join(map(str, it[3])) if isinstance(it[3], tuple) else str(it[3])
+                lines.append(f"{pcs[idx]:6d}  {it[1]:<14}{arg:<20} ; {region}" + (f"  {it[4]}" if it[4] else ""))
             elif kind == "push":
                 v, k = it[1], it[2]
                 out.append(0x5F + k)
@@ -117,9 +138,10 @@ class Stack:
     for consuming everything it creates.
     """
 
-    def __init__(self, asm: Asm, names=()):
+    def __init__(self, asm: Asm, names=(), deep=False):
         self.a = asm
         self.s = list(names)
+        self.deep = deep      # allow EIP-8024 DUPN / SWAPN beyond depth 16
 
     def depth(self, name):
         i = len(self.s) - 1 - self.s[::-1].index(name)
@@ -138,16 +160,22 @@ class Stack:
 
     def dup(self, name, new=None):
         d = self.depth(name)
-        assert d < 16, f"dup too deep: {name} at {d} ({self.s})"
-        self.a.op(f"DUP{d + 1}")
+        if d >= 16 and self.deep:
+            self.a.dupn(d + 1)
+        else:
+            assert d < 16, f"dup too deep: {name} at {d} ({self.s})"
+            self.a.op(f"DUP{d + 1}")
         self.s.append(new if new is not None else name + "'")
 
     def to_top(self, name):
         d = self.depth(name)
         if d == 0:
             return
-        assert d <= 16, f"swap too deep: {name} at {d}"
-        self.a.op(f"SWAP{d}")
+        if d > 16 and self.deep:
+            self.a.swapn(d)
+        else:
+            assert d <= 16, f"swap too deep: {name} at {d}"
+            self.a.op(f"SWAP{d}")
         i = len(self.s) - 1 - d
         self.s[i], self.s[-1] = self.s[-1], self.s[i]
 
@@ -159,7 +187,10 @@ class Stack:
             self.to_top(name)
 
     def swap(self, k):
-        self.a.op(f"SWAP{k}")
+        if k > 16 and self.deep:
+            self.a.swapn(k)
+        else:
+            self.a.op(f"SWAP{k}")
         self.s[-1], self.s[-1 - k] = self.s[-1 - k], self.s[-1]
 
     def op(self, name, nin, out=None, comment=None):

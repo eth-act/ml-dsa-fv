@@ -1,0 +1,70 @@
+ML-DSA-65 optimised verifier: 46163 bytes (limit 65536, EIP-7954)
+
+Subroutines / regions (pc ranges of the generated code):
+       0 ..   2588   2588 bytes  main
+    2588 ..   4805   2217 bytes  expand_a
+    4805 ..   5665    860 bytes  hash_mu
+    5665 ..   6438    773 bytes  final_hash
+    6438 ..   7034    596 bytes  absorb17
+    7034 ..   7265    231 bytes  sample_in_ball
+    7265 ..   7952    687 bytes  decode_hint
+    7952 ..   8834    882 bytes  dz
+    8834 ..  10009   1175 bytes  blk
+   10009 ..  10291    282 bytes  pass3
+   10291 ..  10413    122 bytes  pass3x5
+   10413 ..  10533    120 bytes  pass3x6
+   10533 ..  10645    112 bytes  pass3x7
+   10645 ..  10708     63 bytes  pass3x8
+   10708 ..  11038    330 bytes  gfix
+   11038 ..  11478    440 bytes  ginit
+   11478 ..  12099    621 bytes  trabs
+   12099 ..  12373    274 bytes  cext
+   12373 ..  12588    215 bytes  spr
+   12588 ..  12961    373 bytes  mu0
+   12961 ..  13650    689 bytes  fix
+   13650 ..  13915    265 bytes  group
+   13915 ..  14723    808 bytes  tbuild
+   14723 ..  15528    805 bytes  csum
+   15528 ..  15799    271 bytes  usehint
+   15799 ..  16182    383 bytes  pack
+   16182 ..  17449   1267 bytes  ntt
+   17449 ..  18930   1481 bytes  intt
+   18930 ..  31162  12232 bytes  kf1
+   31162 ..  46163  15001 bytes  kf4
+
+Memory map (byte offsets):
+  KS     0x000000 .. 0x000320  (800 bytes)
+  KB     0x000400 .. 0x000720  (800 bytes)
+  RC4    0x000800 .. 0x000b00  (768 bytes)
+  RC1    0x000b00 .. 0x000e00  (768 bytes)
+  MISC   0x000e00 .. 0x001000  (512 bytes)
+  TBL    0x001000 .. 0x003000  (8192 bytes)
+  CW     0x003000 .. 0x005000  (8192 bytes)
+  ABUF   0x005000 .. 0x007a00  (10752 bytes)
+  FL     0x007a00 .. 0x007f40  (1344 bytes)
+  ZH     0x008000 .. 0x00c000  (16384 bytes)
+  BASES  0x00c000 .. 0x00c800  (2048 bytes)
+  IDX    0x00c800 .. 0x00c900  (256 bytes)
+  ACC    0x00c900 .. 0x010900  (16384 bytes)
+  HP     0x010900 .. 0x014900  (16384 bytes)
+  FIN    0x014900 .. 0x015600  (3328 bytes)
+  RHO1   0x015600 .. 0x015780  (384 bytes)
+  CB     0x015800 .. 0x015c40  (1088 bytes)
+  TRL    0x015d00 .. 0x015e00  (256 bytes)
+  MU     0x015e00 .. 0x015f00  (256 bytes)
+  BK     0x015f00 .. 0x016220  (800 bytes)
+  KZ     0x016300 .. 0x016620  (800 bytes)
+  TT     0x005000 (overlays ABUF/FL/ZH after ExpandA)
+  SP     0x008000 (overlays ABUF/FL/ZH after ExpandA)
+  top    0x016620 (touched once at entry)
+
+SIMD groups (slot roles; each group squeezes 5 blocks of 4 states):
+   0: slots=[('A', 0, 0), ('A', 1, 0), ('A', 2, 0), ('A', 3, 0)] keep=None acc=('aligned', 0, 0)
+   1: slots=[('A', 0, 1), ('A', 1, 1), ('A', 2, 1), ('A', 3, 1)] keep=None acc=('aligned', 0, 1)
+   2: slots=[('A', 0, 2), ('A', 1, 2), ('A', 2, 2), ('A', 3, 2)] keep=None acc=('aligned', 0, 2)
+   3: slots=[('A', 0, 3), ('A', 1, 3), ('A', 2, 3), ('A', 3, 3)] keep=None acc=('aligned', 0, 3)
+   4: slots=[('A', 0, 4), ('A', 1, 4), ('A', 2, 4), ('A', 3, 4)] keep=None acc=('aligned', 0, 4)
+   5: slots=[('A', 4, 0), ('A', 5, 0), ('A', 4, 1), ('tr', 0)] keep=None acc=('mix', 1, [(0, 0, 0), (1, 1, 0), (2, 0, 1)])
+   6: slots=[('A', 5, 1), ('A', 4, 2), ('A', 5, 2), ('tr', 1)] keep=3 acc=('mix', 1, [(0, 1, 1), (1, 0, 2), (2, 1, 2)])
+   7: slots=[('A', 4, 3), ('A', 5, 3), ('A', 4, 4), ('tr', 2)] keep=3 acc=('mix', 1, [(0, 0, 3), (1, 1, 3), (2, 0, 4)])
+   8: slots=[('A', 5, 4), ('c',), ('mu',), None] keep=None acc=('mix', 1, [(0, 1, 4)])

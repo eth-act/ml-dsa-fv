@@ -12,6 +12,7 @@ analysis and proof plan are in `docs/opt.md`.
 | `NN/opt.asm` | readable intermediate form: annotated listing (pc, mnemonic, immediate, subroutine, generator comments) |
 | `NN/layout.txt` | subroutine pc ranges, memory map, SIMD slot schedule |
 | `NN/v2/` | the same three files for v2 (the proved bytes) |
+| `NN/glam/` | Glamsterdam prototype (EIP-8024 DUPN/SWAPN, EIP-7954 64 KiB code), not proved: v3 with stack-resident Keccak kernels, `scripts/gen_glam.py`, see `docs/glam.md` |
 
 Gas for a valid signature over an empty message, frame gas as measured by
 `mldsa44tool run-file` and foundry's GasProbe:

@@ -10,6 +10,10 @@ itself, from pc = 0.
 
 Used by scripts/gen_opt.py's unit tests and scripts/opt_run.py; not part of
 any proof.
+
+`run(..., fork="glamsterdam")` also executes EIP-8024's DUPN (0xe6), SWAPN
+(0xe7) and EXCHANGE (0xe8), 3 gas each, with a one-byte immediate. Under the
+default fork ("osaka") these bytes are undefined opcodes, as before.
 """
 from __future__ import annotations
 
@@ -36,6 +40,39 @@ for _i in range(1, 17):
 NAMES = {v[0]: k for k, v in OPS.items()}
 GAS = {v[0]: v[1] for v in OPS.values()}
 
+# EIP-8024 (Glamsterdam): opcode -> name; each carries a one-byte immediate.
+EIP8024 = {0xE6: "DUPN", 0xE7: "SWAPN", 0xE8: "EXCHANGE"}
+
+
+def decode_single(x: int) -> int:
+    """EIP-8024: immediate of DUPN / SWAPN -> n with 17 <= n <= 235."""
+    assert 0 <= x <= 90 or 128 <= x <= 255
+    return (x + 145) % 256
+
+
+def decode_pair(x: int) -> tuple[int, int]:
+    """EIP-8024: immediate of EXCHANGE -> (n, m), 1 <= n <= 14, n < m <= 30 - n."""
+    assert 0 <= x <= 81 or 128 <= x <= 255
+    k = x ^ 143
+    q, r = divmod(k, 16)
+    if q < r:
+        return q + 1, r + 1
+    return r + 1, 29 - q
+
+
+def encode_single(n: int) -> int:
+    assert 17 <= n <= 235
+    return (n + 111) % 256
+
+
+def encode_pair(n: int, m: int) -> int:
+    assert 1 <= n < m and n + m <= 30
+    if m <= 16:
+        q, r = n - 1, m - 1
+    else:
+        q, r = 29 - m, n - 1
+    return (16 * q + r) ^ 143
+
 
 class EvmError(Exception):
     pass
@@ -47,12 +84,15 @@ def mem_cost(words: int) -> int:
 
 def run(code: bytes, calldata: bytes = b"", gas: int = 1 << 40, memory: bytearray | None = None,
         profile: bool = False, stack: list | None = None, stop_pc: int | None = None,
-        max_steps: int = 1 << 62, start_pc: int = 0):
+        max_steps: int = 1 << 62, start_pc: int = 0, fork: str = "osaka"):
     """Execute `code`; returns dict(status, ret, gas_used, memory, stack, prof).
 
     status: 'return' | 'revert' | 'stop' | 'invalid' | 'oog' | 'error:<msg>'.
     `stop_pc`: halt (status 'break') when pc reaches this value.
+    `fork`: "osaka" or "glamsterdam" (adds EIP-8024 DUPN / SWAPN / EXCHANGE).
     """
+    assert fork in ("osaka", "glamsterdam"), fork
+    eip8024 = fork == "glamsterdam"
     n = len(code)
     jumpdests = set()
     i = 0
@@ -121,6 +161,29 @@ def run(code: bytes, calldata: bytes = b"", gas: int = 1 << 40, memory: bytearra
                 k = op - 0x8E
                 st[-1], st[-k] = st[-k], st[-1]
                 npc = pc + 1
+            elif eip8024 and op in EIP8024:
+                used += 3
+                x = code[pc + 1] if pc + 1 < n else 0
+                if op == 0xE8:
+                    if 81 < x < 128:
+                        raise EvmError(f"bad EXCHANGE immediate {x:#x} at {pc}")
+                    i_, j_ = decode_pair(x)
+                    if j_ + 1 > len(st):
+                        raise IndexError
+                    st[-1 - i_], st[-1 - j_] = st[-1 - j_], st[-1 - i_]
+                else:
+                    if 90 < x < 128:
+                        raise EvmError(f"bad {EIP8024[op]} immediate {x:#x} at {pc}")
+                    k = decode_single(x)
+                    if op == 0xE6:
+                        if k > len(st):
+                            raise IndexError
+                        st.append(st[-k])
+                    else:
+                        if k + 1 > len(st):
+                            raise IndexError
+                        st[-1], st[-1 - k] = st[-1 - k], st[-1]
+                npc = pc + 2
             else:
                 npc = pc + 1
                 if op == 0x01:
@@ -229,13 +292,16 @@ def run(code: bytes, calldata: bytes = b"", gas: int = 1 << 40, memory: bytearra
             "prof": prof, "cnt": cnt, "pc": pc, "steps": steps}
 
 
-def disasm(code: bytes):
+def disasm(code: bytes, fork: str = "osaka"):
     out = []
     i = 0
     while i < len(code):
         op = code[i]
         name = NAMES.get(op, f"0x{op:02x}")
-        if 0x60 <= op <= 0x7F:
+        if fork == "glamsterdam" and op in EIP8024:
+            out.append((i, EIP8024[op], code[i + 1:i + 2].hex()))
+            i += 2
+        elif 0x60 <= op <= 0x7F:
             k = op - 0x5F
             out.append((i, name, code[i + 1:i + 1 + k].hex()))
             i += 1 + k
