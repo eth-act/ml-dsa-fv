@@ -1,0 +1,140 @@
+name = "evm_semantics"
+version = "0.1.0"
+defaultTargets = ["evm_semantics", "Checks"]
+
+# `autoImplicit` (and its relaxed variant) are disabled so a typo in a
+# theorem or constructor statement becomes an elaboration error instead
+# of a silently-quantified fresh implicit variable — essential when the
+# core artifacts are Prop-valued specifications and soundness theorems.
+#
+# The 100-column line limit remains a project convention (see AGENTS.md)
+# but is no longer machine-enforced: the text-based style linter lived in
+# Mathlib, and this project is deliberately Mathlib-free.
+leanOptions = { autoImplicit = false, relaxedAutoImplicit = false }
+
+# Use Batteries' `runLinter` script as the lint driver (same approach as
+# Mathlib's lakefile). `lake lint` will build and execute this driver
+# against the modules listed in `lintDriverArgs`. The driver runs the
+# `#lint` suite (Batteries' linters: simpNF, unused arguments, missing
+# docs, ...) on every declaration whose root namespace matches the
+# argument.
+lintDriver = "batteries/runLinter"
+lintDriverArgs = ["EvmSemantics", "EvmSemantics.EVM.StepDeterminism"]
+
+# Batteries was previously pulled in transitively through Mathlib; now that
+# Mathlib is gone it is required directly. It supplies the `runLinter` lint
+# driver and the `Batteries.Tactic.Lint.*` linter attributes used across the
+# semantics, and depends only on Lean core (no Mathlib, aesop, etc.).
+[[require]]
+name = "batteries"
+git = "https://github.com/leanprover-community/batteries"
+rev = "v4.33.0"
+
+[[lean_lib]]
+name = "EvmSemantics"
+# Two roots, deliberately.
+#
+# `EvmSemantics` is the *public* root: what downstream consumers (e.g.
+# yul-compiler) import. It stops at `EVM.Equiv`, so importers pay for the
+# semantics and the soundness direction, and nothing else.
+#
+# `EVM.StepDeterminism` is the *completeness* half — `step_complete`,
+# `step_deterministic`, `step_iff_stepF`, plus the ~4.5k lines of
+# per-constructor cases under `EVM/StepComplete/`. It is proof-only: nothing
+# in the public API depends on it, and importing it would bloat every
+# downstream olean for no gain, so it is not re-exported from
+# `EvmSemantics.lean`. Naming it here is what puts it in the build graph at
+# all — without this entry Lake owns no target containing it, `lake build`
+# skips it silently, and its proofs go unchecked in CI.
+globs = ["EvmSemantics", "EvmSemantics.EVM.StepDeterminism"]
+
+# The declared headline theorems and their pinned axiom footprint. A target
+# of its own (rather than a `lake env lean Checks.lean` side-run) so the
+# `#guard_msgs` pins are elaborated by an ordinary `lake build` — locally as
+# well as in CI. Nothing imports it; it exists to be checked.
+[[lean_lib]]
+name = "Checks"
+
+# Shared helpers imported by several test-runner executables (Lake only
+# builds modules owned by some target, so the shared module needs a lib
+# entry of its own).
+[[lean_lib]]
+name = "TestSupport"
+roots = ["tests.FakeExponential"]
+
+[[lean_exe]]
+name = "evm_semantics"
+root = "Main"
+
+[[lean_exe]]
+name = "vmtests"
+root = "tests.VMRunner"
+
+[[lean_exe]]
+name = "statetests"
+root = "tests.StateTestRunner"
+
+[[lean_exe]]
+name = "gstatetests"
+root = "tests.GeneralStateTestRunner"
+
+[[lean_exe]]
+name = "txtests"
+root = "tests.TransactionTestRunner"
+
+[[lean_exe]]
+name = "blockchaintests"
+root = "tests.BlockchainTestRunner"
+
+[[lean_exe]]
+name = "blockchaintests_engine"
+root = "tests.BlockchainEngineTestRunner"
+
+[[lean_exe]]
+name = "rlptests"
+root = "tests.RlpTestRunner"
+
+[[lean_exe]]
+name = "trietests"
+root = "tests.TrieTestRunner"
+
+[[lean_exe]]
+name = "keccak_test"
+root = "tests.KeccakTest"
+
+[[lean_exe]]
+name = "sha256_test"
+root = "tests.Sha256Test"
+
+[[lean_exe]]
+name = "ripemd160_test"
+root = "tests.Ripemd160Test"
+
+[[lean_exe]]
+name = "ecrecover_test"
+root = "tests.EcrecoverTest"
+
+[[lean_exe]]
+name = "ecadd_ecmul_test"
+root = "tests.EcaddEcmulTest"
+
+[[lean_exe]]
+name = "ecpairing_test"
+root = "tests.EcpairingTest"
+
+[[lean_exe]]
+name = "blake2f_test"
+root = "tests.Blake2fTest"
+
+[[lean_exe]]
+name = "bls12381_test"
+root = "tests.Bls12381Test"
+
+[[lean_exe]]
+name = "ecrecover_bench"
+root = "tests.EcrecoverBench"
+
+[[lean_exe]]
+name = "mpt_smoke"
+root = "tests.MptSmoke"
+
