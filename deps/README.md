@@ -8,11 +8,11 @@ trust boundary). It is
 `2f8714d6ba960a3de67720019b54513f5bc1a2e3` (the revision `master` pins), with
 `.claude/` and `.github/` left out, plus a patch adding a partial `Amsterdam`
 fork (EIP-8024 `DUPN` / `SWAPN` / `EXCHANGE`, EIP-7954 code size). The commit
-that adds this directory is the verbatim copy (58e20dd); the patch is the next
-commit (cbc0a96), so `git diff 58e20dd cbc0a96 -- deps/evm-semantics` is the
+that adds this directory is the verbatim copy (b4b91d5); the patch is the next
+commit (2e8a064), so `git diff b4b91d5 2e8a064 -- deps/evm-semantics` is the
 whole trust-boundary change.
 
-`lakefile.toml` requires it as a git package: this repository at cbc0a96
+`lakefile.toml` requires it as a git package: this repository at 2e8a064
 (`subDir = "deps/evm-semantics"`), so the gate sees an ordinary pinned
 dependency. Editing this directory therefore changes nothing until the require
 is re-pinned to a commit with the edit.

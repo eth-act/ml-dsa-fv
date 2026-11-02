@@ -25,7 +25,7 @@ rev = "c9914c13df47efe026376723acd632bc33bc16e3"
 [[require]]
 name = "evm_semantics"
 git = "https://github.com/eth-act/ml-dsa-fv"
-rev = "cbc0a962512d81be688c19cd117b3effc9367260"
+rev = "2e8a064f00cab4ba11799ccbed5bcaf7fcb349be"
 subDir = "deps/evm-semantics"
 
 [[require]]
