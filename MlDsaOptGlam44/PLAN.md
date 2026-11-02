@@ -39,7 +39,7 @@ Open (`#open_items`, 9 declarations):
 | `ntt_call`, `intt_call` | `ntt`, `intt` | 4 + 4 passes, 16 words on the stack, table `TblAt` (`nttRecG`); v4's per-layer bounds and butterflies apply |
 | `dz_call` | `dz` | gather loop unrolled per chunk |
 | `csum_call` | `csum` | all τ bases on the stack (DUPN) |
-| `sib_call`, `sib_call0` | `sample_in_ball` | two loop copies (the first stops at block 1's end, where c's 2nd block is squeezed from `SC` if `FLAG = 1`); `sib_call` (`FLAG = 1`, c's 2nd block squeezed from `SC`) and `sib_call0` (`FLAG = 0`, both blocks already in `CB[0, 34)`), same post, frame and `Gas.sib` (to re-derive) |
+| `sib_call`, `sib_call0` | `sample_in_ball` | two loop copies (the first stops at block 1's end, where c's 2nd block is squeezed from `SC` if `FLAG = 1`); `sib_call` (`FLAG = 1`, c's 2nd block squeezed from `SC`) and `sib_call0` (`FLAG = 0`, both blocks already in `CB[0, 34)`, frame `CW`, `BASES`, `IDX`, `NNEG` only), same post and `Gas.sib` (to re-derive) |
 | `seg_alt` | `alt` … `altj`, `mulong`, `pass3f4b`, the tail with `FLAG = 0` | the long-message schedule; `Gas.pAlt` is a provisional bound (`Gas.lean`) |
 
 ```sh
