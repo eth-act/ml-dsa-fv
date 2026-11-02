@@ -159,7 +159,7 @@ theorem wApprox_congr (cd : ByteArray) {c : Fips204.Poly} (hcs : c.size = 256) (
           Fips204.ntt (p.map (· * 2 ^ Fips204.d)))[i]!) j := rfl
     rw [e3, e4, MlDsaOptM1.toF_mulNTT' _ _ hj, e2, e1, MlDsaOptM1.toF_azFold _ _ hj,
       toF_azRow cd i hj, show P.l = 7 from rfl]
-    congr 1
+    refine congrArg₂ HSub.hSub ?_ rfl
     apply Finset.sum_congr rfl
     intro s hs
     rw [Finset.mem_range] at hs

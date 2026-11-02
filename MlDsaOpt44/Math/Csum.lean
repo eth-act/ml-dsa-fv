@@ -29,7 +29,8 @@ theorem t1Of_get (cd : ByteArray) {r i : Nat} (hr : r < 4) (hi : i < 256) :
   simp only [hc]
   rw [Proofs.Math.getElem!_map_range 256 i _ hi, ByteArray.extract_extract, Nat.mul_comm i 10]
   unfold t1v
-  congr 3 <;> omega
+  rw [show 0 + (32 + 32 * 10 * r) = 32 + 320 * r by omega,
+    show min (0 + (32 + 32 * 10 * (r + 1))) 1312 = 32 + 320 * (r + 1) by omega]
 
 theorem sum_succ_int (g : Nat → Int) (n : Nat) :
     ((List.range (n + 1)).map g).sum = ((List.range n).map g).sum + g n := by

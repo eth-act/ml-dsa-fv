@@ -30,7 +30,8 @@ theorem t1Of_get (cd : ByteArray) {g r i : Nat} (hrow : 4 * g + r < 8) (hi : i <
   rw [MlDsa44.Proofs.Math.getElem!_map_range 256 i _ hi, ByteArray.extract_extract, Nat.mul_comm i 10]
   unfold t1f
   have hct : CTOFF = 2592 := rfl
-  congr 3 <;> omega
+  rw [show 0 + (32 + 32 * 10 * (4 * g + r)) = 32 + 1280 * g + 320 * r by omega,
+    show min (0 + (32 + 32 * 10 * (4 * g + r + 1))) CTOFF = 32 + 1280 * g + 320 * (r + 1) by omega]
 
 theorem nNeg_sum (c : Fips204.Poly) (t : Nat) :
     nNeg c t = ((List.range 256).map (MlDsaOptG4.np c t)).sum := by

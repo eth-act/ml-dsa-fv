@@ -23,7 +23,7 @@ theorem aI_seedState {seed : ByteArray} (h : seed.size < 168) :
   unfold aI Fips204.rejNTTPoly Fips204.G Fips202.shake128
   rw [← MlDsa44.Proofs.Math.squeeze_extract_shake 168 seed Fips204.rejNTTPolyLimit 6
     (Or.inr rfl) (by decide), absorb_single (by norm_num) h]
-  congr 1
+  refine congrArg Fips204.rejNTTPolyOf ?_
   have hs := MlDsa44.Proofs.Math.squeeze_size' 168 (Keccak.permute (seedState 168 seed)) 6
   rw [show Fips204.rejNTTPolyLimit = (Fips202.squeeze 168 (Keccak.permute (seedState 168 seed)) 6).size
     by rw [hs]; rfl]
