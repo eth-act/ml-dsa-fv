@@ -1,4 +1,5 @@
-import MlDsaOptGlam65.Main.S1.Tac
+import MlDsaOptGlam65.Main.Base
+import MlDsaOpt65.Main.S1.Tac  -- v4's macro (a top-level syntax: one copy only)
 import MlDsaOptGlam44.Main.Tbl.Defs
 import MlDsaOptGlam65.Layout
 import MlDsaOptGlam65.Budget

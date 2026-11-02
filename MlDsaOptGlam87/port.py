@@ -87,7 +87,6 @@ FILES = [
     "MlDsaOpt87/Main/S1/Fin.lean",
     "MlDsaOpt87/Main/S1/FinBlocks.lean",
     "MlDsaOpt87/Main/S1/Rho.lean",
-    "MlDsaOpt87/Main/S1/Tac.lean",
     "MlDsaOpt87/Main/SegCt.lean",
     "MlDsaOpt87/Main/SegExp.lean",
     "MlDsaOpt87/Main/SegFin.lean",
