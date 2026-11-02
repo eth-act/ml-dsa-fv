@@ -155,6 +155,37 @@ theorem kb_round {s : State} (hs : Ctx s) {tl stk : List UInt256} (htl : tl.leng
   · exact (hB1.frame hf2 (by simp only [avoids_cons, avoids_nil, and_true]; omega)
       (by simp only [avoids_cons, avoids_nil, and_true]; omega)) b' (by omega)
 
+/-- `kb_round` with the whole block (56 candidates, 7 flag words) as `blk` writes it. -/
+theorem kbf_round {s : State} (hs : Ctx s) {tl stk : List UInt256} (htl : tl.length ≤ 8) {m : ByteArray}
+    {pc0 r1 r2 c1 c2 b ab fl : Nat} (hb : b < 5) (hbuf : BufOK ab fl)
+    (g1 : Reach (callState s pc0 stk m) (callState s 41842 (wd r1 :: tl) m) c1)
+    (g2 : ∀ m', Reach (callState s r1 tl m')
+      (callState s 10187 (wd (fl + 224 * b) :: wd (ab + 1792 * b) :: wd r2 :: tl) m') c2)
+    (hj1 : Decode.isValidJumpDest optBytecode r1 = true) (hr1 : r1 < 2 ^ 16)
+    (hj2 : Decode.isValidJumpDest optBytecode r2 = true) (hr2 : r2 < 2 ^ 16)
+    (hrc : RC4Table m) {S : Nat → Fips202.SpongeState} (hS : Sized4 S) (hks : KS4 m S) :
+    ∃ m', KS4 m' (fun k => Keccak.permute (S k)) ∧
+      (∀ i, i < 56 → word m' (ab + 1792 * b + 32 * i) = pack4 fun k => cand (Keccak.permute (S k)) i) ∧
+      (∀ g, g < 7 → word m' (fl + 224 * b + 32 * g) = flagWord (fun k => Keccak.permute (S k)) g) ∧
+      RC4Table m' ∧
+      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (ab + 1792 * b, ab + 1792 * b + 1792),
+        (fl + 224 * b, fl + 224 * b + 224)] ∧
+      Reach (callState s pc0 stk m) (callState s r2 tl m') (c1 + Gas.kf4 + c2 + Gas.blk) := by
+  obtain ⟨hab, hab', hfl, hfl', hd, ⟨hrcab, hrcfl⟩⟩ := hbuf
+  simp only [KS, TOP, RC4] at hab hab' hfl hfl' hrcab hrcfl
+  obtain ⟨m1, hk, hf1, hc1⟩ := kf4_call hs (ret := r1) (tail := tl)
+    (retOK_main (by decide) htl hj1 hr1) m hrc
+  have hks1 := hk S hS hks
+  obtain ⟨m2, hbk, hf2, hc2⟩ := blk_call hs (ret := r2) (tail := tl)
+    (retOK_main (by decide) htl hj2 hr2) m1 (abp := ab + 1792 * b) (flp := fl + 224 * b)
+    (by unfold KS; omega) (by unfold TOP; omega) (by unfold KS; omega) (by unfold TOP; omega) (by omega)
+  obtain ⟨hA, hF⟩ := hbk _ (sized4_permute hS) hks1
+  have ha2 : Avoids [(ab + 1792 * b, ab + 1792 * b + 1792), (fl + 224 * b, fl + 224 * b + 224)]
+      KS (KS + 800) := by simp only [avoids_cons, avoids_nil, and_true, KS]; omega
+  exact ⟨m2, KS4.frame hks1 hf2 ha2, hA, hF, RC4Table.frame (RC4Table.frame hrc hf1 (by avoids_tac)) hf2
+    (by simp only [avoids_cons, avoids_nil, and_true, RC4]; omega), FrameExcept.trans hf1 hf2,
+    ((g1.trans hc1).trans (g2 m1)).trans hc2⟩
+
 /-- The last squeeze of a group: glue, `kf4`, glue, `blkh` (block 4). -/
 theorem kbh_round {s : State} (hs : Ctx s) {tl stk : List UInt256} (htl : tl.length ≤ 8) {m : ByteArray}
     {pc0 r1 r2 c1 c2 ab fl : Nat} (hbuf : BufOK ab fl)
