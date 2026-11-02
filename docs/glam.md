@@ -1,7 +1,8 @@
 # Glamsterdam variant (MlDsaOpt/NN/glam/)
 
 `MlDsaOpt/{44,65,87}/glam/opt.hex` is the **v4** verifier (`docs/opt.md`,
-"Round 4 (v4)") with three Glamsterdam-only changes:
+"Round 4 (v4)", including R4-5's fix-up, μ and SampleInBall changes) with
+three Glamsterdam-only changes:
 
 1. **Stack-resident, fully unrolled Keccak kernels** (`kf4`, `kf1`;
    `scripts/opt_keccak_glam.py`).
@@ -36,25 +37,25 @@ Frame gas, valid empty-message vector (line 1 of each `calldata.txt`):
 
 | set | v3 | v4 | **glam (v4 base)** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,105,097 | 2,042,346 | **1,850,700** | −191,646 (−9.4%) | −254,397 (−12.1%) |
-| 65 | 3,701,979 | 3,564,626 | **3,243,261** | −321,365 (−9.0%) | −458,718 (−12.4%) |
-| 87 | 5,424,737 | 5,271,542 | **4,766,670** | −504,872 (−9.6%) | −658,067 (−12.1%) |
+| 44 | 2,105,097 | 2,035,355 | **1,843,709** | −191,646 (−9.4%) | −261,388 (−12.4%) |
+| 65 | 3,701,979 | 3,552,170 | **3,230,805** | −321,365 (−9.0%) | −471,174 (−12.7%) |
+| 87 | 5,424,737 | 5,249,518 | **4,744,646** | −504,872 (−9.6%) | −680,091 (−12.5%) |
 
 Worst case (`opt_worstcase.py --version glam`, \|M\| = 0):
 
 | set | v3 | v4 | **glam** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,864,301 | 2,809,039 | **2,589,377** | −219,662 | −274,924 |
-| 65 | 5,073,355 | 4,947,325 | **4,575,743** | −371,582 | −497,612 |
-| 87 | 7,954,105 | 7,823,331 | **7,224,679** | −598,652 | −729,426 |
+| 44 | 2,864,301 | 2,642,702 | **2,423,040** | −219,662 | −441,261 |
+| 65 | 5,073,355 | 4,652,942 | **4,281,360** | −371,582 | −791,995 |
+| 87 | 7,954,105 | 7,283,210 | **6,684,558** | −598,652 | −1,269,547 |
 
 Code size (limit 65,536 B under EIP-7954):
 
 | set | v3 | v4 | glam |
 |---|---:|---:|---:|
-| 44 | 23,091 | 22,546 | **53,971** |
-| 65 | 23,422 | 23,219 | **54,644** |
-| 87 | 23,982 | 23,941 | **55,366** (10.2 KB left) |
+| 44 | 23,091 | 22,470 | **53,895** |
+| 65 | 23,422 | 23,140 | **54,565** |
+| 87 | 23,982 | 23,934 | **55,359** (10.2 KB left) |
 
 Saving by step, typical 44 / 65 / 87:
 
@@ -242,13 +243,15 @@ the result is frame gas, the same quantity as `opt_evm.py`.
 | glam 65 | all 57 vectors | identical |
 | glam 87 | all 57 vectors | identical |
 | v3-based glam 44 (`gas/glamsterdam`), v4 44 and 87 (controls) | line 1 | identical (1,947,956; 2,042,346; 5,271,542) |
+| after R4-5 (`gas/final`): glam 44 / 65 / 87 | all 47 / 57 / 57 vectors | identical |
+| after R4-5: v4 44 and 87 (controls) | line 1 | identical (2,035,355; 5,249,518) |
 
 revm/Foundry is not installed in this environment, and no local Rust
 toolchain was available to build a revm with EIP-8024.
 
 ## Validation
 
-On the v4-based artifacts:
+On the v4-based artifacts (re-run after R4-5, `gas/final`):
 
 | check | result |
 |---|---|
@@ -258,7 +261,9 @@ On the v4-based artifacts:
 | NTT 4 + 4 forward bias bounds (Shoup on layers 1–4) | hold for 44 / 65 / 87 |
 | all vectors on glam bytecode (44: 47, 65: 57, 87: 57), `opt_evm` and EELS | 0 mismatches |
 | forced sixth squeeze (debug build; exercises `blkt` and the sixth `blk`) | 19 / 21 / 36 vectors with sixth-block checks, all correct |
-| differential fuzz (`OPT_VERSION=glam opt_fuzz.py`, seeds 447 / 657 / 877, messages up to 1,200 B) | 300 cases per set, 0 failures; accepted 54 / 47 / 58. Mean / max gas of accepted cases: 1,903,756 / 2,136,405 (44), 3,292,488 / 3,566,153 (65), 4,810,952 / 4,962,707 (87) |
+| μ block boundaries (`opt_selftest.test_mu_lengths`: \|M\| = 69 … 1,500, valid and one-bit-flipped message) | 13 lengths per set, all correct |
+| differential fuzz before R4-5 (`OPT_VERSION=glam opt_fuzz.py`, seeds 447 / 657 / 877, messages up to 1,200 B) | 300 cases per set, 0 failures; accepted 54 / 47 / 58. Mean / max gas of accepted cases: 1,903,756 / 2,136,405 (44), 3,292,488 / 3,566,153 (65), 4,810,952 / 4,962,707 (87) |
+| differential fuzz after R4-5 (`opt_fuzz.py --version v3,v4,glam`, seeds 341 / 141 / 241, same cases on all three) | 400 cases per set, 0 failures; accepted 65 / 77 / 73. Mean / max gas of accepted cases: 1,859,153 / 1,925,370 (44), 3,237,540 / 3,297,312 (65), 4,812,150 / 5,017,182 (87) |
 
 ## Reproducing
 

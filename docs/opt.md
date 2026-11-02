@@ -10,8 +10,10 @@ parametric generator, `scripts/gen_opt.py`.
 There are three generator versions:
 
 * **v4** (round 4, not yet proved) is written to `MlDsaOpt/NN/v4/`; see
-  section "Round 4 (v4)". It saves 62,751 / 137,353 / 153,195 gas (44 / 65 /
-  87) over v3 outside the Keccak kernels.
+  section "Round 4 (v4)". It saves 69,742 / 149,809 / 175,219 gas (44 / 65 /
+  87) over v3 outside the Keccak kernels for an empty message,
+  129k–222k (44) and 216k–309k (65) for messages of 70 bytes or more, and
+  222k / 420k / 671k in the worst case.
 * **v3** is the proved version (round 3), written to `MlDsaOpt/NN/`. It is
   formally verified: `MlDsaOpt44/`, `MlDsaOpt65/` and `MlDsaOpt87/` prove
   these bytes (all four final theorems, standard axioms only). Section
@@ -92,6 +94,9 @@ python3 scripts/opt_fuzz.py 65 400 111         # differential fuzzing (Python EV
 python3 scripts/opt_selftest.py                # model, kernels, constants, all vectors, forced 6th squeeze
 python3 scripts/opt_worstcase.py               # worst-case gas over adversarial inputs, per set
 .lake/build/bin/mldsa44tool run-file MlDsaOpt/44/opt.hex FILE   # Lean-semantics gas (one calldata per line)
+python3 scripts/opt_fuzz.py --version v3,v4,glam 44 400 341   # same cases on several builds, accepted mean per build
+python3 scripts/opt_corpus.py 44 v3,v4,glam    # Python EVM: corpus verdicts, gas median / mean / max per build
+OPT_V4_DATADEP=fix python3 scripts/gen_opt.py --version v4 --out DIR   # v4 with a subset of R4-5 (measurement only)
 ```
 
 `scripts/opt_evm.py` is a Python Osaka interpreter with exact frame gas. It
@@ -114,22 +119,27 @@ unchanged; kf4 and kf1 are untouched.
 | R4-2 `trabs` network | −15,037 / −22,115 / −28,312 | 2,825,011 / 4,971,667 / 7,845,182 | `trabs` |
 | R4-3 NTT bias + Shoup | −7,301 / −14,602 / −14,602 | 2,817,710 / 4,957,065 / 7,830,580 | `ntt`, `dz`, `main` (one immediate) |
 | R4-4 c codes, lazy tail, UseHint, 44 buffers | −16,160 / −21,063 / −29,670 | 2,809,039 / 4,947,325 / 7,823,331 | `csum`, `sample_in_ball`, `usehint`, `blk`, `gfix`, `group`, `expand_a`, `main` |
-| **v4** | **2,042,346 / 3,564,626 / 5,271,542** | **2,809,039 / 4,947,325 / 7,823,331** | |
+| R4-5 fix-ups, μ in the SIMD slot, SampleInBall | −6,991 / −12,456 / −22,024 | 2,642,702 / 4,652,942 / 7,283,210 | `fix`, `sample_in_ball`; 44, 65: `expand_a`, `hash_mu`, new `mub`, `mulong`, `mu0` removed |
+| **v4** | **2,035,355 / 3,552,170 / 5,249,518** | **2,642,702 / 4,652,942 / 7,283,210** | |
 
-Code size v4: 22,546 / 23,219 / 23,941 B. Memory: 44 grows by 512 words
-(2097 → 2609, R4-4); 65 and 87 are unchanged.
+R4-5 matters most for real messages: for 44 and 65 every |M| ≥ 70 is
+64k–155k cheaper (subsection R4-5).
+
+Code size v4: 22,470 / 23,140 / 23,934 B (R4-4: 22,546 / 23,219 / 23,941).
+Memory: 44 grows by 512 words (2097 → 2609, R4-4); 65 and 87 are
+unchanged; R4-5 adds no memory.
 
 `python3 scripts/opt_diff.py --from v3 --to v4`:
 
 | set | changed | added | removed |
 |---|---|---|---|
-| 44 | `main`, `expand_a`, `sample_in_ball`, `dz`, `blk`, `gfix`, `trabs`, `group`, `csum`, `usehint`, `ntt` | `pass3f4` | `pass3`, `pass3m`, `pass3k4` |
-| 65 | same as 44 | `pass3f4`, `pass3f8` | `pass3`, `pass3x5` … `pass3x8` |
-| 87 | same as 44, plus the tail of `main` that sits in the `hash_mu` region (SampleInBall moved) | `pass3f4`, `pass3f6`, `pass3f10`, `pass3f14` | `pass3`, `pass3m`, `pass3k14` |
+| 44 | `main`, `expand_a`, `hash_mu`, `sample_in_ball`, `dz`, `blk`, `gfix`, `trabs`, `fix`, `group`, `csum`, `usehint`, `ntt` | `pass3f4`, `mub`, `mulong` | `pass3`, `pass3m`, `pass3k4`, `mu0` |
+| 65 | same as 44 | `pass3f4`, `pass3f8`, `mub`, `mulong` | `pass3`, `pass3x5` … `pass3x8`, `mu0` |
+| 87 | same as 44 (`hash_mu`: the tail of `main` that sits in that region, SampleInBall moved) | `pass3f4`, `pass3f6`, `pass3f10`, `pass3f14` | `pass3`, `pass3m`, `pass3k14` |
 
-Unchanged (byte-identical modulo relocation): `kf4`, `kf1`, `fix`, `ginit`,
-`cext`, `spr`, `mu0`, `tbuild`, `intt`, `pack`, `decode_hint`, `final_hash`,
-`hash_mu` (44, 65), `absorb17`.
+Unchanged (byte-identical modulo relocation): `kf4`, `kf1`, `ginit`,
+`cext`, `spr`, `tbuild`, `intt`, `pack`, `decode_hint`, `final_hash`,
+`absorb17`.
 
 ### What each step does
 
@@ -182,16 +192,171 @@ Unchanged (byte-identical modulo relocation): `kf4`, `kf1`, `fix`, `ginit`,
   * 44: two extra 8 KB side buffers (appended after KZ) let all five groups
     share one fused pass (+6.3k memory expansion, −10.3k accumulation).
 
-Validation of the final v4 artifacts (each step was validated the same
-way with 120 fuzz cases per set):
+### R4-5: data-dependent paths (fix-ups, μ, SampleInBall)
+
+These three changes were first built on v3 (branch `gas/worstcase`,
+`07aeb37`, then `--version wc`) and are now part of v4, gated on
+`Gen.wc_fix`, `Gen.wc_mu` and `Gen.wc_sib` (all on for v4; the environment
+variable `OPT_V4_DATADEP=fix,mu,sib` selects a subset, for measurement
+only). v3 and v2 bytes are unchanged.
+
+Interplay with R4-1 … R4-4 (checked against the v4 memory map; no new
+region, memory size unchanged):
+
+* `fix` keeps v3's contract, so `gfix`'s lazy tail (`blkt` before the
+  first `fix` of a group) supplies candidates 256–279 and flag words 32–34
+  as before; the sixth squeeze still calls the full `blk`.
+* μ lives in the KS slot, MU, TRL and FIN only. The side buffers of the
+  fused accumulation (CW, HP, 44's SB) and `zero_side_buffers` /
+  `decode_hint` (which v4 runs between ExpandA and μ) do not touch them.
+  `mulong` rejoins the inline path at `gfix`'s return, so the group's
+  fused accumulation follows unchanged. `mub` after the fifth kf4 only
+  reads KS (or does nothing), so `blkt` in `gfix` still sees the squeezed
+  state, and the sixth squeeze's save/restore keeps the μ state.
+* `sample_in_ball` keeps v4's pre-replicated c codes: the accept step is
+  v4's code, moved into `sib_accept`.
+
+Final v4 (and glam on it): see the table at the end of this subsection.
+
+Measured on v3 (`wc`), gas against v3. Typical and worst case are for |M| = 0 (worst case as in
+"Worst-case gas"); the fuzz mean is over the accepted cases of one
+`opt_fuzz.py` run, the same cases for every build (seeds 341 / 141 / 241,
+400 cases each, messages up to 1,200 bytes); the median is over all cases
+of `scripts/opt_corpus.py` (44: the 3,639-case corpus; 65 / 87: the 57
+vector rows).
+
+| build | typical 44 / 65 / 87 | fuzz mean (accepted) 44 / 65 / 87 | corpus median 44 / 65 / 87 | worst case 44 / 65 / 87 |
+|---|---|---|---|---|
+| v3 | 2,105,097 / 3,701,979 / 5,424,737 | 2,152,701 / 3,751,723 / 5,490,731 | 2,236,639 / 3,702,164 / 5,470,332 | 2,864,301 / 5,073,355 / 7,954,105 |
+| v3 + fix | 2,100,250 / 3,692,149 / 5,408,596 | 2,147,862 / 3,739,811 / 5,469,151 | 2,226,988 / 3,692,334 / 5,447,326 | 2,717,597 / 4,798,285 / 7,440,641 |
+| v3 + mu | 2,105,090 / 3,701,972 / = v3 | 2,112,370 / 3,717,579 / = v3 | 2,142,424 / 3,701,972 / = v3 | 2,864,294 / 5,073,348 / = v3 |
+| v3 + sib | 2,102,960 / 3,699,360 / 5,418,854 | 2,150,601 / 3,748,999 / 5,485,255 | 2,234,575 / 3,699,535 / 5,464,921 | 2,844,675 / 5,054,049 / 7,927,448 |
+| **wc** (all three) | **2,098,106 / 3,689,523 / 5,402,713** | **2,105,431 / 3,702,942 / 5,463,674** | **2,130,195 / 3,689,523 / 5,441,915** | **2,697,964 / 4,778,972 / 7,413,984** |
+
+The worst-case components on v3 (`wc`): fix-ups 614,265 / 1,133,409 / 2,027,675
+(v3 760,969 / 1,408,479 / 2,541,139), SampleInBall 25,779 / 29,289 /
+100,291 (v3 45,405 / 48,595 / 126,948); hints unchanged. The mu change
+does not move the |M| = 0 worst case, but lowers every |M| ≥ 70 case of
+44 and 65 by 64k–155k (worst case included). All builds give 0 verdict
+mismatches on the corpus and the fuzz runs.
+
+Changed subroutines relative to the previous v4 (`f0cd987`), modulo
+relocation (the same as v3 → wc):
+
+| change | 44 | 65 | 87 |
+|---|---|---|---|
+| fix | `fix` | `fix` | `fix` |
+| mu | `expand_a` (mu group and the post-ExpandA mu dispatch), `hash_mu`; new `mub`, `mulong`; `mu0` removed | same | – (no idle slot) |
+| sib | `sample_in_ball` | `sample_in_ball` | `sample_in_ball` |
+
+Sizes on v3: 44 23,015 B, 65 23,343 B, 87 23,975 B. No new opcode.
+
+* **fix: cheaper compaction.** Same contract and memory as v3's `fix`.
+  * The lane is kept in place: x = word & lm, accepted iff x < q << sh.
+    A flagged candidate is 19 ops (v3: 27): load and mask, read-merge-write
+    of lane s at wp, wp += 32·[x < q << sh] with wp on top of the stack.
+  * The flag word of the group at rp is read at (rp >> 3) + FL − ABUF/8,
+    so there is no separate flag pointer, and one combined test
+    (wp < END256 and rp < rlim) closes each group.
+  * Clean groups are 8 masked copies as before (16 ops per word, v3 18).
+  * Per fully flagged instance 32,279 → 23,110; the sixth squeeze is
+    unchanged (48,271 per group).
+  * Re-proof: v3's loop invariant (lane s of ABUF[0, wp) holds the first
+    accepted candidates, rp is the next unread one) is unchanged; new are
+    the flag-address identity rp = ABUF + 8 (fp − FL) and the in-place
+    comparison x < q << sh ⇔ (x >> sh) < q for x = word & lm.
+* **mu: blocks 0..4 in the SIMD mu slot (44, 65).** The last group's mu
+  slot absorbs one mu block before each of its 5 kf4 calls, so
+  |M| ≤ 613 needs no kf1 call for mu, and longer messages continue on kf1
+  from that state after 5 blocks.
+  * `mub0` absorbs block 0 (tr ‖ 0 ‖ 0 ‖ M[0..70)). For |M| ≤ 69 it pads
+    and returns to v3's block loop (mu extracted after kf4 #0); otherwise
+    it returns to `mulong`, an out-of-line copy of the block loop that
+    calls `mub` after each kf4. `mub` absorbs block k (17 lanes via
+    `trabs`), pads the last block, or extracts mu to MU after the last
+    block's permutation.
+  * For |M| ≥ 614, `hash_mu` extracts the slot's 25 lanes in place
+    (`cext`), replicates them (REP·v, NOT on the complemented lanes) and
+    runs v3's kf1 loop from block 5.
+  * Gas (44): −64k for 70 ≤ |M| ≤ 205, −94k / −123k / −153k for the next
+    136-byte steps up to 613, −149k for |M| ≥ 614 (65: −66k … −155k,
+    −151k). |M| ≤ 69 is unchanged (−7).
+  * Re-proof: per-slot sponge semantics as for tr (the absorption
+    pattern is `trabs` again), the padding position P − 136 k, and the
+    interleaved-slot → replicated-state conversion (complemented lanes:
+    NOT(REP·v) = REP·(v ⊕ M64)). The 6th squeeze's state save/restore
+    keeps the mu state.
+* **sib: lane-unrolled SampleInBall loop.** One iteration per 64-bit
+  stream lane, 8 unrolled byte tests j = (w >> 8k) & 0xFF; a rejected byte
+  is 10 ops, one taken JUMPI and a POP (v3: 36 ops and three jumps). Accepted bytes call one shared
+  accept step (v3's body unchanged) with their return label. The kf1
+  variant (87) addresses the lane as KS + (32 x mod 544) and squeezes at
+  x = 17. Re-proof: the byte order is v3's (byte 8 x + k of the stream);
+  the accept step is v3's code.
+
+Evaluated and not done:
+
+* **Sixth squeeze on kf1 for the one slot that needs it.** Per slot:
+  `cext` of 25 lanes (~5.2k), replication (~0.6k), kf1 (32.6k),
+  candidate extraction into lane s (~3k) and the state save/restore: about
+  41k against 48.3k for the whole-group kf4 + `blk`. But a group can need
+  it in up to 4 slots (k slots: k × 41k), and a hybrid (kf1 for the first
+  slot, kf4 for a second) costs 41k + 48k. So the worst case gets worse,
+  and the typical, corpus and fuzz cases never take this path
+  (probability ≈ 10^-38 per instance). Not done.
+* **mu in idle SIMD slots for 87.** All 300 slot-permutations carry
+  ExpandA or tr, so there is none.
+
+Final candidate (`gas/final`): v3, v4 and glam on the same cases.
+Typical and worst case as above (\|M\| = 0; glam runs with EIP-8024).
+Fuzz mean: accepted cases of `opt_fuzz.py --version v3,v4,glam` with seeds
+341 / 141 / 241 (400 cases per set, messages up to 1,200 bytes), every case
+run on all three builds; the keys are fresh dilithium-py keys
+(`os.urandom`), so v3's mean differs from the `wc` run above. Median: all
+cases of `opt_corpus.py NN v3,v4,glam` (44: the 3,639-case corpus; 65 / 87:
+the 57 vector rows). All runs: 0 verdict mismatches.
+
+| build | typical 44 / 65 / 87 | fuzz mean (accepted) 44 / 65 / 87 | corpus median 44 / 65 / 87 | worst case 44 / 65 / 87 | code size (B) |
+|---|---|---|---|---|---|
+| v3 (proved) | 2,105,097 / 3,701,979 / 5,424,737 | 2,164,928 / 3,750,199 / 5,502,449 | 2,236,639 / 3,702,164 / 5,470,332 | 2,864,301 / 5,073,355 / 7,954,105 | 23,091 / 23,422 / 23,982 |
+| v4 before R4-5 (`f0cd987`) | 2,042,346 / 3,564,626 / 5,271,542 | – | – | 2,809,039 / 4,947,325 / 7,823,331 | 22,546 / 23,219 / 23,941 |
+| **v4** | **2,035,355 / 3,552,170 / 5,249,518** | **2,051,279 / 3,558,500 / 5,322,277** | **2,068,118 / 3,552,170 / 5,292,368** | **2,642,702 / 4,652,942 / 7,283,210** | 22,470 / 23,140 / 23,934 |
+| glam before R4-5 (`f0cd987`) | 1,850,700 / 3,243,261 / 4,766,670 | – | – | 2,589,377 / 4,575,743 / 7,224,679 | 53,971 / 54,644 / 55,366 |
+| **glam** (v4 base, Glamsterdam) | **1,843,709 / 3,230,805 / 4,744,646** | **1,859,153 / 3,237,540 / 4,812,150** | **1,876,419 / 3,230,805 / 4,784,387** | **2,423,040 / 4,281,360 / 6,684,558** | 53,895 / 54,565 / 55,359 |
+
+Gas by message length (one valid signature per length, dilithium-py, fixed
+key, deterministic; v4 (f0cd987) is the v4 before R4-5):
+
+| \|M\| | 44 v3 | 44 v4 (f0cd987) | **44 v4** | **44 glam** | 65 v3 | 65 v4 (f0cd987) | **65 v4** | **65 glam** | 87 v3 | 87 v4 (f0cd987) | **87 v4** | **87 glam** |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 2,100,288 | 2,037,537 | **2,031,280** | **1,839,634** | 3,671,907 | 3,523,863 | **3,515,552** | **3,195,246** | 5,488,420 | 5,342,383 | **5,310,425** | **4,804,847** |
+| 69 | 2,101,432 | 2,038,681 | **2,032,424** | **1,840,778** | 3,672,223 | 3,524,179 | **3,516,123** | **3,195,817** | 5,486,576 | 5,340,539 | **5,309,210** | **4,803,632** |
+| 70 | 2,164,154 | 2,102,284 | **2,035,488** | **1,843,842** | 3,734,172 | 3,587,009 | **3,518,244** | **3,197,938** | 5,520,417 | 5,374,380 | **5,342,776** | **4,832,332** |
+| 206 | 2,196,371 | 2,134,501 | **2,036,779** | **1,845,133** | 3,768,712 | 3,621,549 | **3,521,826** | **3,201,520** | 5,555,500 | 5,409,463 | **5,377,151** | **4,861,841** |
+| 342 | 2,231,194 | 2,169,324 | **2,040,554** | **1,848,908** | 3,803,217 | 3,656,054 | **3,525,193** | **3,204,887** | 5,588,251 | 5,442,214 | **5,410,767** | **4,890,591** |
+| 478 | 2,265,503 | 2,203,633 | **2,043,693** | **1,852,047** | 3,836,769 | 3,689,606 | **3,527,405** | **3,207,099** | 5,622,396 | 5,476,359 | **5,444,794** | **4,919,752** |
+| 613 | 2,264,454 | 2,202,584 | **2,042,729** | **1,851,083** | 3,837,225 | 3,690,062 | **3,527,861** | **3,207,555** | 5,621,860 | 5,475,823 | **5,443,865** | **4,918,823** |
+| 614 | 2,297,708 | 2,235,838 | **2,079,769** | **1,883,257** | 3,869,550 | 3,722,387 | **3,564,572** | **3,239,400** | 5,657,087 | 5,511,050 | **5,478,856** | **4,948,948** |
+| 1000 | 2,366,172 | 2,304,302 | **2,148,111** | **1,941,867** | 3,938,052 | 3,790,889 | **3,632,734** | **3,297,830** | 5,723,277 | 5,577,240 | **5,545,675** | **5,006,035** |
+
+### Validation (v4)
+
+Validation of the final v4 artifacts (after R4-5, branch `gas/final`):
 
 | check | result |
 |---|---|
-| SHA-256 `MlDsaOpt/NN/v4/opt.hex` | 44 `8dd3fe7076ac56ddb5bff80f71e5d523a93dafa175957f374ab87ad7939a5355`, 65 `fc11f93836507fc0ddbcfbe9cabf188402af5d182857a86a2faf6fea74fb9f3b`, 87 `6540a5eba24c9a0e798f1125761118379e69a620a0ce5d6e0219e8ff01afb0b8` |
-| `opt_selftest.py` | passes: v2 and v3 reproduced byte for byte (SHA-256 pinned), v4 constants, all vectors on v3 and v4, forced sixth squeeze on v4 (19 / 21 / 36 vectors with sixth-block checks) |
-| revm (`opt_forge.sh`) | 44: 3,639 cases, 65 / 87: 57 each, 0 mismatches |
-| Lean semantics (`mldsa44tool run-file`), 44 | 46 rows: exact gas and output, total 93,585,031 in both |
-| `opt_fuzz.py` (`OPT_VERSION=v4`, seeds 544 / 565 / 587) | 44: 400, 65: 800, 87: 800 cases, 0 failures |
+| SHA-256 `MlDsaOpt/NN/v4/opt.hex` | 44 `d16d86bce905a9f24a72ce27c674969f5966e8e009fb3de0e8bb38d136b2fa8d`, 65 `063bfc9072dd80689e8cebb97e65edc159bbf8f8a703c0c819e31390eaa222fe`, 87 `08a547f438a6a8f46978a6320dfc2bacf4d30ffb91d257cc62c2bf108abf22cb` |
+| `opt_selftest.py` | passes: v2 and v3 reproduced byte for byte (SHA-256 pinned), v4 constants, all vectors on v3 and v4, μ block boundaries on v4 (13 lengths per set, valid and flipped message), forced sixth squeeze on v4 (19 / 21 / 36 vectors with sixth-block checks) |
+| `opt_corpus.py` (Python EVM) | 44: 3,639 cases, 65 / 87: 57 each, 0 mismatches |
+| Lean semantics (`mldsa44tool run-file`), 44 | 46 rows: exact gas and output, total 91,541,319 in both |
+| EELS (Amsterdam fork), line 1 of 44 and 87 | identical gas and output |
+| `opt_fuzz.py --version v3,v4,glam`, seeds 341 / 141 / 241 | 400 cases per set, 0 failures |
+| revm (`opt_forge.sh`) | not re-run after R4-5 (no forge in the orb); before R4-5: 44: 3,639 cases, 65 / 87: 57 each, 0 mismatches |
+
+Before R4-5 (`f0cd987`): SHA-256 44 `8dd3fe70…`, 65 `fc11f938…`, 87
+`6540a5eb…`; Lean semantics total 93,585,031; `opt_fuzz.py`
+(`OPT_VERSION=v4`, seeds 544 / 565 / 587) 44: 400, 65: 800, 87: 800 cases,
+0 failures. R4-1 … R4-4 were each validated with 120 fuzz cases per set.
 
 Still open: `blk` loop overhead (~10k for 44, needs unrolling and code
 space, which 87 lacks), the inverse NTT, `dz`, `pack`, `decode_hint`,
