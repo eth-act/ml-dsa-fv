@@ -107,6 +107,7 @@ GENERATORS = (
     + [(f"glam {k} {n}", ["python3", f"MlDsaOptGlam44/Fn/{d}/{k}", str(n)], None)
        for d, k in (("Kf4", "gen_kf4.py"), ("Kf1", "gen_kf1.py")) for n in (44, 65, 87)]
     + [("glam port 44", ["python3", "MlDsaOptGlam44/port.py"], None),
+       ("glam port 65", ["python3", "MlDsaOptGlam65/port.py"], None),
        ("glam blk gen.py", ["python3", "MlDsaOptGlam44/Fn/Blk/gen.py"], None),
        ("glam gen_nttg.py", ["python3", "MlDsaOptGlam44/Fn/Ntt/gen_nttg.py"], None),
        ("glam ball gen_blocks.py", ["python3", "MlDsaOptGlam44/Fn/Ball/gen_blocks.py"], None),
