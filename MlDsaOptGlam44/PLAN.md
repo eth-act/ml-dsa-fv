@@ -39,7 +39,7 @@ Open (`#open_items`, 9 declarations):
 | `ntt_call`, `intt_call` | `ntt`, `intt` | 4 + 4 passes, 16 words on the stack, table `TblAt` (`nttRecG`); v4's per-layer bounds and butterflies apply |
 | `dz_call` | `dz` | gather loop unrolled per chunk |
 | `csum_call` | `csum` | all τ bases on the stack (DUPN) |
-| `sib_call` | `sample_in_ball` | two loop copies (the first stops at block 1's end, where c's 2nd block is squeezed from `SC` if `FLAG = 1`); contract as v4's with `FLAG = 1`; `Gas.sib` to re-derive |
+| `sib_call`, `sib_call0` | `sample_in_ball` | two loop copies (the first stops at block 1's end, where c's 2nd block is squeezed from `SC` if `FLAG = 1`); `sib_call` (`FLAG = 1`, c's 2nd block squeezed from `SC`) and `sib_call0` (`FLAG = 0`, both blocks already in `CB[0, 34)`), same post, frame and `Gas.sib` (to re-derive) |
 | `seg_alt` | `alt` … `altj`, `mulong`, `pass3f4b`, the tail with `FLAG = 0` | the long-message schedule; `Gas.pAlt` is a provisional bound (`Gas.lean`) |
 
 ```sh
@@ -48,3 +48,24 @@ lake build MlDsaOptGlam44
 lake env lean MlDsaOptGlam44/checks/Axioms.lean
 python3 MlDsaOptGlam44/port.py && git status --short MlDsaOptGlam44   # reproduces the ported files
 ```
+
+## Work packages (branches off `proof/glam`, merged here)
+
+| package | items | branch |
+|---|---|---|
+| 1 | `blk_call`, `blkh_call`, `blkt_call` | `proof/glam-blk` |
+| 2 | `ntt_call`, `intt_call` | `proof/glam-ntt` |
+| 3 | `dz_call`, `csum_call` | `proof/glam` |
+| 4 | `sib_call`, `sib_call0`, `Gas.sib` | `proof/glam-sib` |
+| 5 | `seg_alt`, exact `Gas.pAlt` (uses `sib_call0` as stated) | `proof/glam-alt` |
+
+Rules for the shared files:
+
+* the statements of the open items in `Fn/*.lean` and `Main/Valid.lean` are the
+  interfaces: change one only after agreeing it with the integrator (proof/glam);
+* `Layout.lean` `Stack.*`: a package may raise only its own routine's budget,
+  as a new `def` value, and says so when it reports;
+* `Budget.lean`: a package changes only its own routines' `Gas.*`;
+* ported files are regenerated with `python3 MlDsaOptGlam44/port.py`; a package
+  that ports more v4 files adds them to its `FILES` (and adjustments) there,
+  never hand-edits a ported file without recording it in `port.py`.

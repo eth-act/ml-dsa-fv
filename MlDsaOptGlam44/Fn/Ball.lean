@@ -39,4 +39,20 @@ theorem sib_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib := by
   sorry  -- glam: open item
 
+/-- **sib on the long-message schedule** (`FLAG = 0`): c's second block (stream
+bytes `136 … 271`) is already in `CB[17, 34)` (the alt schedule squeezes c's
+slot twice), so the extension at block 1's end goes straight to the second loop
+copy. Same postcondition, frame and budget as `sib_call`. **Open item**. -/
+theorem sib_call0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.sib ret tail) (m : ByteArray)
+    (bs : ByteArray) (hbs : bs.size = 272)
+    (hcb : ∀ x, x < 34 → word m (CB + 32 * x) = le64 bs (8 * x))
+    (hz : SibFresh m) (hfl : word m FLAG = 0) :
+    ∃ m', (∀ c, Fips204.sampleInBallOf bs = some c → CRep m' c) ∧
+      (∀ i, i < Fips204.tau → word m' (BASES + 32 * i) ≤ 6112) ∧
+      FrameExcept m m' [(KS, KS + 800), (KB, KB + 800), (LIM, LIM + 32), (CW, CW + 8192),
+        (BASES, BASES + 2048), (IDX, IDX + 256), (NNEG, NNEG + 64), (CB + 544, CB + 1088)] ∧
+      Call s Entry.sib [] ret tail m [flag (Fips204.sampleInBallOf bs).isSome] m' Gas.sib := by
+  sorry  -- glam: open item
+
 end MlDsaOptGlam44.Proofs
