@@ -120,14 +120,16 @@ unchanged; kf4 and kf1 are untouched.
 | R4-3 NTT bias + Shoup | −7,301 / −14,602 / −14,602 | 2,817,710 / 4,957,065 / 7,830,580 | `ntt`, `dz`, `main` (one immediate) |
 | R4-4 c codes, lazy tail, UseHint, 44 buffers | −16,160 / −21,063 / −29,670 | 2,809,039 / 4,947,325 / 7,823,331 | `csum`, `sample_in_ball`, `usehint`, `blk`, `gfix`, `group`, `expand_a`, `main` |
 | R4-5 fix-ups, μ in the SIMD slot, SampleInBall | −6,991 / −12,456 / −22,024 | 2,642,702 / 4,652,942 / 7,283,210 | `fix`, `sample_in_ball`; 44, 65: `expand_a`, `hash_mu`, new `mub`, `mulong`, `mu0` removed |
-| **v4** | **2,035,355 / 3,552,170 / 5,249,518** | **2,642,702 / 4,652,942 / 7,283,210** | |
+| R4-6 arithmetic (UseHint fused into the inverse NTT, GS without swap, SP rounding term, `dz` flag multiply, `csum` bases on the stack) | −21,342 / −42,684 / −21,606 | 2,621,360 / 4,610,258 / 7,261,604 | `intt` (+ UseHint, 44 / 65), `usehint` (87; removed for 44 / 65), `csum`, `dz` |
+| **v4** | **2,014,013 / 3,509,486 / 5,227,912** | **2,621,360 / 4,610,258 / 7,261,604** | |
 
 R4-5 matters most for real messages: for 44 and 65 every |M| ≥ 70 is
 64k–155k cheaper (subsection R4-5).
 
-Code size v4: 22,470 / 23,140 / 23,934 B (R4-4: 22,546 / 23,219 / 23,941).
+Code size v4: 23,488 / 24,049 / 23,798 B (R4-5: 22,470 / 23,140 / 23,934;
+R4-4: 22,546 / 23,219 / 23,941).
 Memory: 44 grows by 512 words (2097 → 2609, R4-4); 65 and 87 are
-unchanged; R4-5 adds no memory.
+unchanged; R4-5 and R4-6 add no memory.
 
 `python3 scripts/opt_diff.py --from v3 --to v4`:
 
@@ -339,9 +341,75 @@ key, deterministic; v4 (f0cd987) is the v4 before R4-5):
 | 614 | 2,297,708 | 2,235,838 | **2,079,769** | **1,883,257** | 3,869,550 | 3,722,387 | **3,564,572** | **3,239,400** | 5,657,087 | 5,511,050 | **5,478,856** | **4,948,948** |
 | 1000 | 2,366,172 | 2,304,302 | **2,148,111** | **1,941,867** | 3,938,052 | 3,790,889 | **3,632,734** | **3,297,830** | 5,723,277 | 5,577,240 | **5,545,675** | **5,006,035** |
 
+### R4-6: arithmetic (branch `gas/arith`)
+
+On top of R4-5. All changed paths are data-independent, so R4-6 lowers
+every row of the message-length table above by the same amount per set
+(−21,342 / −42,684 / −21,606).
+
+* UseHint (`uh_word`) runs on each output word of the inverse NTT's last
+  pass before it is stored (`Kernel.post` hook): no `usehint` loop, no
+  ACC reload or second store. 44 and 65 only: it adds ~1.3 KB, which 87
+  does not have, so 87 keeps the `usehint` subroutine with the same body.
+* UseHint's D′ is not masked: lane j + 1's product bits land at bits
+  ≥ 64 − KD ≥ 15 of lane j, and only bits [0, 15) are used (h & D′ and
+  (D′ >> 1) & M14). Asserted in the generator.
+* `csum` folds UseHint's rounding term γ2 − 1 into SP (the initial running
+  count): with x = x0 + γ2 − 1, ⌊(x − ⌊x/q⌋)/γ2⌋ = D(x0 mod q) + 2m⌊x/q⌋
+  also when x0 mod q + γ2 − 1 wraps past q (q = 2γ2m + 1 never changes the
+  quotient). `opt_selftest.py` checks it for every residue and sampled x
+  up to 2^31 − γ2, and asserts W < 2^30 from an interval bound of the
+  inverse NTT.
+* GS butterfly: d = (C − a) + b instead of (b + C) − a drops a SWAP1
+  (C ≥ a in every layer, asserted with the inverse NTT bound).
+* `dz`: one MUL forms both halves of the norm flag word:
+  raw·(2^32 − 1) + (C2·2^32 + K + C1) = (raw + C2)·2^32 + (K + C1 − raw)
+  (no borrow; asserted in the generator); −10 gas per coefficient.
+* `csum`: the first 11 window bases stay on the stack (DUP instead of
+  PUSH + MLOAD per term; DUP16 is the limit).
+
+Per kernel (valid |M| = 0 vector), before → after:
+
+| kernel | 44 | 65 | 87 |
+|---|---|---|---|
+| `intt` + `usehint` | 172,098 → 155,433 | 328,324 → 294,994 | 328,324 → 316,036 |
+| `dz` | 46,156 → 43,516 | 92,312 → 87,032 | 92,312 → 87,032 |
+| `csum` | 66,675 → 64,656 | 156,390 → 152,352 | 181,734 → 177,696 |
+
+Evaluated and not done:
+* Montgomery's final SHR 32 is already unmasked. Precomputing ζ·q⁻¹ mod
+  2^32 removes the first mask (b·ζQ < 2^64 for b < 2^32) but needs a second
+  constant per zeta: the same 13 operations as Shoup in pass A, and in
+  table passes the extra loads cost more than the 3 gas per butterfly.
+* Radix-4 butterflies: ζ_{2k+1} = ζ_{2k}·ζ^128, and multiplying by ζ^128
+  mod q is not free, so two merged layers still take 4 multiplications
+  per 4 points.
+* Plantard needs a product mod 2^64 per lane; lane products carry into
+  the next lane.
+* Lazy reduction of products in the forward NTT: the additions are
+  already lazy (bias). Skipping a product's reduction keeps the a-path
+  at ~2^41, so outputs need 256 extra reductions for A·ẑ; the inverse
+  NTT's 256 load reductions cannot be avoided either (moving them onto
+  the butterflies' differences costs the same 256).
+* 8 × 32-bit lanes for `dz` / `pack`: their inputs and outputs are in
+  the 4 × 64 layout of the NTT and the hash, and converting costs more
+  than the narrower arithmetic saves (not measured).
+* Folding UseHint into `pack` saves the same as folding it into the
+  inverse NTT, with 2× (44) or 1× (65 / 87) the code.
+
+Validation of the R4-6 artifacts:
+
+| check | result |
+|---|---|
+| `opt_selftest.py` | passes: v2 and v3 byte for byte, constants (incl. the new UseHint and inverse NTT bounds), all vectors on v3 and v4, μ block boundaries, forced sixth squeeze |
+| revm (`opt_forge.sh`, forge 1.x installed with foundryup) | 44: 3,639 cases, 65 / 87: 57 each, 0 mismatches |
+| Lean semantics (`mldsa44tool run-file`), 44 | 46 rows: exact gas and output, total 90,580,929 in both |
+| `opt_fuzz.py` (`OPT_VERSION=v4`, seeds 744 / 765 / 787) | 300 cases per set, 0 failures |
+| `opt_worstcase.py --version v4` | typical and worst case both lower by R4-6's constant |
+
 ### Validation (v4)
 
-Validation of the final v4 artifacts (after R4-5, branch `gas/final`):
+Validation of the R4-5 artifacts (branch `gas/final`):
 
 | check | result |
 |---|---|

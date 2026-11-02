@@ -1,34 +1,33 @@
-ML-DSA-65 optimised verifier: 54565 bytes (limit 65536, EIP-7954)
+ML-DSA-65 optimised verifier: 56222 bytes (limit 65536, EIP-7954)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   2515   2515 bytes  main
     2515 ..   4626   2111 bytes  expand_a
-    4626 ..   5274    648 bytes  hash_mu
-    5274 ..   6047    773 bytes  final_hash
-    6047 ..   6263    216 bytes  mulong
-    6263 ..   6859    596 bytes  absorb17
-    6859 ..   7299    440 bytes  sample_in_ball
-    7299 ..   7986    687 bytes  decode_hint
-    7986 ..   8871    885 bytes  dz
-    8871 ..  15415   6544 bytes  blk
-   15415 ..  15607    192 bytes  pass3f4
-   15607 ..  15973    366 bytes  pass3f8
-   15973 ..  16383    410 bytes  gfix
-   16383 ..  16823    440 bytes  ginit
-   16823 ..  17272    449 bytes  trabs
-   17272 ..  17546    274 bytes  cext
-   17546 ..  17761    215 bytes  spr
-   17761 ..  18337    576 bytes  mub
-   18337 ..  18856    519 bytes  fix
-   18856 ..  19087    231 bytes  group
-   19087 ..  19895    808 bytes  tbuild
-   19895 ..  20648    753 bytes  csum
-   20648 ..  20886    238 bytes  usehint
-   20886 ..  21269    383 bytes  pack
-   21269 ..  23855   2586 bytes  ntt
-   23855 ..  27332   3477 bytes  intt
-   27332 ..  39564  12232 bytes  kf1
-   39564 ..  54565  15001 bytes  kf4
+    4626 ..   5252    626 bytes  hash_mu
+    5252 ..   6025    773 bytes  final_hash
+    6025 ..   6241    216 bytes  mulong
+    6241 ..   6837    596 bytes  absorb17
+    6837 ..   7277    440 bytes  sample_in_ball
+    7277 ..   7964    687 bytes  decode_hint
+    7964 ..   9691   1727 bytes  dz
+    9691 ..  16235   6544 bytes  blk
+   16235 ..  16427    192 bytes  pass3f4
+   16427 ..  16793    366 bytes  pass3f8
+   16793 ..  17203    410 bytes  gfix
+   17203 ..  17643    440 bytes  ginit
+   17643 ..  18092    449 bytes  trabs
+   18092 ..  18366    274 bytes  cext
+   18366 ..  18581    215 bytes  spr
+   18581 ..  19157    576 bytes  mub
+   19157 ..  19676    519 bytes  fix
+   19676 ..  19907    231 bytes  group
+   19907 ..  20715    808 bytes  tbuild
+   20715 ..  21608    893 bytes  csum
+   21608 ..  21991    383 bytes  pack
+   21991 ..  24577   2586 bytes  ntt
+   24577 ..  28989   4412 bytes  intt
+   28989 ..  41221  12232 bytes  kf1
+   41221 ..  56222  15001 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)

@@ -37,6 +37,8 @@ def rec(L, g):
 
 
 class Kernel4x4(Kernel):
+    post_consts = ()
+
     def records(self):
         out = []
         for b in range(16):
@@ -172,7 +174,10 @@ class Kernel4x4(Kernel):
         st.s.pop()
         st.pop("pj")
         st.pop("zb")
-        # pass 2: len 16, 32, 64, 128 on words j + 16 i (+ scaling)
+        # pass 2: len 16, 32, 64, 128 on words j + 16 i (+ scaling); the
+        # store hook's wide constants (post_consts) stay on the stack
+        for nm, v in self.post_consts:
+            st.push(v, nm)
         st.dup("P", "end")
         st.push(16 * 32, "c")
         st.op("ADD", 2, "end")
@@ -191,9 +196,10 @@ class Kernel4x4(Kernel):
                         self.gs(st, f"x{i}", f"x{i + h}", zm(1, F), ascale=F * R32 % Q)
                     else:
                         self.gs(st, f"x{i}", f"x{i + h}", zm(m))
-        self.store(st, "pj", offs)
+        self.store(st, "pj", offs, self.post)
         st.add_const("pj", 32)
-        st.expect(["ret", "P", "M", "C", "end", "pj"])
+        cn = [nm for nm, _ in self.post_consts]
+        st.expect(["ret", "P", "M", "C"] + cn + ["end", "pj"])
         st.dup("pj", "x")
         st.dup("end", "e")
         st.op("GT", 2, "f")
@@ -201,6 +207,8 @@ class Kernel4x4(Kernel):
         st.s.pop()
         st.pop("pj")
         st.pop("end")
+        for nm in reversed(cn):
+            st.pop(nm)
         st.pop("C")
         st.pop("M")
         st.pop("P")

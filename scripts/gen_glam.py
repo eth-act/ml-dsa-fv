@@ -54,6 +54,15 @@ class GlamGen(gen_opt.Gen):
             k.biased = self.nttk.biased
             self.nttk = k
 
+    UH_FUSE = {44: True, 65: True, 87: True}
+    CSUM_DEEP = True
+    DZ_UNROLL = True
+
+    def gen_ntts(self):
+        if self.uh_fused():
+            self.nttk.post_consts = self.uh_consts()
+        super().gen_ntts()
+
     def init_tables(self):
         pass                  # iota is a PUSH immediate in the unrolled kernels
 

@@ -1,8 +1,8 @@
 # Glamsterdam variant (MlDsaOpt/NN/glam/)
 
 `MlDsaOpt/{44,65,87}/glam/opt.hex` is the **v4** verifier (`docs/opt.md`,
-"Round 4 (v4)", including R4-5's fix-up, μ and SampleInBall changes) with
-three Glamsterdam-only changes:
+"Round 4 (v4)", including R4-5's fix-up, μ and SampleInBall changes and
+R4-6's arithmetic) with three Glamsterdam-only changes:
 
 1. **Stack-resident, fully unrolled Keccak kernels** (`kf4`, `kf1`;
    `scripts/opt_keccak_glam.py`).
@@ -10,6 +10,9 @@ three Glamsterdam-only changes:
    un-complemented on load.
 3. **NTT and inverse NTT merged 4 + 4.** Each pass keeps 16 words on the
    stack (`scripts/opt_ntt_glam.py`).
+4. **Arithmetic round** (branch `gas/arith`, section "Arithmetic"): UseHint
+   fused into the inverse NTT for all three sets, all τ `csum` bases on the
+   stack, `dz`'s gather loop unrolled, plus v4's R4-6.
 
 They need two EIPs scheduled for Glamsterdam (EIP-7773):
 
@@ -37,25 +40,25 @@ Frame gas, valid empty-message vector (line 1 of each `calldata.txt`):
 
 | set | v3 | v4 | **glam (v4 base)** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,105,097 | 2,035,355 | **1,843,709** | −191,646 (−9.4%) | −261,388 (−12.4%) |
-| 65 | 3,701,979 | 3,552,170 | **3,230,805** | −321,365 (−9.0%) | −471,174 (−12.7%) |
-| 87 | 5,424,737 | 5,249,518 | **4,744,646** | −504,872 (−9.6%) | −680,091 (−12.5%) |
+| 44 | 2,105,097 | 2,014,013 | **1,813,297** | −200,716 (−10.0%) | −291,800 (−13.9%) |
+| 65 | 3,701,979 | 3,509,486 | **3,166,301** | −343,185 (−9.8%) | −535,678 (−14.5%) |
+| 87 | 5,424,737 | 5,227,912 | **4,676,094** | −551,818 (−10.6%) | −748,643 (−13.8%) |
 
 Worst case (`opt_worstcase.py --version glam`, \|M\| = 0):
 
 | set | v3 | v4 | **glam** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,864,301 | 2,642,702 | **2,423,040** | −219,662 | −441,261 |
-| 65 | 5,073,355 | 4,652,942 | **4,281,360** | −371,582 | −791,995 |
-| 87 | 7,954,105 | 7,283,210 | **6,684,558** | −598,652 | −1,269,547 |
+| 44 | 2,864,301 | 2,621,360 | **2,392,628** | −228,732 | −471,673 |
+| 65 | 5,073,355 | 4,610,258 | **4,216,856** | −393,402 | −856,499 |
+| 87 | 7,954,105 | 7,261,604 | **6,616,006** | −645,598 | −1,338,099 |
 
 Code size (limit 65,536 B under EIP-7954):
 
 | set | v3 | v4 | glam |
 |---|---:|---:|---:|
-| 44 | 23,091 | 22,470 | **53,895** |
-| 65 | 23,422 | 23,140 | **54,565** |
-| 87 | 23,982 | 23,934 | **55,359** (10.2 KB left) |
+| 44 | 23,091 | 23,488 | **55,717** |
+| 65 | 23,422 | 24,049 | **56,222** |
+| 87 | 23,982 | 23,798 | **57,049** (8.3 KB left) |
 
 Saving by step, typical 44 / 65 / 87:
 
@@ -64,6 +67,7 @@ Saving by step, typical 44 / 65 / 87:
 | stack-resident kf4 + kf1, no iota tables | −157,141 | −255,101 | −421,505 | +22.7 KB |
 | unrolled `blk` / `blkh` / `blkt` | −14,429 | −26,184 | −43,287 | +5.3 KB |
 | NTT / inverse NTT 4 + 4 | −20,076 | −40,080 | −40,080 | +3.3 KB |
+| arithmetic round (`gas/arith`) | −30,412 | −64,504 | −68,552 | +1.8 KB |
 
 Per call:
 
@@ -163,6 +167,33 @@ Shoup's u < q (1 + b / 2^32) + 1 is below the Montgomery bound;
 per-layer operations and constant (C = cgs(8)); only the pass boundaries
 move. A single pass is impossible: 256 words exceed DUPN's reach of 235.
 
+## Arithmetic (branch `gas/arith`)
+
+v4's R4-6 (`docs/opt.md`) plus three changes that need DUPN or code space:
+
+* **UseHint fused into the inverse NTT for 87 too.** Pass 2's 16 output
+  words go through `uh_word` before they are stored; its wide masks sit on
+  the stack for the whole pass (`post_consts`, DUPN instead of PUSH32), so
+  the 16 copies add ~1 KB.
+* **All τ window bases on the stack in `csum`** (`CSUM_DEEP`): a term is
+  DUPN base, DUP pointer, ADD, MLOAD, ADD (15 gas instead of 18).
+* **`dz` gather loop unrolled per chunk** (`DZ_UNROLL`): immediate shifts
+  and store offsets, no loop test (+0.9 KB).
+
+Per kernel (valid |M| = 0 vector), before → after:
+
+| kernel | 44 | 65 | 87 |
+|---|---|---|---|
+| `intt` + `usehint` | 162,120 → 145,475 | 308,368 → 275,078 | 308,368 → 275,078 |
+| `dz` | 46,156 → 39,578 | 92,312 → 79,156 | 92,312 → 79,156 |
+| `csum` | 66,675 → 59,504 | 156,390 → 138,368 | 181,734 → 159,664 |
+
+The forward NTT is unchanged (82,378 per call). Its butterfly is 19
+operations (Shoup) or 20 (Montgomery, pass B); `docs/opt.md` R4-6 lists
+the alternatives that were ruled out. The rest of its cost is the two
+passes' loads and stores (~12k) and pass B's zeta loads (~3k), which only
+a fully unrolled kernel (~25 KB) would remove.
+
 ### Remaining headroom (not done)
 
 * Chaining every chi output into the next input slot, not only the plane's
@@ -245,13 +276,14 @@ the result is frame gas, the same quantity as `opt_evm.py`.
 | v3-based glam 44 (`gas/glamsterdam`), v4 44 and 87 (controls) | line 1 | identical (1,947,956; 2,042,346; 5,271,542) |
 | after R4-5 (`gas/final`): glam 44 / 65 / 87 | all 47 / 57 / 57 vectors | identical |
 | after R4-5: v4 44 and 87 (controls) | line 1 | identical (2,035,355; 5,249,518) |
+| after R4-6 (`gas/arith`): glam 44 / 65 / 87 | all 47 / 57 / 57 vectors | identical |
 
 revm/Foundry is not installed in this environment, and no local Rust
 toolchain was available to build a revm with EIP-8024.
 
 ## Validation
 
-On the v4-based artifacts (re-run after R4-5, `gas/final`):
+On the v4-based artifacts (re-run after R4-5, `gas/final`, and after R4-6, `gas/arith`):
 
 | check | result |
 |---|---|
@@ -263,6 +295,7 @@ On the v4-based artifacts (re-run after R4-5, `gas/final`):
 | forced sixth squeeze (debug build; exercises `blkt` and the sixth `blk`) | 19 / 21 / 36 vectors with sixth-block checks, all correct |
 | μ block boundaries (`opt_selftest.test_mu_lengths`: \|M\| = 69 … 1,500, valid and one-bit-flipped message) | 13 lengths per set, all correct |
 | differential fuzz before R4-5 (`OPT_VERSION=glam opt_fuzz.py`, seeds 447 / 657 / 877, messages up to 1,200 B) | 300 cases per set, 0 failures; accepted 54 / 47 / 58. Mean / max gas of accepted cases: 1,903,756 / 2,136,405 (44), 3,292,488 / 3,566,153 (65), 4,810,952 / 4,962,707 (87) |
+| differential fuzz after R4-6 (`OPT_VERSION=glam opt_fuzz.py`, seeds 844 / 865 / 887) | 300 cases per set, 0 failures |
 | differential fuzz after R4-5 (`opt_fuzz.py --version v3,v4,glam`, seeds 341 / 141 / 241, same cases on all three) | 400 cases per set, 0 failures; accepted 65 / 77 / 73. Mean / max gas of accepted cases: 1,859,153 / 1,925,370 (44), 3,237,540 / 3,297,312 (65), 4,812,150 / 5,017,182 (87) |
 
 ## Reproducing

@@ -176,10 +176,16 @@ class Kernel:
         st.swap(d)
         st.rename("s", ai)
         st.s[-1] = "aold"               # [.., b, aold]
-        st.swap(1)                      # [.., aold, b]
-        st.dup("C", "c")
-        st.op("ADD", 2, "bc")
-        st.op("SUB", 2, "d")            # (b + C) - a
+        if self.biased:
+            # v4: (C - a) + b, no swap
+            st.dup("C", "c")
+            st.op("SUB", 2, "ca")
+            st.op("ADD", 2, "d")
+        else:
+            st.swap(1)                  # [.., aold, b]
+            st.dup("C", "c")
+            st.op("ADD", 2, "bc")
+            st.op("SUB", 2, "d")        # (b + C) - a
         self.zeta(st, z)
         st.op("MUL", 2, bi)
         self.mont(st, bi)
@@ -195,11 +201,17 @@ class Kernel:
             if mont:
                 self.mont(st, f"x{i}")
 
-    def store(self, st, ptr, offs):
+    # optional hook (st, name, ptr, off) applied to every output word of the
+    # inverse NTT's last pass before it is stored (v4: fused UseHint)
+    post = None
+
+    def store(self, st, ptr, offs, post=None):
         n = len(offs)
         for _ in range(n):
             nm = st.top()
             i = int(nm[1:])
+            if post:
+                post(st, nm, ptr, offs[i])
             st.dup(ptr, "p")
             if offs[i]:
                 st.push(offs[i], "c")
@@ -389,7 +401,7 @@ class Kernel:
             self.gs(st, f"x{i}", f"x{i + 2}", zm(z))
         for i in range(4):
             self.gs(st, f"x{i}", f"x{i + 4}", zm(1, F), self.cgs(8), ascale=F * R32 % Q)
-        self.store(st, "pj", [1024 * i for i in range(8)])
+        self.store(st, "pj", [1024 * i for i in range(8)], self.post)
         st.add_const("pj", 32)
         st.expect(["ret", "P", "M", "C", "end", "pj"])
         st.dup("pj", "x")

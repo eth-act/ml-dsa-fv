@@ -421,6 +421,8 @@ class Gen:
         st.op("SHL", 2, "x")
         st.op("OR", 2, x)
 
+    DZ_UNROLL = False   # glam: the gather loop of a chunk unrolled
+
     def gen_decode(self, name, stride, bits, post, flags=False):
         """Subroutine `name`: decode four little-endian `bits`-bit packed
         polynomials at calldata offsets off + stride*j (j = lane) into 256
@@ -467,58 +469,66 @@ class Gen:
             for _ in range(4):
                 st.swap(4)
                 st.pop()                 # drop the bswap masks (below the V words)
-            st.push(0, "gs")             # bit offset of the gather group
-            st.dup("dp", "gp")           # destination of its first coefficient
-            glayout = list(st.s)
-            gloop = self.fresh(name + "_g")
-            a.label(gloop)
-            # gather coefficients of every polynomial into lanes (G per lane)
-            for j in used:
-                st.dup(f"V{j}", "g")
-                st.dup("gs", "s")
-                st.op("SHR", 2, "g")
-                st.push((1 << (G * bits)) - 1, "m")
-                st.op("AND", 2, "g")
-                if j:
-                    st.push(64 * j, "s")
-                    st.op("SHL", 2, "g")
-                    st.op("OR", 2, "W")
-                else:
-                    st.rename("g", "W")
-            if flags:
-                st.push(0, "Lf")
-            for kk in range(G):
-                st.dup("W", "r")
-                if kk:
-                    st.push(bits * kk, "s")
-                    st.op("SHR", 2, "r")
-                st.dup("MB", "m")
-                st.op("AND", 2, "raw")
+            unroll = self.DZ_UNROLL
+            if not unroll:
+                st.push(0, "gs")             # bit offset of the gather group
+                st.dup("dp", "gp")           # destination of its first coefficient
+                glayout = list(st.s)
+                gloop = self.fresh(name + "_g")
+                a.label(gloop)
+            for it in range(ncoef // G if unroll else 1):
+                # gather coefficients of every polynomial into lanes (G per lane)
+                for j in used:
+                    st.dup(f"V{j}", "g")
+                    if not unroll:
+                        st.dup("gs", "s")
+                        st.op("SHR", 2, "g")
+                    elif it:
+                        st.push(it * G * bits, "s")
+                        st.op("SHR", 2, "g")
+                    st.push((1 << (G * bits)) - 1, "m")
+                    st.op("AND", 2, "g")
+                    if j:
+                        st.push(64 * j, "s")
+                        st.op("SHL", 2, "g")
+                        st.op("OR", 2, "W")
+                    else:
+                        st.rename("g", "W")
+                if flags:
+                    st.push(0, "Lf")
+                for kk in range(G):
+                    st.dup("W", "r")
+                    if kk:
+                        st.push(bits * kk, "s")
+                        st.op("SHR", 2, "r")
+                    st.dup("MB", "m")
+                    st.op("AND", 2, "raw")
 
-                def store(off=32 * kk):
-                    st.dup("gp", "p")
-                    if off:
-                        st.push(off, "c")
-                        st.op("ADD", 2, "p")
-                    st.op("MSTORE", 2)
-                post(st, store)
-            if flags:
-                st.dup("acc", "A")
-                st.op("OR", 2, "A")
-                st.to_top("acc")
-                st.pop()
-                st.rename("A", "acc")
-            st.pop("W")
-            st.add_const("gs", G * bits)
-            st.add_const("gp", 32 * G)
-            assert st.s == glayout, (st.s, glayout)
-            st.dup("gs", "x")
-            st.push(ncoef * bits, "e")
-            st.op("GT", 2, "f")
-            a.jumpi(gloop)
-            st.s.pop()
-            st.pop("gp")
-            st.pop("gs")
+                    def store(off=32 * (kk + G * it * unroll)):
+                        st.dup("dp" if unroll else "gp", "p")
+                        if off:
+                            st.push(off, "c")
+                            st.op("ADD", 2, "p")
+                        st.op("MSTORE", 2)
+                    post(st, store)
+                if flags:
+                    st.dup("acc", "A")
+                    st.op("OR", 2, "A")
+                    st.to_top("acc")
+                    st.pop()
+                    st.rename("A", "acc")
+                st.pop("W")
+            if not unroll:
+                st.add_const("gs", G * bits)
+                st.add_const("gp", 32 * G)
+                assert st.s == glayout, (st.s, glayout)
+                st.dup("gs", "x")
+                st.push(ncoef * bits, "e")
+                st.op("GT", 2, "f")
+                a.jumpi(gloop)
+                st.s.pop()
+                st.pop("gp")
+                st.pop("gs")
             for j in reversed(used):
                 st.pop(f"V{j}")
 
@@ -572,6 +582,22 @@ class Gen:
         C2 = (1 << Z) - 2 * p["g1"] + p["beta"]      # bit Z set iff raw >= 2g1 - beta
         C1 = (1 << self.ZFB) - (K - p["beta"])        # bit ZFB set iff K - raw >= K - beta
         lanes = lambda v: sum(v << (64 * j) for j in range(4))
+        if self.v4:
+            # v4: one multiply forms both halves of the flag word:
+            # raw (2^32 - 1) + (C2 2^32 + K + C1) = (raw + C2) 2^32 + (K + C1 - raw),
+            # no borrow since K + C1 - raw > 0, and both halves < 2^32
+            assert K + C1 >= 1 << Z and K + C1 < 1 << 32 and C2 + (1 << Z) < 1 << 32
+            st.dup("raw", "x")
+            st.push((1 << 32) - 1, "c")
+            st.op("MUL", 2, "x")
+            st.push(lanes(C2 << 32 | (K + C1)), "c")
+            st.op("ADD", 2, "f")       # [Lf, raw, f]
+            st.swap(1)
+            st.push(lanes(K), "k")
+            st.op("SUB", 2, "zv")      # [Lf, f, zv]
+            store()
+            st.op("OR", 2, "Lf")
+            return
         st.dup("raw", "x")
         st.push(lanes(C2), "c")
         st.op("ADD", 2, "x")
@@ -3191,6 +3217,8 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
+    CSUM_DEEP = False   # glam: all tau bases on the stack (DUPN)
+
     def gen_csum(self):
         """csum: entry [ret, tt, sp]: SP[t] = 2^13 S'(t) + n_neg(t) (all lanes)
         for t < 256 from the window table at tt and the BASES list."""
@@ -3198,26 +3226,38 @@ class Gen:
         tau = L.p["tau"]
         a.region("csum")
         a.label("csum")
-        st = Stack(a, ["ret", "tt", "sp"])
+        st = Stack(a, ["ret", "tt", "sp"], deep=self.CSUM_DEEP)
+        # v4: the first nb window bases stay on the stack (DUP instead of
+        # PUSH + MLOAD per term); without EIP-8024 DUP reaches 11 of them
+        nb = (tau if self.CSUM_DEEP else 11) if self.v4 else 0
+        for m in range(nb):
+            st.push(L.BASES + 32 * m, "c")
+            st.op("MLOAD", 1, f"B{m}")
+        if nb:
+            st.dup("sp", "spc")
         # g = n_neg(-1) = number of +1 coefficients; codes: CW = -1 for c = +1
         st.push(L.MISC + 0x1A0, "c")
         st.op("MLOAD", 1, "nn")
         st.push(tau, "c")
         st.op("SUB", 2, "g")             # g = n_neg(-1) = number of +1 coefficients
         if self.v4:
-            # v4: g' = 128 q - g, replicated (CW codes are +-REP); SP gets
-            # 128 q - (2^13 S' + n_neg) (no borrow: 2^13 S' + n_neg < 2^30 < 128 q)
+            # v4: g' = 128 q + g2 - 1 - g, replicated (CW codes are +-REP); SP
+            # gets 128 q + g2 - 1 - (2^13 S' + n_neg) (no borrow: 2^13 S' + n_neg
+            # < 2^30 < 128 q); the g2 - 1 is UseHint's rounding term (uh_word)
             st.push(REP, "c")
             st.op("MUL", 2, "g")
-            st.push(128 * Q * REP, "c")
+            st.push((128 * Q + L.p["g2"] - 1) * REP, "c")
             st.op("SUB", 2, "g")
         st.push(L.CW, "cw")
         st.dup("tt", "bu")                  # bu = tt - 32 u
         loop = self.fresh("csl")
         a.label(loop)
         for m in range(tau):
-            st.push(L.BASES + 32 * m, "c")
-            st.op("MLOAD", 1, "b")
+            if m < nb:
+                st.dup(f"B{m}", "b")
+            else:
+                st.push(L.BASES + 32 * m, "c")
+                st.op("MLOAD", 1, "b")
             st.dup("bu", "bb")
             st.op("ADD", 2, "b")
             st.op("MLOAD", 1, "b")
@@ -3263,14 +3303,14 @@ class Gen:
                 st.push(1 | 1 << 64 | 1 << 128 | 1 << 192, "c")
                 st.op("MUL", 2, "gl")
                 st.op("ADD", 2, "e")
-            st.dup("sp", "p")
+            st.dup("spc" if nb else "sp", "p")
             if k:
                 st.push(32 * k, "o")
                 st.op("ADD", 2, "p")
             st.op("MSTORE", 2)
         st.pop("S")
         st.add_const("cw", 128)
-        st.add_const("sp", 128)
+        st.add_const("spc" if nb else "sp", 128)
         st.to_top("bu")
         st.push(32, "c")
         st.swap(1)
@@ -3291,6 +3331,111 @@ class Gen:
     DIVG2W = {95232: (46, 738919105), 261888: (49, 2149582851)}
     MOD44W = (17, 2979)
 
+    # v4: UseHint fused into the inverse NTT's last pass (no usehint loop, no
+    # ACC reload); 87 keeps the subroutine (code size)
+    UH_FUSE = {44: True, 65: True, 87: False}
+
+    def uh_fused(self):
+        return self.v4 and self.UH_FUSE[self.L.nn]
+
+    def uh_word(self, st, x, ptr, off):
+        """v4 UseHint of the row-packed word x (on top, lanes < 2^32) stored at
+        ptr + off (ACC_g): x := UseHint(HP, (x - 2^13 c*t1) mod q) lane-wise,
+        with HP_g and SP_g at fixed offsets from ACC_g."""
+        L = self.L
+        p = L.p
+        g2, m = p["g2"], p["m"]
+        X4 = lambda v: sum(v << (64 * j) for j in range(4))
+        assert st.top() == x
+
+        def const(v):
+            # glam: the wide masks sit on the stack (uh_consts), DUPN instead of PUSH32
+            nm = f"UH{v:x}"
+            if st.has(nm):
+                st.dup(nm, "c")
+            else:
+                st.push(v, "c")
+        # x = W + 128 q + g2 - 1 - (2^13 S' + n_neg)   (csum stores all but W)
+        d = L.ACC - L.SP - off
+        assert d > 0
+        st.push(d, "c")
+        st.dup(ptr, "e")
+        st.op("SUB", 2, "e")
+        st.op("MLOAD", 1, "e")
+        st.op("ADD", 2, "x")
+        # k = x div q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
+        st.dup("x", "qq")
+        st.push(1074791297, "c")
+        st.op("MUL", 2, "qq")
+        st.push(53, "c")
+        st.op("SHR", 2, "qq")
+        const(lanemask(9))
+        st.op("AND", 2, "qq")
+        st.swap(1)
+        st.op("SUB", 2, "r")
+        # With x0 = x - (g2 - 1) (the value to decompose), D = (x0 mod q + g2 - 1)
+        # div g2. y = x - k instead of x mod q: since q - 1 = 2 g2 m,
+        # y = 2 g2 m k + (x mod q), and D' = y div g2 = D + 2 m k (also when
+        # x0 mod q + g2 - 1 wraps past q: k counts the wrap and q = 2 g2 m + 1
+        # never changes the quotient; checked in opt_selftest), so D' >> 1 = r1
+        # (mod m) and D' & 1 = D & 1; v below is reduced mod m anyway.
+        # D' is not masked: lane j + 1's product bits land at bits >= 64 - KD
+        # of lane j, and only bits [0, 15) of D' are used (h & D', (D' >> 1) & M14)
+        KD, MD = self.DIVG2W[g2]
+        assert 64 - KD >= 15 and ((1 << 31) + 2 * g2) // g2 < 1 << 15
+        # x < 2^31: W < 2^30 (inverse NTT bound, opt_selftest) plus SP
+        assert (1 << 30) + 128 * Q + g2 - 1 < 1 << 31
+        st.rename("r", "D")
+        st.push(MD, "c")
+        st.op("MUL", 2, "D")
+        st.push(KD, "c")
+        st.op("SHR", 2, "D")
+        st.dup(ptr, "h")
+        st.push(L.HP - L.ACC + off, "c")
+        st.op("ADD", 2, "h")
+        st.op("MLOAD", 1, "h")           # [D, h]
+        st.dup("D", "d2")
+        st.dup("h", "h2")
+        st.op("AND", 2, "hd")
+        st.dup("hd", "hd2")
+        st.op("ADD", 2, "hd")            # [D, h, 2 (h & D)]
+        st.swap(1)
+        const(X4(m))
+        st.op("SUB", 2, "mh")            # [D, 2hD, m - h]
+        st.op("ADD", 2, "t")             # [D, t]
+        st.swap(1)
+        st.push(1, "c")
+        st.op("SHR", 2, "r1")
+        const(lanemask(14))
+        st.op("AND", 2, "r1")
+        st.op("ADD", 2, "v")             # < 2^15
+        if m & (m - 1) == 0:
+            const(X4(m - 1))
+            st.op("AND", 2, "v")
+        else:
+            assert m == 44
+            K44, M44 = self.MOD44W
+            st.dup("v", "qq")
+            st.push(M44, "c")
+            st.op("MUL", 2, "qq")
+            st.push(K44, "c")
+            st.op("SHR", 2, "qq")
+            const(lanemask(10))
+            st.op("AND", 2, "qq")
+            st.push(44, "c")
+            st.op("MUL", 2, "qq")
+            st.swap(1)
+            st.op("SUB", 2, "v")
+        st.rename("v", x)
+
+    def uh_consts(self):
+        """Wide constants of uh_word, for callers that keep them on the stack."""
+        p = self.L.p
+        X4 = lambda v: sum(v << (64 * j) for j in range(4))
+        vs = [lanemask(9), X4(p["m"]), lanemask(14)]
+        vs.append(X4(p["m"] - 1) if p["m"] & (p["m"] - 1) == 0 else lanemask(10))
+        return [(f"UH{v:x}", v) for v in vs]
+
     def gen_usehint(self):
         """usehint: entry [ret, wp] (wp = ACC_g): for the 256 row-packed words
         at wp (lanes < 2^32), W[t] := UseHint(HP[t], (W[t] - 2^13 c*t1[t]) mod q)
@@ -3310,158 +3455,129 @@ class Gen:
         assert L.HP - L.ACC > 0 and L.SP < L.ACC
         loop = self.fresh("uhloop")
         a.label(loop)
-        # x = W + 128 q - (2^13 S' + n_neg)   (subtracts c * t1 * 2^d mod q)
-        st.push(L.ACC - L.SP, "c")
-        st.dup("wp", "e")
-        st.op("SUB", 2, "e")
-        st.op("MLOAD", 1, "e")
-        st.dup("wp", "x")
-        st.op("MLOAD", 1, "x")
         if self.v4:
-            st.op("ADD", 2, "x")         # v4: csum stores 128 q - (2^13 S' + n_neg)
+            st.dup("wp", "w")
+            st.op("MLOAD", 1, "w")
+            self.uh_word(st, "w", "wp", 0)
+            st.dup("wp", "p")
+            st.op("MSTORE", 2)
         else:
+            # x = W + 128 q - (2^13 S' + n_neg)   (subtracts c * t1 * 2^d mod q)
+            st.push(L.ACC - L.SP, "c")
+            st.dup("wp", "e")
+            st.op("SUB", 2, "e")
+            st.op("MLOAD", 1, "e")
+            st.dup("wp", "x")
+            st.op("MLOAD", 1, "x")
             st.push(X4(128 * Q), "c")
             st.op("ADD", 2, "x")
             st.op("SUB", 2, "x")
-        # r = x mod q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
-        st.dup("x", "qq")
-        st.push(1074791297, "c")
-        st.op("MUL", 2, "qq")
-        st.push(53, "c")
-        st.op("SHR", 2, "qq")
-        st.push(lanemask(9), "c")
-        st.op("AND", 2, "qq")
-        if not self.v4:
+            # r = x mod q: quotient (x * M) >> 53 is exact for x < 4.3e9 (lanes < 2^31 here)
+            st.dup("x", "qq")
+            st.push(1074791297, "c")
+            st.op("MUL", 2, "qq")
+            st.push(53, "c")
+            st.op("SHR", 2, "qq")
+            st.push(lanemask(9), "c")
+            st.op("AND", 2, "qq")
             st.push(Q, "c")
             st.op("MUL", 2, "qq")
-        st.swap(1)
-        st.op("SUB", 2, "r")
-        if self.v4:
-            # y = x - k (k = x div q) instead of r = x - k q: since
-            # q - 1 = 2 g2 m, D' = (y + g2 - 1) div g2 = D + 2 m k, so D' >> 1
-            # = r1 (mod m) and D' & 1 = D & 1; v below is reduced mod m anyway
-            KD, MD = self.DIVG2W[g2]
-            st.push(X4(g2 - 1), "c")
-            st.op("ADD", 2, "D")
-            st.push(MD, "c")
-            st.op("MUL", 2, "D")
-            st.push(KD, "c")
-            st.op("SHR", 2, "D")
-            st.push(lanemask(15), "c")
-            st.op("AND", 2, "D")
-            st.dup("wp", "h")
-            st.push(L.HP - L.ACC, "c")
-            st.op("ADD", 2, "h")
-            st.op("MLOAD", 1, "h")       # [D, h]
-            st.dup("D", "d2")
-            st.dup("h", "h2")
-            st.op("AND", 2, "hd")
-            st.dup("hd", "hd2")
-            st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
             st.swap(1)
-            st.push(X4(m), "c")
-            st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
-            st.op("ADD", 2, "t")         # [D, t]
-            st.swap(1)
-            st.push(1, "c")
-            st.op("SHR", 2, "r1")
-            st.push(lanemask(14), "c")
-            st.op("AND", 2, "r1")
-            st.op("ADD", 2, "v")         # < 2^15
-        elif self.v3:
-            # D = (r + g2 - 1) div g2 (exact multiply-shift); r1 = D >> 1 and
-            # r0 > 0 iff D is odd, so h * pos = h & D and
-            # v = (D >> 1) + m - h + 2 (h & D), in [m - 1, 2m]
-            KD, MD = self.DIVG2[g2]
-            st.push(X4(g2 - 1), "c")
-            st.op("ADD", 2, "D")
-            st.push(MD, "c")
-            st.op("MUL", 2, "D")
-            st.push(KD, "c")
-            st.op("SHR", 2, "D")
-            st.push(lanemask(7), "c")
-            st.op("AND", 2, "D")
-            st.dup("wp", "h")
-            st.push(L.HP - L.ACC, "c")
-            st.op("ADD", 2, "h")
-            st.op("MLOAD", 1, "h")       # [D, h]
-            st.dup("D", "d2")
-            st.dup("h", "h2")
-            st.op("AND", 2, "hd")
-            st.dup("hd", "hd2")
-            st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
-            st.swap(1)
-            st.push(X4(m), "c")
-            st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
-            st.op("ADD", 2, "t")         # [D, t]
-            st.swap(1)
-            st.push(1, "c")
-            st.op("SHR", 2, "r1")
-            st.push(lanemask(6), "c")
-            st.op("AND", 2, "r1")
-            st.op("ADD", 2, "v")
-        else:
-            # r1 = (r + g2 - 1) div 2g2
-            st.dup("r", "r1")
-            st.push(X4(g2 - 1), "c")
-            st.op("ADD", 2, "r1")
-            st.push(M, "c")
-            st.op("MUL", 2, "r1")
-            st.push(K, "c")
-            st.op("SHR", 2, "r1")
-            st.push(lanemask(6), "c")
-            st.op("AND", 2, "r1")
-            # pos = (r + g2 - r1 2g2) > g2
-            st.dup("r1", "e")
-            st.push(2 * g2, "c")
-            st.op("MUL", 2, "e")
-            st.dup("r", "rr")
-            st.push(X4(g2), "c")
-            st.op("ADD", 2, "rr")
-            st.op("SUB", 2, "e")
-            st.push(X4((1 << 24) - g2 - 1), "c")
-            st.op("ADD", 2, "e")
-            st.push(24, "c")
-            st.op("SHR", 2, "e")
-            st.push(lanemask(1), "c")
-            st.op("AND", 2, "pos")
-            # h
-            st.dup("wp", "h")
-            st.push(L.HP - L.ACC, "c")
-            st.op("ADD", 2, "h")
-            st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
-            st.swap(1)
-            st.dup("h", "hh")
-            st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
-            st.push(1, "c")
-            st.op("SHL", 2, "hpos")
-            st.swap(1)
-            st.push(X4(m), "c")
-            st.op("SUB", 2, "mh")            # m - h
-            st.op("ADD", 2, "v")
-            st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
-        if m & (m - 1) == 0:
-            st.push(X4(m - 1), "c")
-            st.op("AND", 2, "v")
-        else:
-            assert m == 44
-            K44, M44 = self.MOD44W if self.v4 else (12, 94)
-            st.dup("v", "qq")
-            st.push(M44, "c")
-            st.op("MUL", 2, "qq")
-            st.push(K44, "c")
-            st.op("SHR", 2, "qq")
-            st.push(lanemask(10 if self.v4 else 2), "c")
-            st.op("AND", 2, "qq")
-            st.push(44, "c")
-            st.op("MUL", 2, "qq")
-            st.swap(1)
-            st.op("SUB", 2, "v")
-        if not self.v3:
-            st.swap(1)
-            st.pop()                     # drop r
-        st.dup("wp", "p")
-        st.op("MSTORE", 2)
+            st.op("SUB", 2, "r")
+            if self.v3:
+                # D = (r + g2 - 1) div g2 (exact multiply-shift); r1 = D >> 1 and
+                # r0 > 0 iff D is odd, so h * pos = h & D and
+                # v = (D >> 1) + m - h + 2 (h & D), in [m - 1, 2m]
+                KD, MD = self.DIVG2[g2]
+                st.push(X4(g2 - 1), "c")
+                st.op("ADD", 2, "D")
+                st.push(MD, "c")
+                st.op("MUL", 2, "D")
+                st.push(KD, "c")
+                st.op("SHR", 2, "D")
+                st.push(lanemask(7), "c")
+                st.op("AND", 2, "D")
+                st.dup("wp", "h")
+                st.push(L.HP - L.ACC, "c")
+                st.op("ADD", 2, "h")
+                st.op("MLOAD", 1, "h")       # [D, h]
+                st.dup("D", "d2")
+                st.dup("h", "h2")
+                st.op("AND", 2, "hd")
+                st.dup("hd", "hd2")
+                st.op("ADD", 2, "hd")        # [D, h, 2 (h & D)]
+                st.swap(1)
+                st.push(X4(m), "c")
+                st.op("SUB", 2, "mh")        # [D, 2hD, m - h]
+                st.op("ADD", 2, "t")         # [D, t]
+                st.swap(1)
+                st.push(1, "c")
+                st.op("SHR", 2, "r1")
+                st.push(lanemask(6), "c")
+                st.op("AND", 2, "r1")
+                st.op("ADD", 2, "v")
+            else:
+                # r1 = (r + g2 - 1) div 2g2
+                st.dup("r", "r1")
+                st.push(X4(g2 - 1), "c")
+                st.op("ADD", 2, "r1")
+                st.push(M, "c")
+                st.op("MUL", 2, "r1")
+                st.push(K, "c")
+                st.op("SHR", 2, "r1")
+                st.push(lanemask(6), "c")
+                st.op("AND", 2, "r1")
+                # pos = (r + g2 - r1 2g2) > g2
+                st.dup("r1", "e")
+                st.push(2 * g2, "c")
+                st.op("MUL", 2, "e")
+                st.dup("r", "rr")
+                st.push(X4(g2), "c")
+                st.op("ADD", 2, "rr")
+                st.op("SUB", 2, "e")
+                st.push(X4((1 << 24) - g2 - 1), "c")
+                st.op("ADD", 2, "e")
+                st.push(24, "c")
+                st.op("SHR", 2, "e")
+                st.push(lanemask(1), "c")
+                st.op("AND", 2, "pos")
+                # h
+                st.dup("wp", "h")
+                st.push(L.HP - L.ACC, "c")
+                st.op("ADD", 2, "h")
+                st.op("MLOAD", 1, "h")           # [r, r1, pos, h]
+                st.swap(1)
+                st.dup("h", "hh")
+                st.op("AND", 2, "hpos")          # [r, r1, h, hpos]
+                st.push(1, "c")
+                st.op("SHL", 2, "hpos")
+                st.swap(1)
+                st.push(X4(m), "c")
+                st.op("SUB", 2, "mh")            # m - h
+                st.op("ADD", 2, "v")
+                st.op("ADD", 2, "v")             # r1 + m - h + 2 h pos, in [m-1, 2m]
+            if m & (m - 1) == 0:
+                st.push(X4(m - 1), "c")
+                st.op("AND", 2, "v")
+            else:
+                assert m == 44
+                K44, M44 = 12, 94
+                st.dup("v", "qq")
+                st.push(M44, "c")
+                st.op("MUL", 2, "qq")
+                st.push(K44, "c")
+                st.op("SHR", 2, "qq")
+                st.push(lanemask(2), "c")
+                st.op("AND", 2, "qq")
+                st.push(44, "c")
+                st.op("MUL", 2, "qq")
+                st.swap(1)
+                st.op("SUB", 2, "v")
+            if not self.v3:
+                st.swap(1)
+                st.pop()                     # drop r
+            st.dup("wp", "p")
+            st.op("MSTORE", 2)
         st.add_const("wp", 32)
         st.expect(["ret", "end", "wp"])
         st.dup("end", "e")
@@ -3659,6 +3775,8 @@ class Gen:
     def gen_ntts(self):
         self.nttk.gen_ntt("ntt")
         self.nttk.premont = True
+        if self.uh_fused():
+            self.nttk.post = self.uh_word
         self.nttk.gen_intt("intt", self.R)
 
     P3F_UNROLL = {44: 2, 65: 2, 87: 2}
@@ -3753,7 +3871,8 @@ class Gen:
         lpr = L.w1lanes // L.k
         for g in range(L.GR):
             self.call("intt", [L.ACC + 0x2000 * g])     # Montgomery-reduces ACC at load
-            self.call("usehint", [L.ACC + 0x2000 * g])
+            if not self.uh_fused():                     # v4: UseHint fused into intt
+                self.call("usehint", [L.ACC + 0x2000 * g])
             self.call("pack", [L.ACC + 0x2000 * g, L.FIN + 32 * (8 + lpr * 4 * g), min(4, L.k - 4 * g)])
         self.final_hash()
         a.op("PUSH0")
@@ -3802,7 +3921,8 @@ class Gen:
         self.gen_group()
         self.gen_tbuild()
         self.gen_csum()
-        self.gen_usehint()
+        if not self.uh_fused():
+            self.gen_usehint()
         self.gen_pack()
         self.gen_ntts()
         gen_keccak_f(a, "kf1", L.KS, L.KB, L.RC1, unroll=2, scale=1, kz_addr=L.KZ if self.v3 else None)

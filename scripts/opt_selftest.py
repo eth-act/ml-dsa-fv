@@ -119,11 +119,14 @@ def test_constants():
             for y in (qv * g2, min(qv * g2 + g2 - 1, N - 1)):
                 assert (y * mm) >> k == qv
         m = (Q - 1) // (2 * g2)
-        for x in list(range(0, 1 << 31, 4093)) + [j * Q + d for j in range(1, 257) for d in (-1, 0, 1)]:
-            r = x % Q
-            D = ((x - x // Q + g2 - 1) * mm) >> k
-            assert (D >> 1) % m == opt_ref.use_hint(0, r, g2)
-            assert ((D >> 1) + m - 1 + 2 * (D & 1)) % m == opt_ref.use_hint(1, r, g2)
+        # csum folds UseHint's g2 - 1 into SP: x = x0 + g2 - 1, D' = (x - x div q) div g2
+        xs = list(range(0, (1 << 31) - g2, 4093)) + [j * Q + d for j in range(1, 256) for d in range(-g2 - 2, 2, 7)]
+        for x0 in xs + list(range(Q)) + [200 * Q + r for r in range(Q - 2 * g2, Q)]:
+            x = x0 + g2 - 1
+            assert x < 1 << 31
+            D = ((x - x // Q) * mm) >> k
+            assert (D >> 1) % m == opt_ref.use_hint(0, x0 % Q, g2)
+            assert ((D >> 1) + m - 1 + 2 * (D & 1)) % m == opt_ref.use_hint(1, x0 % Q, g2)
     k44, m44 = gen_opt.Gen.MOD44W
     assert all(v - 44 * ((v * m44) >> k44) == v % 44 for v in range(1 << 15))
     # v4 forward NTT: inputs z + 8q (bias from the z decoder), b' = a - u without
@@ -145,7 +148,20 @@ def test_constants():
             umax = Q + (hi * Q >> 32) + 1 if layer < 3 else (t >> 32) + Q
             lo, hi = lo - umax, hi + umax
             assert lo >= 0 and hi < 1 << 28
-    print("constants: multiply-shift quotients exact; v4 NTT bias bounds hold")
+    # v4 inverse NTT (both kernels): ACC lanes < 2^57 are Montgomery-reduced at
+    # load (u < t / 2^32 + q); GS b' = mont(((C - a) + b) zeta) needs C >= a
+    # (no borrow in C - a) and t < 2^64; the last layer's a' = mont((a + b) F).
+    # UseHint (fused into the last pass) needs outputs < 2^30 (x < 2^31).
+    C = Kernel.cgs(8)
+    hi = (((1 << 57) - 1) >> 32) + Q
+    for layer in range(8):
+        assert hi <= C and (C + hi) * (Q - 1) < 1 << 64
+        ub = ((C + hi) * (Q - 1) >> 32) + Q
+        ahi = 2 * hi if layer < 7 else ((2 * hi * (Q - 1)) >> 32) + Q
+        assert 2 * hi * (Q - 1) < 1 << 64
+        hi = max(ahi, ub)
+    assert hi < 1 << 30
+    print("constants: multiply-shift quotients exact; v4 NTT bias bounds and inverse NTT bounds hold")
 
 
 def run_vectors(nn, code, check6=None):
