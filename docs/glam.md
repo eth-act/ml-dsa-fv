@@ -31,8 +31,10 @@ the execution specs' Amsterdam fork gives exactly the same gas (section
 
 `gen_opt.py` is not edited. `scripts/gen_glam.py` subclasses its generator,
 and the v2, v3 (SHA-256 pinned) and v4 artifacts stay byte-identical.
-`gen_glam.py --base v3 --out DIR` rebuilds the first, v3-based prototype
-(branch `gas/glamsterdam`, kernels only) byte for byte.
+`gen_glam.py --base v3 --out DIR` builds the first, v3-based prototype
+(branch `gas/glamsterdam`, kernels only), now with the current kernels; it
+matched that branch byte for byte until the plane schedule of
+`gas/keccak-glam`.
 
 ## Result
 
@@ -40,28 +42,28 @@ Frame gas, valid empty-message vector (line 1 of each `calldata.txt`):
 
 | set | v3 | v4 | **glam (v4 base)** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,105,097 | 1,930,325 | **1,740,387** | −189,938 (−9.8%) | −364,710 (−17.3%) |
-| 65 | 3,701,979 | 3,509,486 | **3,166,301** | −343,185 (−9.8%) | −535,678 (−14.5%) |
-| 87 | 5,424,737 | 5,227,912 | **4,676,094** | −551,818 (−10.6%) | −748,643 (−13.8%) |
+| 44 | 2,105,097 | 1,930,325 | **1,687,047** | −243,278 (−12.6%) | −418,050 (−19.9%) |
+| 65 | 3,701,979 | 3,509,486 | **3,073,845** | −435,641 (−12.4%) | −628,134 (−17.0%) |
+| 87 | 5,424,737 | 5,227,912 | **4,523,186** | −704,726 (−13.5%) | −901,551 (−16.6%) |
 
 Worst case (`opt_worstcase.py --version glam`, \|M\| = 0):
 
 | set | v3 | v4 | **glam** | vs v4 | vs v3 |
 |---|---:|---:|---:|---:|---:|
-| 44 | 2,864,301 | 2,581,468 | **2,358,616** | −222,852 | −505,685 |
-| 65 | 5,073,355 | 4,610,258 | **4,216,856** | −393,402 | −856,499 |
-| 87 | 7,954,105 | 7,261,604 | **6,616,006** | −645,598 | −1,338,099 |
+| 44 | 2,864,301 | 2,581,468 | **2,294,608** | −286,860 | −569,693 |
+| 65 | 5,073,355 | 4,610,258 | **4,108,398** | −501,860 | −964,957 |
+| 87 | 7,954,105 | 7,261,604 | **6,432,872** | −828,732 | −1,521,233 |
 
 Code size (limit 65,536 B under EIP-7954):
 
 | set | v3 | v4 | glam |
 |---|---:|---:|---:|
-| 44 | 23,091 | 24,049 | **56,278** |
-| 65 | 23,422 | 24,049 | **56,222** |
-| 87 | 23,982 | 23,798 | **57,049** (8.3 KB left) |
+| 44 | 23,091 | 24,049 | **55,722** |
+| 65 | 23,422 | 24,049 | **55,666** |
+| 87 | 23,982 | 23,798 | **56,493** (8.8 KB left) |
 
 44 includes v4's R4-7 (23 kf4 calls instead of 25, `docs/opt.md`); before
-it glam 44 was 1,813,297 (worst 2,392,628, 55,717 B).
+it, with the searched kernels, glam 44 was 1,756,401 (worst 2,326,842, 55,161 B).
 
 Saving by step, typical 44 / 65 / 87:
 
@@ -71,13 +73,14 @@ Saving by step, typical 44 / 65 / 87:
 | unrolled `blk` / `blkh` / `blkt` | −14,429 | −26,184 | −43,287 | +5.3 KB |
 | NTT / inverse NTT 4 + 4 | −20,076 | −40,080 | −40,080 | +3.3 KB |
 | arithmetic round (`gas/arith`) | −30,412 | −64,504 | −68,552 | +1.8 KB |
+| Keccak plane schedule (`gas/keccak-glam`; 32 / 52 / 86 kernel calls × −1,778) | −56,896 | −92,456 | −152,908 | −0.5 KB |
 
 Per call:
 
 | routine | before | glam | saving |
 |---|---:|---:|---:|
-| kf4 | 40,238 | 35,340 | −4,898 (−12.2%) |
-| kf1 | 32,571 | 27,705 | −4,866 (−14.9%) |
+| kf4 | 40,238 | 33,562 (35,340 before `gas/keccak-glam`) | −6,676 (−16.6%) |
+| kf1 | 32,571 | 25,927 (27,705) | −6,644 (−20.4%) |
 | `blk` region, 44 (25 calls, 5 of them `blkh`) | 190,336 | 175,907 | −14,429 (−7.6%) |
 | `ntt` (v4) | 92,404 | 82,378 | −10,026 (−10.9%) |
 | `intt` | 119,593 | 109,615 | −9,978 (−8.3%) |
@@ -87,8 +90,8 @@ kf4 or kf1.
 
 **Deployment.** The code is about 2.4× v4's. Under EIP-8037 (CPSB = 1,530
 gas per byte of code deposit) that is ≈ 48M more state gas, one time, per
-deployment (≈ 83M instead of ≈ 35M). At 44's saving of 192k per
-verification, it pays back after ≈ 250 verifications.
+deployment (≈ 84M instead of ≈ 36M). At 44's saving of 258k per
+verification, it pays back after ≈ 190 verifications.
 
 ## Kernel design (`scripts/opt_keccak_glam.py`)
 
@@ -100,31 +103,73 @@ reuses `opt_keccak.rot_top`, `CHI` and `rc_table`. The interface is the same:
 unused).
 
 * **Entry/exit.** 25 MLOADs. The last round MSTOREs its outputs directly,
-  then 31 POPs clear the dead slots, D and REP.
-* **Theta.** C[x] = 5 DUP/DUPN + 4 XOR. v3 needs 5 × (PUSH + MLOAD).
-* **Rho/pi input.** DUPN of the lane: 3 gas instead of 6. The source slot
-  becomes dead.
-* **Chi output.** SWAPN into one of the plane's dead slots + POP: 5 gas
-  instead of PUSH + MSTORE (6). The plane's last output instead swaps with
-  the next plane's first input, which then arrives on top (3 gas for a store
-  and a load; 4 per round).
+  then POPs clear the dead values (one parked D per round, the last round's
+  dead lane copies, and REP for kf1): 48 POPs for kf4.
+* **Theta.** C[x] = 5 DUP/DUPN + 4 XOR. v3 needs 5 × (PUSH + MLOAD). One
+  EXCHANGE at the end orders the D's for the last plane (below).
+* **Plane schedule** (branch `gas/keccak-glam`). Every SWAPN parks one value
+  and fetches another, so no lane is copied for rho and no slot needs a POP:
+  1. the top value (the previous plane's output 4, or a D at the start of
+     the round) is parked in the slot of the lane for B1;
+  2. B1, B2, B3 are parked in the slots of the lanes for B2, B3, B4 as those
+     come up (each lane is XORed with a D copy and rotated in place);
+  3. output 2 is parked in the slot of the lane for B0;
+  4. outputs 3, 0 and 1 are parked in the slots of B3, B2 and B1, which come
+     up for their last, consuming use (B2 ∧ B3 in output 1, B0 ∧ B1 and B4
+     in output 4);
+  5. output 4 stays on top.
+
+  That is 8 SWAPs and 10 DUPs per plane (v3's chi needs the same 10 DUPs),
+  against 4 lane DUPs, 4 SWAPN + POP into dead slots and one chained SWAPN
+  before: −11 gas per plane. A shortest-path search over abstract stack
+  schedules (cost = DUPs + SWAPs + POPs, one plane, no EXCHANGE) found it and
+  shows 54 is the minimum of that model; a two-plane search ran out of memory.
+* **Last plane.** Its first four lanes use D2, D3, D4, D0 (the plane is
+  processed from B0), and theta leaves exactly those four D's, in that order,
+  right below the plane's work area. Each is then consumed by the lane's XOR
+  instead of copied: 4 × (DUP + POP) saved per round for one EXCHANGE.
+* **Last round.** Outputs are stored, so nothing is parked: one SWAPN, four
+  lane DUPs, and the two outputs whose operands meet on top consume them
+  (the same search with stored outputs; the plane rotation is chosen per
+  row so that no consumed operand needs a NOT below the top).
 * **Layout.** The lanes end up in a different stack permutation after every
   round. `opt_asm.Stack(deep=True)` tracks the layout by name and emits DUPN /
   SWAPN past depth 16, so no code restores a fixed layout. Full unrolling
   makes that free and turns iota into a PUSH immediate.
-* **Stack use.** At most ~40 items above the caller's: 25 lanes, D, B,
-  temporaries and REP.
+* **Stack use.** About 40 items above the caller's in a round (25 lanes, D,
+  B, temporaries, REP) plus one dead D per round: at most ~65.
 
-kf4 costs ≈ 1,457 gas per round instead of 1,677: (35,340 − 371 entry/exit)
-/ 24. By line item, v3 → glam:
+kf4 costs ≈ 1,388 gas per round, (33,562 − 255 entry/exit) / 24 (1,457 before the plane schedule, 1,677 in
+v3). By line item, v3 → glam:
 
 * theta lane reads: 150 → 75;
-* rho/pi lane reads: 150 → 63;
-* stores: 150 → 117;
+* rho/pi lane reads and chi stores: 300 → 120 (8 SWAPs per plane);
+* D copies: 75 → 63, and 5 POPs → 1;
 * iota: ~15 → 6;
 * no loop overhead.
 
-Rotations (609), D and chi are unchanged.
+Rotations (609) and chi's operations and DUPs are unchanged.
+
+### Lower bound per round (kf4)
+
+Counting only operations no stack schedule can avoid, at 3 gas each:
+
+| part | operations | count |
+|---|---|---:|
+| theta C | 25 lane DUPs + 20 XOR | 45 |
+| theta D | 5 C DUPs + 5 rotations × 7 + 5 XOR | 45 |
+| rho | 25 XOR with D + 20 D DUPs (5 uses each, one consumes) + 24 rotations × 7 | 213 |
+| chi | 50 AND/OR/XOR + 8 NOT (this complementing; ≥ 5 with any) + 50 B DUPs (3 uses each) | 108 |
+| iota | PUSH + XOR | 2 |
+| **total** | | **413 = 1,239 gas** |
+
+Before: 1,457 (+17.6%). Now: 1,388 (+12.0%). The rest is stack movement
+that a zero-move bound ignores: lanes must reach the top to be consumed and
+outputs must leave it, and the one-plane search says 8 SWAPs (120 gas per
+round) is the minimum for a plane. With those and theta's 6 SWAPs + 1 EXCHANGE, the
+floor of this design is ≈ 1,380: the kernels are within ~0.6% of it. The
+7-op rotation (DUP1 PUSH SHL SWAP1 PUSH SHR OR) is minimal without SAR or a
+sound MULMOD.
 
 ## `blk` unrolled (`gen_glam.GlamGen.gen_blk`)
 
@@ -199,10 +244,35 @@ a fully unrolled kernel (~25 KB) would remove.
 
 ### Remaining headroom (not done)
 
-* Chaining every chi output into the next input slot, not only the plane's
-  last one, breaks chi's in-place consumption: B2 and B3 must sit right below
-  the partial result. A scheduler search might save ≤ 2 gas per lane
-  (≤ 1.1k per kf4 call).
+* **Dead outputs in the last round.** A permutation whose output is only
+  partly read could skip those chi outputs and the B's only they use:
+  * the final kf1 (c̃ check) reads 4 / 6 / 8 lanes: planes 1–4 of round 24
+    (most of plane 1 for 87) are dead, ≈ 0.8k once per verification;
+  * an ExpandA group's fifth squeeze does not need lanes 21–24 unless the
+    sixth squeeze happens (B3, B4 and outputs 21–24 of the last plane,
+    ≈ 150 per call: 0.75k / 1.2k / 2.2k for 44 / 65 / 87).
+
+  kf1 and kf4 are shared subroutines, so this needs a second copy of round
+  24 (~0.6 KB each) behind a JUMPI on the return address (~22 gas on every
+  other call), and the sixth squeeze would have to recompute the fifth
+  permutation (+34k worst case per group). Not done.
+* **Shared first round across ExpandA groups.** A group's first block
+  differs from the other groups' only in lane 4 (column and row bytes), so
+  C0..C3, D1, D2, D4 and the B's of the 14 lanes in columns 1, 2, 4 (minus
+  lane 4) are common; most lanes are zero or constant, which a dedicated
+  first round could exploit even without sharing (≈ 250 per group: no
+  MLOAD, no C XOR, B = rot(D)). Sharing adds ≈ 300 per group after the
+  first. Together ≈ 2.5k / 4k / 7.5k for 44 / 65 / 87, but only for groups
+  whose four slots are all fresh ExpandA seeds (not slots kept for tr, μ or
+  c̃), and it needs a separate round-1 entry ending in the shared kernel's
+  round-2 layout plus caller changes in the group driver. Not done.
+* **D frames** (`gas/keccak-lab`). Reading lanes at memory offsets rotates
+  them for free, so column parities can be taken in per-column frames and
+  four of theta's five rotations disappear. On the stack, a lane read
+  (DUPN) is in its stored frame, all outputs of a plane share the plane's
+  B frame (chi mixes the plane's columns), and a column takes one lane from
+  every plane, so aligned parities force one global frame: the five
+  rotations stay.
 * `trabs`, `cext` and `ginit` could take lanes at immediate addresses like
   `blk`, but they run 11 / 16 / 20 times (44 / 65 / 87) against 25 / 50 / 75
   for `blk`, and v4's `trabs` is already a straight 7-stage network.
@@ -292,6 +362,9 @@ On the v4-based artifacts (re-run after R4-5, `gas/final`, and after R4-6, `gas/
 |---|---|
 | EIP-8024 test cases (assembly + execution) on `opt_evm.py` | all pass; 0xe6 still undefined under `fork="osaka"` |
 | stack-resident kernels vs reference Keccak-f (random + all-ones states, complemented lanes), no memory written outside KS | pass |
+| `gas/keccak-glam` kernels: 88 KATs per kernel vs `opt_ref.keccak_f` (zero, all-ones, 40 random single bits, one bit in each lane at a different bit per slot, 20 random, mixed slots), no memory written outside KS | pass |
+| EELS (`opt_eels.py`, execution-specs `fd92984`) vs `opt_evm.py` after `gas/keccak-glam` | all 47 / 57 / 57 vectors: identical gas and output |
+| differential fuzz after `gas/keccak-glam` (`OPT_VERSION=glam opt_fuzz.py`, seeds 447 / 657 / 877) | 300 cases per set, 0 failures; accepted 54 / 47 / 58. Mean / max gas of accepted cases: 1,771,461 / 1,901,912 (44), 3,084,265 / 3,208,507 (65), 4,567,328 / 4,643,242 (87) |
 | v2, v3 (SHA-256 pins) and v4 artifacts | byte-identical |
 | NTT 4 + 4 forward bias bounds (Shoup on layers 1–4) | hold for 44 / 65 / 87 |
 | all vectors on glam bytecode (44: 47, 65: 57, 87: 57), `opt_evm` and EELS | 0 mismatches |

@@ -1,4 +1,4 @@
-ML-DSA-65 optimised verifier: 56222 bytes (limit 65536, EIP-7954)
+ML-DSA-65 optimised verifier: 55666 bytes (limit 65536, EIP-7954)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   2515   2515 bytes  main
@@ -26,8 +26,8 @@ Subroutines / regions (pc ranges of the generated code):
    21608 ..  21991    383 bytes  pack
    21991 ..  24577   2586 bytes  ntt
    24577 ..  28989   4412 bytes  intt
-   28989 ..  41221  12232 bytes  kf1
-   41221 ..  56222  15001 bytes  kf4
+   28989 ..  40943  11954 bytes  kf1
+   40943 ..  55666  14723 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
