@@ -34,8 +34,8 @@ theorem p3_w0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 0)) 32) (c + 32 * 0))) 48 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4509, 4510, 4511, 4512, 4513, 4514, 4515, 4516, 4517, 4518, 4519, 4520, 4521, 4522, 4523, 4524] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4509, 4510, 4511, 4512, 4513, 4514, 4515, 4516, 4517, 4518, 4519, 4520, 4521, 4522, 4523, 4524] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w1 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -46,8 +46,8 @@ theorem p3_w1 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 1)) 32) (c + 32 * 1))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4525, 4526, 4527, 4528, 4529, 4530, 4531, 4532, 4533, 4534, 4535, 4536, 4537, 4538, 4539, 4540, 4541, 4542, 4543, 4544, 4545] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4525, 4526, 4527, 4528, 4529, 4530, 4531, 4532, 4533, 4534, 4535, 4536, 4537, 4538, 4539, 4540, 4541, 4542, 4543, 4544, 4545] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w2 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -58,8 +58,8 @@ theorem p3_w2 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 2)) 32) (c + 32 * 2))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4546, 4547, 4548, 4549, 4550, 4551, 4552, 4553, 4554, 4555, 4556, 4557, 4558, 4559, 4560, 4561, 4562, 4563, 4564, 4565, 4566] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4546, 4547, 4548, 4549, 4550, 4551, 4552, 4553, 4554, 4555, 4556, 4557, 4558, 4559, 4560, 4561, 4562, 4563, 4564, 4565, 4566] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w3 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -70,8 +70,8 @@ theorem p3_w3 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 3)) 32) (c + 32 * 3))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580, 4581, 4582, 4583, 4584, 4585, 4586, 4587] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580, 4581, 4582, 4583, 4584, 4585, 4586, 4587] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w4 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -82,8 +82,8 @@ theorem p3_w4 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 4)) 32) (c + 32 * 4))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598, 4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598, 4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w5 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -94,8 +94,8 @@ theorem p3_w5 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 5)) 32) (c + 32 * 5))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616, 4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616, 4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w6 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -106,8 +106,8 @@ theorem p3_w6 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 6)) 32) (c + 32 * 6))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4630, 4631, 4632, 4633, 4634, 4635, 4636, 4637, 4638, 4639, 4640, 4641, 4642, 4643, 4644, 4645, 4646, 4647, 4648, 4649, 4650] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4630, 4631, 4632, 4633, 4634, 4635, 4636, 4637, 4638, 4639, 4640, 4641, 4642, 4643, 4644, 4645, 4646, 4647, 4648, 4649, 4650] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_w7 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hsh : sh < 256)
@@ -118,8 +118,8 @@ theorem p3_w7 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (p3v M a z c sh (32 * 7)) 32) (c + 32 * 7))) 65 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt65_reach [4651, 4652, 4653, 4654, 4655, 4656, 4657, 4658, 4659, 4660, 4661, 4662, 4663, 4664, 4665, 4666, 4667, 4668, 4669, 4670, 4671] with [p3v, land_m64, land_m64']
-  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]
+  opt65_reach [4651, 4652, 4653, 4654, 4655, 4656, 4657, 4658, 4659, 4660, 4661, 4662, 4663, 4664, 4665, 4666, 4667, 4668, 4669, 4670, 4671] with [p3v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,
+    Nat.mul_comm, Nat.and_comm]
 
 theorem p3_tail {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     {a z c sh ret : Nat} (M : ByteArray) (hlt : a + 256 < 28672) :

@@ -52,8 +52,8 @@ def gen(kind):
           f"        (MachineState.writeBytes M (Data.Bytes.natToBytesPadded ({v} (32 * {i})) 32) (c + 32 * {i}))) {{cost{i}}} := by\n"
           f"  have hsz := hs.sized; simp only [memWords] at hsz\n"
           f"  have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small\n"
-          f"  opt44_reach {idx} with [{name}v, land_m64, land_m64']\n"
-          f"  simp only [Nat.add_zero, Nat.add_comm, Nat.mul_comm, Nat.and_comm]\n")
+          f"  opt44_reach {idx} with [{name}v, land_m64, land_m64', Nat.add_zero, Nat.add_comm,\n"
+          f"    Nat.mul_comm, Nat.and_comm]\n")
     tidx = list(range(tail_start, jumpi + 1))
     P(f"theorem {name}_tail {{s : State}} (hs : Ctx s) {{tail : List UInt256}} (htail : tail.length ≤ 960)\n"
       f"    {{a z c sh ret{' lm' if kind != 'p3' else ''} : Nat}} (M : ByteArray) (hlt : a + 256 < 28672) :\n"
