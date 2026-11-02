@@ -128,7 +128,7 @@ def test_base_unchanged():
     opt_selftest.test_proved_reproducible()
     for nn in (44, 65, 87):
         code = gen_opt.Gen(gen_opt.Layout(nn, "v4")).build()
-        with open(os.path.join(ROOT, "MlDsaOpt", str(nn), "v4", "opt.hex")) as f:
+        with open(os.path.join(ROOT, "MlDsaOpt", str(nn), "opt.hex")) as f:
             assert f.read().strip() == code.hex(), f"v4 {nn} changed"
     print("v4: artifacts unchanged")
 

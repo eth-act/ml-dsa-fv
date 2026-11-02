@@ -55,7 +55,7 @@ M32 = bytepattern(0x00000000FFFFFFFF, 8)
 
 
 VERSIONS = ("v2", "v3", "v4")
-DEFAULT_VERSION = "v3"
+DEFAULT_VERSION = "v4"
 
 
 class Layout:
@@ -4458,10 +4458,9 @@ def layout_text(g, code):
 def main(argv):
     """gen_opt.py [--version v2|v3|v4] [--out DIR] [44|65|87 ...]
 
-    v2 = the formally verified artifacts (MlDsaOptNN/Bytecode.lean), written to
-    MlDsaOpt/NN/v2/ by default; v3 = the current proved design, written to
-    MlDsaOpt/NN/; v4 = round 4 (not yet proved), written to MlDsaOpt/NN/v4/.
-    --out DIR writes DIR/NN/ instead."""
+    v4 = round 4, the current design (MlDsaOptNN/Bytecode.lean), written to
+    MlDsaOpt/NN/; v2 and v3 = the earlier proved designs, written to
+    MlDsaOpt/NN/v2/ and MlDsaOpt/NN/v3/. --out DIR writes DIR/NN/ instead."""
     version, out, sets = DEFAULT_VERSION, None, []
     it = iter(argv)
     for x in it:
@@ -4480,7 +4479,7 @@ def main(argv):
         assert len(code) <= 24576, f"{nn}: {len(code)} bytes exceeds EIP-170"
         if out is not None:
             d = os.path.join(out, str(nn))
-        elif version in ("v2", "v4"):
+        elif version in ("v2", "v3"):
             d = os.path.join(root, str(nn), version)
         else:
             d = os.path.join(root, str(nn))

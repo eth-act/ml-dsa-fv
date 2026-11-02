@@ -5,8 +5,8 @@
 
 Corpus: ML-DSA-44 = foundry/fixtures/vectors.txt + foundry/fixtures/fuzz/*.txt
 (the 3,639 cases opt_forge.sh replays in revm); 65 / 87 = the vector file
-vectors/mldsa{65,87}/calldata.txt. V is v3 (MlDsaOpt/NN/), v4 or glam
-(MlDsaOpt/NN/v4|glam/) or a directory holding NN/opt.hex; a V containing
+vectors/mldsa{65,87}/calldata.txt. V is v4 (MlDsaOpt/NN/), v3 or glam
+(MlDsaOpt/NN/v3|glam/) or a directory holding NN/opt.hex; a V containing
 "glam" runs with EIP-8024 (fork glamsterdam). Prints per build: mismatches, and gas median /
 mean / max over all cases and over the accepted ones.
 """
@@ -43,7 +43,7 @@ def corpus(nn):
 
 def load(nn, v):
     d = os.path.join(v, str(nn)) if os.path.isdir(v) else \
-        os.path.join(ROOT, "MlDsaOpt", str(nn), *([] if v == "v3" else [v]))
+        os.path.join(ROOT, "MlDsaOpt", str(nn), *([] if v == "v4" else [v]))
     return bytes.fromhex(open(os.path.join(d, "opt.hex")).read().strip())
 
 

@@ -190,7 +190,7 @@ def run_vectors(nn, code, check6=None):
 
 def test_bytecode(version, force6=False):
     import gen_opt
-    sub = {"v3": (), "v4": ("v4",)}[version]
+    sub = {"v3": ("v3",), "v4": ()}[version]
     for nn in (44, 65, 87):
         L = gen_opt.Layout(nn, version)
         g = gen_opt.Gen(L)
@@ -269,7 +269,7 @@ V2_SHA256 = {
 }
 
 
-# SHA-256 of the formally verified v3 artifacts (MlDsaOpt/NN/opt.hex, MlDsaOptNN)
+# SHA-256 of the formally verified v3 artifacts (MlDsaOpt/NN/v3/opt.hex)
 V3_SHA256 = {
     44: "3e0bfe02d9632c98805892e535c319f3c029e59871f8170f3dd40dde901d2c14",
     65: "00d80d9705f83e6ba7bb7ad457d27013163b75a57b7cde99f3f23c949cb53a3b",
@@ -277,9 +277,17 @@ V3_SHA256 = {
 }
 
 
+# SHA-256 of the v4 artifacts (MlDsaOpt/NN/opt.hex, MlDsaOptNN)
+V4_SHA256 = {
+    44: "816e3c2b1d8b0fbca0235be1e37a425713d91fc5c8d56c2e07cc55449e4dbffb",
+    65: "6298f2959da03632fd5b750578e02b72c1a4ebab2d4fe902684fa1eacea0804f",
+    87: "da031d6c038f34feafcfa49eda3d2467e47731236757e42b296d8270c3cbc4cd",
+}
+
+
 def test_proved_reproducible():
     import gen_opt
-    for version, pins in (("v2", V2_SHA256), ("v3", V3_SHA256)):
+    for version, pins in (("v2", V2_SHA256), ("v3", V3_SHA256), ("v4", V4_SHA256)):
         for nn, h in pins.items():
             code = gen_opt.Gen(gen_opt.Layout(nn, version)).build()
             assert hashlib.sha256((code.hex() + "\n").encode()).hexdigest() == h, f"{version} {nn} not reproduced"

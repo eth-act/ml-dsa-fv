@@ -6,11 +6,11 @@ divergence: it accepts a repeated hint index inside a row; only a strict
 mismatch outside that case is an error).
 
 Usage: python3 scripts/opt_fuzz.py [--version V[,V...]] NN COUNT SEED [OUT.tsv]
-V is v3 (MlDsaOpt/NN/), v4 or glam (MlDsaOpt/NN/v4|glam/; glam runs with
+V is v4 (MlDsaOpt/NN/), v3 or glam (MlDsaOpt/NN/v3|glam/; glam runs with
 EIP-8024), or a directory holding NN/opt.hex (a directory whose name contains
 "glam" also runs with EIP-8024). Every case runs on each listed bytecode (same
 keys and messages), and the mean gas of the accepted cases is printed per
-bytecode. Without --version, OPT_VERSION (v4, glam) or v3.
+bytecode. Without --version, OPT_VERSION (v3, glam) or v4.
 Each case: fresh or reused key, random message length, then one mutation
 (none, bit flip in pk / c-tilde / z / hint / message, hint byte set, z
 coefficient at the norm boundary, truncation, extension).
@@ -58,7 +58,7 @@ def repeated_hint(nn, cd):
 
 def main():
     argv = sys.argv[1:]
-    version = os.environ.get("OPT_VERSION", "v3")
+    version = os.environ.get("OPT_VERSION", "v4")
     if argv[:1] == ["--version"]:
         version, argv = argv[1], argv[2:]
     nn, count, seed = int(argv[0]), int(argv[1]), int(argv[2])
@@ -71,7 +71,7 @@ def main():
         if os.path.isdir(v):
             d = os.path.join(v, str(nn))
         else:
-            d = os.path.join(HERE, "..", "MlDsaOpt", str(nn), *([] if v == "v3" else [v]))
+            d = os.path.join(HERE, "..", "MlDsaOpt", str(nn), *([] if v == "v4" else [v]))
         forks[v] = "glamsterdam" if "glam" in v else "osaka"
         codes[v] = bytes.fromhex(open(os.path.join(d, "opt.hex")).read().strip())
     accg = {v: [] for v in codes}

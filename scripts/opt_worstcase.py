@@ -48,7 +48,7 @@ def regions(g, code, prof):
     return {n: sum(prof[a:b]) for (a, n), (b, _) in zip(rp, rp[1:])}
 
 
-def analyse(nn, version="v3"):
+def analyse(nn, version="v4"):
     if version == "glam":
         import gen_glam
         g, code = gen_glam.build(nn)
@@ -59,7 +59,7 @@ def analyse(nn, version="v3"):
         g = gen_opt.Gen(L)
         code = g.build()
         run = opt_evm.run
-    sub = (version,) if version in ("v4", "glam") else ()
+    sub = (version,) if version in ("v2", "v3", "glam") else ()
     with open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), *sub, "opt.hex")) as f:
         assert f.read().strip() == code.hex(), "stale artifact"
     lab = g.a.labels
@@ -250,7 +250,7 @@ def analyse(nn, version="v3"):
 
 
 def main(argv):
-    version = "v3"
+    version = "v4"
     if argv[:1] == ["--version"]:
         version, argv = argv[1], argv[2:]
     for nn in [int(x) for x in argv] or [44, 65, 87]:
