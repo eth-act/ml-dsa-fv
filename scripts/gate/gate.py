@@ -51,7 +51,9 @@ ROOT = GATE_DIR.parent.parent
 ALLOWED_AXIOMS = ["propext", "Classical.choice", "Quot.sound"]
 
 HEADLINES = [f"{ns}_{s}" for ns in ("MlDsa44.Proofs.reference", "MlDsaOpt44.Proofs.opt",
-                                     "MlDsaOpt65.Proofs.opt", "MlDsaOpt87.Proofs.opt")
+                                     "MlDsaOpt65.Proofs.opt", "MlDsaOpt87.Proofs.opt",
+                                     "MlDsaOptGlam44.Proofs.opt", "MlDsaOptGlam65.Proofs.opt",
+                                     "MlDsaOptGlam87.Proofs.opt")
              for s in ("correctInAnyContextWithSchedule", "correctInAnyContext",
                        "correctWithSchedule", "correct")]
 
@@ -61,6 +63,9 @@ BYTECODES = {
     "MlDsaOpt44.optBytecode": "MlDsaOpt/44/opt.hex",
     "MlDsaOpt65.optBytecode": "MlDsaOpt/65/opt.hex",
     "MlDsaOpt87.optBytecode": "MlDsaOpt/87/opt.hex",
+    "MlDsaOptGlam44.optBytecode": "MlDsaOpt/44/glam/opt.hex",
+    "MlDsaOptGlam65.optBytecode": "MlDsaOpt/65/glam/opt.hex",
+    "MlDsaOptGlam87.optBytecode": "MlDsaOpt/87/glam/opt.hex",
 }
 
 # Frozen artifacts: byte-identical between BASE and HEAD (git blob ids).
@@ -726,10 +731,19 @@ def compare(base: Snap, head: Snap, allow_moves=False, allow_gate_change=False, 
         ok(f"axiom policy: {len(head.consts)} constants use only {', '.join(ALLOWED_AXIOMS)}; no axiom declarations")
     for h in headlines:
         kind, axs = head.headline.get(h, ("missing", "-"))
+        # the statement digest (`ct`: the type, hashed with its dependencies' meaning);
+        # a headline present on base must keep it (the signature diff checks the same)
+        st = head.consts.get(h, {}).get("ct", "-")
+        bst = base.consts.get(h, {}).get("ct") if base is not None else None
+        bad = [a for a in axs.split(",") if a not in ("-", "") and a not in ALLOWED_AXIOMS]
         if kind != "theorem":
             fail(f"headline {h}: {kind}")
+        elif bad:
+            fail(f"headline {h}: axioms {axs} (not allowed: {', '.join(bad)}); statement {st}")
+        elif bst is not None and bst != st:
+            fail(f"headline {h}: statement {st} differs from base {bst}")
         else:
-            ok(f"headline {h}: {axs}")
+            ok(f"headline {h}: {axs}; statement {st}")
 
     section("checks that pass on base must pass on head (outside Lean files, generators)")
     for k in sorted(set(base.checks) | set(head.checks)):
@@ -750,11 +764,16 @@ def compare(base: Snap, head: Snap, allow_moves=False, allow_gate_change=False, 
         fail(f"{len(diffs)} frozen artifacts differ", diffs)
     else:
         ok(f"{len(head.frozen)} frozen artifacts identical")
-    bdiff = [n for n in bytecodes if base.bytes.get(n) != head.bytes.get(n)]
+    # a literal that base does not have (it does not evaluate there) is new: its bytes
+    # are checked against the hex file above, not against base
+    new = [n for n in bytecodes if base.bytes.get(n, ("error",))[0] == "error"]
+    bdiff = [n for n in bytecodes if n not in new and base.bytes.get(n) != head.bytes.get(n)]
     if bdiff:
         fail("bytecode literals differ", bdiff)
     else:
-        ok(f"{len(bytecodes)} bytecode literals identical")
+        ok(f"{len(bytecodes) - len(new)} bytecode literals identical")
+    if new:
+        out.append(f"note {len(new)} bytecode literals new on head: {', '.join(new)}")
 
     section("signature diff (every non-auxiliary constant: kind, statement, meaning, axioms, module)")
     bc = {k: v for k, v in base.consts.items() if v["aux"] == "0"}

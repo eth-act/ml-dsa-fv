@@ -65,9 +65,12 @@ Per revision (HEAD must pass all of these):
   and `Lean.ofReduceNat` (`native_decide`, `bv_decide`) are rejected even if
   the list were widened.
 * **Headline theorems**: the four per bytecode (`MlDsa44.Proofs.reference_*`,
-  `MlDsaOpt{44,65,87}.Proofs.opt_*`) exist and are theorems.
-* **Bytecode literals**: `MlDsa44.referenceBytecode` and
-  `MlDsaOpt{44,65,87}.optBytecode`, evaluated (compiled code, in a process of
+  `MlDsaOpt{44,65,87}.Proofs.opt_*`, `MlDsaOptGlam{44,65,87}.Proofs.opt_*`) exist,
+  are theorems, depend only on the allowed axioms (listed with their statement
+  digest), and keep base's statement digest when base has them.
+* **Bytecode literals**: `MlDsa44.referenceBytecode`,
+  `MlDsaOpt{44,65,87}.optBytecode` and `MlDsaOptGlam{44,65,87}.optBytecode`
+  (against `MlDsaOpt/NN/glam/opt.hex`), evaluated (compiled code, in a process of
   its own), equal the bytes of `reference.hex` / `opt.hex`. Their logical value
   is also part of the signature diff.
 
