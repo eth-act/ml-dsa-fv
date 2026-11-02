@@ -190,14 +190,32 @@ theorem pass3f7_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     exact f7_entry hs hr m
   exact ((hentry.trans (Reach.loop 127 hbody)).trans hlast).mono (by omega)
 
-/-- **pass3f7** with literal addresses (`CW = 0x3000`, `ACC = 0xc900`). -/
+/-- **pass3f7**, the body of `p3f7Word` with the layout constants as literals
+(`ZH = 0x8000`, `CW = 0x3000`, `HP = 0x10900`, `ACC = 0xc900`, `SB = 0x16700`,
+`ABUF = 0x5000`). -/
 theorem pass3f7_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK 74 ret tail) (m : ByteArray) :
-    ∃ m', (∀ t, t < 256 → word m' (0xc900 + 32 * t) = f7v m (0x3000 + 32 * t)) ∧
+    ∃ m', (∀ t, t < 256 → word m' (0xc900 + 32 * t) =
+        let z0 := word m (0x8000 + 32 * t)
+        let z1 := word m (0x8000 + 8192 + 32 * t)
+        (word m (0x3000 + 32 * t) * lane z0 0 + word m (0x10900 + 32 * t) * lane z0 1 +
+          word m (0x10900 + 8192 + 32 * t) * lane z0 2 + word m (0xc900 + 32 * t) / 2 ^ 64 * lane z0 3 +
+          word m (0x16700 + 8192 + 32 * t) / 2 ^ 64 * lane z1 0 +
+          ((word m (0x5000 + 32 * t) &&& (2 ^ 256 - 2 ^ 128)) * (z1 * 2 ^ 64 % 2 ^ 256 ||| z0 / 2 ^ 192) %
+              2 ^ 256 &&& (M64 * 2 ^ 192))) % 2 ^ 256) ∧
       FrameExcept m m' [(0xc900, 0xc900 + 8192)] ∧
       Call s 16731 [] ret tail m [] m' 73885 := by
   have hv : ∀ t, f7f m t < 2 ^ 256 := fun t => Nat.mod_lt _ (by norm_num)
-  refine ⟨storeWords m 0xc900 (f7f m) 256, fun t ht => word_storeWords (hv t) 256 ht, ?_, ?_⟩
+  refine ⟨storeWords m 0xc900 (f7f m) 256, fun t ht => ?_, ?_, ?_⟩
+  · rw [word_storeWords (hv t) 256 ht]
+    unfold f7f f7v
+    rw [show 0x3000 + 32 * t + 0x5000 = 0x8000 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0x7000 = 0x8000 + 8192 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0xd900 = 0x10900 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0xf900 = 0x10900 + 8192 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0x9900 = 0xc900 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0x15700 = 0x16700 + 8192 + 32 * t by omega,
+      show 0x3000 + 32 * t + 0x2000 = 0x5000 + 32 * t by omega]
   · simpa using FrameExcept.storeWords m 0xc900 (f7f m) 256
   · rw [call_iff]
     simpa using pass3f7_reach hs hr m

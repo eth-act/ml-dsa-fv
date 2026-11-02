@@ -155,14 +155,26 @@ theorem pass3f8_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     exact f8_entry hs hr m
   exact ((hentry.trans (Reach.loop 127 hbody)).trans hlast).mono (by omega)
 
-/-- **pass3f8** with literal addresses (`ABUF = 0x5000`, `ACC + 0x2000 = 0xe900`). -/
+/-- **pass3f8**, the body of `p3f8Word` with the layout constants as literals
+(`ZH = 0x8000`, `ACC = 0xc900`, `SB = 0x16700`, `ABUF = 0x5000`). -/
 theorem pass3f8_call_aux {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK 74 ret tail) (m : ByteArray) :
-    ∃ m', (∀ t, t < 256 → word m' (0xe900 + 32 * t) = f8v m (0x5000 + 32 * t)) ∧
-      FrameExcept m m' [(0xe900, 0xe900 + 8192)] ∧
+    ∃ m', (∀ t, t < 256 → word m' (0xc900 + 8192 + 32 * t) =
+        let z0 := word m (0x8000 + 32 * t)
+        let z1 := word m (0x8000 + 8192 + 32 * t)
+        (word m (0xc900 + 8192 + 32 * t) * z0 % 2 ^ 256 / 2 ^ 192 +
+          (word m (0x16700 + 32 * t) * z0 % 2 ^ 256 &&& (M64 * 2 ^ 192)) / 2 ^ 128 +
+          (word m (0x5000 + 32 * t) &&& (2 ^ 128 - 1)) * lane z1 0) % 2 ^ 256) ∧
+      FrameExcept m m' [(0xc900 + 8192, 0xc900 + 8192 + 8192)] ∧
       Call s 17053 [] ret tail m [] m' 38813 := by
   have hv : ∀ t, f8f m t < 2 ^ 256 := fun t => Nat.mod_lt _ (by norm_num)
-  refine ⟨storeWords m 0xe900 (f8f m) 256, fun t ht => word_storeWords (hv t) 256 ht, ?_, ?_⟩
+  refine ⟨storeWords m 0xe900 (f8f m) 256, fun t ht => ?_, ?_, ?_⟩
+  · rw [show 0xc900 + 8192 + 32 * t = 0xe900 + 32 * t by omega, word_storeWords (hv t) 256 ht]
+    unfold f8f f8v
+    rw [show 0x5000 + 32 * t + 0x3000 = 0x8000 + 32 * t by omega,
+      show 0x5000 + 32 * t + 0x5000 = 0x8000 + 8192 + 32 * t by omega,
+      show 0x5000 + 32 * t + 0x9900 = 0xc900 + 8192 + 32 * t by omega,
+      show 0x5000 + 32 * t + 0x11700 = 0x16700 + 32 * t by omega]
   · simpa using FrameExcept.storeWords m 0xe900 (f8f m) 256
   · rw [call_iff]
     simpa using pass3f8_reach hs hr m
