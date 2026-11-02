@@ -136,6 +136,8 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOpt44/Fn/Kf1/gen_kf1.py` | `MlDsaOpt44/Fn/Kf1/{Tables,Blocks*,BlocksLoop,Rounds}.lean` |
 | `MlDsaOpt65/Fn/Csum/gen_blocks.py 87` | `MlDsaOpt87/Fn/Csum/Blocks.lean` |
 | `MlDsaOpt65/Fn/Ginit/gen_lanes.py 87` (stdout) | `MlDsaOpt87/Fn/Ginit/Lanes.lean` |
+| `proofgen_artifact_glam.py MlDsaOpt/NN/glam/opt.hex MlDsaOptGlamNN MlDsaOptGlamNN glamNN M` (M = 2616, 3384, 2897) | `MlDsaOptGlamNN/{Bytecode,Artifact,Infra,Infra/*}.lean`, `listing.tsv` |
+| `MlDsaOptGlam44/Fn/Kf4/gen_kf4.py NN`, `MlDsaOptGlam44/Fn/Kf1/gen_kf1.py NN` (44, 65, 87) | `MlDsaOptGlamNN/Fn/{Kf4,Kf1}/*.lean` (`Model`, `Algebra` for 44 only) |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 29 ported files (28 carry hand adjustments

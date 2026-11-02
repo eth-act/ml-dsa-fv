@@ -93,6 +93,12 @@ GENERATORS = (
        ("Csum gen_blocks.py 87", ["python3", "MlDsaOpt65/Fn/Csum/gen_blocks.py", "87"], None),
        ("Ginit gen_lanes.py 87", ["python3", "MlDsaOpt65/Fn/Ginit/gen_lanes.py", "87"],
         "MlDsaOpt87/Fn/Ginit/Lanes.lean")]
+    # Glamsterdam variants (MlDsaOpt/NN/glam/): artifact infrastructure and kernel blocks
+    + [(f"proofgen_artifact_glam.py {n}", ["python3", "scripts/proofgen_artifact_glam.py",
+        f"MlDsaOpt/{n}/glam/opt.hex", f"MlDsaOptGlam{n}", f"MlDsaOptGlam{n}", f"glam{n}", str(m)], None)
+       for n, m in ((44, 2616), (65, 3384), (87, 2897))]
+    + [(f"glam {k} {n}", ["python3", f"MlDsaOptGlam44/Fn/{d}/{k}", str(n)], None)
+       for d, k in (("Kf4", "gen_kf4.py"), ("Kf1", "gen_kf1.py")) for n in (44, 65, 87)]
 # Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,
 # gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65,
 # Ginit gen_lanes.py 65.
