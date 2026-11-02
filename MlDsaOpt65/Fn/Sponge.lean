@@ -1,6 +1,7 @@
 import MlDsaOpt65.Fn.Sponge.Spr
 import MlDsaOpt65.Fn.Sponge.Cext
 import MlDsaOpt65.Fn.Sponge.Absorb
+import MlDsaOpt65.Fn.Sponge.TrabsRun
 import MlDsaOpt65.Fn.Sponge.Mub0
 import MlDsaOpt65.Fn.Sponge.Mub
 /-!
@@ -11,8 +12,8 @@ targets, and the statements are the ML-DSA-44 ones (with this artifact's
 `Entry`, `Gas`, `TOP`). The proofs are the 44 proofs ported to this artifact
 by `scripts/proofgen_port.py 65` (`Fn/Sponge/{Spr,Trabs,Cext,Absorb}.lean`;
 the pure lemmas are the 44 modules `Fn/Sponge/{Bits,Lanes,Fold,Mem,Defs}`).
-`ginit` lives in `Fn/Ginit`. v4: `trabs` is a new delta-swap network (open,
-statement with the lane-aligned mask hypothesis `hlmL`).
+`ginit` lives in `Fn/Ginit`. v4: `trabs` is a new delta-swap network
+(`Fn/Sponge/TrabsRun.lean`, ported from 44; lane-aligned mask hypothesis `hlmL`).
 -/
 
 namespace MlDsaOpt65.Proofs
@@ -43,7 +44,7 @@ theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         else word m (KS + 32 * x)) ∧
       FrameExcept m m' [(kp, kp + 128 * n4)] ∧
       Call s Entry.trabs [wd kp, wd lm, wd n4, wd sh, wd off] ret tail m [] m' (Gas.trabs n4) :=
-  sorry
+  WP4.trabs_call_v4 hs hr m hoff hsh hn4 hlm hlmL hkp hkp' hkp32
 
 /-- **cext**: `[n, sh, dst, ret]`; `dst[x] := lane x of slot sh`, de-interleaved and
 un-complemented, `x < n`. -/

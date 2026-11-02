@@ -50,7 +50,7 @@ theorem raw_pack (cd : ByteArray) {G u g kk off : Nat} (hoff : off = Z0 + 2560 *
   rw [show 640 * k + off = Z0 + 2560 * G + 10 * u + 640 * k by omega]
   exact le_rawZ cd hg hkk ht
 
-theorem zLane_eq (cd : ByteArray) (k t : Nat) : zLane cd k t = 8904705 - rawZ cd k t := by
+theorem zLane_eq (cd : ByteArray) (k t : Nat) : zLane cd k t = 75948041 - rawZ cd k t := by
   unfold zLane; rw [show (Fips204.q : Nat) = 8380417 from rfl]; norm_num
 
 theorem zv_raw (cd : ByteArray) (G t : Nat) :
@@ -85,7 +85,7 @@ theorem z_gstep (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
         (callState s 10929 (wd (96 + gp) :: wd (60 + gs) :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
           wd (leNat s.executionEnv.calldata (1280 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata off 32) ::
-          wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 307 := by
+          wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 277 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz : memWords ≤ s.activeWords.toNat := hs.sized
   simp only [memWords] at hsz
@@ -198,7 +198,7 @@ theorem z_chunk (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
         (callState s 10929 (wd (dp + 384) :: wd 240 :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
           wd (leNat s.executionEnv.calldata (1280 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata off 32) ::
-          wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 1986 := by
+          wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 1866 := by
   have hoff64 : off < 2 ^ 64 := by simp only [Z0] at hoff; omega
   have l0 := z_load0 (ret := ret) (tail := tail) hs htl M (dp := dp) (acc := acc) (e := e) hoff64
   have l1 := z_load1 (ret := ret) (tail := tail) hs htl M (dp := dp) (acc := acc) (e := e)
@@ -249,7 +249,7 @@ theorem z_chunks (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
       Reach (callState s 10221 (wd (ZH + 0x2000 * G) :: wd (Z0 + 2560 * G) :: wd 0 :: wd MBL ::
           wd (7808 + (ZH + 0x2000 * G)) :: wd ret :: tail) m)
         (callState s 10221 (wd (ZH + 0x2000 * G + 384 * j) :: wd (Z0 + 2560 * G + 30 * j) :: wd acc ::
-          wd MBL :: wd (7808 + (ZH + 0x2000 * G)) :: wd ret :: tail) M) (2097 * j)
+          wd MBL :: wd (7808 + (ZH + 0x2000 * G)) :: wd ret :: tail) M) (1977 * j)
   | 0, _ => ⟨m, 0, ⟨FrameExcept.refl _ _, fun t ht => absurd ht (by omega)⟩,
       ⟨by norm_num, fun j _ => by simp⟩, (Reach.refl _).of_eq rfl (by simp)⟩
   | j + 1, hj => by

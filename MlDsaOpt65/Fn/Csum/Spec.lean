@@ -1,12 +1,12 @@
-import MlDsaOpt44.Fn.Ct.CsumSpec
+import MlDsaOpt44.Fn.Ct.Csum4Spec
 import MlDsaOpt65.Fn.Csum.Defs
 set_option warningAsError true
 /-!
-# `csum` (WP G4): counting facts about `c` (ML-DSA-65)
+# `csum` (v4): counting facts about `c` (ML-DSA-65)
 
-As `MlDsaOpt44/Fn/Ct/CsumSpec.lean` with `τ = 49` and the table rows at calldata
-offset `off`: `sPrime` is the sum over the `BASES` list, the running `n_neg` word
-`N c t'` (the 44 definition `CS.N`) starts at `τ − negCount c` and steps by the
+As `MlDsaOpt44/Fn/Ct/Csum4Spec.lean` with `τ = 49` and the table rows at calldata
+offset `off`: `sPrime` is the sum over the `BASES` list, the running count
+`N c t'` (the 44 definition `CS4.N`) starts at `τ − negCount c` and steps by the
 `CW` code of `c[t']`, and `nNeg c t = N c (t + 1)`.
 -/
 
@@ -16,7 +16,7 @@ open EvmSemantics
 open MlDsaOptCommon
 open MlDsa
 open MlDsaOpt65.Proofs
-open MlDsaOpt44.Proofs.CS (N N_step_gen N_zero_gen sum_ite_filter)
+open MlDsaOpt44.Proofs.CS4 (N N_step_gen N_zero_gen sum_ite_filter)
 
 /-- Facts about `c` that `CRep` and SampleInBall provide. -/
 structure CFacts (c : Fips204.Poly) (ps : List Nat) : Prop where
@@ -74,19 +74,5 @@ theorem N_zero {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) : N c 0 + ne
 
 theorem negCount_le {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) : negCount c ≤ 49 := by
   have := N_zero h; omega
-
-/-- The running `n_neg` word: base. -/
-theorem g_zero {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) :
-    UInt256.ofNat 49 - UInt256.ofNat (negCount c) = UInt256.ofNat (N c 0) := by
-  rw [ofNat_sub (negCount_le h) (by norm_num)]
-  congr 1; have := N_zero h; omega
-
-/-- The running `n_neg` word: one `CW` code. -/
-theorem g_step {c : Fips204.Poly} {ps : List Nat} (h : CFacts c ps) {t' : Nat} (ht : t' < 256) :
-    UInt256.ofNat (N c t') + UInt256.ofNat (codeOf c[t']!) = UInt256.ofNat (N c (t' + 1)) := by
-  rw [EvmProof.Word.ofNat_add_mod, ofNat_eq_ofNat_iff]
-  have hs := N_step h ht
-  unfold codeOf
-  rcases h.coeff t' ht with hc | hc | hc <;> simp [hc] at hs ⊢ <;> omega
 
 end MlDsaOpt65.Proofs.G4

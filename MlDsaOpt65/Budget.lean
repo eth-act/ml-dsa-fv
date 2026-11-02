@@ -6,7 +6,6 @@ worst-case cost of its contract, from the entry `JUMPDEST` up to and including
 the returning `JUMP`; memory never grows after the entry store. Constant-cost
 subroutines measured in the Python EVM, data-dependent ones as longest static
 paths. Kernels shared with ML-DSA-44 have the ML-DSA-44 budgets.
-`Gas.sib` is a placeholder until the `sib` proof fixes its path count.
 -/
 
 namespace MlDsaOpt65.Proofs.Gas
@@ -59,8 +58,11 @@ def mub0 : Nat := 3466
 /-- `mub`: the longest of its paths (absorb a block, pad it, or extract μ). -/
 def mub : Nat := 3090
 
-/-- `sib`: placeholder (v3 count). -/
-def sib : Nat := 13 + 216 * 125 + 49 * 454
+/-- `sib` (`Fn/Ball/V4Loop.lean`): entry 13; the 264 stream bytes as rejected
+(each lane: byte 0 with the loop head 66, bytes 1 … 6 40 each, byte 7 with the
+lane epilogue 62, so 33 × 368); 353 more per accepted byte (49); the failure
+exit 43. -/
+def sib : Nat := 13 + 33 * 368 + 49 * 353 + 43
 
 /-- `dhint`: fixed part 458 plus at most `ω + k + 1 = 62` loop visits of at
 most 161 each (55 hint indices, 6 row exits, the trailing scan exit). -/
