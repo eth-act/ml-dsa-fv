@@ -14,6 +14,7 @@ import MlDsaOptGlam44.Main.SegCt
 import MlDsaOptGlam44.Main.SegW
 import MlDsaOptGlam44.Main.SegFin
 import MlDsaOptGlam44.Main.SegSwitch
+import MlDsaOptGlam44.Main.SegAlt
 import MlDsaOptGlam44.Gas
 import MlDsaOptGlam44.Layout
 import MlDsaOptGlam44.Budget
@@ -26,8 +27,9 @@ set_option maxHeartbeats 0  -- glam: re-elaboration headroom
 bytes, the segments compose to a `RETURN` of the verification word within
 `Gas.schedule`. Glamsterdam: after ExpandA's second group the long-message
 switch (`Main/SegSwitch.lean`) selects the packed schedule (`|M| < 342`,
-`packed_tail`: v4's segments) or the long-message schedule (`seg_alt`, an
-**open item**); both reach `6030` (after SampleInBall) with `Inv7`.
+`packed_tail`: v4's segments) or the long-message schedule (`seg_alt`,
+`Main/SegAlt.lean`, entered with `FLAG = 0`); both reach `6030` (after
+SampleInBall) with `Inv7`.
 -/
 
 namespace MlDsaOptGlam44.Proofs
@@ -60,21 +62,6 @@ theorem result_bit (cd : ByteArray) (E : Bool) (m : ByteArray) (hI : Inv9 cd m)
     unfold optAccepts
     simp only [ok3, ok2, Bool.and_eq_true] at h3
     simp [h3]
-
-/-- **Open item** (glam): `2436 … 6030` on the long-message schedule
-(`|M| ≥ 342`): the jump to `alt`, the previous schedule's groups (the last one
-carrying up to five μ blocks through `mub` / `mulong`), `pass3f4b`, the shared
-code with `FLAG = 0` (`dhint`, `hash_mu` from `muimg`, SampleInBall with c's
-second block already squeezed). -/
-theorem seg_alt {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
-    (hI : InvG1 s.executionEnv.calldata m) (hge : 4074 ≤ s.executionEnv.calldata.size) :
-    ∃ m', Inv7 s.executionEnv.calldata m' ∧
-      Reach (callState s 2436
-          [flag ((okZ s.executionEnv.calldata && okCol s.executionEnv.calldata 0) &&
-            okCol s.executionEnv.calldata 1)] m)
-        (callState s 6030 [flag (ok2 s.executionEnv.calldata && okC s.executionEnv.calldata)] m')
-        (Gas.pAlt (mlenOf s.executionEnv.calldata)) := by
-  sorry  -- glam: open item (the long-message schedule)
 
 /-- `2436 … 6030` on the packed schedule (`|M| < 342`): the switch, v4's group 2,
 window, the jump to the shared code, the side buffers and hints, μ and
@@ -124,9 +111,13 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
   obtain ⟨m2, hI2, hR2⟩ := seg_tbl hs hI1 (okZ s₁.executionEnv.calldata)
   obtain ⟨m3, hI3, hR3⟩ := seg_ntt hs hI2 (okZ s₁.executionEnv.calldata) hlen1
   obtain ⟨m4, hI4, hR4⟩ := seg_rho hs hI3 (okZ s₁.executionEnv.calldata)
-  obtain ⟨m5, hI5, hR5⟩ := seg_g0 hs hlen1 hI4 (okZ s₁.executionEnv.calldata)
-  obtain ⟨m6, hI6, hR6⟩ := seg_g1 hs hlen1 hI5
+  obtain ⟨m5, hI5, hfl5, hR5⟩ := seg_g0 hs hlen1 hI4 (okZ s₁.executionEnv.calldata)
+  obtain ⟨m6, hI6, hfl6, hR6⟩ := seg_g1 hs hlen1 hI5
     (okZ s₁.executionEnv.calldata && okCol s₁.executionEnv.calldata 0)
+  -- `FLAG` is still zero (the long-message schedule reads it)
+  have hfl : word m6 FLAG = 0 := by
+    rw [hfl6, hfl5]
+    exact MlDsaOpt44.Proofs.word_zero_of_zeroOn hI4.zMisc (by unfold FLAG MISC; omega) (by unfold FLAG TBL; omega)
   -- the long-message switch
   have hT : ∃ m11, Inv7 s₁.executionEnv.calldata m11 ∧
       Reach (callState s₁ 2436
@@ -138,7 +129,7 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
     by_cases hm : s₁.executionEnv.calldata.size - 3732 < 342
     · obtain ⟨m11, hI11, hR11⟩ := packed_tail hs hlen1 hI6 (by unfold HDR at hlen1; omega)
       exact ⟨m11, hI11, by rw [if_pos hm]; exact hR11⟩
-    · obtain ⟨m11, hI11, hR11⟩ := seg_alt hs hlen1 hI6 (by unfold HDR at hlen1; omega)
+    · obtain ⟨m11, hI11, hR11⟩ := seg_alt hs hlen1 hI6 (by unfold HDR at hlen1; omega) hfl
       exact ⟨m11, hI11, by rw [if_neg hm]; exact hR11⟩
   obtain ⟨m11, hI11, hR11⟩ := hT
   obtain ⟨m12, hI12, hR12⟩ := seg_ct hs hlen1 hI11

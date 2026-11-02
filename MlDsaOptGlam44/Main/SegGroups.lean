@@ -73,7 +73,7 @@ theorem InvX.frame {cd m m' : ByteArray} {rs : List (Nat × Nat)} (hI : InvX cd 
 
 theorem seg_g0 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : Inv4 s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', InvG0 s.executionEnv.calldata m' ∧
+    ∃ m', InvG0 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
       Reach (callState s 2389 [flag b] m)
         (callState s 2412 [flag (b && okCol s.executionEnv.calldata 0)] m') Gas.pG0 := by
   have hb1 : Reach (callState s 2389 [flag b] m) (callState s 20814 [wd 15, wd 0, wd 0, wd 2400, flag b] m)
@@ -87,11 +87,12 @@ theorem seg_g0 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
     (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
     (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
     hR.mono (by unfold Gas.pG0; generalize Gas.group = g; omega)⟩
 
 theorem seg_g1 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
     (hI : InvG0 s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', InvG1 s.executionEnv.calldata m' ∧
+    ∃ m', InvG1 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
       Reach (callState s 2412 [flag b] m)
         (callState s 2436 [flag (b && okCol s.executionEnv.calldata 1)] m') Gas.pG1 := by  -- glam: switch at 2436
   have hb1 : Reach (callState s 2412 [flag b] m) (callState s 20814 [wd 15, wd 1, wd 0, wd 2424, flag b] m)
@@ -106,6 +107,7 @@ theorem seg_g1 {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac)
     (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac),
     hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
     hR.mono (by unfold Gas.pG1; generalize Gas.group = g; omega)⟩
 
 end MlDsaOptGlam44.Proofs

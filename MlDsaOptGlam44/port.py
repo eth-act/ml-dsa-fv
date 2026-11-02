@@ -292,3 +292,19 @@ sub('Fn/Ct/Csum4Main.lean', "only [csMem, word_mstore_disjoint, word_mstore]",
     "only [csMem, c4mem, word_mstore_disjoint, word_mstore]", count=4)
 sub('Fn/Ct/Csum4Main.lean', "have htail : tail.length ≤ 960 := by have := hr.depth; simp only [Stack.csum, Stack.leaf] at this; omega",
     "have htail : tail.length ≤ 950 := by have := hr.depth; simp only [Stack.csum, Stack.leaf] at this; omega")
+
+# glam (seg_alt): `seg_g0` / `seg_g1` keep `FLAG` (the long-message schedule needs `FLAG = 0`)
+subonce('Main/SegGroups.lean', """    ∃ m', InvG0 s.executionEnv.calldata m' ∧
+      Reach (callState s 2389""", """    ∃ m', InvG0 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
+      Reach (callState s 2389""")
+subonce('Main/SegGroups.lean', """    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    hR.mono""", """    (by unfold groupFrame; avoids_tac) (by unfold groupFrame; avoids_tac), hc0⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
+    hR.mono""")
+subonce('Main/SegGroups.lean', """    ∃ m', InvG1 s.executionEnv.calldata m' ∧
+      Reach (callState s 2412""", """    ∃ m', InvG1 s.executionEnv.calldata m' ∧ word m' FLAG = word m FLAG ∧  -- glam: `FLAG` kept
+      Reach (callState s 2412""")
+subonce('Main/SegGroups.lean', """    hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    hR.mono""", """    hI.c0.frame hfr (by unfold groupFrame; avoids_tac)⟩, hc1⟩,
+    word_frame hfr (lo := FLAG) (hi := FLAG + 32) (by unfold FLAG groupFrame; avoids_tac) le_rfl le_rfl,
+    hR.mono""")
