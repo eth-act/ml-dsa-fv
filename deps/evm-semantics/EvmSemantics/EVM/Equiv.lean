@@ -4958,23 +4958,19 @@ private theorem Operation.pushArity_le_1024 (op : Operation) :
     show i + 2 ≤ 1024
     omega
   | DupN d =>
-    obtain ⟨⟨i, hi⟩⟩ := d
-    show i + 2 ≤ 1024
+    show d.n.val + 2 ≤ 1024
+    have := d.n.isLt
     omega
   | SwapN se =>
-    obtain ⟨⟨i, hi⟩⟩ := se
-    show i + 2 ≤ 1024
+    show se.n.val + 2 ≤ 1024
+    have := se.n.isLt
     omega
   | Exchange e =>
     show Nat.max (e.n + 1) (e.m + 1) + 1 ≤ 1024
-    have hn : e.n ≤ 15 := by
-      show e.packed.val >>> 4 ≤ 15
-      have hpacked := e.packed.isLt
-      omega
-    have hm : e.m ≤ 15 := by
-      show e.packed.val &&& 0xf ≤ 15
-      have := Nat.and_le_right (n := e.packed.val) (m := 0xf)
-      omega
+    have hn : e.n ≤ 28 := by
+      simp only [Operation.ExchangeOp.n, Operation.decodePair]; split <;> omega
+    have hm : e.m ≤ 28 := by
+      simp only [Operation.ExchangeOp.m, Operation.decodePair]; split <;> omega
     simp only [Nat.max_def]; split <;> omega
   | Log l => show 0 ≤ 1024; omega
   | System op => cases op <;> decide

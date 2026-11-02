@@ -77,13 +77,18 @@ end PrecompileConfig
     * `Osaka` (Fusaka, post-Prague): EIP-7594 (PeerDAS), EIP-7825 (per-tx
       gas cap), EIP-7823 (modexp upper bound), EIP-7883 (modexp
       re-pricing), EIP-7918 (blob base-fee floor), EIP-7935 (gas-limit
-      raise). -/
+      raise).
+    * `Amsterdam` (Glamsterdam, post-Osaka) — **partial**: only EIP-8024
+      (`DUPN` / `SWAPN` / `EXCHANGE`, as the execution specs' Amsterdam fork
+      implements it) and EIP-7954 (code size limit 65,536 bytes, init code
+      131,072 bytes) are modelled. Every other rule is Osaka's; the other
+      Amsterdam EIPs are not modelled. -/
 inductive Fork where
   | Frontier | Homestead | TangerineWhistle | SpuriousDragon
   | Byzantium | Constantinople | Petersburg
   | Istanbul | MuirGlacier | Berlin | London
   | ArrowGlacier | GrayGlacier | Paris | Shanghai | Cancun
-  | Prague | Osaka
+  | Prague | Osaka | Amsterdam
   deriving DecidableEq, Repr, Inhabited
 
 namespace Fork
@@ -110,6 +115,7 @@ def toOrd : Fork → Nat
   | .Cancun          => 15
   | .Prague          => 16
   | .Osaka           => 17
+  | .Amsterdam       => 18
 
 /-- `a ≤ b` iff `a` activated no later than `b` on mainnet. Lifted
     from `toOrd` so `Nat` order does the work. -/

@@ -188,8 +188,10 @@ def resumeException (child : State) (f : Frame) (rest : List Frame) : State :=
 /-- EIP-170 (Spurious Dragon, both modelled forks): a contract's
     deployed code is rejected if it exceeds this many bytes. The
     init code itself can be larger (subject to EIP-3860's cap on
-    Cancun); only the *returned* runtime code is capped here. -/
-@[inline] def maxCodeSize : Nat := 24576
+    Cancun); only the *returned* runtime code is capped here.
+    EIP-7954 (Amsterdam) raises the limit from 24,576 to 65,536 bytes. -/
+@[inline] def maxCodeSize (fork : Fork) : Nat :=
+  if fork ≥ .Amsterdam then 65536 else 24576
 
 /-- EIP-3541 (London+): does the candidate deployed code start with
     the reserved `0xEF` byte? Such code is rejected at deploy time;
@@ -217,7 +219,7 @@ def resumeCreateSuccess (child : State) (f : Frame) (rest : List Frame)
     (newAddr : AccountAddress) : State :=
   let codeLen     := child.hReturn.size
   let depositCost := codeDepositPerByte * codeLen
-  let oversized   := codeLen > maxCodeSize
+  let oversized   := codeLen > maxCodeSize child.executionEnv.fork
   let badPrefix   := isReservedCodePrefix child.executionEnv.fork child.hReturn
   if depositCost ≤ child.gasAvailable ∧ ¬ oversized ∧ ¬ badPrefix then
     let σ := child.accountMap.set newAddr
