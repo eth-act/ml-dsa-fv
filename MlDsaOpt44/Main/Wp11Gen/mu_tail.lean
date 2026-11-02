@@ -8,10 +8,10 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
     (hI : MuInv s.executionEnv.calldata m M ((muMsgW s.executionEnv.calldata).size / 136)) :
     ∃ M', FinMu M' s.executionEnv.calldata ∧ RC1Table M' ∧
       FrameExcept m M' [(KS, KS + 800), (KB, KB + 800), (FIN, FIN + 256)] ∧
-      Reach (callState s 5727 [wd ((muMsgW s.executionEnv.calldata).size -
+      Reach (callState s 5677 [wd ((muMsgW s.executionEnv.calldata).size -
           136 * ((muMsgW s.executionEnv.calldata).size / 136)),
           wd (3802 + 136 * ((muMsgW s.executionEnv.calldata).size / 136)), flag b] M)
-        (callState s 5926 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
+        (callState s 5876 [flag b] M') (23 + 100 + Gas.kf1 + 102) := by
   set cd := s.executionEnv.calldata with hcdef
   set L := (muMsgW cd).size
   set n := L / 136
@@ -60,7 +60,7 @@ theorem mu_finish {s : State} (hs : Ctx s) (b : Bool)
 theorem seg_mu_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
     {m : ByteArray} (hI : Inv5 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv6 s.executionEnv.calldata m' ∧
-      Reach (callState s 4648 [flag b] m) (callState s 5926 [flag b] m')
+      Reach (callState s 4870 [flag b] m) (callState s 5876 [flag b] m')
         (Gas.pMu (mlenOf s.executionEnv.calldata)) := by
   have hfit : s.executionEnv.calldata.size < 18446744073709551616 := hs.calldataFits
   have hl : 3732 ≤ s.executionEnv.calldata.size := hcd

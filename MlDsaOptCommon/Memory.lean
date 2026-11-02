@@ -193,6 +193,43 @@ theorem BytesAt.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {base : Nat} {
     BytesAt m' base b := fun i hi => by
   rw [FrameExcept.byteAt h (ha.mono (by omega) (by omega))]; exact hb i hi
 
+/-! ## `MCOPY` (`writeBytes m (readPadded m src n) d`) -/
+
+theorem byteAt_readPadded (m : ByteArray) (p n i : Nat) :
+    byteAt (MachineState.readPadded m p n) i = if i < n then byteAt m (p + i) else 0 := by
+  rw [byteAt_eq_getD, EvmProof.Memory.readPadded_getElem?_getD]
+  split
+  · rw [byteAt_eq_getD]
+  · rfl
+
+theorem byteAt_mcopy (m : ByteArray) (src d n a : Nat) :
+    byteAt (MachineState.writeBytes m (MachineState.readPadded m src n) d) a =
+      if d ≤ a ∧ a < d + n then byteAt m (src + (a - d)) else byteAt m a := by
+  rw [byteAt_writeBytes, EvmProof.Memory.readPadded_size]
+  split
+  · rw [byteAt_readPadded, if_pos (by omega)]
+  · rfl
+
+/-- A word inside the destination of an `MCOPY` is the source word. -/
+theorem word_mcopy (m : ByteArray) {src d n a : Nat} (h1 : d ≤ a) (h2 : a + 32 ≤ d + n) :
+    word (MachineState.writeBytes m (MachineState.readPadded m src n) d) a = word m (src + (a - d)) := by
+  rw [word_eq_beNat, word_eq_beNat]
+  suffices H : ∀ w, w ≤ 32 → beNat (MachineState.writeBytes m (MachineState.readPadded m src n) d) a w =
+      beNat m (src + (a - d)) w from H 32 le_rfl
+  intro w
+  induction w with
+  | zero => intro _; rfl
+  | succ w ih =>
+    intro hw
+    simp only [beNat]
+    rw [ih (by omega), byteAt_mcopy, if_pos (by omega),
+      show src + (a + w - d) = src + (a - d) + w by omega]
+
+theorem FrameExcept.mcopy (m : ByteArray) (src d n : Nat) :
+    FrameExcept m (MachineState.writeBytes m (MachineState.readPadded m src n) d) [(d, d + n)] := by
+  have := FrameExcept.writeBytes m (MachineState.readPadded m src n) d
+  rwa [EvmProof.Memory.readPadded_size] at this
+
 /-! ## Word-array stores (loops `for k < n: mstore(base + 32 k, v k)`) -/
 
 /-- Memory after storing `v 0, …, v (n-1)` at `base, base + 32, …`. -/

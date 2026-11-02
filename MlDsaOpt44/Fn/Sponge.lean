@@ -1,9 +1,13 @@
 import MlDsaOpt44.Fn.Sponge.Ginit
 import MlDsaOpt44.Fn.Sponge.Cext
 import MlDsaOpt44.Fn.Sponge.Absorb
-import MlDsaOpt44.Fn.Sponge.Mu0
+import MlDsaOpt44.Fn.Sponge.Spr
+import MlDsaOpt44.Fn.Sponge.TrabsRun
+import MlDsaOpt44.Fn.Sponge.Kmove
+import MlDsaOpt44.Fn.Sponge.Lmerge
+import MlDsaOpt44.Fn.Sponge.Mub0
 /-!
-# Sponge glue: `spr`, `ginit`, `trabs`, `cext`, `absorb17`, `mu0` (WP4)
+# Sponge glue: `spr`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`, `kmove`, `lmerge` (WP4)
 
 All contracts are exact word-level statements; the sponge meaning (spread /
 compress are bit permutations, `ginit` builds the padded absorbed states,
@@ -39,10 +43,12 @@ theorem ginit_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   WP4.ginit_call_aux hs hr m hk ha hc hl
 
 /-- **trabs**: `[kp, lm, n4, sh, off, ret]`; slot `sh` of the `4 n4` state words
-from `kp` absorbs the spread calldata lanes. -/
+from `kp` absorbs the spread calldata lanes. v4 masks the calldata word before
+the byte swap, so `lm` must be lane-aligned (`hlmL`; proof in `Fn/Sponge/TrabsRun.lean`). -/
 theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.trabs ret tail) (m : ByteArray) {off sh n4 lm kp : Nat}
     (hoff : off < 2 ^ 64) (hsh : sh < 4) (hn4 : 1 ≤ n4) (hlm : lm < 2 ^ 256)
+    (hlmL : ∀ k, k < 4 → lane lm k = 0 ∨ lane lm k = M64)
     (hkp : kp + 128 * n4 ≤ KS + 800) (hkp' : KS ≤ kp) (hkp32 : kp % 32 = 0) :
     ∃ m', (∀ x, x < 25 → word m' (KS + 32 * x) =
         if kp ≤ KS + 32 * x ∧ KS + 32 * x < kp + 128 * n4 then
@@ -51,7 +57,7 @@ theorem trabs_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
         else word m (KS + 32 * x)) ∧
       FrameExcept m m' [(kp, kp + 128 * n4)] ∧
       Call s Entry.trabs [wd kp, wd lm, wd n4, wd sh, wd off] ret tail m [] m' (Gas.trabs n4) :=
-  WP4.trabs_call_aux hs hr m hoff hsh hn4 hlm hkp hkp' hkp32
+  WP4.trabs_call_v4 hs hr m hoff hsh hn4 hlm hlmL hkp hkp' hkp32
 
 /-- **cext**: `[n, sh, dst, ret]`; `dst[x] := lane x of slot sh`, de-interleaved and
 un-complemented, `x < n`. -/
@@ -75,20 +81,55 @@ theorem absorb17_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       Call s Entry.absorb17 [wd off] ret tail m [] m' Gas.absorb17 :=
   WP4.absorb17_call_aux hs hr m hoff
 
-/-- **mu0**: `[sh, ret]`; for `|M| ≤ 69` slot `sh` absorbs μ's single block
-(with `tr` read from `TRL`), otherwise nothing. -/
-theorem mu0_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.mu0 ret tail) (m : ByteArray) {sh : Nat} (hsh : sh < 4)
-    (hcd : HDR ≤ s.executionEnv.calldata.size) :
-    ∃ m', (mlenOf s.executionEnv.calldata ≤ 69 → ∀ tr : ByteArray, tr.size = 64 →
-        (∀ x, x < 8 → word m (TRL + 32 * x) = le64 tr (8 * x)) →
+/-- μ's first SHAKE256 block in a SIMD slot: `tr ‖ 0 ‖ 0 ‖ M`, padded when it
+is the only one (`|M| ≤ 69`). -/
+def mu0Bytes (tr : ByteArray) (cd : ByteArray) : ByteArray :=
+  if mlenOf cd ≤ 69 then muBlock tr cd else tr ++ (ByteArray.mk #[0, 0] ++ msgOf cd)
+
+/-- **mub0**: `[sh, rs, rl]`; slot `sh` absorbs μ's block 0 (with `tr` read
+from `TRL`), padded for `|M| ≤ 69`; then returns to `rs` with `[rl]` left on
+the stack (`|M| ≤ 69`) or to `rl`. -/
+theorem mub0_call {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
+    (hrl : RetOK Stack.mub0 rl tail) (hrs : RetOK Stack.mub0 rs (wd rl :: tail)) (m : ByteArray)
+    {sh : Nat} (hsh : sh < 4) (hcd : HDR ≤ s.executionEnv.calldata.size) :
+    ∃ m', (∀ tr : ByteArray, tr.size = 64 → (∀ x, x < 8 → word m (TRL + 32 * x) = le64 tr (8 * x)) →
         ∀ x, x < 25 → word m' (KS + 32 * x) =
           if x < 17 then word m (KS + 32 * x) ^^^
-            spread (le64 (muBlock tr s.executionEnv.calldata) (8 * x)) * 2 ^ sh
+            spread (le64 (mu0Bytes tr s.executionEnv.calldata) (8 * x)) * 2 ^ sh
           else word m (KS + 32 * x)) ∧
-      (69 < mlenOf s.executionEnv.calldata → m' = m) ∧
       FrameExcept m m' [(KS, KS + 800)] ∧
-      Call s Entry.mu0 [wd sh] ret tail m [] m' Gas.mu0 :=
-  WP4.mu0_call_aux hs hr m hsh hcd
+      Reach (callState s Entry.mub0 (wd sh :: wd rs :: wd rl :: tail) m)
+        (if mlenOf s.executionEnv.calldata ≤ 69 then callState s rs (wd rl :: tail) m'
+          else callState s rl tail m') Gas.mub0 :=
+  WP4.mub0_call_aux hs hrl hrs m hsh hcd trabs_call
+
+/-- **kmove**: `[keep, msk, sr, sl, src, ret]`; for every lane `x < 25`,
+`KS[x] := (((src[x] << sl) >> sr) & msk) | (KS[x] & keep)` (moves states
+between slots, or restores them from a saved image; `src` may be `KS`). -/
+theorem kmove_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.kmove ret tail) (m : ByteArray) {src sl sr msk keep : Nat}
+    (hsrc : src = KS ∨ KS + 800 ≤ src) (hsrc' : src + 800 ≤ TOP) (hsl : sl < 256) (hsr : sr < 256)
+    (hmsk : msk < 2 ^ 256) (hkeep : keep < 2 ^ 256) :
+    ∃ m', (∀ x, x < 25 → word m' (KS + 32 * x) =
+        (word m (src + 32 * x) * 2 ^ sl % 2 ^ 256 / 2 ^ sr &&& msk) ||| (word m (KS + 32 * x) &&& keep)) ∧
+      FrameExcept m m' [(KS, KS + 800)] ∧
+      Call s Entry.kmove [wd keep, wd msk, wd sr, wd sl, wd src] ret tail m [] m' Gas.kmove :=
+  WP4.kmove_call_aux hs hr m hsrc hsrc' hsl hsr hmsk hkeep
+
+/-- **lmerge**: `[a, a + 32 n, sl, b − a, ma, dst − a, ret]` (offsets mod
+`2^256`), `n = 11 k`; for `w < n`, `dst[w] := the lanes `ma` of `a[w]`, the
+others of `b[w] << sl`. -/
+theorem lmerge_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.lmerge ret tail) (m : ByteArray) {dst a b ma sl k : Nat}
+    (hk : 1 ≤ k) (hdst : dst + 352 * k ≤ TOP) (ha : a + 352 * k ≤ TOP) (hb : b + 352 * k ≤ TOP)
+    (hda : dst = a ∨ dst + 352 * k ≤ a ∨ a + 352 * k ≤ dst)
+    (hdb : dst + 352 * k ≤ b ∨ b + 352 * k ≤ dst) (hma : ma < 2 ^ 256) (hsl : sl < 256) :
+    ∃ m', (∀ w, w < 11 * k → word m' (dst + 32 * w) =
+        let b' := word m (b + 32 * w) * 2 ^ sl % 2 ^ 256
+        b' ^^^ ((word m (a + 32 * w) ^^^ b') &&& ma)) ∧
+      FrameExcept m m' [(dst, dst + 352 * k)] ∧
+      Call s Entry.lmerge [wd a, wd (a + 352 * k), wd sl, wd ((b + 2 ^ 256 - a) % 2 ^ 256), wd ma,
+        wd ((dst + 2 ^ 256 - a) % 2 ^ 256)] ret tail m [] m' (Gas.lmerge k) :=
+  WP4.lmerge_call_aux hs hr m hk hdst ha hb hda hdb hma hsl
 
 end MlDsaOpt44.Proofs

@@ -1,67 +1,66 @@
 /-!
-# Gas budgets of the subroutine contracts (ML-DSA-87)
+# Gas budgets of the subroutine contracts (ML-DSA-87, v4)
 
 Same conventions as `MlDsaOpt44/Budget.lean`: every budget is the exact
 worst-case cost of its contract, from the entry `JUMPDEST` up to and including
-the returning `JUMP`; memory never grows after the entry store.
-
-Numbers: `python3 scripts/proofgen_gas_param.py 87 --analyse` (constant-cost
+the returning `JUMP`; memory never grows after the entry store. Constant-cost
 subroutines measured in the Python EVM, data-dependent ones as longest static
-paths with the loop trip counts documented below). Kernels shared with
-ML-DSA-44 (`kf4`, `kf1`, `blk`, `ntt`, `intt`, `pass3`, `pass3m`, `tbuild`, `dz`, `spr`,
-`absorb17`, `trabs`, `cext`, `fix`, `gfix`) have the ML-DSA-44 budgets.
+paths. Kernels shared with ML-DSA-44 have the ML-DSA-44 budgets.
 -/
 
 namespace MlDsaOpt87.Proofs.Gas
 
 /-! ## Constant-cost subroutines -/
 
+def ginit : Nat := 677
 def kf4 : Nat := 40238
 def kf1 : Nat := 32571
-def blk : Nat := 7836
-def ntt : Nat := 99705
-def intt : Nat := 119593
-def pass3 : Nat := 17780
-def pass3m : Nat := 19318
-def pass3k14 : Nat := 29453
+def blk : Nat := 7842
+def blkh : Nat := 4592
+def blkt : Nat := 3512
+def ntt : Nat := 92404
 def tbuild : Nat := 28511
-def csum : Nat := 94053
-def usehint : Nat := 48153
-def dz : Nat := 46156
+def dz : Nat := 43516
 def spr : Nat := 120
-def ginit : Nat := 677
 def absorb17 : Nat := 1160
-/-- `pack` with `nr` rows (rows `≥ nr` take a cheaper skip branch); ML-DSA-87
-calls it with 4 rows twice. -/
+/-- `pack` with `nr` rows (rows `≥ nr` take a cheaper skip branch). -/
 def pack (nr : Nat) : Nat := if nr ≤ 2 then 8227 else 9251
-/-- `trabs` with `n4` groups of four lanes: 826 per group (one of them masked). -/
-def trabs (n4 : Nat) : Nat := 55 + 826 * n4
+/-- `trabs` with `n4` groups of four lanes. -/
+def trabs (n4 : Nat) : Nat := 65 + 529 * n4
 /-- `cext` extracting `n` lanes. -/
 def cext (n : Nat) : Nat := 19 + 205 * n
 
 /-! ## Data-dependent subroutines (worst cases) -/
 
-/-- `fix` without a sixth squeeze (as ML-DSA-44): first-flag scan 1810, at most
-44 group-loop visits of at most 784, continue path 59, exit 51. -/
-def fixNo : Nat := 1810 + 44 * 784 + 59 + 51
+/-- `fix` without a sixth squeeze (as ML-DSA-44). -/
+def fixNo : Nat := 40 + 32 * 55 + 4 + 42 * 580 + 65 + 53
 
-/-- `fix` performing the sixth squeeze (48350 instead of the continue path). -/
-def fixSq : Nat := 1810 + 44 * 784 + 48350 + 51
+/-- `fix` performing the sixth squeeze (as ML-DSA-44). -/
+def fixSq : Nat := 40 + 32 * 55 + 4 + 42 * 580 + 48362 + 53
 
 /-- `gfix` own instructions with all four slots taking the `fix` call path. -/
-def gfix0 : Nat := 630
+def gfix0 : Nat := 806
 
-/-- `gfix` with at most `n` active slots (at most one sixth squeeze). -/
-def gfix (n : Nat) : Nat := gfix0 + n * fixNo + (fixSq - fixNo)
+/-- `gfix` with at most `n` active slots: one `blkt`, at most one sixth squeeze. -/
+def gfix (n : Nat) : Nat := gfix0 + blkt + n * fixNo + (fixSq - fixNo)
 
-/-- `group`: glue 470, `ginit`, five `kf4` + `blk`, `gfix 4`, `pass3`. -/
-def group : Nat := 470 + ginit + 5 * (kf4 + blk) + gfix 4 + pass3
+/-- `group`: glue 404, `ginit`, five `kf4`, four `blk` and one `blkh`, `gfix 4`. -/
+def group : Nat := 404 + ginit + 5 * kf4 + 4 * blk + blkh + gfix 4
 
-/-- `sib`: prologue 853 + `kf1` (zeroing, absorbing `c̃`, the first `kf1`); 265
-loop visits (positions `8 … 271` and the exit visit), at most `τ = 60`
-accepted ones (487 each), the others rejected (158 each); the second `H(c̃)`
-block squeezed once at position 136 (135 + `kf1`). -/
-def sib : Nat := (853 + kf1) + 205 * 158 + 60 * 487 + (135 + kf1)
+def intt : Nat := 116521
+def usehint : Nat := 41497
+def pass3f4 : Nat := 55187
+def pass3f6 : Nat := 32147
+def pass3f10 : Nat := 46232
+def pass3f14 : Nat := 60061
+def csum : Nat := 88848
+
+/-- `sib` (`Fn/Ball/V4Loop.lean`): the prologue 853 with the first `kf1`; the
+264 stream bytes as rejected (each lane: the loop-head check with byte 0's test
+97, bytes 1 … 6 40 each, byte 7 with the lane epilogue 62, so 33 × 399); 353
+more per accepted byte (60); the failure exit 43; the second block's squeeze
+136 + `kf1`. -/
+def sib : Nat := (853 + kf1) + 33 * 399 + 60 * 353 + 43 + (136 + kf1)
 
 /-- `dhint`: fixed part 604 plus at most `ω + k + 1 = 84` loop visits of at
 most 161 each (75 hint indices, 8 row exits, the trailing scan exit). -/

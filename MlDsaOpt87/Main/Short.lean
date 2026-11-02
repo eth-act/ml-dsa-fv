@@ -5,7 +5,7 @@ set_option warningAsError true
 # Short calldata (ML-DSA-87)
 
 `PUSH2 7219; CALLDATASIZE; LT; PUSH2 short; JUMPI` → `short: JUMPDEST; PUSH0;
-PUSH0; MSTORE; PUSH1 32; PUSH0; RETURN` (pcs 7480 … 7487, instruction indices
+PUSH0; MSTORE; PUSH1 32; PUSH0; RETURN` (pcs 7561 … 7568, instruction indices
 2611 … 2617): the zero word, 37 gas.
 -/
 
@@ -25,9 +25,9 @@ theorem activeWordsAfter_zero (off : Nat) :
 
 theorem short_block {s : State} (h0 : Ctx0 s) (haw : s.activeWords.toNat = 0)
     (hlen : s.executionEnv.calldata.size < 7219) :
-    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2611, 2612, 2613, 2614, 2615, 2616, 2617])
+    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2678, 2679, 2680, 2681, 2682, 2683, 2684])
       (callState s 0 [] .empty) =
-    some { callState s 7487 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
+    some { callState s 7568 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
       halt := .Returned
       hReturn := MachineState.readPadded
         (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) 0 32

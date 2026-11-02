@@ -5,10 +5,10 @@ Usage:
   python3 scripts/proofgen_port.py NN [--sub OLD=NEW ...] [--path OLD=NEW ...] FILE ...
   python3 scripts/proofgen_port.py --reloc NN [--all-jd] [--pc-lines REGEX] FILE ...
 
-`--reloc NN` relocates files of `MlDsaOptNN/` in place from the v2 bytes
-(`MlDsaOpt/NN/v2/`) to the current bytes of the same set (`reloc_maps`,
+`--reloc NN` relocates files of `MlDsaOptNN/` in place from the previous proved
+bytes (`MlDsaOpt/NN/v3/`, `OLD`) to the current bytes of the same set (`reloc_maps`,
 `reloc_text`): unchanged regions are mapped whole, changed ones on their common
-prefix/suffix; memory size v2 → v3 in memory-size contexts only. Every relocated
+prefix/suffix; memory size v3 → v4 in memory-size contexts only. Every relocated
 proof is re-checked by the kernel; read the `CHECK` / `RELOC` lines.
 
 e.g.  python3 scripts/proofgen_port.py 65 MlDsaOpt44/Fn/Kf4/Blocks1.lean
@@ -59,14 +59,16 @@ trusted.
 """
 from __future__ import annotations
 
+import difflib
 import os
 import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-MEMW = {44: 2097, 65: 2865, 87: 2897}             # v3 (current bytes)
-MEMW_V2 = {44: 2065, 65: 2833, 87: 2865}          # v2 (`MlDsaOpt/NN/v2/`)
+MEMW = {44: 2616, 65: 2865, 87: 2897}             # v4 (current bytes)
+OLD = "v3"                                        # `--reloc` source: `MlDsaOpt/NN/v3/`
+MEMW_OLD = {44: 2097, 65: 2865, 87: 2897}         # memory size of OLD
 
 
 def regions(nn, sub=""):
@@ -146,12 +148,12 @@ def reloc_maps(nn):
     """Index and pc maps v2 → v3 of one set (`--reloc`).
 
     A region with the same instruction count in both versions is mapped
-    entirely. A changed region is mapped on its longest common prefix and
-    suffix, comparing instructions modulo PUSH2 immediates (jump targets), so
-    the unchanged parts of the main flow keep their proofs. Everything else
+    entirely. A changed region is mapped on the matching stretches of the two
+    instruction sequences (difflib), comparing instructions modulo PUSH2
+    immediates (jump targets), so the unchanged parts keep their proofs. Everything else
     (the changed code) is unmapped: its proofs have to be rewritten."""
-    ra, rb = regions(nn, "v2"), regions(nn)
-    da, db = disasm(nn, "v2"), disasm(nn)
+    ra, rb = regions(nn, OLD), regions(nn)
+    da, db = disasm(nn, OLD), disasm(nn)
     pa, pb = [p for p, _, _ in da], [p for p, _, _ in db]
     key = lambda t: (t[1], None if t[1] == 0x61 else t[2])
     idx, pc = {}, {}
@@ -165,19 +167,17 @@ def reloc_maps(nn):
             pairs = list(zip(ia, ib))
             pc[b] = b2
         else:
+            # matching blocks of the two instruction sequences (difflib): the
+            # unchanged stretches of a changed region keep their proofs
+            sm = difflib.SequenceMatcher(None, [key(da[i]) for i in ia], [key(db[i]) for i in ib],
+                                         autojunk=False)
             pairs = []
-            k = 0
-            while k < min(len(ia), len(ib)) and key(da[ia[k]]) == key(db[ib[k]]):
-                pairs.append((ia[k], ib[k]))
-                k += 1
-            j = 1
-            while j <= min(len(ia), len(ib)) - k and key(da[ia[-j]]) == key(db[ib[-j]]):
-                pairs.append((ia[-j], ib[-j]))
-                j += 1
-            if j > 1:
+            for x, y, n in sm.get_matching_blocks():
+                pairs += [(ia[x + t], ib[y + t]) for t in range(n)]
+            if pairs and pairs[-1] == (ia[-1], ib[-1]):
                 pc[b] = b2
             print(f"reloc {nn}: {name} changed ({len(ia)} -> {len(ib)} instructions); "
-                  f"mapped prefix {k}, suffix {j - 1}")
+                  f"mapped {len(pairs)} in {len(sm.get_matching_blocks()) - 1} stretches")
         for x, y in pairs:
             idx[x] = y
             pc[pa[x]] = pb[y]
@@ -233,7 +233,7 @@ def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_l
         n = int(m.group(2))
         if n in jd and n in pcm:
             if pcm[n] != n:
-                report.append(f"{fname}: relocated stack word wd {n} -> {pcm[n]} (v2 JUMPDEST)")
+                report.append(f"{fname}: relocated stack word wd {n} -> {pcm[n]} (old JUMPDEST)")
             return m.group(1) + L + str(pcm[n]) + R
         return m.group(0)
     out = re.sub(r"(\bwd\s+)(\d+)\b", map_jd, out)
@@ -242,7 +242,7 @@ def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_l
     def map_entry(m):
         return re.sub(r"(def \w+ : Nat := )(\d+)", lambda e: map_pc(e), m.group(0))
     out = re.sub(r"namespace Entry\n.*?\nend Entry", map_entry, out, flags=re.S)
-    old, new = MEMW_V2[nn], MEMW[nn]           # memory-size contexts only (never index lists)
+    old, new = MEMW_OLD[nn], MEMW[nn]           # memory-size contexts only (never index lists)
     out = re.sub(rf"\b{old}(?=\s*≤\s*(?:s\.activeWords|32 \* s\.activeWords))", str(new), out)
     out = re.sub(rf"(32 \* |memWords = |memWords : Nat := ){old}\b", rf"\g<1>{new}", out)
     moved = {n for n, v in pcm.items() if v != n}
@@ -274,7 +274,7 @@ def reloc_text(src, nn, idx, pcm, jd, report, fname, all_jd=False, data=(), pc_l
 def layout_data(nn):
     """Every address constant of `layout.txt` (both versions), as a guard for `--all-jd`."""
     out = set()
-    for sub in ("v2", ""):
+    for sub in (OLD, ""):
         for l in open(os.path.join(ROOT, "MlDsaOpt", str(nn), sub, "layout.txt")):
             for h in re.findall(r"0x[0-9a-f]+", l):
                 out.add(int(h, 16))

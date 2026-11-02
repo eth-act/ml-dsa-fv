@@ -1,10 +1,11 @@
 import MlDsaOpt65.Main.Base
 import MlDsaOpt65.Fn.Ntt
+import MlDsaOpt65.Fn.Decode
 import MlDsaOpt65.Math
 set_option warningAsError true
 /-! # Segment `3093 … 3115`: `ntt(ZH)`, `ntt(ZH2)`.
 
-Every lane of both `ZAt` tables is a `zLane < 2^25`; polynomials `0 … 4` (lanes `0 … 3`
+Every lane of both `ZAt` tables is a `zLane ∈ [zLo, zHi]` (v4 bias `8q`); polynomials `0 … 4` (lanes `0 … 3`
 of `ZH`, lane 0 of `ZH2`) give `ẑ` via `ntt_zLane`. -/
 
 namespace MlDsaOpt65.Proofs
@@ -15,9 +16,15 @@ open MlDsaOptCommon
 open MlDsa
 open MlDsaOpt65.Proofs.Infra
 
-theorem S2.zLane_lt (cd : ByteArray) (k t : Nat) : zLane cd k t < 2 ^ 25 := by
+theorem S2.zLane_lt (cd : ByteArray) (k t : Nat) : zLane cd k t < 2 ^ 28 := by
   unfold zLane
   have : Fips204.q = 8380417 := rfl
+  omega
+
+theorem S2.zLane_range (cd : ByteArray) (k t : Nat) : zLo ≤ zLane cd k t ∧ zLane cd k t ≤ zHi := by
+  have h := DecodeZ.rawZ_lt cd k t
+  have : Fips204.q = 8380417 := rfl
+  unfold zLane zLo zHi
   omega
 
 /-- The lanes `ZAt` stores at a table, as an `Array` of polynomials. -/
@@ -34,22 +41,22 @@ theorem S2.lanesPoly_zLane {m : ByteArray} {cd : ByteArray} {base j : Nat}
 theorem seg_ntt {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv2 cd m) (b : Bool)
     (hcd : HDR ≤ cd.size) :
     ∃ m', Inv3 cd m' ∧
-      Reach (callState s 3093 [flag b] m) (callState s 3115 [flag b] m') Gas.pNtt := by
-  have hb1 : Reach (callState s 3093 [flag b] m) (callState s Entry.ntt [wd ZH, wd 3103, flag b] m)
+      Reach (callState s 3084 [flag b] m) (callState s 3106 [flag b] m') Gas.pNtt := by
+  have hb1 : Reach (callState s 3084 [flag b] m) (callState s Entry.ntt [wd ZH, wd 3094, flag b] m)
       17 := by
-    opt65_reach [973, 974, 975, 976] with [ZH, Entry.ntt]
-  obtain ⟨m1, hpost1, hfr1, hc1⟩ := ntt_call hs (p := ZH) (Or.inl rfl) (ret := 3103)
+    opt65_reach [968, 969, 970, 971] with [ZH, Entry.ntt]
+  obtain ⟨m1, hpost1, hfr1, hc1⟩ := ntt_call hs (p := ZH) (Or.inl rfl) (ret := 3094)
     (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hI.tbl
-  have hb2 : Reach (callState s 3103 [flag b] m1)
-      (callState s Entry.ntt [wd ZH2, wd 3114, flag b] m1) 18 := by
-    opt65_reach [977, 978, 979, 980, 981] with [ZH2, Entry.ntt]
-  obtain ⟨m2, hpost2, hfr2, hc2⟩ := ntt_call hs (p := ZH2) (Or.inr rfl) (ret := 3114)
+  have hb2 : Reach (callState s 3094 [flag b] m1)
+      (callState s Entry.ntt [wd ZH2, wd 3105, flag b] m1) 18 := by
+    opt65_reach [972, 973, 974, 975, 976] with [ZH2, Entry.ntt]
+  obtain ⟨m2, hpost2, hfr2, hc2⟩ := ntt_call hs (p := ZH2) (Or.inr rfl) (ret := 3105)
     (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
     (TblAt.frame hI.tbl hfr1 (by avoids_tac))
-  have hb3 : Reach (callState s 3114 [flag b] m2) (callState s 3115 [flag b] m2) 1 := by
-    opt65_reach [982]
+  have hb3 : Reach (callState s 3105 [flag b] m2) (callState s 3106 [flag b] m2) 1 := by
+    opt65_reach [977]
   have hz0 : ∀ t, t < 256 → word m (ZH + 32 * t) = pack4 fun k => zLane cd (0 + k) t :=
     fun t ht => by simp only [Nat.zero_add]; exact (hI.z t ht).1
   have hz1 : ∀ t, t < 256 → word m1 (ZH2 + 32 * t) = pack4 fun k => zLane cd (4 + k) t :=
@@ -59,15 +66,14 @@ theorem seg_ntt {s : State} (hs : Ctx s) {cd m : ByteArray} (hI : Inv2 cd m) (b 
   have hp1 := hpost1 fun k hk t ht => by
     rw [hz0 t ht, MlDsaOpt44.Proofs.lane_pack4
       (fun j _ => Nat.lt_trans (S2.zLane_lt cd _ t) (by norm_num)) hk]
-    exact S2.zLane_lt cd _ t
+    exact S2.zLane_range cd _ t
   have hp2 := hpost2 fun k hk t ht => by
     rw [hz1 t ht, MlDsaOpt44.Proofs.lane_pack4
       (fun j _ => Nat.lt_trans (S2.zLane_lt cd _ t) (by norm_num)) hk]
-    exact S2.zLane_lt cd _ t
+    exact S2.zLane_range cd _ t
   refine ⟨m2, ⟨RC4Table.frame (RC4Table.frame hI.rc4 hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
     RC1Table.frame (RC1Table.frame hI.rc1 hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
     TblAt.frame (TblAt.frame hI.tbl hfr1 (by avoids_tac)) hfr2 (by avoids_tac), ?_,
-    HPAt.frame (HPAt.frame hI.hp hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
     ZeroOn.frame (ZeroOn.frame hI.zMisc hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
     ZeroOn.frame (ZeroOn.frame hI.zCw hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
     ZeroOn.frame (ZeroOn.frame hI.zHigh hfr1 (by avoids_tac)) hfr2 (by avoids_tac)⟩,

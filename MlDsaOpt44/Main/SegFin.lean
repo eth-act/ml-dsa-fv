@@ -16,7 +16,7 @@ theorem seg_fin {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.
     (hrc : RC1Table m) (b : Bool) :
     ∃ E : Bool, ∃ pc stk m',
       (∀ X : ByteArray, X.size = 832 → FinAt m X → E = (ctOf s.executionEnv.calldata == Fips204.H X 32)) ∧
-      Reach (callState s 6001 [flag b] m)
+      Reach (callState s 5940 [flag b] m)
         (finalState s pc stk m' (if (b && E) = true then 1 else 0)) Gas.pFin := by
   exact seg_fin_proof hs hcd hrc b
 

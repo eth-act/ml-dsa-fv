@@ -1,7 +1,7 @@
 import MlDsaOpt44.Main.Base
 import MlDsaOpt44.Fn.Ct
 set_option warningAsError true
-/-! # Segment `5936 … 5963`: `tbuild`, `csum`. -/
+/-! # Segment `5886 … 5913`: `tbuild`, `csum`. -/
 
 namespace MlDsaOpt44.Proofs
 
@@ -14,23 +14,23 @@ open MlDsaOpt44.Proofs.Infra
 theorem seg_ct {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
     {m : ByteArray} (hI : Inv7 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv8 s.executionEnv.calldata m' ∧
-      Reach (callState s 5936 [flag b] m) (callState s 5963 [flag b] m') Gas.pCt := by
-  have hb1 : Reach (callState s 5936 [flag b] m) (callState s 13924 [wd TT, wd 32, wd 5948, flag b] m)
+      Reach (callState s 5886 [flag b] m) (callState s 5913 [flag b] m') Gas.pCt := by
+  have hb1 : Reach (callState s 5886 [flag b] m) (callState s 13954 [wd TT, wd 32, wd 5898, flag b] m)
       20 := by
-    opt44_reach [1990, 1991, 1992, 1993, 1994] with [TT]
-  obtain ⟨m1, htt, hfr1, hc1⟩ := tbuild_call hs (ret := 5948) (tail := [flag b])
+    opt44_reach [1937, 1938, 1939, 1940, 1941] with [TT]
+  obtain ⟨m1, htt, hfr1, hc1⟩ := tbuild_call hs (ret := 5898) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m hcd
-  have hb2 : Reach (callState s 5948 [flag b] m1) (callState s 14732 [wd SP, wd TT, wd 5962, flag b] m1)
+  have hb2 : Reach (callState s 5898 [flag b] m1) (callState s 14762 [wd SP, wd TT, wd 5912, flag b] m1)
       21 := by
-    opt44_reach [1995, 1996, 1997, 1998, 1999, 2000] with [TT, SP]
-  obtain ⟨m2, hsp, hfr2, hc2⟩ := csum_call hs (ret := 5962) (tail := [flag b])
+    opt44_reach [1942, 1943, 1944, 1945, 1946, 1947] with [TT, SP]
+  obtain ⟨m2, hsp, hfr2, hc2⟩ := csum_call hs (ret := 5912) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m1
     (fun i hi => by
       have : i < 39 := hi
       rw [word_frame hfr1 (lo := BASES) (hi := BASES + 2048) (by avoids_tac) (by omega) (by omega)]
       exact hI.bases i hi)
-  have hb3 : Reach (callState s 5962 [flag b] m2) (callState s 5963 [flag b] m2) 1 := by
-    opt44_reach [2001]
+  have hb3 : Reach (callState s 5912 [flag b] m2) (callState s 5913 [flag b] m2) 1 := by
+    opt44_reach [1948]
   refine ⟨m2, ⟨(hI.rc1.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),
     (hI.tbl.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),
     (hI.hp.frame hfr1 (by avoids_tac)).frame hfr2 (by avoids_tac),

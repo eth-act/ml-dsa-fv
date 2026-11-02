@@ -24,36 +24,43 @@ namespace Gas
 /-- `0 … 992`: size check, the sizing store and the `RC4` / `RC1` tables
 (static cost; memory expansion to `memWords` is added by the trace). -/
 def pInit : Nat := 658
-/-- `992 … 1085`: `dz`, flag check, `dhint`, `AND`. -/
-def pZh : Nat := 59 + dz + dhint
-/-- `1085 … 3068`: the 248 NTT zeta records. -/
+/-- `992 … 1076`: `dz`, the norm-flag check. -/
+def pZ : Nat := 41 + dz
+/-- `1076 … 3059`: the 248 NTT zeta records. -/
 def pTbl : Nat := 2232
-/-- `3068 … 3078`: `ntt(ZH)`. -/
+/-- `3059 … 3069`: `ntt(ZH)`. -/
 def pNtt : Nat := 17 + ntt
-/-- `3078 … 3439`: `RHO1` (8 `spr` calls). -/
+/-- `3069 … 3430`: `RHO1` (8 `spr` calls). -/
 def pRho : Nat := 527 + 8 * spr
-/-- `3439 … 3452`, `3452 … 3466`: the two pure ExpandA groups. -/
-def pG0 : Nat := 25 + group
-def pG1 : Nat := 26 + group
-/-- `3466 … 4648`: the three mixed groups (tr, c̃ and μ riders), with glue
-1209: three `ginit`, fifteen `kf4` + `blk`, ten `trabs`, four `cext`, `mu0`,
-`gfix` on 3, 3 and 2 slots, two `pass3m`, `pass3k4`. -/
-def pG234 : Nat :=
-  1209 + 3 * ginit + 15 * (kf4 + blk) + 9 * trabs 5 + trabs 3 + 2 * cext 17 + 2 * cext 8 + mu0 +
-    2 * gfix 3 + gfix 2 + 2 * pass3m + pass3k4
-/-- `4648 … 5926`: μ, from the SIMD slot (`|M| ≤ 69`) or by `kf1` (`hash_mu`):
-setup 983, one loop visit (kf1 + absorb17 + 88) per 136 bytes of
-`tr ‖ 0 ‖ 0 ‖ M` plus one, the final permutation (kf1 + 202). -/
+/-- `3430 … 3453`, `3453 … 3477`: the two pure ExpandA groups, each followed by
+the `MCOPY` of `ABUF` to its side buffer (771). -/
+def pG0 : Nat := 805 + group
+def pG1 : Nat := 806 + group
+/-- `3477 … 3875`: the mixed group (tr blocks 0 … 4 in slot 0, column 2 rows
+0 … 2) and its copy to `SB`. -/
+def pG2 : Nat := 1153 + ginit + 5 * trabs 5 + 5 * kf4 + 4 * blk + blkh + gfix 3
+/-- `3875 … 4973`: the packed window (eight `kf4` calls: tr blocks 5 … 9, c̃,
+μ's block 0, row 3 columns 2 and 3, column 3 rows 0 … 2), its two fix-ups and
+the fused accumulation. -/
+def pWin : Nat :=
+  2785 + 3 * ginit + 4 * trabs 5 + trabs 3 + 8 * kf4 + 7 * blk + blkh + mub0 + 2 * cext 8 + cext 17 +
+    3 * kmove + lmerge 8 + lmerge 1 + gfix 2 + gfix 3 + pass3f4
+/-- `4973 … 5075`: zero the side buffers in `CW` and `HP`, `dhint`, `AND`. -/
+def pZd : Nat := 1668 + dhint
+/-- `5075 … 5876`: μ, from the SIMD slot (`|M| ≤ 69`) or by `kf1` from the
+slot's saved state (`hash_mu`): dispatch 24, setup 667 with `cext 25` and the
+absorption of block 1, one loop visit (kf1 + absorb17 + 88) per further 136
+bytes of `tr ‖ 0 ‖ 0 ‖ M` plus one, the final permutation (kf1 + 202). -/
 def pMu (mlen : Nat) : Nat :=
-  if mlen ≤ 69 then 196
-  else 25 + 983 + ((66 + mlen) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
-/-- `5926 … 5936`: `sib`, `AND`. -/
+  if mlen ≤ 69 then 195
+  else 24 + 667 + cext 25 + absorb17 + ((mlen - 70) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
+/-- `5876 … 5886`: `sib`, `AND`. -/
 def pSib : Nat := 19 + sib
-/-- `5936 … 5963`: `tbuild`, `csum`. -/
+/-- `5886 … 5913`: `tbuild`, `csum`. -/
 def pCt : Nat := 42 + tbuild + csum
-/-- `5963 … 6001`: `intt`, `usehint`, `pack`. -/
-def pW : Nat := 60 + intt + usehint + pack
-/-- `6001 …`: the final hash (six absorbing `kf1` calls and the last one),
+/-- `5913 … 5940`: `intt` (with UseHint), `pack`. -/
+def pW : Nat := 42 + intt + pack
+/-- `5940 …`: the final hash (six absorbing `kf1` calls and the last one),
 the c̃ comparison, `mstore(0, ok)`, `return(0, 32)`. -/
 def pFin : Nat := 220 + 6 * (kf1 + 495) + (kf1 + 327)
 

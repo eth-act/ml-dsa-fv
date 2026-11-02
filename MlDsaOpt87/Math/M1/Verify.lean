@@ -73,11 +73,11 @@ theorem ntt_zLane (cd : ByteArray) {k : Nat} (hk : k < 7) :
   have hlt : rawZ cd k t < 1048576 := rawZ_lt cd k t
   unfold zLane
   generalize rawZ cd k t = r at hlt ⊢
-  have e : ((2 ^ 19 + Fips204.q - r : Nat) : Int) = ((2 ^ 19 : Int) - r) + (Fips204.q : Int) := by
+  have e : ((2 ^ 19 + 9 * Fips204.q - r : Nat) : Int) = ((2 ^ 19 : Int) - r) + (Fips204.q : Int) * 9 := by
     rw [Nat.cast_sub (by unfold Fips204.q; omega)]
     push_cast
     ring
-  rw [e, Int.add_emod_right]
+  rw [e, Int.add_mul_emod_self_left]
 
 /-! ## One row of `w′` -/
 

@@ -3,7 +3,7 @@ import MlDsaOpt87.Fn.Sponge
 import MlDsaOpt44.Main.Rho.Blocks
 set_option warningAsError true
 set_option maxHeartbeats 0
-/-! # Segment `3140 … 3389`: `RHO1` (4 `spr` calls).
+/-! # Segment `3122 … 3371`: `RHO1` (4 `spr` calls).
 
 Each byte-swapped calldata word `Y = bswapNet (word cd a)` stays on the stack; its
 lanes, top first, are spread by `spr` and stored at `RHO1 + 32 i`: memory after `k`
@@ -30,62 +30,62 @@ def rhoW (cd : ByteArray) (i : Nat) : Nat := spread (le64 cd (8 * i))
 theorem rhoW_lt (cd : ByteArray) (i : Nat) : rhoW cd i < 2 ^ 256 := spread_lt _
 
 theorem rho_net0 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
-    Reach (callState s 3140 [flag b] M)
-      (callState s 3308 (wd (bswapNet (word s.executionEnv.calldata 0)) :: rhoK b) M) 119 := by
+    Reach (callState s 3122 [flag b] M)
+      (callState s 3290 (wd (bswapNet (word s.executionEnv.calldata 0)) :: rhoK b) M) 119 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
+  opt87_reach [978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017] with [rhoK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem rho_l0 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
-    Reach (callState s 3308 (wd Y :: rhoK b) M)
-      (callState s 14195 (wd (Y / 2 ^ 192) :: wd 3320 :: wd Y :: rhoK b) M) 26 := by
+    Reach (callState s 3290 (wd Y :: rhoK b) M)
+      (callState s 14454 (wd (Y / 2 ^ 192) :: wd 3302 :: wd Y :: rhoK b) M) 26 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [1028, 1029, 1030, 1031, 1032, 1033, 1034] with [rhoK]
+  opt87_reach [1018, 1019, 1020, 1021, 1022, 1023, 1024] with [rhoK]
 
 theorem rho_s0 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 0 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3320 (wd (w 0) :: wd Y :: rhoK b) (storeWords m RHO1 w 0))
-      (callState s 14195 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3340 :: wd Y :: rhoK b)
+    Reach (callState s 3302 (wd (w 0) :: wd Y :: rhoK b) (storeWords m RHO1 w 0))
+      (callState s 14454 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 2)) :: wd 3322 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 1)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046] with [rhoK]
+  opt87_reach [1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036] with [rhoK]
   rfl
 
 theorem rho_s1 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 1 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3340 (wd (w 1) :: wd Y :: rhoK b) (storeWords m RHO1 w 1))
-      (callState s 14195 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3360 :: wd Y :: rhoK b)
+    Reach (callState s 3322 (wd (w 1) :: wd Y :: rhoK b) (storeWords m RHO1 w 1))
+      (callState s 14454 (wd (18446744073709551615 &&& Y / 2 ^ (64 * 1)) :: wd 3342 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 2)) 39 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [1047, 1048, 1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058] with [rhoK]
+  opt87_reach [1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047, 1048] with [rhoK]
   rfl
 
 theorem rho_s2 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (m : ByteArray)
     (w : Nat → Nat) (hw : w 2 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3360 (wd (w 2) :: wd Y :: rhoK b) (storeWords m RHO1 w 2))
-      (callState s 14195 (wd (18446744073709551615 &&& Y) :: wd 3377 :: wd Y :: rhoK b)
+    Reach (callState s 3342 (wd (w 2) :: wd Y :: rhoK b) (storeWords m RHO1 w 2))
+      (callState s 14454 (wd (18446744073709551615 &&& Y) :: wd 3359 :: wd Y :: rhoK b)
         (storeWords m RHO1 w 3)) 33 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067, 1068] with [rhoK]
+  opt87_reach [1049, 1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058] with [rhoK]
   rfl
 
 theorem rho_e3 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (m : ByteArray)
     (w : Nat → Nat) (hw : w 3 < 115792089237316195423570985008687907853269984665640564039457584007913129639936) :
-    Reach (callState s 3377 (wd (w 3) :: wd Y :: rhoK b) (storeWords m RHO1 w 3))
-      (callState s 3389 [flag b] (storeWords m RHO1 w 4)) 19 := by
+    Reach (callState s 3359 (wd (w 3) :: wd Y :: rhoK b) (storeWords m RHO1 w 3))
+      (callState s 3371 [flag b] (storeWords m RHO1 w 4)) 19 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [1069, 1070, 1071, 1072, 1073, 1074, 1075, 1076, 1077] with [rhoK]
+  opt87_reach [1059, 1060, 1061, 1062, 1063, 1064, 1065, 1066, 1067] with [rhoK]
   rfl
 
 theorem seg_rho_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size) {m : ByteArray}
-    (hI : Inv4 s.executionEnv.calldata m) (b : Bool) :
-    ∃ m', Inv5 s.executionEnv.calldata m' ∧
-      Reach (callState s 3140 [flag b] m) (callState s 3389 [flag b] m') Gas.pRho := by
+    (hI : Inv3 s.executionEnv.calldata m) (b : Bool) :
+    ∃ m', Inv4 s.executionEnv.calldata m' ∧
+      Reach (callState s 3122 [flag b] m) (callState s 3371 [flag b] m') Gas.pRho := by
   generalize hcd' : s.executionEnv.calldata = cd at hI
   have hY0 := bswapNet_lt (word cd 0)
   have hW : ∀ k, rhoW cd k < 2 ^ 256 := rhoW_lt cd
@@ -107,16 +107,16 @@ theorem seg_rho_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.cal
   subst hcd'
   let Y0 := bswapNet (word s.executionEnv.calldata 0)
   let W := rhoW s.executionEnv.calldata
-  have c0 := spr_call hs (hr 3320 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c0 := spr_call hs (hr 3302 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 0) (v := Y0 / 2 ^ 192) (by omega)
   rw [call_iff, e0] at c0
-  have c1 := spr_call hs (hr 3340 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c1 := spr_call hs (hr 3322 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 1) (v := 18446744073709551615 &&& Y0 / 2 ^ (64 * 2)) (by rw [laneK_eq]; unfold lane; omega)
   rw [call_iff, e1] at c1
-  have c2 := spr_call hs (hr 3360 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c2 := spr_call hs (hr 3342 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 2) (v := 18446744073709551615 &&& Y0 / 2 ^ (64 * 1)) (by rw [laneK_eq]; unfold lane; omega)
   rw [call_iff, e2] at c2
-  have c3 := spr_call hs (hr 3377 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
+  have c3 := spr_call hs (hr 3359 Y0 (by simp only [isValidJumpDest_lit]) (by norm_num))
     (storeWords m RHO1 W 3) (v := 18446744073709551615 &&& Y0) (by rw [lane0_eq]; unfold lane; omega)
   rw [call_iff, e3] at c3
   have h := ((rho_net0 hs b m).trans
@@ -134,8 +134,8 @@ theorem seg_rho_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.cal
   refine ⟨storeWords m RHO1 W 4,
     ⟨⟨RC4Table.frame hI.rc4 hfr (by s1_avoids87), RC1Table.frame hI.rc1 hfr (by s1_avoids87),
       TblAt.frame hI.tbl hfr (by s1_avoids87), ZHatAt.frame hI.zhat hfr (by s1_avoids87),
-      HPAt.frame hI.hp hfr (by s1_avoids87), CAt.frame hI.c hfr (by s1_avoids87) (by s1_avoids87) (by s1_avoids87),
-      ZeroOn.frame hI.zAcc hfr (by s1_avoids87)⟩,
+      ZeroOn.frame hI.zMisc hfr (by s1_avoids87),
+      ZeroOn.frame hI.zCw hfr (by s1_avoids87), ZeroOn.frame hI.zHigh hfr (by s1_avoids87)⟩,
       fun x hx => ?_⟩, h.mono (Nat.le_of_eq (by unfold Gas.pRho; ring))⟩
   rw [word_storeWords (hW x) 4 (by omega)]
   rfl

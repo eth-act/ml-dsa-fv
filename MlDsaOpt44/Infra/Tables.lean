@@ -112,7 +112,7 @@ open Lean Meta Elab Command
 /-- The instruction `Expr`s of `instructionList`, in order (uncached). -/
 def instrExprsRaw : MetaM (Array Expr) := do
   let mut out := #[]
-  for k in [0:30] do
+  for k in [0:31] do
     let name := Name.mkStr `MlDsaOpt44.Proofs.Artifact s!"instructions{k}"
     let some v := (← getEnv).find? name |>.bind (·.value?) | throwError "missing {name}"
     let mut e := v

@@ -1,11 +1,11 @@
 import MlDsaOpt87.Fn.Decode.Defs
-import MlDsaOpt87.Fn.Decode.ZLoop
 import MlDsaOpt87.Fn.Decode.ZSpec
+import MlDsaOpt87.Fn.Decode.ZLoop
 import MlDsaOpt87.Fn.Decode.HintMain
 /-!
 # Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack), ML-DSA-87
 
-Open contracts (statements only); the proofs mirror `MlDsaOpt44/Fn/Decode.lean` and
+The proofs mirror `MlDsaOpt44/Fn/Decode.lean` and
 `MlDsaOpt44/Fn/Decode/*` (`ZBlocks`, `ZLoop`, `ZMath`, `HintBlocks`, `HintLoop`,
 `HintMain`), with the ML-DSA-87 parameters: 20-bit z fields (`G = 3` per 64-bit
 gather, `C = 12` per 32-byte load), `k = 8` unrolled hint rows, `ω = 75`.
@@ -24,10 +24,10 @@ open MlDsa
 /-- **dz**: `[ZH + 0x2000 g, Z0 + 2560 g, ret] ↦ [f]`, `g < 2`. Decodes the four
 20-bit packed polynomials `4g … 4g + 3` of the z stream (for `g = 1` lanes 0–2 are
 `z_4, z_5, z_6`; lane 3 holds `zLane` of the bytes behind `z_6` (hint bytes, message, zero
-past the end of the calldata)) into lane-packed words, `lane j of ZH_g[t] = γ1 + q − raw = zLane`, and
+past the end of the calldata)) into lane-packed words, `lane j of ZH_g[t] = γ1 + 9q − raw = zLane (v4)`, and
 returns the OR of the SIMD flag words: the lane-`j` flag bits `zFlagBit j` of `f` are
 clear iff every field of polynomial `4g + j` is in `(β, 2γ1 − β)`.
-Mirror `MlDsaOpt44/Fn/Decode/ZLoop.lean` (`DecodeZ.dz_main`), generic in the base. -/
+Proof: `Fn/Decode/Z{Blocks,Loop,Math}.lean` (`DecodeZ.dz_main`, v4 stores and flag words). -/
 theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.dz ret tail) (m : ByteArray) {g : Nat} (hg : g < 2) :
     ∃ m', ∃ f, f < 2 ^ 256 ∧

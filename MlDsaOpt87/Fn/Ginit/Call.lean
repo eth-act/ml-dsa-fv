@@ -25,7 +25,7 @@ amult cmult l4 x` for every lane `x < 25`, nothing else written, no results,
 gas `Gas.ginit`. Covers every call site: `group` (`keep = 0`, `amult = 15`,
 `cmult = 0`) and the mixed groups of the main flow (`keep`, `amult`,
 `cmult = 0`). Proof: `G1.ginit_reach` (`Fn/Ginit/Lanes.lean`, one block lemma per
-lane, generated from the ML-DSA-87 listing, pcs 12945–13299). -/
+lane, generated from the ML-DSA-87 listing, pcs 13376–13299). -/
 theorem ginit_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.ginit ret tail) (m : ByteArray) {keep amult cmult l4 : Nat}
     (hk : keep < 2 ^ 256) (ha : amult < 2 ^ 256) (hc : cmult < 2 ^ 256) (hl : l4 < 2 ^ 256) :

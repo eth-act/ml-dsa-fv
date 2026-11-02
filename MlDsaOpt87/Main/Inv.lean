@@ -21,25 +21,24 @@ Row groups: polynomials / rows `0 … 3` live in the lanes of one 8 KB table,
 | boundary | pc | stack | invariant |
 |---|---|---|---|
 | sized, tables | 992 | `[]` | `Inv0` |
-| z, hints | 1126 | `[ok1]` | `Inv1` |
-| c (`sib`, own `kf1` sponge) | 1135 | `[ok2]` | `Inv2` |
-| NTT records | 3118 | `[ok2]` | `Inv3` |
-| ẑ (both tables) | 3140 | `[ok2]` | `Inv4` |
-| ρ spread | 3389 | `[ok2]` | `Inv5` |
-| group `[15, s, 0]`, `s < 7` | 3402, 3416, …, 3486 | `[ok2 ∧ C₀(0) … C₀(s)]` | `InvA cd m (s + 1)` |
-| group `[15, s, 1]`, `s < 3` | 3500, 3515, 3530 | `[… ∧ C₁(0) … C₁(s)]` | `InvB cd m (s + 1)` |
-| mixed group `10 + i` (rows 4–6 col `3 + i`, `tr` blocks `5i … 5i + 4`), `i < 3` | 3963, 4430, 4898 | `[… ∧ M(3) … M(3 + i)]` | `InvT cd m (4 + i)` |
-| mixed group 13 (col 6, last `tr` blocks, `TRL`) | 5435 | `[… ∧ M(6)]` | `InvTr cd m` |
-| Kronecker group 14 (row 7, cols 3–6) | 5593 | `[ok3]` | `Inv6` |
-| μ | 6591 | `[ok3]` | `Inv7` |
-| c · t1 | 6646 | `[ok3]` | `Inv8` |
-| w1Encode | 6724 | `[ok3]` | `Inv9` |
+| z | 1117 | `[okZ]` | `Inv1` |
+| NTT records | 3100 | `[okZ]` | `Inv2` |
+| ẑ (both tables) | 3122 | `[okZ]` | `Inv3` |
+| ρ spread | 3371 | `[okZ]` | `Inv4` |
+| ExpandA done (`pass3f14`) | 5551 | `[okZ ∧ okA]` | `InvW` |
+| hints | 5665 | `[… ∧ okH]` | `InvH` |
+| μ | 6663 | `[ok2]` | `Inv6` |
+| c (`sib`, own `kf1` sponge) | 6672 | `[ok3]` | `Inv7` |
+| c · t1 | 6727 | `[ok3]` | `Inv8` |
+| w1Encode | 6805 | `[ok3]` | `Inv9` |
 
-with `ok1 = okZ ∧ okH`, `ok2 = ok1 ∧ okC`, `ok3 = ok2 ∧ okA` (the order of
-`optAccepts`); `C₀(s) = okCol cd 0 s 4`, `C₁(s) = okCol cd 1 s 4`,
-`M(s) = okCol cd 1 s 3` (rows 4–6 only: slot 3 carries `tr`), and group 14's
-flag is `okRow7 cd` (row 7, columns 3–6). The flag after group 14 is `ok3` by
-`flags_eq` (`Main/Valid.lean`).
+with `ok2 = (okZ ∧ okA) ∧ okH`, `ok3 = ok2 ∧ okC` (v4: hints are decoded after
+ExpandA, `sib` runs after μ). The ExpandA segment (`Main/SegExp.lean`) is one
+segment for now; the v3 group definitions (`okCol`, `okRow7`, `okUpTo`,
+`okMid`, `AccCols`, `AccMid`, `TrSlot`) are kept for its proof: `okCol cd 0 s 4`
+(rows 0–3 of column `s`), `okCol cd 1 s 4` (rows 4–7), `okCol cd 1 s 3` (rows
+4–6 of the mixed groups, slot 3 carries `tr`), `okRow7 cd` (the Kronecker
+group 14: row 7, columns 3–6).
 -/
 
 namespace MlDsaOpt87.Proofs
@@ -49,9 +48,8 @@ open EvmSemantics.EVM
 open MlDsaOptCommon
 open MlDsa
 
-def ok1 (cd : ByteArray) : Bool := okZ cd && okH cd
-def ok2 (cd : ByteArray) : Bool := ok1 cd && okC cd
-def ok3 (cd : ByteArray) : Bool := ok2 cd && okA cd
+def ok2 (cd : ByteArray) : Bool := (okZ cd && okA cd) && okH cd
+def ok3 (cd : ByteArray) : Bool := ok2 cd && okC cd
 
 /-! ## Flags of the ExpandA groups -/
 
@@ -132,10 +130,10 @@ def AccMid (m : ByteArray) (cd : ByteArray) (n : Nat) : Prop :=
       pack4 fun j => accSum cd m (4 + j) t (if j < 3 then n else 3)
 
 /-- `ACC` / `ACC + 0x2000` hold `Â ẑ` (bounded representatives mod q) when `A`
-exists; every lane of both tables is `< 2^58` (the `intt` precondition). -/
+exists; every lane of both tables is `< 2^57` (the `intt` precondition). -/
 def AccAt (m : ByteArray) (cd : ByteArray) : Prop :=
   okA cd = true →
-    (∀ g, g < 2 → ∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 58) ∧
+    (∀ g, g < 2 → ∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 57) ∧
     ∀ r, r < 8 → ∀ t, t < 256 →
       ((lane (word m (accAddr r t)) (r % 4) : Int) - (azRow cd r)[t]!) % (Fips204.q : Int) = 0
 
@@ -165,11 +163,11 @@ from (`BASES[i] + TT − 32 u` stays inside the window table) unconditionally. -
 def CAt (m : ByteArray) (cd : ByteArray) : Prop :=
   (okC cd = true → CRep m (cD cd)) ∧ ∀ i, i < P.tau → word m (BASES + 32 * i) ≤ 6112
 
-/-- `SP` / `SP + 0x2000` hold `2^13 S'(t) + n_neg(t)` per row (`csum` of row
-group `g` reads the `t1` rows at calldata offset `32 + 1280 g`). -/
+/-- `SP` / `SP + 0x2000` hold `spOff − (2^13 S'(t) + n_neg(t))` per row (v4; `csum`
+of row group `g` reads the `t1` rows at calldata offset `32 + 1280 g`). -/
 def SpAt (m : ByteArray) (cd : ByteArray) : Prop :=
   okC cd = true → ∀ g, g < 2 → ∀ t, t < 256 → word m (SP + 0x2000 * g + 32 * t) =
-    pack4 fun r => 2 ^ 13 * sPrime (cD cd) cd (32 + 1280 * g) r t + nNeg (cD cd) t
+    pack4 fun r => spOff - (2 ^ 13 * sPrime (cD cd) cd (32 + 1280 * g) r t + nNeg (cD cd) t)
 
 /-! ## Invariants -/
 
@@ -182,74 +180,54 @@ structure Inv1 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   z : ZAt m cd
-  hp : HPAt m cd
   zLow : ZeroOn m MISC ZH
-  zHigh : ZeroOn m BASES HP
+  zHigh : ZeroOn m BASES FIN
 
 structure Inv2 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
+  tbl : TblAt m
   z : ZAt m cd
-  hp : HPAt m cd
-  c : CAt m cd
-  zAcc : ZeroOn m ACC HP
+  zMisc : ZeroOn m MISC TBL
+  zCw : ZeroOn m CW ABUF
+  zHigh : ZeroOn m BASES FIN
 
-structure Inv3 (cd m : ByteArray) : Prop extends Inv2 cd m where
-  tbl : TblAt m
-
-structure Inv4 (cd m : ByteArray) : Prop where
+structure Inv3 (cd m : ByteArray) : Prop where
   rc4 : RC4Table m
   rc1 : RC1Table m
   tbl : TblAt m
   zhat : ZHatAt m cd
-  hp : HPAt m cd
-  c : CAt m cd
-  zAcc : ZeroOn m ACC HP
+  zMisc : ZeroOn m MISC TBL
+  zCw : ZeroOn m CW ABUF
+  zHigh : ZeroOn m BASES FIN
 
-structure Inv5 (cd m : ByteArray) : Prop extends Inv4 cd m where
+structure Inv4 (cd m : ByteArray) : Prop extends Inv3 cd m where
   rho : Rho1At m cd
 
-/-- What every ExpandA boundary keeps. -/
-structure InvE (cd m : ByteArray) : Prop where
-  rc4 : RC4Table m
+/-- After ExpandA (`pass3f14`): `Â ẑ` in `ACC`, `tr` in `TRL` (group 13's
+`cext`, read by `hash_mu`), `sib`'s `IDX` and `NNEG` scratch still zero. -/
+structure InvW (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
   tbl : TblAt m
-  zhat : ZHatAt m cd
-  hp : HPAt m cd
-  c : CAt m cd
-  rho : Rho1At m cd
-
-/-- After the row-group-0 groups `[15, s, 0]`, `s < n`. -/
-structure InvA (cd m : ByteArray) (n : Nat) : Prop extends InvE cd m where
-  acc0 : AccCols m cd 0 n
-  zAcc1 : ZeroOn m (ACC + 0x2000) HP
-
-/-- After row group 0 and the row-group-1 groups `[15, s, 1]`, `s < n`. -/
-structure InvB (cd m : ByteArray) (n : Nat) : Prop extends InvE cd m where
-  acc0 : AccCols m cd 0 7
-  acc1 : AccCols m cd 1 n
-
-/-- During the mixed groups 10–13: rows 4–6 after the columns `s < n`. -/
-structure InvM (cd m : ByteArray) (n : Nat) : Prop extends InvE cd m where
-  acc0 : AccCols m cd 0 7
-  acc1 : AccMid m cd n
-
-/-- After mixed group `n − 1` (`n = 4, 5, 6`): the `tr` sponge after `5 (n − 3)`
-blocks in slot 3 of `KS`. -/
-structure InvT (cd m : ByteArray) (n : Nat) : Prop extends InvM cd m n where
-  tr : TrSlot m cd (5 * (n - 3))
-
-/-- After mixed group 13: `tr` in `TRL`. -/
-structure InvTr (cd m : ByteArray) : Prop extends InvM cd m 7 where
+  acc : AccAt m cd
   trl : TrlAt m cd
+  zBases : ZeroOn m BASES (BASES + 2048)
+  zIdx : ZeroOn m IDX (IDX + 256)
+  zNeg : ZeroOn m NNEG (NNEG + 64)
 
+/-- After the side buffers are zeroed and the hints decoded. -/
+structure InvH (cd m : ByteArray) : Prop extends InvW cd m where
+  hp : HPAt m cd
+  zCw : ZeroOn m CW (CW + 8192)
+
+/-- After μ: `sib`'s scratch is fresh (`CW`, `BASES`, `IDX`, `NNEG` zero). -/
 structure Inv6 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m
   tbl : TblAt m
   hp : HPAt m cd
   acc : AccAt m cd
-  c : CAt m cd
-  trl : TrlAt m cd
+  fresh : SibFresh m
+  fmu : FinMu m cd
 
 structure Inv7 (cd m : ByteArray) : Prop where
   rc1 : RC1Table m

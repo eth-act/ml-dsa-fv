@@ -12,10 +12,10 @@ open EvmSemantics.EVM
 open YulEvmCompiler
 open MlDsaOpt87.Proofs.Artifact
 
-theorem tables_ok30 : checkAll instrTree pcTree 12000 23582 instructions30 = true := by
+theorem tables_ok30 : checkAll instrTree pcTree 12000 23381 instructions30 = true := by
   decide +kernel
 
-theorem size_instructions30 : (instructions30.map isz).sum = 400 := by
+theorem size_instructions30 : (instructions30.map isz).sum = 417 := by
   decide +kernel
 
 end MlDsaOpt87.Proofs.Infra

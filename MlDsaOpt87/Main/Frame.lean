@@ -21,7 +21,8 @@ open MlDsa
 
 /-- Close `Avoids rs lo hi` for literal layout ranges. -/
 macro "avoids_tac" : tactic => `(tactic| (
-  simp only [MlDsaOptCommon.avoids_cons, MlDsaOptCommon.avoids_nil, and_true,
+  simp only [MlDsaOptCommon.avoids_cons, MlDsaOptCommon.avoids_nil, MlDsaOptCommon.avoids_append,
+    List.cons_append, List.nil_append, and_true,
     KS, KB, RC4, RC1, MISC, NNEG, CNT, HAVE6, TBL, CW, ABUF, FL, ZH, ZH2, BASES, IDX, ACC, HP,
     FIN, RHO1, CB, TRL, MU, BK, TT, SP, TOP, KZ]
   omega))
@@ -106,9 +107,10 @@ theorem CRep.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {c : Fips204.Poly
     rw [word_frame h hb (a := BASES + 32 * i) (by omega) (by omega)]; exact h6 i hi
 
 theorem SibFresh.frame {m m' : ByteArray} {rs : List (Nat × Nat)} (hr : SibFresh m)
-    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hb : Avoids rs BASES (IDX + 256))
-    (hn : Avoids rs NNEG (NNEG + 64)) : SibFresh m' :=
-  ⟨ZeroOn.frame hr.1 h ha, ZeroOn.frame hr.2.1 h hb, ZeroOn.frame hr.2.2 h hn⟩
+    (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hbs : Avoids rs BASES (BASES + 2048))
+    (hb : Avoids rs IDX (IDX + 256)) (hn : Avoids rs NNEG (NNEG + 64)) : SibFresh m' :=
+  ⟨ZeroOn.frame hr.1 h ha, ZeroOn.frame hr.2.1 h hbs, ZeroOn.frame hr.2.2.1 h hb,
+    ZeroOn.frame hr.2.2.2 h hn⟩
 
 theorem CAt.frame {m m' : ByteArray} {rs : List (Nat × Nat)} {cd : ByteArray} (hr : CAt m cd)
     (h : FrameExcept m m' rs) (ha : Avoids rs CW (CW + 8192)) (hb : Avoids rs BASES (BASES + 2048))

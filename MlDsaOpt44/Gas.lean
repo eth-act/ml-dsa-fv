@@ -9,10 +9,9 @@ RejNTTPoly fix-ups including the sixth squeeze in every group, SampleInBall's
 byte loop, HintBitUnpack's loops; μ's block count depends on the message
 length only.
 
-`schedule (3732 + n)` is 2,931,924 for `n ≤ 69`, 3,033,147 for `70 ≤ n ≤
-205`, and grows by 33,819 per 136 message bytes (`scripts/proofgen_gas.py
---schedule`). The measured adversarial worst case of `docs/opt.md` is
-2,864,301 for `n = 0`; the difference is the conservative fix-up and
+See `scripts/proofgen_gas.py --schedule` for the values of
+`schedule (3732 + n)`; the measured adversarial worst case of `docs/opt.md`
+is 2,580,502 for `n = 0`; the difference is the conservative fix-up and
 SampleInBall loop counts.
 -/
 
@@ -25,7 +24,7 @@ def short : Nat := 37
 /-- **The public gas schedule.** -/
 def schedule (size : Nat) : Nat :=
   if size < 3732 then short else
-    pInit + EvmSemantics.MachineState.memCost memWords + pZh + pTbl + pNtt + pRho + pG0 + pG1 + pG234 +
-      pMu (size - 3732) + pSib + pCt + pW + pFin
+    pInit + EvmSemantics.MachineState.memCost memWords + pZ + pTbl + pNtt + pRho + pG0 + pG1 + pG2 +
+      pWin + pZd + pMu (size - 3732) + pSib + pCt + pW + pFin
 
 end MlDsaOpt44.Proofs.Gas

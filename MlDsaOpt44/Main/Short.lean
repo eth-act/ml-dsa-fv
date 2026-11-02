@@ -24,9 +24,9 @@ theorem activeWordsAfter_zero (off : Nat) :
 
 theorem short_block {s : State} (h0 : Ctx0 s) (haw : s.activeWords.toNat = 0)
     (hlen : s.executionEnv.calldata.size < 3732) :
-    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2377, 2378, 2379, 2380, 2381, 2382, 2383])
+    runLocatedBlock (locatedPath [0, 1, 2, 3, 4, 2319, 2320, 2321, 2322, 2323, 2324, 2325])
       (callState s 0 [] .empty) =
-    some { callState s 6704 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
+    some { callState s 6643 [] (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) with
       halt := .Returned
       hReturn := MachineState.readPadded
         (MachineState.writeBytes .empty (Data.Bytes.natToBytesPadded 0 32) 0) 0 32

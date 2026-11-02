@@ -15,31 +15,31 @@ open MlDsaOpt44.Proofs.Artifact
 theorem tables_ok0 : checkAll instrTree pcTree 0 0 instructions0 = true := by
   decide +kernel
 
-theorem size_instructions0 : (instructions0.map isz).sum = 1565 := by
+theorem size_instructions0 : (instructions0.map isz).sum = 1571 := by
   decide +kernel
 
-theorem tables_ok1 : checkAll instrTree pcTree 400 1565 instructions1 = true := by
+theorem tables_ok1 : checkAll instrTree pcTree 400 1571 instructions1 = true := by
   decide +kernel
 
-theorem size_instructions1 : (instructions1.map isz).sum = 1067 := by
+theorem size_instructions1 : (instructions1.map isz).sum = 1064 := by
   decide +kernel
 
-theorem tables_ok2 : checkAll instrTree pcTree 800 2632 instructions2 = true := by
+theorem tables_ok2 : checkAll instrTree pcTree 800 2635 instructions2 = true := by
   decide +kernel
 
-theorem size_instructions2 : (instructions2.map isz).sum = 994 := by
+theorem size_instructions2 : (instructions2.map isz).sum = 993 := by
   decide +kernel
 
-theorem tables_ok3 : checkAll instrTree pcTree 1200 3626 instructions3 = true := by
+theorem tables_ok3 : checkAll instrTree pcTree 1200 3628 instructions3 = true := by
   decide +kernel
 
-theorem size_instructions3 : (instructions3.map isz).sum = 1489 := by
+theorem size_instructions3 : (instructions3.map isz).sum = 1446 := by
   decide +kernel
 
-theorem tables_ok4 : checkAll instrTree pcTree 1600 5115 instructions4 = true := by
+theorem tables_ok4 : checkAll instrTree pcTree 1600 5074 instructions4 = true := by
   decide +kernel
 
-theorem size_instructions4 : (instructions4.map isz).sum = 846 := by
+theorem size_instructions4 : (instructions4.map isz).sum = 920 := by
   decide +kernel
 
 end MlDsaOpt44.Proofs.Infra

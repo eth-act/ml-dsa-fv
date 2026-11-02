@@ -5,18 +5,20 @@ import MlDsaOpt44.Fn.Blk.Blocks
 import MlDsaOpt44.Fn.Blk.BodyA
 import MlDsaOpt44.Fn.Blk.Defs
 /-!
-# `blk`: proof of `blk_call` (WP3)
+# `blk`, `blkh`, `blkt`: proofs (WP3, v4)
 
-Entry `[flp, abp, ret]`. Un-complements the rate lanes of `KS` in place
-(restoring them at the end), de-interleaves 3 words at a time with 6 delta
-swaps (bit `4b + k` ↦ `64k + b`) and writes, per 8 candidates, 8 row-packed
+The three entries push the lane range `[xp, xe)` (`blkt` also its `abp`, `flp`)
+and run one shared body: un-complement the rate lanes of `KS` in
+place (restored at the end), de-interleave 3 words at a time with 6 delta
+swaps (bit `4b + k` ↦ `64k + b`) and write, per 8 candidates, 8 row-packed
 candidate words at `abp` (lane = slot) and one rejection-flag word at `flp`.
-The block number `b ≤ 5` selects `abp = ABUF + 1792 b`, `flp = FL + 224 b`.
 
-Proof: prologue `Blk.pro` (111 gas), seven loop iterations `Blk.bodyA` +
-`Blk.bodyB_loop`/`Blk.bodyB_exit` (1087 gas each), epilogue `Blk.epi` (116 gas):
-exactly `Gas.blk = 7836`. Bit facts in `Blk/Bits.lean`, memory facts in
-`Blk/Mem.lean`.
+Proof: `Blk.run` is the body over iterations `j0 … j0 + N − 1` at any placement
+`Geo`: prologue `Blk.pro` (109 gas), `N` loop iterations `Blk.bodyA` +
+`Blk.bodyB_loop`/`Blk.bodyB_exit` (1087 gas each, 2 more for the exit's
+`POP`), epilogue `Blk.epi` (116 gas). With the entries (6, 17, 24 gas) this is
+exactly `Gas.blk`, `Gas.blkh`, `Gas.blkt`. Bit facts in `Blk/Bits.lean`, memory
+facts in `Blk/Mem.lean`.
 -/
 
 namespace MlDsaOpt44.Proofs
@@ -132,36 +134,52 @@ theorem lfv_flag (S : Nat → Fips202.SpongeState) (j : Nat) :
 
 /-! ## The loop -/
 
-/-- Loop-head stack of iteration `j`. -/
-def stk (b ret : Nat) (tail : List UInt256) (j : Nat) : List UInt256 :=
-  wd U5 :: wd U4 :: wd U3 :: wd U2 :: wd U1 :: wd U0 :: wd (96 * j) :: wd (FL + 224 * b + 32 * j) ::
-    wd (ABUF + 1792 * b + 256 * j) :: wd ret :: tail
+/-- Placement of a run over the lanes `[3 j0, 3 (j0 + N))`: candidate words
+from `abp0`, flag words from `flp0`, both above the lane flips and disjoint. -/
+structure Geo (j0 N abp0 flp0 : Nat) : Prop where
+  hj : j0 + N ≤ 7
+  ha : 800 ≤ abp0
+  ha' : abp0 + 256 * N ≤ 66080
+  hf : 800 ≤ flp0
+  hf' : flp0 + 32 * N ≤ 66080
+  hd : abp0 + 256 * N ≤ flp0 ∨ flp0 + 32 * N ≤ abp0
 
-/-- Memory after `j` iterations. -/
-def Inv (m : ByteArray) (b j : Nat) (M : ByteArray) : Prop :=
-  FrameExcept (flip6 m) M [(ABUF + 1792 * b, ABUF + 1792 * b + 1792), (FL + 224 * b, FL + 224 * b + 224)] ∧
+/-- Loop-head stack after `n` iterations. -/
+def stk (j0 N abp0 flp0 ret : Nat) (tail : List UInt256) (n : Nat) : List UInt256 :=
+  wd U5 :: wd U4 :: wd U3 :: wd U2 :: wd U1 :: wd U0 :: wd (96 * (j0 + N)) :: wd (96 * (j0 + n)) ::
+    wd (flp0 + 32 * n) :: wd (abp0 + 256 * n) :: wd ret :: tail
+
+/-- Memory after `n` iterations. -/
+def Inv (m : ByteArray) (j0 N abp0 flp0 n : Nat) (M : ByteArray) : Prop :=
+  FrameExcept (flip6 m) M [(abp0, abp0 + 256 * N), (flp0, flp0 + 32 * N)] ∧
     ∀ S, KS4 m S →
-      (∀ i, i < 8 * j → word M (ABUF + 1792 * b + 32 * i) = pack4 fun k => cand (S k) i) ∧
-      (∀ g, g < j → word M (FL + 224 * b + 32 * g) = flagWord S g)
+      (∀ i, i < 8 * n → word M (abp0 + 32 * i) = pack4 fun k => cand (S k) (8 * j0 + i)) ∧
+      (∀ g, g < n → word M (flp0 + 32 * g) = flagWord S (j0 + g))
+
+/-- The state after `n` iterations: the loop head, or the epilogue after the last. -/
+def hd (s : State) (j0 N abp0 flp0 ret : Nat) (tail : List UInt256) (n : Nat) (M : ByteArray) :
+    State :=
+  if n < N then callState s 9248 (stk j0 N abp0 flp0 ret tail n) M
+  else callState s 10143 (stk j0 N abp0 flp0 ret tail n).tail M
 
 theorem step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960)
-    (m : ByteArray) {b : Nat} (hb : b ≤ 5) {j : Nat} (hj : j < 7) (M : ByteArray) (hI : Inv m b j M) :
-    ∃ M', Inv m b (j + 1) M' ∧
-      Reach (callState s 9106 (stk b ret tail j) M)
-        (callState s (if j + 1 < 7 then 9106 else 10002) (stk b ret tail (j + 1)) M') 1087 := by
-  have hABUF : ABUF = 20480 := rfl
-  have hFL : FL = 31232 := rfl
+    (m : ByteArray) {j0 N abp0 flp0 : Nat} (hg : Geo j0 N abp0 flp0) {n : Nat} (hn : n < N)
+    (M : ByteArray) (hI : Inv m j0 N abp0 flp0 n M) :
+    ∃ M', Inv m j0 N abp0 flp0 (n + 1) M' ∧
+      Reach (callState s 9248 (stk j0 N abp0 flp0 ret tail n) M)
+        (hd s j0 N abp0 flp0 ret tail (n + 1) M') (if n + 1 < N then 1087 else 1089) := by
+  obtain ⟨hj, ha, ha', hf, hf', hdj⟩ := hg
   have hA := bodyA hs (rest := wd ret :: tail) (by simp only [List.length_cons]; omega)
-    U5 U4 U3 U2 U1 U0 (96 * j) (FL + 224 * b + 32 * j) (ABUF + 1792 * b + 256 * j) M (by omega)
-    (by omega)
-  generalize hD0 : unz U0 U1 U2 U3 U4 U5 (word M (96 * j)) = D0 at hA
-  generalize hD1 : unz U0 U1 U2 U3 U4 U5 (word M (32 + 96 * j)) = D1 at hA
-  generalize hD2 : unz U0 U1 U2 U3 U4 U5 (word M (64 + 96 * j)) = D2 at hA
-  have e1 : 96 + 96 * j = 96 * (j + 1) := by ring
-  have e2 : 32 + (FL + 224 * b + 32 * j) = FL + 224 * b + 32 * (j + 1) := by ring
-  have e3 : 256 + (ABUF + 1792 * b + 256 * j) = ABUF + 1792 * b + 256 * (j + 1) := by ring
-  refine ⟨MachineState.writeBytes (candMem M (ABUF + 1792 * b + 256 * j) D0 D1 D2)
-    (Data.Bytes.natToBytesPadded (lfv D0 D1 D2 % 2 ^ 256) 32) (FL + 224 * b + 32 * j), ?_, ?_⟩
+    U5 U4 U3 U2 U1 U0 (96 * (j0 + N)) (96 * (j0 + n)) (flp0 + 32 * n) (abp0 + 256 * n) M
+    (by omega) (by omega)
+  generalize hD0 : unz U0 U1 U2 U3 U4 U5 (word M (96 * (j0 + n))) = D0 at hA
+  generalize hD1 : unz U0 U1 U2 U3 U4 U5 (word M (32 + 96 * (j0 + n))) = D1 at hA
+  generalize hD2 : unz U0 U1 U2 U3 U4 U5 (word M (64 + 96 * (j0 + n))) = D2 at hA
+  have e1 : 96 + 96 * (j0 + n) = 96 * (j0 + (n + 1)) := by ring
+  have e2 : 32 + (flp0 + 32 * n) = flp0 + 32 * (n + 1) := by ring
+  have e3 : 256 + (abp0 + 256 * n) = abp0 + 256 * (n + 1) := by ring
+  refine ⟨MachineState.writeBytes (candMem M (abp0 + 256 * n) D0 D1 D2)
+    (Data.Bytes.natToBytesPadded (lfv D0 D1 D2 % 2 ^ 256) 32) (flp0 + 32 * n), ?_, ?_⟩
   · -- the invariant
     refine ⟨?_, ?_⟩
     · refine ((hI.1.trans (frame_candMem _ _ _ _ _)).trans (FrameExcept.mstore _ _ _)).mono ?_
@@ -177,90 +195,178 @@ theorem step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail :
       obtain ⟨hcand, hflag⟩ := hI.2 S hKS
       have hfr : ∀ a, a + 32 ≤ 672 → word M a = word (flip6 m) a := fun a ha =>
         hI.1.word (by simp only [avoids_cons, avoids_nil, and_true]; omega)
-      have hD : ∀ w, w < 3 → word M (32 * w + 96 * j) = il (ln S j w) := by
+      have hD : ∀ w, w < 3 → word M (32 * w + 96 * (j0 + n)) = il (ln S (j0 + n) w) := by
         intro w hw
-        rw [hfr _ (by omega), show 32 * w + 96 * j = 32 * (3 * j + w) by ring, ks_lane hKS (by omega)]
+        rw [hfr _ (by omega), show 32 * w + 96 * (j0 + n) = 32 * (3 * (j0 + n) + w) by ring,
+          ks_lane hKS (by omega)]
         rfl
-      have hD0' : D0 = pack4 (ln S j 0) := by
-        rw [← hD0, show 96 * j = 32 * 0 + 96 * j by ring, hD 0 (by omega), unz_il (ln_lt S j 0)]
-      have hD1' : D1 = pack4 (ln S j 1) := by
-        rw [← hD1, show 32 + 96 * j = 32 * 1 + 96 * j by ring, hD 1 (by omega), unz_il (ln_lt S j 1)]
-      have hD2' : D2 = pack4 (ln S j 2) := by
-        rw [← hD2, show 64 + 96 * j = 32 * 2 + 96 * j by ring, hD 2 (by omega), unz_il (ln_lt S j 2)]
+      have hD0' : D0 = pack4 (ln S (j0 + n) 0) := by
+        rw [← hD0, show 96 * (j0 + n) = 32 * 0 + 96 * (j0 + n) by ring, hD 0 (by omega),
+          unz_il (ln_lt S _ 0)]
+      have hD1' : D1 = pack4 (ln S (j0 + n) 1) := by
+        rw [← hD1, show 32 + 96 * (j0 + n) = 32 * 1 + 96 * (j0 + n) by ring, hD 1 (by omega),
+          unz_il (ln_lt S _ 1)]
+      have hD2' : D2 = pack4 (ln S (j0 + n) 2) := by
+        rw [← hD2, show 64 + 96 * (j0 + n) = 32 * 2 + 96 * (j0 + n) by ring, hD 2 (by omega),
+          unz_il (ln_lt S _ 2)]
       subst hD0' hD1' hD2'
       refine ⟨fun i hi => ?_, fun g hg => ?_⟩
       · rw [word_wb _ _ (by omega), if_neg (by omega)]
-        by_cases hij : i < 8 * j
+        by_cases hij : i < 8 * n
         · rw [word_candMem_disjoint _ _ _ _ _ (by omega)]
           exact hcand i hij
-        · obtain ⟨k, rfl⟩ : ∃ k, i = 8 * j + k := ⟨i - 8 * j, by omega⟩
-          rw [show ABUF + 1792 * b + 32 * (8 * j + k) = ABUF + 1792 * b + 256 * j + 32 * k by ring,
-            word_candMem _ _ _ _ _ (by omega)]
-          exact cw_cand S j (by omega)
-      · by_cases hgj : g < j
+        · obtain ⟨k, rfl⟩ : ∃ k, i = 8 * n + k := ⟨i - 8 * n, by omega⟩
+          rw [show abp0 + 32 * (8 * n + k) = abp0 + 256 * n + 32 * k by ring,
+            word_candMem _ _ _ _ _ (by omega), cw_cand S (j0 + n) (by omega),
+            show 8 * (j0 + n) + k = 8 * j0 + (8 * n + k) by ring]
+      · by_cases hgn : g < n
         · rw [word_wb _ _ (by omega), if_neg (by omega),
             word_candMem_disjoint _ _ _ _ _ (by omega)]
-          exact hflag g hgj
-        · obtain rfl : g = j := by omega
+          exact hflag g hgn
+        · obtain rfl : g = n := by omega
           rw [word_wb _ _ (by omega), if_pos rfl]
-          exact lfv_flag S g
+          exact lfv_flag S (j0 + g)
   · -- the trace
-    by_cases hj7 : j + 1 < 7
-    · have hB := bodyB_loop hs htail (lfv D0 D1 D2) D2 D1 D0 U5 U4 U3 U2 U1 U0 (96 * j)
-        (FL + 224 * b + 32 * j) (ABUF + 1792 * b + 256 * j) ret
-        (candMem M (ABUF + 1792 * b + 256 * j) D0 D1 D2) (by omega) (by omega)
+    unfold hd
+    by_cases hn1 : n + 1 < N
+    · have hB := bodyB_loop hs htail (lfv D0 D1 D2) D2 D1 D0 U5 U4 U3 U2 U1 U0 (96 * (j0 + N))
+        (96 * (j0 + n)) (flp0 + 32 * n) (abp0 + 256 * n) ret
+        (candMem M (abp0 + 256 * n) D0 D1 D2) (by omega) (by omega) (by omega)
       rw [e1, e2, e3] at hB
-      rw [if_pos hj7]
+      rw [if_pos hn1, if_pos hn1]
       exact (hA.trans hB).mono (by omega)
-    · have hB := bodyB_exit hs htail (lfv D0 D1 D2) D2 D1 D0 U5 U4 U3 U2 U1 U0 (96 * j)
-        (FL + 224 * b + 32 * j) (ABUF + 1792 * b + 256 * j) ret
-        (candMem M (ABUF + 1792 * b + 256 * j) D0 D1 D2) (by omega) (by omega)
+    · have hB := bodyB_exit hs htail (lfv D0 D1 D2) D2 D1 D0 U5 U4 U3 U2 U1 U0 (96 * (j0 + N))
+        (96 * (j0 + n)) (flp0 + 32 * n) (abp0 + 256 * n) ret
+        (candMem M (abp0 + 256 * n) D0 D1 D2) (by omega) (by omega) (by omega)
       rw [e1, e2, e3] at hB
-      rw [if_neg hj7]
+      rw [if_neg hn1, if_neg hn1]
       exact (hA.trans hB).mono (by omega)
 
 theorem loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960)
-    (m : ByteArray) {b : Nat} (hb : b ≤ 5) :
-    ∀ j, j ≤ 7 → ∃ M, Inv m b j M ∧
-      Reach (callState s 9106 (stk b ret tail 0) (flip6 m))
-        (callState s (if j < 7 then 9106 else 10002) (stk b ret tail j) M) (1087 * j)
+    (m : ByteArray) {j0 N abp0 flp0 : Nat} (hg : Geo j0 N abp0 flp0) (hN : 0 < N) :
+    ∀ n, n ≤ N → ∃ M, Inv m j0 N abp0 flp0 n M ∧
+      Reach (callState s 9248 (stk j0 N abp0 flp0 ret tail 0) (flip6 m))
+        (hd s j0 N abp0 flp0 ret tail n M) (1087 * n + if n < N then 0 else 2)
   | 0, _ => ⟨flip6 m, ⟨FrameExcept.refl _ _, fun _ _ => ⟨fun _ h => absurd h (by omega),
       fun _ h => absurd h (by omega)⟩⟩,
-      by rw [if_pos (by omega), Nat.mul_zero]; exact Reach.refl _⟩
-  | j + 1, hj => by
-    obtain ⟨M, hI, hR⟩ := loop hs htail m hb j (by omega)
-    rw [if_pos (by omega)] at hR
-    obtain ⟨M', hI', hR'⟩ := step hs htail m hb (j := j) (by omega) M hI
-    exact ⟨M', hI', (hR.trans hR').mono (by omega)⟩
+      by unfold hd; rw [if_pos hN, if_pos hN]; exact Reach.refl _⟩
+  | n + 1, hn => by
+    obtain ⟨M, hI, hR⟩ := loop hs htail m hg hN n (by omega)
+    unfold hd at hR
+    rw [if_pos (by omega), if_pos (by omega)] at hR
+    obtain ⟨M', hI', hR'⟩ := step hs htail m hg (n := n) (by omega) M hI
+    refine ⟨M', hI', (hR.trans hR').mono ?_⟩
+    split <;> omega
+
+/-- The shared body from pc 9030 (`[xe, xp, flp, abp, ret]`) to the return. -/
+theorem run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960)
+    (hj : Decode.isValidJumpDest MlDsaOpt44.optBytecode ret = true) (hret : ret < 2 ^ 16)
+    (m : ByteArray) {j0 N abp0 flp0 : Nat} (hg : Geo j0 N abp0 flp0) (hN : 0 < N) :
+    ∃ m', (∀ S, KS4 m S →
+        (∀ i, i < 8 * N → word m' (abp0 + 32 * i) = pack4 fun k => cand (S k) (8 * j0 + i)) ∧
+        (∀ g, g < N → word m' (flp0 + 32 * g) = flagWord S (j0 + g))) ∧
+      FrameExcept m m' [(abp0, abp0 + 256 * N), (flp0, flp0 + 32 * N)] ∧
+      Reach (callState s 9030 (wd (96 * (j0 + N)) :: wd (96 * j0) :: wd flp0 :: wd abp0 :: wd ret ::
+          tail) m) (callState s ret tail m') (1087 * N + 227) := by
+  obtain ⟨Mf, hI, hL⟩ := loop hs htail m hg hN (ret := ret) N le_rfl
+  unfold hd at hL
+  rw [if_neg (by omega), if_neg (by omega)] at hL
+  have hpro := pro hs htail (96 * (j0 + N)) (96 * j0) flp0 abp0 ret m
+  have hepi := epi hs htail U4 U3 U2 U1 U0 (96 * (j0 + N)) (96 * (j0 + N))
+    (flp0 + 32 * N) (abp0 + 256 * N) ret Mf hj hret
+  have hg' := hg
+  obtain ⟨_, ha, _, hf, _, _⟩ := hg'
+  refine ⟨flip6 Mf, fun S hKS => ?_, ?_, ?_⟩
+  · obtain ⟨hcand, hflag⟩ := hI.2 S hKS
+    refine ⟨fun i hi => ?_, fun g hg => ?_⟩
+    · rw [word_flip6_high _ (by omega)]; exact hcand i hi
+    · rw [word_flip6_high _ (by omega)]; exact hflag g hg
+  · exact flip6_frame (by simp only [avoids_cons, avoids_nil, and_true]; omega) hI.1
+  · have hpro' : Reach (callState s 9030 (wd (96 * (j0 + N)) :: wd (96 * j0) :: wd flp0 :: wd abp0 ::
+        wd ret :: tail) m) (callState s 9248 (stk j0 N abp0 flp0 ret tail 0) (flip6 m)) 109 := by
+      simpa only [stk, Nat.add_zero, Nat.mul_zero] using hpro
+    have hepi' : Reach (callState s 10143 (stk j0 N abp0 flp0 ret tail N).tail Mf)
+        (callState s ret tail (flip6 Mf)) 116 := by
+      simpa only [stk, List.tail_cons] using hepi
+    exact ((hpro'.trans hL).trans hepi').mono (by omega)
 
 end Blk
 
-open Blk in
+open Blk
+
+/-- **blk** (proof). -/
 theorem blk_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
-    (hr : RetOK Stack.blk ret tail) (m : ByteArray) {b : Nat} (hb : b ≤ 5) :
+    (hr : RetOK Stack.blk ret tail) (m : ByteArray) {abp flp : Nat}
+    (ha : KS + 800 ≤ abp) (ha' : abp + 1792 ≤ TOP) (hf : KS + 800 ≤ flp) (hf' : flp + 224 ≤ TOP)
+    (hd : abp + 1792 ≤ flp ∨ flp + 224 ≤ abp) :
     ∃ m', (∀ S, Sized4 S → KS4 m S →
-        (∀ i, i < 56 → word m' (ABUF + 1792 * b + 32 * i) = pack4 fun k => cand (S k) i) ∧
-        (∀ g, g < 7 → word m' (FL + 224 * b + 32 * g) = flagWord S g)) ∧
-      FrameExcept m m' [(ABUF + 1792 * b, ABUF + 1792 * b + 1792), (FL + 224 * b, FL + 224 * b + 224)] ∧
-      Call s Entry.blk [wd (FL + 224 * b), wd (ABUF + 1792 * b)] ret tail m [] m' Gas.blk := by
+        (∀ i, i < 56 → word m' (abp + 32 * i) = pack4 fun k => cand (S k) i) ∧
+        (∀ g, g < 7 → word m' (flp + 32 * g) = flagWord S g)) ∧
+      FrameExcept m m' [(abp, abp + 1792), (flp, flp + 224)] ∧
+      Call s Entry.blk [wd flp, wd abp] ret tail m [] m' Gas.blk := by
   have htail : tail.length ≤ 960 := by
     have := hr.depth; simp only [Stack.blk, Stack.leaf] at this; omega
-  have hABUF : ABUF = 20480 := rfl
-  have hFL : FL = 31232 := rfl
-  obtain ⟨Mf, hI, hL⟩ := loop hs htail m hb 7 le_rfl
-  rw [if_neg (by omega)] at hL
-  have hpro := pro hs htail (FL + 224 * b) (ABUF + 1792 * b) ret m
-  have hepi := epi hs htail U5 U4 U3 U2 U1 U0 (96 * 7) (FL + 224 * b + 32 * 7)
-    (ABUF + 1792 * b + 256 * 7) ret Mf hr.jumpdest hr.small
-  refine ⟨flip6 Mf, fun S _ hKS => ?_, ?_, ?_⟩
-  · obtain ⟨hcand, hflag⟩ := hI.2 S hKS
-    refine ⟨fun i hi => ?_, fun g hg => ?_⟩
-    · rw [word_flip6_high _ (by omega)]; exact hcand i (by omega)
-    · rw [word_flip6_high _ (by omega)]; exact hflag g hg
-  · exact flip6_frame (by simp only [avoids_cons, avoids_nil, and_true]; omega) hI.1
+  simp only [KS, TOP] at ha ha' hf hf'
+  obtain ⟨m', hpost, hfr, hreach⟩ := run hs htail hr.jumpdest hr.small m (j0 := 0) (N := 7)
+    (abp0 := abp) (flp0 := flp) ⟨by omega, ha, by omega, hf, by omega, by omega⟩ (by omega)
+  refine ⟨m', fun S _ hKS => ?_, by simpa using hfr, ?_⟩
+  · obtain ⟨h1, h2⟩ := hpost S hKS
+    exact ⟨fun i hi => by simpa using h1 i (by omega), fun g hg => by simpa using h2 g hg⟩
   · rw [call_iff]
-    have h := (hpro.trans hL).trans hepi
+    have he := ent_blk hs htail flp abp ret m
     simp only [List.cons_append, List.nil_append, Entry.blk, Gas.blk]
-    exact h.mono (by norm_num)
+    exact (he.trans (by simpa using hreach)).mono (by norm_num)
+
+/-- **blkh** (proof). -/
+theorem blkh_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.blk ret tail) (m : ByteArray) {abp flp : Nat}
+    (ha : KS + 800 ≤ abp) (ha' : abp + 1024 ≤ TOP) (hf : KS + 800 ≤ flp) (hf' : flp + 128 ≤ TOP)
+    (hd : abp + 1024 ≤ flp ∨ flp + 128 ≤ abp) :
+    ∃ m', (∀ S, Sized4 S → KS4 m S →
+        (∀ i, i < 32 → word m' (abp + 32 * i) = pack4 fun k => cand (S k) i) ∧
+        (∀ g, g < 4 → word m' (flp + 32 * g) = flagWord S g)) ∧
+      FrameExcept m m' [(abp, abp + 1024), (flp, flp + 128)] ∧
+      Call s Entry.blkh [wd flp, wd abp] ret tail m [] m' Gas.blkh := by
+  have htail : tail.length ≤ 960 := by
+    have := hr.depth; simp only [Stack.blk, Stack.leaf] at this; omega
+  simp only [KS, TOP] at ha ha' hf hf'
+  obtain ⟨m', hpost, hfr, hreach⟩ := run hs htail hr.jumpdest hr.small m (j0 := 0) (N := 4)
+    (abp0 := abp) (flp0 := flp) ⟨by omega, ha, by omega, hf, by omega, by omega⟩ (by omega)
+  refine ⟨m', fun S _ hKS => ?_, by simpa using hfr, ?_⟩
+  · obtain ⟨h1, h2⟩ := hpost S hKS
+    exact ⟨fun i hi => by simpa using h1 i (by omega), fun g hg => by simpa using h2 g hg⟩
+  · rw [call_iff]
+    have he := ent_blkh hs htail flp abp ret m
+    simp only [List.cons_append, List.nil_append, Entry.blkh, Gas.blkh]
+    exact (he.trans (by simpa using hreach)).mono (by norm_num)
+
+/-- **blkt** (proof). -/
+theorem blkt_call_proof {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.blk ret tail) (m : ByteArray) :
+    ∃ m', (∀ S, Sized4 S → KS4 m S →
+        (∀ i, 32 ≤ i → i < 56 → word m' (ABUF + 1792 * 4 + 32 * i) = pack4 fun k => cand (S k) i) ∧
+        (∀ g, 4 ≤ g → g < 7 → word m' (FL + 224 * 4 + 32 * g) = flagWord S g)) ∧
+      FrameExcept m m' [(ABUF + 1792 * 4 + 1024, ABUF + 1792 * 5), (FL + 224 * 4 + 128, FL + 224 * 5)] ∧
+      Call s Entry.blkt [] ret tail m [] m' Gas.blkt := by
+  have htail : tail.length ≤ 960 := by
+    have := hr.depth; simp only [Stack.blk, Stack.leaf] at this; omega
+  obtain ⟨m', hpost, hfr, hreach⟩ := run hs htail hr.jumpdest hr.small m (j0 := 4) (N := 3)
+    (abp0 := 28672) (flp0 := 32256) ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
+    (by omega)
+  refine ⟨m', fun S _ hKS => ?_, by simpa [ABUF, FL] using hfr, ?_⟩
+  · obtain ⟨h1, h2⟩ := hpost S hKS
+    refine ⟨fun i hi hi' => ?_, fun g hg hg' => ?_⟩
+    · have := h1 (i - 32) (by omega)
+      rw [show 8 * 4 + (i - 32) = i by omega, show 28672 + 32 * (i - 32) = ABUF + 1792 * 4 + 32 * i by
+        simp only [ABUF]; omega] at this
+      exact this
+    · have := h2 (g - 4) (by omega)
+      rw [show 4 + (g - 4) = g by omega, show 32256 + 32 * (g - 4) = FL + 224 * 4 + 32 * g by
+        simp only [FL]; omega] at this
+      exact this
+  · rw [call_iff]
+    have he := ent_blkt hs htail ret m
+    simp only [List.nil_append, Entry.blkt, Gas.blkt]
+    exact (he.trans (by simpa using hreach)).mono (by norm_num)
 
 end MlDsaOpt44.Proofs

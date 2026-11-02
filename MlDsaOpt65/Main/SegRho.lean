@@ -14,7 +14,7 @@ lanes, `bswap` network then `spr`, `MSTORE` to `RHO1 + 32 x`). -/
 theorem seg_rho {s : State} (hs : Ctx s) {m : ByteArray}
     (hI : Inv3 s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv4 s.executionEnv.calldata m' ∧
-      Reach (callState s 3115 [flag b] m) (callState s 3565 [flag b] m') Gas.pRho := by
+      Reach (callState s 3106 [flag b] m) (callState s 3556 [flag b] m') Gas.pRho := by
   exact S1.seg_rho_proof hs hI b
 
 end MlDsaOpt65.Proofs

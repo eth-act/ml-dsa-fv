@@ -23,50 +23,39 @@ namespace Gas
 /-- `0 … 992`: size check, the sizing store and the `RC4` / `RC1` tables
 (static cost; memory expansion to `memWords` is added by the trace). -/
 def pInit : Nat := 658
-/-- `992 … 1110`: `dz [ZH, Z0]`, `dz [ZH2, Z0 + 2560]`, flag masking and check,
-`dhint`, `AND`. -/
-def pZh : Nat := 89 + 2 * dz + dhint
-/-- `1110 … 3093`: the 248 NTT zeta records. -/
+/-- `992 … 1101`: `dz [ZH, Z0]`, `dz [ZH2, Z0 + 2560]`, flag masking and check. -/
+def pZ : Nat := 71 + 2 * dz
+/-- `1101 … 3084`: the 248 NTT zeta records. -/
 def pTbl : Nat := 2232
-/-- `3093 … 3115`: `ntt(ZH)`, `ntt(ZH2)`. -/
+/-- `3084 … 3106`: `ntt(ZH)`, `ntt(ZH2)`, the return `JUMPDEST`. -/
 def pNtt : Nat := 36 + 2 * ntt
-/-- `3115 … 3565`: `RHO1` (ρ and c̃ lanes spread, ten `spr` calls). -/
+/-- `3106 … 3556`: `RHO1` (ρ and c̃ lanes spread, ten `spr` calls). -/
 def pRho : Nat := 705 + 10 * spr
-/-- `3565 … 3578`: `group [15, 0, 0]`, `AND`. -/
-def pG0 : Nat := 25 + group
-/-- `3578 … 3634`: `group [15, s, 0]`, `s = 1 … 4`, `AND` (one segment each). -/
-def pG1 : Nat := 26 + group
-def pG2 : Nat := 26 + group
-def pG3 : Nat := 26 + group
-def pG4 : Nat := 26 + group
-/-- `3634 … 4033`: group 5 (instances 0–2: `A[4][0]`, `A[5][0]`, `A[4][1]`; `tr`
-blocks 0–4): `ginit`, five `trabs 5` + `kf4` + `blk`, `gfix [7]` (three active
-slots), `AND`, `pass3x5`. -/
-def pG5 : Nat := 392 + ginit + 5 * (trabs 5 + kf4 + blk) + gfix 3 + pass3x5
-/-- `4033 … 4468`: group 6 (instances 3–5: `A[5][1]`, `A[4][2]`, `A[5][2]`; `tr`
-blocks 5–9), `pass3x6`. -/
-def pG6 : Nat := 395 + ginit + 5 * (trabs 5 + kf4 + blk) + gfix 3 + pass3x6
-/-- `4468 … 4972`: group 7 (instances 6–8: `A[4][3]`, `A[5][3]`, `A[4][4]`; `tr`
-blocks 10–14, `cext 8` into `TRL`), `pass3x7`. -/
-def pG7 : Nat :=
-  455 + ginit + 4 * trabs 5 + trabs 2 + 5 * (kf4 + blk) + cext 8 + gfix 3 + pass3x7
-/-- `4972 … 5190`: group 8 (instance 9: `A[5][4]`; the c̃ stream: two `cext 17`
-into `CB`; the μ rider: `mu0`, `cext 8` into `MU`), `gfix [1]`, `pass3x8`, the
-return `JUMPDEST`. -/
-def pG8 : Nat := 341 + ginit + mu0 + 5 * (kf4 + blk) + 2 * cext 17 + cext 8 + gfix 1 + pass3x8
-/-- `5190 … 6499`: μ, from the SIMD slot (`|M| ≤ 69`, 195) or by `kf1`
-(`hash_mu`): selection 24, setup 983, one loop visit (`kf1` + `absorb17` + 88)
-per 136 bytes of `tr ‖ 0 ‖ 0 ‖ M` plus one, the final permutation (`kf1` + 202). -/
+/-- `3556 … 5242`: ExpandA: the five pure groups of row group 0 (copies to
+`CW`, `HP`, `HP + 0x2000`, `ACC + 0x2000`, then `pass3f4`), the mixed groups
+5 … 7 (row group 1 instances, `tr`; copies to `CW`, `HP`, `HP + 0x2000`), group
+8 (`A[5][4]`, c̃ stream, μ's blocks 0 … 4 in slot 2, `mub0`/`mub`, the `mulong`
+region), `pass3f8`. Longest static path: row group 0 2038895
+(`Exp.exp_pure`), groups 5–7 1152470 (`Exp.gG57`), group 8 and `pass3f8` on the
+`mulong` path (`|M| ≥ 70`: five `mub` instead of `cext [MU, 2, 8]`) 432185
+(the short-μ path is 13870 cheaper). -/
+def pExp : Nat := 3623550
+/-- `5242 … 5356`: zero the side buffers in `CW`, `HP`, `HP + 0x2000`, `dhint`, `AND`. -/
+def pZd : Nat := 2448 + dhint
+/-- `5356 … 6172`: μ, from `MU` (`|M| ≤ 613`, 195) or by `kf1` from slot 2's
+state (`hash_mu`): selection 24, setup (`cext 25`, replication, block 5) 6884,
+one loop visit (`kf1` + `absorb17` + 88) per further 136 bytes plus one, the
+final permutation (`kf1` + 202). -/
 def pMu (mlen : Nat) : Nat :=
-  if mlen ≤ 69 then 195
-  else 24 + 983 + ((66 + mlen) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
-/-- `6499 … 6509`: `sib`, `AND`. -/
+  if mlen ≤ 613 then 195
+  else 24 + 6884 + ((mlen - 614) / 136 + 1) * (kf1 + absorb17 + 88) + (kf1 + 202)
+/-- `6172 … 6182`: `sib`, `AND`. -/
 def pSib : Nat := 19 + sib
-/-- `6509 … 6564`: `tbuild`, `csum` for each row group. -/
+/-- `6182 … 6237`: `tbuild`, `csum` for each row group. -/
 def pCt : Nat := 84 + 2 * (tbuild + csum)
-/-- `6564 … 6642`: `intt`, `usehint`, `pack` for each row group (4 and 2 rows). -/
-def pW : Nat := 120 + 2 * (intt + usehint) + pack 4 + pack 2
-/-- `6642 …`: the final hash (six absorbing `kf1` visits and the last one),
+/-- `6237 … 6293`: `intt` (with UseHint), `pack` for each row group (4 and 2 rows). -/
+def pW : Nat := 84 + 2 * intt + pack 4 + pack 2
+/-- `6293 …`: the final hash (six absorbing `kf1` visits and the last one),
 the 48-byte c̃ comparison, `mstore(0, ok)`, `return(0, 32)`. -/
 def pFin : Nat := 220 + 6 * (kf1 + 495) + (kf1 + 485)
 

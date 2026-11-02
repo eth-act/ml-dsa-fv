@@ -60,19 +60,12 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.tbuild_call
 #print axioms MlDsaOpt65.Proofs.ntt_call
 #print axioms MlDsaOpt65.Proofs.intt_call
-#print axioms MlDsaOpt65.Proofs.pass3_call
-#print axioms MlDsaOpt65.Proofs.pass3x5_call
-#print axioms MlDsaOpt65.Proofs.pass3x6_call
-#print axioms MlDsaOpt65.Proofs.pass3x7_call
-#print axioms MlDsaOpt65.Proofs.pass3x8_call
 #print axioms MlDsaOpt65.Proofs.ginit_call
 #print axioms MlDsaOpt65.Proofs.group_call
-#print axioms MlDsaOpt65.Proofs.mu0_call
 #print axioms MlDsaOpt65.Proofs.seg_mu
 #print axioms MlDsaOpt65.Proofs.csum_call
 #print axioms MlDsaOpt65.Proofs.csum_congr
 #print axioms MlDsaOpt65.Proofs.csum_lt
-#print axioms MlDsaOpt65.Proofs.usehint_call
 #print axioms MlDsaOpt65.Proofs.pack_call
 #print axioms MlDsaOpt65.Proofs.useHint_emod
 #print axioms MlDsaOpt65.Proofs.useHint_range
@@ -83,7 +76,3 @@ elab "#open_items" : command => do
 #print axioms MlDsaOpt65.Proofs.hintBitUnpack_range
 #print axioms MlDsaOpt65.Proofs.ntt_zLane
 #print axioms MlDsaOpt65.Proofs.sib_call
-#print axioms MlDsaOpt65.Proofs.seg_g5
-#print axioms MlDsaOpt65.Proofs.seg_g6
-#print axioms MlDsaOpt65.Proofs.seg_g7
-#print axioms MlDsaOpt65.Proofs.seg_g8
