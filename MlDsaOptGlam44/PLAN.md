@@ -22,7 +22,7 @@ Pure v4 modules (models, spec facts, `Defs`) are imported, not copied, so the
 v4 lemmas apply to the same definitions. All three generators and the port are
 reproduced by the gate.
 
-## Status: retargeted, with open items
+## Status: closed (no open items)
 
 Proved: the kernels (`kf4_spec`, `kf1_spec`), the unrolled `blk` / `blkh` / `blkt`
 (`Fn/Blk/`, package 1; `Fn/Blk/gen.py`), the 4 + 4 NTT and inverse NTT (`Fn/Ntt/`,
@@ -30,7 +30,8 @@ package 2; `Fn/Ntt/gen_nttg.py`), `sib_call` and `sib_call0` (`Fn/Ball/`, packag
 `Fn/Ball/gen_blocks.py`; `Gas.sib` = 64,094 covers both flag values), `dz_call` (`Fn/Decode/Z4G*`, package 3;
 `Fn/Decode/gen_dz.py`: v4's lane algebra, the gather unrolled per chunk), `csum_call`
 (`Fn/Ct/Csum4*`, package 3; `Fn/Ct/gen_csum.py`: all τ = 39 bases on the stack via `DUPN`),
-every ported routine (`fix`,
+the long-message schedule `seg_alt` (`Main/SegAlt.lean`, `Main/Alt/`, `Fn/Alt/`, package 5;
+`Main/Alt/gen.py`; exact `Gas.pAlt`), every ported routine (`fix`,
 `gfix`, `group`, `pass3f4`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`,
 `kmove`, `lmerge`, `spr`, `tbuild`, `pack`, `dhint`), the main flow up to the
 long-message switch and the packed schedule's segments (`|M| < 342`), the
@@ -38,11 +39,8 @@ shared tail (`tbuild` / `csum`, `intt` / `pack`, the final hash), μ on the
 packed schedule (v4's proof with the four blocks that read `FLAG`), the short
 path, and the composition into the final theorems.
 
-Open (`#open_items`):
-
-| item | code | notes |
-|---|---|---|
-| `seg_alt` | `alt` … `altj`, `mulong`, `pass3f4b`, the tail with `FLAG = 0` | the long-message schedule; `Gas.pAlt` is a provisional bound (`Gas.lean`) |
+`#open_items` (`checks/Axioms.lean`) lists nothing; every final theorem depends only on
+`propext`, `Classical.choice`, `Quot.sound`.
 
 ```sh
 export TMPDIR=$PWD/.lake/tmp

@@ -105,6 +105,8 @@ GENERATORS = (
        ("glam ball gen_blocks.py", ["python3", "MlDsaOptGlam44/Fn/Ball/gen_blocks.py"], None),
        ("glam gen_csum.py", ["python3", "MlDsaOptGlam44/Fn/Ct/gen_csum.py"], None),
        ("glam gen_dz.py", ["python3", "MlDsaOptGlam44/Fn/Decode/gen_dz.py"], None)]
+    + [(f"glam alt gen.py {g}", ["python3", "MlDsaOptGlam44/Main/Alt/gen.py", str(g)],
+        f"MlDsaOptGlam44/Main/Alt/Grp{f}.lean") for g, f in ((0, "A"), (1, "B"))]
 # Not listed (do not reproduce the checked-in files on master; see README): gen_kf4.py,
 # gen_ntt.py, gen_p3.py, Main/Wp11Gen/gen_*.py, Main/S1/gen_s1.py, Csum gen_blocks.py 65,
 # Ginit gen_lanes.py 65.
