@@ -146,6 +146,7 @@ that mentions them and their axioms are audited like everything else.
 | `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py` | `MlDsaOptGlam44/Fn/Ntt/{FwdA,FwdB,Inv1,Inv2,Zeta}.lean` |
 | `MlDsaOptGlam44/Fn/Blk/gen.py NN` (65, 87) | `MlDsaOptGlamNN/Fn/Blk/{Iters,Glue,Proof}.lean` |
 | `MlDsaOptGlam44/Fn/Ntt/gen_nttg.py NN` (65, 87; forward NTT only) | `MlDsaOptGlamNN/Fn/Ntt/{FwdA,FwdB,Ctl,Passes,Top}.lean` |
+| `MlDsaOptGlam65/Fn/Ntt/gen_inttg.py 65` | `MlDsaOptGlam65/Fn/Ntt/{Inv1,Inv2,InvCtl,InvTop}.lean` |
 | `MlDsaOptGlam44/Fn/Ball/gen_blocks.py` | `MlDsaOptGlam44/Fn/Ball/Blocks.lean` |
 | `MlDsaOptGlam44/Fn/Ct/gen_csum.py` | `MlDsaOptGlam44/Fn/Ct/{Csum4Blocks,Csum4Iter}.lean` |
 | `MlDsaOptGlam44/Fn/Decode/gen_dz.py` | `MlDsaOptGlam44/Fn/Decode/{Z4GBlocks,Z4GLoop}.lean` |
