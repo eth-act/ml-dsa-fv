@@ -198,3 +198,5 @@ sub('Fn/Csum/Main.lean', "have htail : tail.length ≤ 960 := by have := hr.dept
     "have htail : tail.length ≤ 950 := by have := hr.depth")
 sub('Fn/Csum/Main.lean', "only [csMem, word_mstore_disjoint, word_mstore]",
     "only [csMem, c4mem, word_mstore_disjoint, word_mstore]", count=4)
+# ExpandA's exact cost on this artifact (the composed segment cost, `Exp.seg_exp_of`)
+sub('Main/Base.lean', "def pExp : Nat := 6090544", "def pExp : Nat := 5435839  -- glam: pureCost 3617135 + gG1013 1406472 + gG14 412232")

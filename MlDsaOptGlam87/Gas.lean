@@ -6,9 +6,12 @@ set_option warningAsError true
 # The public gas schedule (Glamsterdam ML-DSA-87)
 
 v4's schedule (`MlDsaOpt87/Gas.lean`) over this artifact's segment budgets
-(`Main/Base.lean`, re-measured where the code changed).
+(`Main/Base.lean`, re-measured where the code changed):
+`schedule (7219 + n) = 6,614,433 + ⌊(66 + n) / 136⌋ · 27,175` (`schedule_msg`), i.e.
+6,614,433 for `n ≤ 69`. The measured worst case of `docs/glam.md` is 6,432,872
+for `n = 0`.
 
-v4's notes:
+v4's notes (v4's numbers):
 
 A function of the calldata length only, composed from the segment budgets of
 `Main/Base.lean` (themselves sums of subroutine budgets and static glue
@@ -39,6 +42,20 @@ def schedule (size : Nat) : Nat :=
     pInit + EvmSemantics.MachineState.memCost memWords + pZ + pTbl + pNtt + pRho + pExp + pZd +
       pSib + pCt + pW + pFin + pMu (size - 7219)
 
--- glam: v4's closed form `schedule_msg` is restated once `pExp`, `pW` are final
+/-- The schedule in closed form: one more `kf1` block per 136 message bytes. -/
+theorem schedule_msg (n : Nat) :
+    schedule (7219 + n) = 6614433 + (66 + n) / 136 * 27175 := by
+  unfold schedule
+  rw [if_neg (by omega), Nat.add_sub_cancel_left]
+  have hc : pInit + EvmSemantics.MachineState.memCost memWords + pZ + pTbl + pNtt + pRho + pExp +
+      pZd + pSib + pCt + pW + pFin = 6560147 := by decide
+  rw [hc]
+  unfold pMu
+  have hk : kf1 + absorb17 + 88 = 27175 := rfl
+  have hp : kf1 + 202 = 26129 := rfl
+  rw [hk, hp]
+  generalize (66 + n) / 136 = X
+  rw [Nat.add_mul, Nat.one_mul]
+  omega
 
 end MlDsaOptGlam87.Proofs.Gas
