@@ -1,6 +1,7 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
 import MlDsaOpt44.Fn.Decode.HintMain
+import MlDsaOpt44.Fn.Decode.Z4Loop
 /-!
 # Signature decoding: `dz` (z with norm flags) and `dhint` (HintBitUnpack) (WP8)
 
@@ -22,14 +23,14 @@ open MlDsa44
 /-- The norm-flag bits checked by `flag_check`. -/
 def zBits : Nat := pack4 fun _ => 2 ^ 50 + 2 ^ 27
 
-/-- **dz**: `[ZH, Z0, ret] ↦ [f]`. -/
+/-- **dz**: `[ZH, Z0, ret] ↦ [f]` (proof: `Fn/Decode/Z4*.lean`). -/
 theorem dz_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.dz ret tail) (m : ByteArray) (hcd : HDR ≤ s.executionEnv.calldata.size) :
     ∃ m', ∃ f, f < 2 ^ 256 ∧ ((f &&& zBits = 0) ↔ okZ s.executionEnv.calldata = true) ∧
       (∀ t, t < 256 → word m' (ZH + 32 * t) = pack4 fun k => zLane s.executionEnv.calldata k t) ∧
       FrameExcept m m' [(ZH, ZH + 8192)] ∧
       Call s Entry.dz [wd ZH, wd Z0] ret tail m [wd f] m' Gas.dz :=
-  sorry
+  DecodeZ4.dz_main hs hr m hcd
 
 /-- **dhint**: `[ret] ↦ [ok]`, `HP` initially zero. Every `HP` word is four
 bit lanes; if the hint decodes, lane `r` of `HP[t]` is `h[r][t]`. -/
