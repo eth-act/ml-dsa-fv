@@ -59,8 +59,13 @@ DEFAULT_VERSION = "v3"
 
 
 class Layout:
-    def __init__(self, nn, version=DEFAULT_VERSION):
+    # v4 R4-7: ML-DSA-65's 42-call schedule (glam only: v4 has no code room)
+    PACK65 = {"v4": False, "glam": True}
+    PACK65_SB = int(os.environ.get("OPT_PACK65_SB", "2"))    # extra side buffers (measured: see docs)
+
+    def __init__(self, nn, version=DEFAULT_VERSION, glam=False):
         assert version in VERSIONS, version
+        self.glam = glam
         p = derived(nn)
         self.nn = nn
         self.version = version
@@ -119,7 +124,9 @@ class Layout:
             alloc("KZ", 25 * 32)  # kf1 third round buffer (v3: 3 rounds per iteration)
         # 44: two extra 8 KB buffers let all 5 groups share one fused pass
         # (+512 words of memory, -4k net); 65 and 87 do not gain
-        self.NSB = 2 if self.v4 and nn == 44 else 0
+        self.pack65 = (self.v4 and nn == 65 and self.PACK65["glam" if glam else "v4"]
+                       and os.environ.get("OPT_V4_PACK", "1") == "1")
+        self.NSB = 2 if self.v4 and nn == 44 else self.PACK65_SB if self.pack65 else 0
         if self.NSB:
             alloc("SB", self.NSB * 0x2000)  # v4: extra side buffers for the fused accumulation
         self.TOP = addr
@@ -147,13 +154,22 @@ class Gen:
         self.deferred = []       # (region, emitter) placed after main's code
         # v4 (R4-7): ML-DSA-44 at the kf4 packing floor (23 calls); states
         # pause and move between slots, see build_schedule / emit_window44
-        self.pack = L.v4 and L.nn == 44 and os.environ.get("OPT_V4_PACK", "1") == "1"
+        self.pack = (L.v4 and L.nn == 44 and os.environ.get("OPT_V4_PACK", "1") == "1") or L.pack65
+        # glam 44: below |M| = MSWITCH the packed schedule, from there on the
+        # previous one (its last group carries up to 5 mu blocks). 65's
+        # packed schedule is cheaper at every length (2 kf4 calls and 3
+        # accumulation terms more than pay for kf1 mu blocks).
+        self.mswitch = (self.pack and L.glam and L.nn == 44
+                        and os.environ.get("OPT_MSWITCH", "1") == "1")
         if self.pack:
-            self.MU_SIMD_BLOCKS = 1          # mu's slot gets one squeeze; kf1 continues
+            if not self.mswitch:
+                self.MU_SIMD_BLOCKS = 1      # mu's slot gets one squeeze; kf1 continues
             F = L.FIN + 8 * 32               # FIN[8..] is dead until pack (w1Encode)
             self.SAVE = [F, F + 25 * 32, F + 50 * 32]   # kf4 state images (25 words)
             assert F + 75 * 32 <= L.FIN + 32 * (8 + L.w1lanes)
             self.LIM = L.MISC + 0x180       # SampleInBall stream limit (c's 2nd block on demand)
+            self.FLAG = L.MISC + 0x160      # mswitch: 1 iff the packed schedule ran (else 0)
+        self.alt = None          # mswitch: (previous schedule, shared prefix length)
         self.c_saved = None      # (state image, slot) of c's sponge after its only SIMD squeeze
         self.mu_saved = None     # (state image, slot) of mu's sponge after its SIMD squeeze
 
@@ -315,6 +331,26 @@ class Gen:
             a.op("MSTORE")
         a.op("POP")
 
+    def push_muoff(self, nb):
+        a, L = self.a, self.L
+        if self.mswitch:
+            # packed schedule (FLAG = 1): 1 SIMD block, else MU_SIMD_BLOCKS
+            a.push(self.FLAG)
+            a.op("MLOAD")
+            a.push(136 * (nb - 1))
+            a.op("MUL")
+            a.push(L.HDR - 66 + 136 * nb)
+            a.op("SUB")
+        else:
+            a.push(L.HDR - 66 + 136 * nb)
+
+    @property
+    def LIMV(self):
+        """SampleInBall's initial stream limit with c's second block on demand
+        (debug: squeeze it at the first lane, or never)."""
+        return (32 if getattr(self, "dbg_c2", False) else
+                34 * 32 if getattr(self, "dbg_c2_off", False) else 17 * 32)
+
     def hash_mu(self):
         """mu = H(tr || 0 || 0 || M, 64) with tr in KS[0..7]; mu -> FIN[0..7]."""
         a, L = self.a, self.L
@@ -325,8 +361,17 @@ class Gen:
             # mu slot of the last group; continue on kf1 from that state
             if self.mu_saved:
                 # R4-7: mu's slot was squeezed once; its state image was saved
+                # (mswitch: only by the packed schedule; the previous one leaves
+                # mu in KS, in the same slot)
                 img, msl = self.mu_saved
+                skip = self.fresh("muimg")
+                if self.mswitch:
+                    a.push(self.FLAG)
+                    a.op("MLOAD")
+                    a.op("ISZERO")
+                    a.jumpi(skip)
                 self.mcopy(L.KS, img, 25)
+                a.label(skip)
             else:
                 msl = [s_ for s_, r in enumerate(self.schedule[-1]['slots']) if r and r[0] == 'mu'][0]
             nb = self.MU_SIMD_BLOCKS
@@ -343,11 +388,11 @@ class Gen:
                 a.push(L.KS + 32 * x)
                 a.op("MSTORE")
             a.op("POP")
-            a.push(L.HDR - 66 + 136 * nb)
+            self.push_muoff(nb)
             self.call_absorb17_top()     # block 5
             a.push(136)
             a.op("ADD")                  # [off] of block 6
-            a.push(L.HDR - 66 + 136 * nb)
+            self.push_muoff(nb)
             a.op("CALLDATASIZE")
             a.op("SUB")                  # [off, P], P = 66 + mlen - 680
         else:
@@ -746,41 +791,19 @@ class Gen:
         st.op("ADD", 2, "cnt")
         st.op("MSTORE", 2)
 
-    def sib_loop_wc(self, cb):
-        """SampleInBall byte loop (v4, R4-5), entry [ret, signs]: one iteration per
-        64-bit stream lane, its 8 bytes unrolled. v = 32 x for stream lane x
-        (byte 8 x), 1 <= x < 34; the lane word is at CB + v (SIMD stream) or
-        KS + v mod 544 (kf1: block 2 squeezed at v = 544). A rejected byte
-        costs one compare and a taken JUMPI; an accepted byte calls the
-        shared accept step `sibacc` with its return label (skip_k: POP)."""
+    def sib_iter(self, cb, loop, lim, target, acc):
+        """One copy of SampleInBall's lane loop: stop to `target` at v = lim
+        (None: v = MLOAD(LIM))."""
         a, L = self.a, self.L
-        tau = L.p["tau"]
-        a.push(256 - tau)
-        a.push(32)
-        loop, fail, done, acc = (self.fresh(x) for x in ("sibloop", "sibfail", "sibdone", "sibacc"))
-        if cb and self.c_saved:
-            # R4-7: c's slot was squeezed once (CB lanes 0..16); the stream
-            # limit LIM starts at block 1's end, where its second block is
-            # squeezed from the saved state on demand
-            ext = self.fresh("sibext")
-            # debug: squeeze block 2 at the first lane (opt_selftest) or
-            # never (opt_worstcase measures the byte loop on crafted lanes)
-            a.push(32 if getattr(self, "dbg_c2", False) else
-                   34 * 32 if getattr(self, "dbg_c2_off", False) else 17 * 32)
-            a.push(self.LIM)
-            a.op("MSTORE")
-            a.label(loop)
-            a.op("DUP1")
+        a.label(loop)
+        a.op("DUP1")
+        if lim is None:
             a.push(self.LIM)
             a.op("MLOAD")
-            a.op("EQ")
-            a.jumpi(ext)
         else:
-            a.label(loop)
-            a.op("DUP1")
-            a.push(34 * 32)
-            a.op("EQ")
-            a.jumpi(fail)
+            a.push(lim)
+        a.op("EQ")
+        a.jumpi(target)
         if not cb:
             assert L.KS == 0
             nok = self.fresh("sibnok")
@@ -824,6 +847,41 @@ class Gen:
         a.push(32)
         a.op("ADD")
         a.jump(loop)
+
+    def sib_loop_wc(self, cb):
+        """SampleInBall byte loop (v4, R4-5), entry [ret, signs]: one iteration per
+        64-bit stream lane, its 8 bytes unrolled. v = 32 x for stream lane x
+        (byte 8 x), 1 <= x < 34; the lane word is at CB + v (SIMD stream) or
+        KS + v mod 544 (kf1: block 2 squeezed at v = 544). A rejected byte
+        costs one compare and a taken JUMPI; an accepted byte calls the
+        shared accept step `sibacc` with its return label (skip_k: POP)."""
+        a, L = self.a, self.L
+        tau = L.p["tau"]
+        a.push(256 - tau)
+        a.push(32)
+        loop, fail, done, acc = (self.fresh(x) for x in ("sibloop", "sibfail", "sibdone", "sibacc"))
+        dup = cb and self.c_saved and self.mswitch
+        if cb and self.c_saved:
+            ext = self.fresh("sibext")
+        if dup:
+            # R4-7, glam: two copies of the loop; the first stops at block 1's
+            # end, where c's second block is squeezed on demand from the
+            # saved state if the packed schedule ran (FLAG), the second at
+            # the 272-byte bound
+            loop2 = self.fresh("sibloop")
+            heads = [(loop, self.LIMV if self.LIMV < 34 * 32 else 17 * 32, ext), (loop2, 34 * 32, fail)]
+        elif cb and self.c_saved:
+            # R4-7: c's slot was squeezed once (CB lanes 0..16); the stream
+            # limit LIM starts at block 1's end, where its second block is
+            # squeezed from the saved state on demand
+            a.push(self.LIMV)
+            a.push(self.LIM)
+            a.op("MSTORE")
+            heads = [(loop, None, ext)]
+        else:
+            heads = [(loop, 34 * 32, fail)]
+        for lp, lim, target in heads:
+            self.sib_iter(cb, lp, lim, target, acc)
         # accept step: [ret, signs, i, v, w, rk, j]
         a.label(acc)
         st = Stack(a, ["ret", "signs", "i", "v", "w", "rk", "j"])
@@ -852,19 +910,27 @@ class Gen:
         a.op("JUMP")
         if cb and self.c_saved:
             a.label(ext)
-            a.push(self.LIM)
-            a.op("MLOAD")
-            a.push(34 * 32)
-            a.op("EQ")
-            a.jumpi(fail)
-            a.push(34 * 32)
-            a.push(self.LIM)
-            a.op("MSTORE")
+            if dup:
+                a.push(self.FLAG)
+                a.op("MLOAD")
+                a.op("ISZERO")
+                a.jumpi(loop2)
+                if getattr(self, "dbg_c2_off", False):
+                    a.jump(loop2)
+            else:
+                a.push(self.LIM)
+                a.op("MLOAD")
+                a.push(34 * 32)
+                a.op("EQ")
+                a.jumpi(fail)
+                a.push(34 * 32)
+                a.push(self.LIM)
+                a.op("MSTORE")
             img, csl = self.c_saved
             self.mcopy(L.KS, img, 25)        # KS is dead here (mu is in FIN)
             self.call("kf4")
             self.call("cext", [L.CB + 17 * 32, csl, 17])
-            a.jump(loop)
+            a.jump(loop2 if dup else loop)
         a.label(fail)
         for _ in range(3):
             a.op("POP")
@@ -1995,6 +2061,15 @@ class Gen:
         a.op("JUMP")
 
     # ── schedule-driven SIMD groups (ExpandA + tr + c riding in slots) ──
+    MSWITCH = 342       # glam: |M| from which the previous schedule (5 SIMD mu blocks) is cheaper
+
+    def unpacked_schedule(self):
+        self.pack = False
+        try:
+            return self.build_schedule()
+        finally:
+            self.pack = True
+
     def build_schedule(self):
         """Groups of four SIMD slots, each running 5 squeezes. Roles:
         ('A', row, col) ExpandA instance, ('tr', run) a 5-block run of
@@ -2011,6 +2086,28 @@ class Gen:
             rows = [4 * rb + s if 4 * rb + s < k else None for s in range(4)]
             return dict(slots=[('A', r, j) if r is not None else None for r in rows],
                         p3=('aligned', rb, j), keep=None)
+        if self.pack and L.nn == 65:
+            # R4-7, 42 kf4 calls: columns 0..2 aligned; Kronecker rows 4, 5
+            # over columns 0..3 (slot s = column 3 - s, dot product moved to
+            # ACC_1 lane 0 / 1); columns 3, 4 rows 0..2 in slots 1..3 with
+            # tr in slot 0; then the tail (emit_window65): P = A33 / A34
+            # (Kronecker, row 3) and KX = A44 / A54 (lanes 0, 1)
+            for j in range(3):
+                groups.append(pure(0, j))
+            for r in (4, 5):
+                groups.append(dict(slots=[('A', r, 3 - s_) for s_ in range(4)], keep=None,
+                                   p3=('kron', 1, 0, 4, r - 4)))
+            for run, j in enumerate((3, 4)):
+                groups.append(dict(slots=[('tr', run)] + [('A', r, j) for r in range(3)],
+                                   keep=0 if run else None,
+                                   p3=('mix', 0, [(r + 1, r, j) for r in range(3)])))
+            groups.append(dict(slots=[None, ('tr', 2), ('A', 3, 4), ('A', 3, 3)], keep=None,
+                               p3=('kron', 0, 3, 2), win=65))
+            groups.append(dict(slots=[('A', 4, 4), ('A', 5, 4), ('mu',), ('c',)], keep=None,
+                               p3=('mix', 1, [(0, 0, 4), (1, 1, 4)]), win=65))
+            if self.mswitch:
+                self.alt = (self.unpacked_schedule(), 3)
+            return groups
         if L.nn == 65 and self.v3:
             # rows 0-3: 5 aligned groups. Rows 4, 5 (10 instances), tr (3 runs),
             # H(c-tilde) and mu share 4 groups (16 slot-runs); instances sit in
@@ -2052,6 +2149,8 @@ class Gen:
                                p3=('kron', 0, 2, 2), win=44))
             groups.append(dict(slots=[('tr', 1)] + [('A', r, 3) for r in range(3)], keep=0,
                                p3=('mix', 0, [(r + 1, r, 3) for r in range(3)]), win=44))
+            if self.mswitch:
+                self.alt = (self.unpacked_schedule(), 2)
             return groups
         # 44 / 87: tr runs in slot 3 of the last trruns groups of the last row
         # group; the displaced A instances (row 4 rb + 3) go to one extra group
@@ -2781,9 +2880,10 @@ class Gen:
                 out.append(('lane', j, None if m & keep == keep else m, d))
             return out
         assert p3[0] == 'kron'
-        return [('kron', p3[2], p3[3])]
+        # optional p3[4]: ACC lane of the dot product (default 3, where it forms)
+        return [('kron', p3[2], p3[3]) + tuple(p3[4:])]
 
-    def plan_accumulation(self):
+    def plan_accumulation(self, sched, tag=""):
         """v4: instead of one ACC read-modify-write pass per group, a group's
         fixed-up candidates (ABUF[0, 256)) are copied (MCOPY) to a side
         buffer that is dead during ExpandA, and one fused pass per batch
@@ -2793,15 +2893,16 @@ class Gen:
         group's ACC serves as a side buffer meanwhile. Side buffers: CW
         (SampleInBall runs after ExpandA), HP (HintBitUnpack runs after
         ExpandA), ACC_g for row groups g not yet started; CW and HP are
-        zeroed again after ExpandA."""
+        zeroed again after ExpandA.
+        Annotates every entry with g['acc'] = ('copy', buffer) / ('pass', name).
+        Row groups may interleave (65, R4-7): then each row group keeps its
+        own pending list, and ACC_rb serves rb's own items until rb's first
+        pass (the pass reads every buffer word before it stores ACC_rb)."""
         L = self.L
-        sched = self.schedule
         rbs = [g['p3'][1] for g in sched]
-        assert rbs == sorted(rbs), rbs
         last = {rb: gi for gi, rb in enumerate(rbs)}
-        self.acc_plan = {}
-        self.fused = []
-        self.zeroed = []
+        if rbs != sorted(rbs):
+            return self.plan_interleaved(sched, tag)
         pending, started = [], set()
         for gi, g in enumerate(sched):
             rb = rbs[gi]
@@ -2811,22 +2912,49 @@ class Gen:
             free = [b for b in pool if b not in [x for x, _ in pending]]
             if gi == last[rb] or not free:
                 bufs = pending + [(L.ABUF, self.acc_items(g))]
-                name = f"pass3f{gi}"
+                name = f"pass3f{gi}{tag}"
                 self.fused.append((name, rb, rb not in started, bufs))
-                self.acc_plan[gi] = ('pass', name)
+                g['acc'] = ('pass', name)
                 started.add(rb)
                 pending = []
             else:
                 b = free[0]
                 pending.append((b, self.acc_items(g)))
-                self.acc_plan[gi] = ('copy', b)
-                if b < L.ACC or b >= L.HP:
+                g['acc'] = ('copy', b)
+                if b < L.ACC or L.HP <= b < L.HP + 0x2000 * L.GR:
                     if b not in self.zeroed:
                         self.zeroed.append(b)
 
-    def accumulate(self, gi):
+    def plan_interleaved(self, sched, tag):
+        L = self.L
+        rbs = [g['p3'][1] for g in sched]
+        last = {rb: gi for gi, rb in enumerate(rbs)}
+        pending = {rb: [] for rb in rbs}
+        started = set()
+        for gi, g in enumerate(sched):
+            rb = rbs[gi]
+            used = [x for p in pending.values() for x, _ in p]
+            pool = [L.CW] + [L.HP + 0x2000 * h for h in range(L.GR)] \
+                + ([L.ACC + 0x2000 * rb] if rb not in started else []) \
+                + [L.SB + 0x2000 * h for h in range(L.NSB)]
+            free = [b for b in pool if b not in used]
+            if gi == last[rb] or not free:
+                bufs = pending[rb] + [(L.ABUF, self.acc_items(g))]
+                name = f"pass3f{gi}{tag}"
+                self.fused.append((name, rb, rb not in started, bufs))
+                g['acc'] = ('pass', name)
+                started.add(rb)
+                pending[rb] = []
+            else:
+                b = free[0]
+                pending[rb].append((b, self.acc_items(g)))
+                g['acc'] = ('copy', b)
+                if (b < L.ACC or L.HP <= b < L.HP + 0x2000 * L.GR) and b not in self.zeroed:
+                    self.zeroed.append(b)
+
+    def accumulate(self, g):
         a, L = self.a, self.L
-        kind, x = self.acc_plan[gi]
+        kind, x = g['acc']
         if kind == 'copy':
             a.push(0x2000)
             a.push(L.ABUF)
@@ -2889,7 +3017,7 @@ class Gen:
                             masks.append(km)
                 for zg in gs:
                     zuse[zg] = zuse.get(zg, 0) + 1
-        if kron:
+        if kron and any(it[0] == 'kron' and (it[3] if len(it) > 3 else 3) for _, its in bufs for it in its):
             masks.append(M64 << 192)
         addrs = [acc] + [L.ZH + 0x2000 * zg for zg in zuse] + [b for b, _ in bufs]
         base = min(addrs)
@@ -2944,7 +3072,7 @@ class Gen:
                             st.dup("M64", "mm")
                             st.op("AND", 2, "z")
                     else:
-                        _, j0, n = it
+                        j0, n = it[1], it[2]
                         g0, s0 = divmod(j0, 4)
                         zget(g0, "z")
                         if s0:
@@ -2977,8 +3105,13 @@ class Gen:
                             st.dup(mname[sum(M64 << (64 * (3 - i)) for i in range(n))], "mm")
                             st.op("AND", 2, "x")
                         st.op("MUL", 2, "x")
-                        st.dup(mname[M64 << 192], "mm")
-                        st.op("AND", 2, "x")
+                        lane = it[3] if len(it) > 3 else 3
+                        if lane:
+                            st.dup(mname[M64 << 192], "mm")
+                            st.op("AND", 2, "x")
+                        if lane < 3:
+                            st.push(64 * (3 - lane), "c")
+                            st.op("SHR", 2, "x")
                     # accumulate x; X (if still needed) stays on top
                     if not have:
                         st.rename("x", "acc")
@@ -3087,11 +3220,12 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
-    LM_UNROLL = 11
+    LM_UNROLL = {44: 11, 65: 14}
 
     def lmerge(self, dst, src_a, ma, src_b, sl, n):
-        """dst[w] = (src_a[w] & ma) | (src_b[w] << sl), w < n words."""
-        assert n % self.LM_UNROLL == 0
+        """dst[w] = lanes ma of src_a[w], the other lanes of src_b[w] << sl,
+        w < n words (dst may be src_a)."""
+        assert n % self.LM_UNROLL[self.L.nn] == 0
         self.call("lmerge", [(dst - src_a) & ALL, ma, (src_b - src_a) & ALL, sl, src_a + 32 * n, src_a])
 
     def gen_lmerge(self):
@@ -3104,27 +3238,29 @@ class Gen:
         layout = list(st.s)
         loop = self.fresh("lml")
         a.label(loop)
-        for k in range(self.LM_UNROLL):
+        for k in range(self.LM_UNROLL[self.L.nn]):
             st.dup("p", "q")
             if k:
                 st.push(32 * k, "c")
                 st.op("ADD", 2, "q")
-            st.dup("q", "v")
-            st.op("MLOAD", 1, "v")
-            st.dup("ma", "c")
-            st.op("AND", 2, "v")
             st.dup("db", "w")
             st.dup("q", "c")
             st.op("ADD", 2, "w")
             st.op("MLOAD", 1, "w")
             st.dup("sl", "c")
-            st.op("SHL", 2, "w")
-            st.op("OR", 2, "v")
+            st.op("SHL", 2, "w")         # b'
+            st.dup("q", "v")
+            st.op("MLOAD", 1, "v")
+            st.dup("w", "c")
+            st.op("XOR", 2, "v")
+            st.dup("ma", "c")
+            st.op("AND", 2, "v")
+            st.op("XOR", 2, "v")         # b' ^ ((a ^ b') & ma)
             st.swap(1)
             st.dup("da", "c")
             st.op("ADD", 2, "q")
             st.op("MSTORE", 2)
-        st.add_const("p", 32 * self.LM_UNROLL)
+        st.add_const("p", 32 * self.LM_UNROLL[self.L.nn])
         assert st.s == layout
         st.dup("end", "e")
         st.dup("p", "x")
@@ -3135,7 +3271,7 @@ class Gen:
             st.pop(nm)
         a.op("JUMP")
 
-    def gfix_acc(self, gi, amask):
+    def gfix_acc(self, g, amask):
         """HAVE6 = 0; gfix the ABUF of schedule entry gi (lanes amask, its
         final states in KS); accumulate it. Stack [ok] -> [ok]."""
         a, L = self.a, self.L
@@ -3148,7 +3284,7 @@ class Gen:
         a.jump("gfix")
         a.label(ret)
         a.op("AND")
-        self.accumulate(gi)
+        self.accumulate(g)
 
     def mu_start(self, sh):
         """mu's block 0 into the fresh slot sh (padded if |M| <= 69)."""
@@ -3162,7 +3298,7 @@ class Gen:
         a.op("POP")
         a.label(join)
 
-    def emit_window44(self, gi):
+    def emit_window44(self, sched, gi):
         """ML-DSA-44 calls 15..22 (8 kf4 calls, all 32 slot-permutations used).
         slot 0: tr blocks 5..9 (15..19), c (20), A13 (21, 22)
         slot 1: A03 (15..19), mu (20), A23 (21, 22)
@@ -3174,7 +3310,7 @@ class Gen:
         A13 / A23 pause after call 17 (state image SAVE[0]) and resume in
         slots 0, 1; for B3's fix-up the state is rebuilt (A03 from SAVE[1])."""
         a, L = self.a, self.L
-        gE, gB = gi, gi + 1
+        gE, gB = sched[gi], sched[gi + 1]
         S17, S19, SC = self.SAVE
         R, RF = L.ACC, L.BASES                 # B3 staging: 256 + 32 words
         assert L.GR == 1
@@ -3216,18 +3352,112 @@ class Gen:
         self.kmove(S19, 0, [1], ALL ^ self.slotbits([1]))
         self.gfix_acc(gB, 0b1110)
 
+    def emit_window65(self, sched, gi):
+        """ML-DSA-65 calls 35..41 (7 kf4 calls; one slot-permutation gives c
+        its second squeeze).
+        slot 0: A44 (35, 36), tr 12, 13 (37, 38), A44 (39..41)
+        slot 1: tr 10, 11 (35, 36), A54 (37..41)
+        slot 2: A34 (35..39), tr 14 (40), mu (41);  slot 3: A33 (35..39), c (40, 41)
+        P = (A34, A33) is written to ABUF blocks 0..4 by calls 35..39 and
+        fixed up first. KX = (A44, A54) in lanes 0, 1: its blocks 0, 1 are
+        merged in place (A44 from calls 35, 36 = blocks 0, 1, A54 from calls
+        37, 38 = blocks 2, 3; P's fix-up only touches lanes 2, 3), block 2 is
+        call 39's (block 4), blocks 3, 4 come from calls 40, 41. A44 pauses
+        for calls 37, 38 (image SAVE[0]), tr for call 39 (SAVE[1])."""
+        a, L = self.a, self.L
+        gP, gK = sched[gi], sched[gi + 1]
+        S0, S1, SC = self.SAVE
+        sd = self.seed
+        bits = self.slotbits
+        self.kmove(L.KS, 1, [1], 0)                       # tr: slot 0 -> 1, rest zero
+        self.call("ginit", [bits([1]), 0b1101, 0, interleave([sd(4, 4), 0, sd(3, 4), sd(3, 3)])])
+        for t in range(7):
+            if t == 2:
+                self.mcopy(S0, L.KS, 25)
+                self.kmove(L.KS, -1, [0], bits([1, 2, 3]))   # tr: slot 1 -> 0
+                self.call("ginit", [bits([0, 2, 3]), 0b0010, 0, interleave([0, sd(5, 4), 0, 0])])
+            elif t == 4:
+                self.mcopy(S1, L.KS, 25)
+                self.kmove(S0, 0, [0], bits([1, 2, 3]))      # A44 back
+            elif t == 5:
+                self.kmove(S1, 2, [2], bits([0, 1]))         # tr -> slot 2, slot 3 zero
+                self.call("ginit", [bits([0, 1, 2]), 0, 1 << 3, 0])
+            if t < 2:
+                self.tr_absorb(10 + t, 1)
+            elif t < 4:
+                self.tr_absorb(10 + t, 0)
+            elif t == 5:
+                self.tr_absorb(14, 2)
+            self.call("kf4")
+            if t == 6:
+                self.call("blkh", [L.ABUF + 56 * 32 * 4, L.FL + 7 * 32 * 4])
+            else:
+                i = t if t < 5 else 3
+                self.call("blk", [L.ABUF + 56 * 32 * i, L.FL + 7 * 32 * i])
+            if t == 4:
+                self.gfix_acc(gP, 0b1100)
+                l0 = M64
+                self.lmerge(L.ABUF, L.ABUF, l0, L.ABUF + 112 * 32, 0, 112)
+                self.lmerge(L.FL, L.FL, l0, L.FL + 14 * 32, 0, 14)
+                self.mcopy(L.ABUF + 112 * 32, L.ABUF + 224 * 32, 56)
+                self.mcopy(L.FL + 14 * 32, L.FL + 28 * 32, 7)
+            elif t == 5:
+                self.call("cext", [L.TRL, 2, 8])
+                self.call("cext", [L.CB, 3, 17])
+                self.call("ginit", [bits([0, 1, 3]), 0, 0, 0])    # slot 2 fresh for mu
+                self.mu_start(2)
+            elif t == 6:
+                self.call("cext", [L.CB + 17 * 32, 3, 17])
+                self.call("cext", [L.MU, 2, 8])
+                self.mcopy(SC, L.KS, 25)
+        self.mu_saved = (SC, 2)
+        self.gfix_acc(gK, 0b0011)
+
     def expand_a(self):
         """All SIMD groups of the schedule; stack [ok] -> [ok]."""
         a, L = self.a, self.L
         a.region("expand_a")
+        self.fused, self.zeroed = [], []
         if self.v4:
-            self.plan_accumulation()
+            self.plan_accumulation(self.schedule)
+        if not self.alt:
+            for gi in range(len(self.schedule)):
+                self.emit_entry(self.schedule, gi)
+            return
+        # glam (R4-7): the packed schedule for |M| < MSWITCH, the previous
+        # one from there on; both share their first `split` entries
+        alt, split = self.alt
+        self.plan_accumulation(alt, "b")
+        assert all(x['acc'] == y['acc'] for x, y in zip(self.schedule[:split], alt[:split]))
+        for gi in range(split):
+            self.emit_entry(self.schedule, gi)
+        lalt, ljoin = self.fresh("alt"), self.fresh("altj")
+        a.push(L.HDR + self.MSWITCH)
+        a.op("CALLDATASIZE")
+        a.op("LT")
+        a.op("ISZERO")
+        a.jumpi(lalt)
+        a.push(1)
+        a.push(self.FLAG)
+        a.op("MSTORE")
+        for gi in range(split, len(self.schedule)):
+            self.emit_entry(self.schedule, gi)
+        a.jump(ljoin)
+        a.label(lalt)
+        for gi in range(split, len(alt)):
+            self.emit_entry(alt, gi)
+        a.label(ljoin)
+
+    def emit_entry(self, sched, gi):
+        """One schedule entry (SIMD group, or a packed window at its first entry)."""
+        a, L = self.a, self.L
         nb = L.PK // 136 + 1
-        for gi, g in enumerate(self.schedule):
+        g = sched[gi]
+        if True:
             if g.get('win'):
-                if gi == min(i for i, x in enumerate(self.schedule) if x.get('win')):
-                    getattr(self, f"emit_window{g['win']}")(gi)
-                continue
+                if gi == min(i for i, x in enumerate(sched) if x.get('win')):
+                    getattr(self, f"emit_window{g['win']}")(sched, gi)
+                return
             slots = g['slots']
             p3 = g['p3']
             Aslots = [s_ for s_, r in enumerate(slots) if r and r[0] == 'A']
@@ -3258,8 +3488,8 @@ class Gen:
                 a.label(ret)
                 a.op("AND")
                 if self.v4:
-                    self.accumulate(gi)
-                continue
+                    self.accumulate(sched[gi])
+                return
             # mixed group: explicit init, block loop with tr / c riders
             amult = sum(1 << s_ for s_ in range(4) if seeds[s_])
             cslot = cs[0] if cs else None
@@ -3276,7 +3506,7 @@ class Gen:
                 # mub0 absorbs mu's block 0 and returns to the short (|M| <= 69,
                 # v3's block loop, inline) or the long continuation (mub after
                 # every kf4; region mulong, out of line, rejoins at gfix)
-                assert gi == len(self.schedule) - 1 and not trs   # hash_mu continues from this state
+                assert gi == len(sched) - 1 and not trs   # hash_mu continues from this state
                 mlong = self.fresh("mulg")
                 ret = self.fresh("ret")
                 a.pushl(mlong)
@@ -3318,7 +3548,7 @@ class Gen:
             a.label(gret)
             a.op("AND")
             if self.v4:
-                self.accumulate(gi)
+                self.accumulate(sched[gi])
             elif p3[0] == 'aligned':
                 rb, j = p3[1], p3[2]
                 self.call("pass3", [L.ACC + 0x2000 * rb, L.ZH + 0x2000 * (j // 4), 64 * (j % 4)])
@@ -4098,7 +4328,15 @@ class Gen:
         mulong, mudone = self.fresh("mulong"), self.fresh("mudone")
         if self.has_mu_slot():
             # v4 (R4-5): up to 5 blocks (|M| <= 613) in the SIMD slot
-            a.push(L.HDR + (136 * self.MU_SIMD_BLOCKS - 66 if self.wc_mu else 70))
+            if self.mswitch:
+                a.push(self.FLAG)
+                a.op("MLOAD")
+                a.push(136 * (self.MU_SIMD_BLOCKS - 1))
+                a.op("MUL")
+                a.push(L.HDR + 136 * self.MU_SIMD_BLOCKS - 66)
+                a.op("SUB")
+            else:
+                a.push(L.HDR + (136 * self.MU_SIMD_BLOCKS - 66 if self.wc_mu else 70))
             a.op("CALLDATASIZE")
             a.op("LT")
             a.op("ISZERO")

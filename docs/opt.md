@@ -121,8 +121,8 @@ unchanged; kf4 and kf1 are untouched.
 | R4-4 c codes, lazy tail, UseHint, 44 buffers | −16,160 / −21,063 / −29,670 | 2,809,039 / 4,947,325 / 7,823,331 | `csum`, `sample_in_ball`, `usehint`, `blk`, `gfix`, `group`, `expand_a`, `main` |
 | R4-5 fix-ups, μ in the SIMD slot, SampleInBall | −6,991 / −12,456 / −22,024 | 2,642,702 / 4,652,942 / 7,283,210 | `fix`, `sample_in_ball`; 44, 65: `expand_a`, `hash_mu`, new `mub`, `mulong`, `mu0` removed |
 | R4-6 arithmetic (UseHint fused into the inverse NTT, GS without swap, SP rounding term, `dz` flag multiply, `csum` bases on the stack) | −21,342 / −42,684 / −21,606 | 2,621,360 / 4,610,258 / 7,261,604 | `intt` (+ UseHint, 44 / 65), `usehint` (87; removed for 44 / 65), `csum`, `dz` |
-| R4-7 kf4 packing floor (44: 25 → 23 calls) | −83,688 / 0 / 0 | 2,581,468 / 4,610,258 / 7,261,604 | 44: `expand_a`, `hash_mu`, `sample_in_ball`, `mub`, `pass3f4`; new `kmove`, `lmerge`; `mulong` removed |
-| **v4** | **1,930,325 / 3,509,486 / 5,227,912** | **2,581,468 / 4,610,258 / 7,261,604** | |
+| R4-7 kf4 packing floor (44: 25 → 23 calls) | −84,654 / 0 / 0 | 2,580,502 / 4,610,258 / 7,261,604 | 44: `expand_a`, `hash_mu`, `sample_in_ball`, `mub`, `pass3f4`, `main` (side buffers SB no longer re-zeroed); new `kmove`, `lmerge`; `mulong` removed |
+| **v4** | **1,929,359 / 3,509,486 / 5,227,912** | **2,580,502 / 4,610,258 / 7,261,604** | |
 
 R4-7 trades μ's SIMD blocks for the two kf4 calls: 44 is cheaper for
 |M| ≤ 341 and dearer from |M| = 342 on (subsection R4-7).
@@ -130,7 +130,7 @@ R4-7 trades μ's SIMD blocks for the two kf4 calls: 44 is cheaper for
 R4-5 matters most for real messages: for 44 and 65 every |M| ≥ 70 is
 64k–155k cheaper (subsection R4-5).
 
-Code size v4: 24,049 / 24,049 / 23,798 B (R4-6: 23,488 / 24,049 / 23,798; R4-5: 22,470 / 23,140 / 23,934;
+Code size v4: 24,050 / 24,049 / 23,798 B (R4-6: 23,488 / 24,049 / 23,798; R4-5: 22,470 / 23,140 / 23,934;
 R4-4: 22,546 / 23,219 / 23,941).
 Memory: 44 grows by 512 words (2097 → 2609, R4-4); 65 and 87 are
 unchanged; R4-5 and R4-6 add no memory.
@@ -421,7 +421,8 @@ row-3 instances it displaces cannot be packed. `scripts/opt_pack_model.py`
 checks the timelines (slot conflicts, 5 squeezes per instance, tr
 sequential, μ after tr, one lane per instance and buffer) and counts merges
 and moves; `--measure` prints the per-subroutine difference
-(`OPT_V4_PACK=0` builds R4-6's schedule, byte for byte).
+(`OPT_V4_PACK=0` builds R4-6's schedule). 65's 42-call schedule is
+implemented for glam only (below).
 
 Calls 0–9: columns 0, 1 (`group`). Calls 10–14: column 2, rows 0–2 in slots
 1–3, tr blocks 0–4 in slot 0 (term `X >> 64`, no mask). Calls 15–22
@@ -451,41 +452,77 @@ Calls 0–9: columns 0, 1 (`group`). Calls 10–14: column 2, rows 0–2 in slot
   honest signatures never need.
 * μ gets one SIMD squeeze (`mub0` in slot 1). For |M| ≥ 70 `hash_mu`
   continues on kf1 from the saved slot state (`MU_SIMD_BLOCKS` = 1).
+* `lmerge` (dst = b′ ^ ((a ^ b′) & ma), b′ = b << sl) and `kmove` are
+  loops, unrolled 11 / 14 words and 5 lanes.
+* The side buffers SB0, SB1 (R4-4) are no longer zeroed after ExpandA;
+  nothing reads them later (−1,560 on every R4-4 … R4-7 44 build).
 
 Cost (v4, valid empty-message vector): kf4 −80,476, `blk` −12,434, `cext`
-−3,504 (one c block), `lmerge` +5,595, `kmove` +4,962 (3 calls), `ginit`
-+754, `expand_a` +1,218, `gfix` +175. Memory and the 65 / 87 artifacts are
-unchanged. The worst case gains less (−39,892), because SampleInBall's
-bound now includes the on-demand squeeze (25,857 → 69,855).
+−3,504 (one c block), `lmerge` +6,189, `kmove` +4,962 (3 calls), `ginit`
++754, `expand_a` +1,218, `gfix` +175, SB zeroing −1,560. Memory and the
+65 / 87 v4 artifacts are unchanged. The worst case gains less (−40,858),
+because SampleInBall's bound now includes the on-demand squeeze (25,857 →
+69,855).
 
-Gas by message length, 44 (dilithium-py, fixed key, deterministic):
+Gas by message length, 44 v4 (dilithium-py, fixed key, deterministic;
+R4-6 = `ec45d14`):
 
-| \|M\| | v4 R4-6 | **v4** | Δ | glam R4-6 | **glam** | Δ |
-|---:|---:|---:|---:|---:|---:|---:|
-| 0 | 2,009,938 | **1,926,075** | −83,863 | 1,809,222 | **1,736,137** | −73,085 |
-| 69 | 2,011,082 | **1,927,219** | −83,863 | 1,810,366 | **1,737,281** | −73,085 |
-| 70 | 2,014,146 | **1,966,363** | −47,783 | 1,813,430 | **1,771,559** | −41,871 |
-| 206 | 2,015,437 | **1,998,699** | −16,738 | 1,814,721 | **1,799,029** | −15,692 |
-| 342 | 2,019,212 | **2,033,522** | +14,310 | 1,818,496 | **1,828,986** | +10,490 |
-| 478 | 2,022,351 | **2,067,712** | +45,361 | 1,821,635 | **1,858,310** | +36,675 |
-| 614 | 2,058,427 | **2,100,036** | +41,609 | 1,852,845 | **1,885,768** | +32,923 |
-| 1000 | 2,126,769 | **2,168,381** | +41,612 | 1,911,455 | **1,944,381** | +32,926 |
+| \|M\| | v4 R4-6 | **v4** | Δ |
+|---:|---:|---:|---:|
+| 0 | 2,009,938 | **1,925,109** | −84,829 |
+| 69 | 2,011,082 | **1,926,253** | −84,829 |
+| 70 | 2,014,146 | **1,965,398** | −48,748 |
+| 206 | 2,015,437 | **1,997,734** | −17,703 |
+| 342 | 2,019,212 | **2,032,557** | +13,345 |
+| 478 | 2,022,351 | **2,066,747** | +44,396 |
+| 614 | 2,058,427 | **2,099,071** | +40,644 |
+| 1000 | 2,126,769 | **2,167,416** | +40,647 |
 
 R4-5 squeezes up to 5 μ blocks in the 25th call's spare slots; at the
 floor there are none, so each μ block after the first costs a kf1 call.
-A run-time switch to R4-6's schedule for |M| ≥ 342 would keep both, but it
-needs both group tails in the code (≈ 1.2 KB; 527 B are left).
+v4 accepts this (EIP-8355 messages are typically 32-byte digests; a
+switch would need ≈ 1.7 KB, 526 B are left).
 
-**65 (not implemented).** The model finds a 42-call schedule (floor:
-167 slot-permutations) with 2 merged blocks and no lane shift: columns 0–2
-aligned, Kronecker rows 4 and 5 over columns 0–3, columns 3 and 4 rows
-0–2 with tr, then a tail where A44 pauses for two calls (tr takes its slot)
-and A54 joins it in one buffer; c keeps two squeezes. It would also cut
-the accumulation terms from 12 to 9, but the row groups then interleave
-(rb1, rb0, rb1), so `plan_accumulation` needs a third pass or two more side
-buffers, and the Kronecker terms for rows 4 / 5 need a result shift.
-Estimate: 3 × 42k − 15k migration ≈ −110k, plus the term saving. 65 has
-527 B of code left for v4.
+**glam 44: run-time switch.** glam keeps both schedules: for |M| < 342
+(`MSWITCH`; 66 + |M| < 3 · 136, at most 3 μ blocks) the packed one, from
+342 on R4-6's (its last group squeezes up to 5 μ blocks). Both share
+columns 0, 1 (calls 0–9). The packed tail stores FLAG = 1 (MISC); the μ
+threshold in `main`, `hash_mu`'s first kf1 block offset and whether it
+copies μ's state image are derived from FLAG, and SampleInBall runs two
+copies of its lane loop, the first ending at byte 136, where c's second
+block is squeezed only if FLAG is set. Against the same kernels with
+R4-6's schedule (`OPT_V4_PACK=0`), the switch costs 43 gas for |M| 342–613
+and 100 gas from 614 on (dispatch, FLAG reads); below 342 it saves
+15–69k. Code: +1.9 KB over d49038a.
+
+**65: 42 kf4 calls (glam only).** 65 needs 167 slot-permutations (30 × 5,
+tr 15, c, μ), so 42 calls (1 spare: c keeps two squeezes); R4-6 used 45.
+
+| calls | slot 0 | slot 1 | slot 2 | slot 3 | buffer, term |
+|---|---|---|---|---|---|
+| 0–14 | rows 0–3, columns 0–2 | | | | 3 aligned, ACC0 |
+| 15–19 | A43 | A42 | A41 | A40 | K4, Kronecker, `>> 192` to ACC1 lane 0 |
+| 20–24 | A53 | A52 | A51 | A50 | K5, Kronecker, `& lane 3, >> 128` to lane 1 |
+| 25–29, 30–34 | tr 0–9 | rows 0–2, column 3 then 4 | | | T3, T4, `X >> 64` |
+| 35, 36 | A44 | tr 10, 11 | A34 | A33 | P = (A34, A33): Kronecker row 3 |
+| 37, 38 | tr 12, 13 | A54 | A34 | A33 | |
+| 39 | A44 | A54 | A34 | A33 | P done: fix-up, accumulate |
+| 40 | A44 | A54 | tr 14 | c | |
+| 41 | A44 | A54 | μ block 0 | c | KX = (A44, A54), lanes 0, 1 |
+
+`emit_window65`: A44 pauses for calls 37, 38 (tr takes its slot, A54
+starts in tr's), tr pauses for call 39. P's fix-up only touches lanes 2, 3,
+so KX's blocks 0, 1 are merged in place in ABUF after it (`lmerge`, 126
+words: A44 from calls 35, 36, A54 from calls 37, 38) and block 2 is call
+39's block 4 (MCOPY). Accumulation drops from 12 to 9 terms (K4 and K5
+replace 7 mixed terms), but the row groups interleave (rb0, rb1, rb0, rb0,
+rb1): `plan_interleaved` keeps a pending list per row group and lets ACC_rb
+hold rb's own items until rb's first pass. Measured (glam, line 1):
+2 side buffers SB (+16 KB, 2 passes) 2,943,671; 1 SB (3 passes) +7,646;
+none (4 passes) +12,120; so SB = 2. The packed schedule is cheaper at every
+|M| (2 kf4 calls and 3 terms outweigh 4 kf1 μ blocks), so 65 needs no
+switch. v4 65 would be 3,357,385 (−152k) but 24,948 B, 372 B over EIP-170,
+so `Layout.PACK65` enables it for glam only.
 
 ### Validation (v4)
 

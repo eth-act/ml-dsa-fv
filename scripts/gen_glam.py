@@ -193,7 +193,7 @@ BASE = "v4"
 
 
 def build(nn, base=BASE, **dbg):
-    g = GlamGen(gen_opt.Layout(nn, base))
+    g = GlamGen(gen_opt.Layout(nn, base, glam=True))
     for k, v in dbg.items():
         setattr(g, k, v)
     return g, g.build()

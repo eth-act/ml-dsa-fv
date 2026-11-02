@@ -130,7 +130,7 @@ def check(nn, T, bufs, trn):
                 instance_moves=moves, tr_moves=trmoves)
 
 
-def measure(nn=44):
+def measure(nn):
     """Per-region gas (valid empty-message vector) of v4 / glam without
     (OPT_V4_PACK=0) and with the packed schedule."""
     import functools
@@ -140,8 +140,9 @@ def measure(nn=44):
     import gen_opt
     import opt_evm
     root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-    cd = bytes.fromhex(open(os.path.join(root, "vectors", "calldata.txt")).readline().split()[0])
-    for ver in ("v4", "glam"):
+    vec = {44: "calldata.txt", 65: "mldsa65/calldata.txt"}[nn]
+    cd = bytes.fromhex(open(os.path.join(root, "vectors", vec)).readline().split()[0])
+    for ver in ("v4", "glam") if nn == 44 else ("glam",):      # 65: glam only (v4 code size)
         res = []
         for pk in ("0", "1"):
             os.environ["OPT_V4_PACK"] = pk
@@ -173,7 +174,8 @@ def main():
         r = check(nn, *f())
         print(f"ML-DSA-{nn}: " + ", ".join(f"{k} {v}" for k, v in r.items()))
     if sys.argv[1:] == ["--measure"]:
-        measure()
+        measure(44)
+        measure(65)
 
 
 if __name__ == "__main__":
