@@ -12,7 +12,7 @@ scripts/opt_keccak_glam.py. They need two Glamsterdam EIPs:
 * EIP-7954 (64 KiB code limit): the unrolled kernels add ~25 KB of code.
 
 With base v4 two further Glamsterdam-only changes apply (base v3 keeps the
-v3 blk and NTT, reproducing gas/glamsterdam byte for byte):
+v3 blk and NTT: the gas/glamsterdam prototype with the current kernels):
 
 * blk / blkh / blkt fully unrolled with immediate lane addresses, the lane
   complementing undone on the loaded word instead of in KS (+5.3 KB);

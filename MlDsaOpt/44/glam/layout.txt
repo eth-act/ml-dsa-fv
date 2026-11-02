@@ -1,4 +1,4 @@
-ML-DSA-44 optimised verifier: 55717 bytes (limit 65536, EIP-7954)
+ML-DSA-44 optimised verifier: 55161 bytes (limit 65536, EIP-7954)
 
 Subroutines / regions (pc ranges of the generated code):
        0 ..   2389   2389 bytes  main
@@ -25,8 +25,8 @@ Subroutines / regions (pc ranges of the generated code):
    20187 ..  21276   1089 bytes  pack
    21276 ..  23862   2586 bytes  ntt
    23862 ..  28484   4622 bytes  intt
-   28484 ..  40716  12232 bytes  kf1
-   40716 ..  55717  15001 bytes  kf4
+   28484 ..  40438  11954 bytes  kf1
+   40438 ..  55161  14723 bytes  kf4
 
 Memory map (byte offsets):
   KS     0x000000 .. 0x000320  (800 bytes)
