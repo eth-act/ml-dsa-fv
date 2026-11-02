@@ -601,7 +601,7 @@ theorem sib_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
       obtain ⟨hkf, hcntB, hinv'⟩ := sinv_accept (nn := negCount c)
         (code := if sg = 1 then 1 else 2 ^ 256 - 1) hinv hsz hi1 hlt hacc hhigh hsg1 rfl rfl
       have hAB : Reach (headSt s ret tail (8 + k) i (le64 bs 0 / 2 ^ (i - 207)) M)
-          (callState s 8154 (wd (byteAt M (IDX + j)) :: wd sg :: wd j :: wd (8 + k + 1) :: wd i ::
+          (callState s 8236 (wd (byteAt M (IDX + j)) :: wd sg :: wd j :: wd (8 + k + 1) :: wd i ::
             wd (le64 bs 0 / 2 ^ (i - 207)) :: wd ret :: tail)
             (sibMB M c i j (negCount c) sg (if sg = 1 then 1 else 2 ^ 256 - 1))) 301 := by
         by_cases hk0 : byteAt M (IDX + j) = 0

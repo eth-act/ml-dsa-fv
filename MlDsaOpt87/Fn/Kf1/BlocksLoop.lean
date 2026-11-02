@@ -20,20 +20,20 @@ set_option linter.unusedVariables false
 
 theorem prologue {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
     (hsz : 2897 ≤ s.activeWords.toNat) (M : ByteArray) (ret : Nat) :
-    Reach (callState s 20467 (wd ret :: tail) M)
-      (callState s 20497 (REPw :: wd 2816 :: wd ret :: tail) M) 7 := by
-  opt87_reach [9825, 9826, 9827] with [REPw]
+    Reach (callState s 20283 (wd ret :: tail) M)
+      (callState s 20313 (REPw :: wd 2816 :: wd ret :: tail) M) 7 := by
+  opt87_reach [9839, 9840, 9841] with [REPw]
 
 theorem loopBack {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
     (hsz : 2897 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (hlt : 96 + rp < 3584) :
-    Reach (callState s 22444 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20497 (REPw :: wd (96 + rp) :: wd ret :: tail) M) 34 := by
-  opt87_reach [11163, 11164, 11165, 11166, 11167, 11168, 11169, 11170, 11171]
+    Reach (callState s 22260 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 20313 (REPw :: wd (96 + rp) :: wd ret :: tail) M) 34 := by
+  opt87_reach [11177, 11178, 11179, 11180, 11181, 11182, 11183, 11184, 11185]
 
 theorem loopExit {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length ≤ 960)
     (hsz : 2897 ≤ s.activeWords.toNat) {M : ByteArray} {rp ret : Nat} (hrp : rp ≤ 3584) (heq : 96 + rp = 3584) (hret : ret < 2 ^ 16)
     (hj : EVM.Decode.isValidJumpDest MlDsaOpt87.optBytecode ret = true) :
-    Reach (callState s 22444 (REPw :: wd rp :: wd ret :: tail) M) (callState s ret tail M) 46 := by
-  opt87_reach [11163, 11164, 11165, 11166, 11167, 11168, 11169, 11170, 11171, 11172, 11173, 11174] with [hj]
+    Reach (callState s 22260 (REPw :: wd rp :: wd ret :: tail) M) (callState s ret tail M) 46 := by
+  opt87_reach [11177, 11178, 11179, 11180, 11181, 11182, 11183, 11184, 11185, 11186, 11187, 11188] with [hj]
 
 end MlDsaOpt87.Proofs.Kf1

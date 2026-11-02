@@ -35,8 +35,8 @@ theorem round1 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (0 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M rp) = rc) :
-    Reach (callState s 19937 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 20509 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 20564 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21136 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 1024 (fun j => (roundW A rc j).toNat) 25)) 1224 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta1 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans
@@ -77,8 +77,8 @@ theorem round2 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (1024 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M (32 + rp)) = rc) :
-    Reach (callState s 20509 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 21126 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 21136 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 21753 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 90880 (fun j => (roundW A rc j).toNat) 25)) 1231 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta2 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans
@@ -119,8 +119,8 @@ theorem round3 {s : State} (hs : Ctx s) {tail : List UInt256} (htl : tail.length
     (A : Nat → UInt256)
     (hA : ∀ j, j < 25 → UInt256.ofNat (word M (90880 + 32 * j)) = A j)
     (rc : UInt256) (hrc : UInt256.ofNat (word M (64 + rp)) = rc) :
-    Reach (callState s 21126 (REPw :: wd rp :: wd ret :: tail) M)
-      (callState s 21884 (REPw :: wd rp :: wd ret :: tail)
+    Reach (callState s 21753 (REPw :: wd rp :: wd ret :: tail) M)
+      (callState s 22511 (REPw :: wd rp :: wd ret :: tail)
         (storeWords M 0 (fun j => (rerepW (roundW A rc j)).toNat) 25)) 1580 := by
   rw [storeWords_25]
   refine Reach.mono ((((((theta3 (ret := ret) hs htl hsz hrp A (hA 0 (by decide)) (hA 1 (by decide)) (hA 2 (by decide)) (hA 3 (by decide)) (hA 4 (by decide)) (hA 5 (by decide)) (hA 6 (by decide)) (hA 7 (by decide)) (hA 8 (by decide)) (hA 9 (by decide)) (hA 10 (by decide)) (hA 11 (by decide)) (hA 12 (by decide)) (hA 13 (by decide)) (hA 14 (by decide)) (hA 15 (by decide)) (hA 16 (by decide)) (hA 17 (by decide)) (hA 18 (by decide)) (hA 19 (by decide)) (hA 20 (by decide)) (hA 21 (by decide)) (hA 22 (by decide)) (hA 23 (by decide)) (hA 24 (by decide))).trans

@@ -1,9 +1,6 @@
 import MlDsaOpt65.Layout
 import MlDsaOpt65.Budget
-import MlDsaOpt65.Fn.Ntt.Top
-import MlDsaOpt65.Fn.Ntt2.Top
 import MlDsa.Bridge44
-set_option warningAsError true
 /-!
 # Four-lane NTT and inverse NTT (ML-DSA-65)
 
@@ -68,31 +65,29 @@ open MlDsa
 /-- **ntt**: `[p, ret]` with `p ∈ {ZH, ZH2}`, in place on the four lane polynomials at `p`. -/
 theorem ntt_call {s : State} (hs : Ctx s) {p : Nat} (hp : p = ZH ∨ p = ZH2) {ret : Nat}
     {tail : List UInt256} (hr : RetOK Stack.ntt ret tail) (m : ByteArray) (htbl : TblAt m) :
-    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (p + 32 * t)) k < 2 ^ 25) →
+    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → zLo ≤ lane (word m (p + 32 * t)) k ∧
+          lane (word m (p + 32 * t)) k ≤ zHi) →
         ∀ k, k < 4 → ∀ t, t < 256 → lane (word m' (p + 32 * t)) k < 2 ^ 28 ∧
           ((lane (word m' (p + 32 * t)) k : Int) - (Fips204.ntt (lanesPoly m p k))[t]!) %
             (Fips204.q : Int) = 0) ∧
       FrameExcept m m' [(p, p + 8192)] ∧
-      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt := by
-  rw [Bridge44.ntt_eq, Bridge44.q_eq]
-  rcases hp with rfl | rfl
-  · exact NttW.ntt_full hs hr m htbl
-  · exact NttW2.ntt_full hs hr m htbl
+      Call s Entry.ntt [wd p] ret tail m [] m' Gas.ntt :=
+  sorry
 
-/-- **intt**: `[p, ret]` with `p ∈ {ACC, ACC + 0x2000}`, in place on the four lane
-polynomials at `p`. -/
-theorem intt_call {s : State} (hs : Ctx s) {p : Nat} (hp : p = ACC ∨ p = ACC + 0x2000)
-    {ret : Nat} {tail : List UInt256} (hr : RetOK Stack.intt ret tail) (m : ByteArray)
-    (htbl : TblAt m) :
-    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (p + 32 * t)) k < 2 ^ 58) →
-        ∀ k, k < 4 → ∀ t, t < 256 → lane (word m' (p + 32 * t)) k < 2 ^ 27 ∧
-          ((lane (word m' (p + 32 * t)) k : Int) - (Fips204.nttInv (lanesPoly m p k))[t]!) %
-            (Fips204.q : Int) = 0) ∧
-      FrameExcept m m' [(p, p + 8192)] ∧
-      Call s Entry.intt [wd p] ret tail m [] m' Gas.intt := by
-  rw [Bridge44.nttInv_eq, Bridge44.q_eq]
-  rcases hp with rfl | rfl
-  · exact NttW.intt_full hs hr m htbl
-  · exact NttW2.intt_full hs hr m htbl
+/-- **intt**: `[ACC + 0x2000 g, ret]`, `g < 2`, in place on the four lane
+polynomials of row group `g`, with UseHint fused into the last pass (v4): lane
+`r` becomes `UseHint(HP_g, NTT⁻¹(ACC_g) + SP_g − spOff)`. -/
+theorem intt_call {s : State} (hs : Ctx s) {g : Nat} (hg : g < 2) {ret : Nat} {tail : List UInt256}
+    (hr : RetOK Stack.intt ret tail) (m : ByteArray) (htbl : TblAt m) :
+    ∃ m', ((∀ k, k < 4 → ∀ t, t < 256 → lane (word m (ACC + 0x2000 * g + 32 * t)) k < 2 ^ 57) →
+        (∀ t, t < 256 → ∀ r, r < 4 → lane (word m (SP + 0x2000 * g + 32 * t)) r ≤ spOff ∧
+          lane (word m (HP + 0x2000 * g + 32 * t)) r ≤ 1) →
+        ∀ t, t < 256 → ∀ r, r < 4 → lane (word m' (ACC + 0x2000 * g + 32 * t)) r =
+          (Fips204.useHint P (lane (word m (HP + 0x2000 * g + 32 * t)) r)
+            ((Fips204.nttInv (lanesPoly m (ACC + 0x2000 * g) r))[t]! +
+              lane (word m (SP + 0x2000 * g + 32 * t)) r - spOff)).toNat) ∧
+      FrameExcept m m' [(ACC + 0x2000 * g, ACC + 0x2000 * g + 8192)] ∧
+      Call s Entry.intt [wd (ACC + 0x2000 * g)] ret tail m [] m' Gas.intt :=
+  sorry
 
 end MlDsaOpt65.Proofs

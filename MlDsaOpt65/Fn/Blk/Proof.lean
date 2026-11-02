@@ -153,8 +153,8 @@ def Inv (m : ByteArray) (b j : Nat) (M : ByteArray) : Prop :=
 theorem step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960)
     (m : ByteArray) {b : Nat} (hb : b ≤ 5) {j : Nat} (hj : j < 7) (M : ByteArray) (hI : Inv m b j M) :
     ∃ M', Inv m b (j + 1) M' ∧
-      Reach (callState s 10030 (stk b ret tail j) M)
-        (callState s (if j + 1 < 7 then 10030 else 10926) (stk b ret tail (j + 1)) M') 1087 := by
+      Reach (callState s 10038 (stk b ret tail j) M)
+        (callState s (if j + 1 < 7 then 10038 else 10933) (stk b ret tail (j + 1)) M') 1087 := by
   have hABUF : ABUF = 20480 := rfl
   have hFL : FL = 31232 := rfl
   have hA := bodyA hs (rest := wd ret :: tail) (by simp only [List.length_cons]; omega)
@@ -228,8 +228,8 @@ theorem step {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail :
 theorem loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256} (htail : tail.length ≤ 960)
     (m : ByteArray) {b : Nat} (hb : b ≤ 5) :
     ∀ j, j ≤ 7 → ∃ M, Inv m b j M ∧
-      Reach (callState s 10030 (stk b ret tail 0) (flip6 m))
-        (callState s (if j < 7 then 10030 else 10926) (stk b ret tail j) M) (1087 * j)
+      Reach (callState s 10038 (stk b ret tail 0) (flip6 m))
+        (callState s (if j < 7 then 10038 else 10933) (stk b ret tail j) M) (1087 * j)
   | 0, _ => ⟨flip6 m, ⟨FrameExcept.refl _ _, fun _ _ => ⟨fun _ h => absurd h (by omega),
       fun _ h => absurd h (by omega)⟩⟩,
       by rw [if_pos (by omega), Nat.mul_zero]; exact Reach.refl _⟩

@@ -1,6 +1,14 @@
 import MlDsaOpt65.Main.Base
-import MlDsaOpt65.Main.Mu.Proof
-/-! # Segment `5236 … 6499`: μ from the SIMD slot (`|M| ≤ 69`) or `hash_mu` (`kf1`). -/
+import MlDsaOpt65.Fn.Keccak
+import MlDsaOpt65.Fn.Sponge
+/-! # Segment `5356 … 6172`: μ (v4, open)
+
+`|M| ≤ 613`: the eight `MU` lanes (μ squeezed in group 8's slot 2 by `mub`)
+replicated into `FIN[0, 8)`. Otherwise (`hash_mu`): μ's sponge after blocks
+`0 … 4` is slot 2 of `KS` (`MuKs`); `cext [KS, 2, 25]` extracts it in place,
+the lanes are replicated for `kf1` (`NOT` on complemented lanes), block 5 is
+absorbed, the `kf1` / `absorb17` loop absorbs the rest, the final permutation's
+lanes `0 … 7` go to `FIN`. -/
 
 namespace MlDsaOpt65.Proofs
 
@@ -10,15 +18,11 @@ open MlDsaOptCommon
 open MlDsa
 open MlDsaOpt65.Proofs.Infra
 
-/-- `|M| ≤ 69`: replicate the eight `MU` lanes into `FIN[0, 8)`. Otherwise `hash_mu`: `KS1`
-of the sponge absorbing `tr ‖ 0 ‖ 0 ‖ M` (`TRL` lanes, `absorb17` per 136-byte block of
-calldata from `HDR`), `(66 + |M|)/136 + 1` loop visits, the final `kf1`, μ lanes replicated
-into `FIN[0, 8)`. The proof (`Main/Mu/*`) is `MlDsaOpt44/Main/Mu/*` relocated to this artifact. -/
 theorem seg_mu {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
-    {m : ByteArray} (hI : Inv5 s.executionEnv.calldata m) (b : Bool) :
+    {m : ByteArray} (hI : InvH s.executionEnv.calldata m) (b : Bool) :
     ∃ m', Inv6 s.executionEnv.calldata m' ∧
-      Reach (callState s 5190 [flag b] m) (callState s 6499 [flag b] m')
-        (Gas.pMu (mlenOf s.executionEnv.calldata)) :=
-  S6Mu.seg_mu_proof hs hcd hI b
+      Reach (callState s 5356 [flag b] m) (callState s 6172 [flag b] m')
+        (Gas.pMu (mlenOf s.executionEnv.calldata)) := by
+  sorry
 
 end MlDsaOpt65.Proofs

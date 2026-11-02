@@ -23,12 +23,12 @@ set_option linter.unusedTactic false
 theorem fin_init {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = rep (cpl x 0)) ∧
       FrameExcept M M' [(KS, KS + 800)] ∧
-      Reach (callState s 6724 [flag b] M) (callState s 6850 [wd 84224, flag b] M') 220 := by
+      Reach (callState s 6805 [flag b] M) (callState s 6931 [wd 84224, flag b] M') 220 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
-  · opt87_reach [2202, 2203, 2204, 2205, 2206, 2207, 2208, 2209, 2210, 2211, 2212, 2213, 2214, 2215, 2216, 2217, 2218, 2219, 2220, 2221, 2222, 2223, 2224, 2225, 2226, 2227, 2228, 2229, 2230, 2231, 2232, 2233, 2234, 2235, 2236, 2237, 2238, 2239, 2240, 2241, 2242, 2243, 2244, 2245, 2246, 2247, 2248, 2249, 2250, 2251, 2252, 2253, 2254, 2255, 2256, 2257, 2258, 2259, 2260, 2261, 2262, 2263, 2264, 2265, 2266, 2267, 2268, 2269, 2270, 2271, 2272, 2273, 2274, 2275, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283] with [word_mstore_disjoint]
+  · opt87_reach [2269, 2270, 2271, 2272, 2273, 2274, 2275, 2276, 2277, 2278, 2279, 2280, 2281, 2282, 2283, 2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 2328, 2329, 2330, 2331, 2332, 2333, 2334, 2335, 2336, 2337, 2338, 2339, 2340, 2341, 2342, 2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350] with [word_mstore_disjoint]
   · intro x hx
     interval_cases x <;> simp only [KS, Nat.reduceMul, Nat.reduceAdd] <;> chain_facts
     all_goals (try simp [cpl, complemented])
@@ -41,12 +41,12 @@ theorem fin_abs {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {p : Nat}
     (hp1 : 84224 ≤ p) (hp2 : p + 544 ≤ 88576) :
     ∃ M', (∀ x, x < 17 → word M' (KS + 32 * x) = word M (KS + 32 * x) ^^^ word M (32 * x + p)) ∧
       FrameExcept M M' [(KS, KS + 544)] ∧
-      Reach (callState s 6850 [wd p, flag b] M) (callState s 20467 [wd 7084, wd p, flag b] M') 466 := by
+      Reach (callState s 6931 [wd p, flag b] M) (callState s 20283 [wd 7165, wd p, flag b] M') 466 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
-  · opt87_reach [2284, 2285, 2286, 2287, 2288, 2289, 2290, 2291, 2292, 2293, 2294, 2295, 2296, 2297, 2298, 2299, 2300, 2301, 2302, 2303, 2304, 2305, 2306, 2307, 2308, 2309, 2310, 2311, 2312, 2313, 2314, 2315, 2316, 2317, 2318, 2319, 2320, 2321, 2322, 2323, 2324, 2325, 2326, 2327, 2328, 2329, 2330, 2331, 2332, 2333, 2334, 2335, 2336, 2337, 2338, 2339, 2340, 2341, 2342, 2343, 2344, 2345, 2346, 2347, 2348, 2349, 2350, 2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2393, 2394, 2395, 2396, 2397, 2398, 2399, 2400, 2401, 2402, 2403, 2404, 2405, 2406, 2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, 2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2438] with [word_mstore_disjoint]
+  · opt87_reach [2351, 2352, 2353, 2354, 2355, 2356, 2357, 2358, 2359, 2360, 2361, 2362, 2363, 2364, 2365, 2366, 2367, 2368, 2369, 2370, 2371, 2372, 2373, 2374, 2375, 2376, 2377, 2378, 2379, 2380, 2381, 2382, 2383, 2384, 2385, 2386, 2387, 2388, 2389, 2390, 2391, 2392, 2393, 2394, 2395, 2396, 2397, 2398, 2399, 2400, 2401, 2402, 2403, 2404, 2405, 2406, 2407, 2408, 2409, 2410, 2411, 2412, 2413, 2414, 2415, 2416, 2417, 2418, 2419, 2420, 2421, 2422, 2423, 2424, 2425, 2426, 2427, 2428, 2429, 2430, 2431, 2432, 2433, 2434, 2435, 2436, 2437, 2438, 2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446, 2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462, 2463, 2464, 2465, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2490, 2491, 2492, 2493, 2494, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503, 2504, 2505] with [word_mstore_disjoint]
   · intro x hx
     interval_cases x <;> simp only [KS, Nat.reduceMul, Nat.reduceAdd, Nat.zero_add, Nat.add_zero] <;>
       chain_facts <;> rw [xor_mod_lit (word_lt_lit _ _) (word_lt_lit _ _)]
@@ -55,16 +55,16 @@ theorem fin_abs {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {p : Nat}
     exact FrameExcept.refl _ _
 
 theorem fin_back {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {p : Nat} (hp : 544 + p < 88576) :
-    Reach (callState s 7084 [wd p, flag b] M) (callState s 6850 [wd (544 + p), flag b] M) 29 := by
+    Reach (callState s 7165 [wd p, flag b] M) (callState s 6931 [wd (544 + p), flag b] M) 29 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446]
+  opt87_reach [2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513]
 
 theorem fin_last {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) {p : Nat} (hp : 544 + p = 88576) :
-    Reach (callState s 7084 [wd p, flag b] M) (callState s 7099 [wd (544 + p), flag b] M) 29 := by
+    Reach (callState s 7165 [wd p, flag b] M) (callState s 7180 [wd (544 + p), flag b] M) 29 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [2439, 2440, 2441, 2442, 2443, 2444, 2445, 2446]
+  opt87_reach [2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513]
 
 /-- What the padding-block code xors into lane `x`. -/
 def finTail (M : ByteArray) (x : Nat) : Nat :=
@@ -73,12 +73,12 @@ def finTail (M : ByteArray) (x : Nat) : Nat :=
 theorem fin_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) (q : Nat) :
     ∃ M', (∀ x, x < 25 → word M' (KS + 32 * x) = word M (KS + 32 * x) ^^^ finTail M x) ∧
       FrameExcept M M' [(KS, KS + 544)] ∧
-      Reach (callState s 7099 [wd q, flag b] M) (callState s 20467 [wd 7180, flag b] M') 50 := by
+      Reach (callState s 7180 [wd q, flag b] M) (callState s 20283 [wd 7261, flag b] M') 50 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
   refine ⟨?_, ?_, ?_, ?_⟩
   rotate_left 3
-  · opt87_reach [2447, 2448, 2449, 2450, 2451, 2452, 2453, 2454, 2455, 2456, 2457, 2458, 2459, 2460, 2461, 2462] with [word_mstore_disjoint]
+  · opt87_reach [2514, 2515, 2516, 2517, 2518, 2519, 2520, 2521, 2522, 2523, 2524, 2525, 2526, 2527, 2528, 2529] with [word_mstore_disjoint]
   · intro x hx
     interval_cases x <;> simp only [KS, finTail, Nat.reduceMul, Nat.reduceAdd, Nat.zero_add,
       Nat.reduceEqDiff, ite_true, ite_false, ↓reduceIte] <;> chain_facts
@@ -91,12 +91,12 @@ theorem fin_pad {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) (q : Nat) :
     exact FrameExcept.refl _ _
 
 theorem fin_net {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
-    Reach (callState s 7180 [flag b] M)
-      (callState s 7351 (wd (bswapNet (word s.executionEnv.calldata 2592)) :: muK b) M)
+    Reach (callState s 7261 [flag b] M)
+      (callState s 7432 (wd (bswapNet (word s.executionEnv.calldata 2592)) :: muK b) M)
       121 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [2463, 2464, 2465, 2466, 2467, 2468, 2469, 2470, 2471, 2472, 2473, 2474, 2475, 2476, 2477, 2478, 2479, 2480, 2481, 2482, 2483, 2484, 2485, 2486, 2487, 2488, 2489, 2490, 2491, 2492, 2493, 2494, 2495, 2496, 2497, 2498, 2499, 2500, 2501, 2502, 2503] with [muK, bswapNet, bsw8, bsw16, bsw32]
+  opt87_reach [2530, 2531, 2532, 2533, 2534, 2535, 2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 2552, 2553, 2554, 2555, 2556, 2557, 2558, 2559, 2560, 2561, 2562, 2563, 2564, 2565, 2566, 2567, 2568, 2569, 2570] with [muK, bswapNet, bsw8, bsw16, bsw32]
 
 theorem ite_land (b : Bool) (P : Prop) [Decidable P] :
     ((if b = true then 1 else 0) &&& (if P then 1 else 0)) = if (b && decide P) = true then 1 else 0 := by
@@ -109,20 +109,20 @@ theorem ite_land_mod (b : Bool) (P : Prop) [Decidable P] :
 
 /-- The first compare: c̃ lanes `0 … 3` against the first four squeezed lanes. -/
 theorem fin_cmp1 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
-    Reach (callState s 7351 (wd Y :: muK b) M)
-      (callState s 7389 (muK (b && decide (finW M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y))) M) 94 := by
+    Reach (callState s 7432 (wd Y :: muK b) M)
+      (callState s 7470 (muK (b && decide (finW M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y))) M) 94 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [2504, 2505, 2506, 2507, 2508, 2509, 2510, 2511, 2512, 2513, 2514, 2515, 2516, 2517, 2518, 2519, 2520, 2521, 2522, 2523, 2524, 2525, 2526, 2527, 2528, 2529, 2530, 2531, 2532, 2533, 2534, 2535] with [muK, flag, ofNat_land, ite_land, finW]
+  opt87_reach [2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 2584, 2585, 2586, 2587, 2588, 2589, 2590, 2591, 2592, 2593, 2594, 2595, 2596, 2597, 2598, 2599, 2600, 2601, 2602] with [muK, flag, ofNat_land, ite_land, finW]
   rfl
 
 theorem fin_net2 {s : State} (hs : Ctx s) (b : Bool) (M : ByteArray) :
-    Reach (callState s 7389 (muK b) M)
-      (callState s 7432 (wd (bswapNet (word s.executionEnv.calldata 2624)) :: muK b) M)
+    Reach (callState s 7470 (muK b) M)
+      (callState s 7513 (wd (bswapNet (word s.executionEnv.calldata 2624)) :: muK b) M)
       105 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  opt87_reach [2536, 2537, 2538, 2539, 2540, 2541, 2542, 2543, 2544, 2545, 2546, 2547, 2548, 2549, 2550, 2551, 2552, 2553, 2554, 2555, 2556, 2557, 2558, 2559, 2560, 2561, 2562, 2563, 2564, 2565, 2566, 2567, 2568, 2569, 2570] with [muK, bswapNet, bsw8, bsw16, bsw32]
+  opt87_reach [2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610, 2611, 2612, 2613, 2614, 2615, 2616, 2617, 2618, 2619, 2620, 2621, 2622, 2623, 2624, 2625, 2626, 2627, 2628, 2629, 2630, 2631, 2632, 2633, 2634, 2635, 2636, 2637] with [muK, bswapNet, bsw8, bsw16, bsw32]
 
 /-- The word the second compare builds from `KS` (c̃ lanes `4 … 7` against squeezed lanes `4 … 7`). -/
 def finW2 (M : ByteArray) : Nat :=
@@ -138,14 +138,14 @@ theorem callState_aw' (s : State) (pc : Nat) (stk : List UInt256) (m : ByteArray
     (callState s pc stk m).activeWords = s.activeWords := rfl
 
 theorem fin_cmp2 {s : State} (hs : Ctx s) (b : Bool) (Y : Nat) (hY : Y < 115792089237316195423570985008687907853269984665640564039457584007913129639936) (M : ByteArray) :
-    Reach (callState s 7432 (wd Y :: muK b) M)
-      (finalState s 7479 [] M (if (b && decide (finW2 M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y)) = true then 1 else 0))
+    Reach (callState s 7513 (wd Y :: muK b) M)
+      (finalState s 7560 [] M (if (b && decide (finW2 M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y)) = true then 1 else 0))
       109 := by
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hfw : 2897 ≤ s.activeWords.toNat := hs.sized
-  have h := reach_block_pot ((hs.ctx0).callState 7432 (wd Y :: muK b) M) (cost := 109)
-    (t := finalState s 7479 [] M (if (b && decide (finW2 M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y)) = true then 1 else 0))
-    [2571, 2572, 2573, 2574, 2575, 2576, 2577, 2578, 2579, 2580, 2581, 2582, 2583, 2584, 2585, 2586, 2587, 2588, 2589, 2590, 2591, 2592, 2593, 2594, 2595, 2596, 2597, 2598, 2599, 2600, 2601, 2602, 2603, 2604, 2605, 2606, 2607, 2608, 2609, 2610] (by decide +kernel) ?run
+  have h := reach_block_pot ((hs.ctx0).callState 7513 (wd Y :: muK b) M) (cost := 109)
+    (t := finalState s 7560 [] M (if (b && decide (finW2 M % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = Y)) = true then 1 else 0))
+    [2638, 2639, 2640, 2641, 2642, 2643, 2644, 2645, 2646, 2647, 2648, 2649, 2650, 2651, 2652, 2653, 2654, 2655, 2656, 2657, 2658, 2659, 2660, 2661, 2662, 2663, 2664, 2665, 2666, 2667, 2668, 2669, 2670, 2671, 2672, 2673, 2674, 2675, 2676, 2677] (by decide +kernel) ?run
   · rw [finalState_aw, callState_aw', Nat.add_sub_cancel] at h
     exact h
   case run =>
