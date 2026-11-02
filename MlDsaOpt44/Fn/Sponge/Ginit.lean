@@ -71,7 +71,7 @@ theorem ginit_lane0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4562, 4563, 4564, 4565, 4566, 4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578, 4579, 4580] (by decide +kernel) ?_
+  refine reach_block hs [4560, 4561, 4562, 4563, 4564, 4565, 4566, 4567, 4568, 4569, 4570, 4571, 4572, 4573, 4574, 4575, 4576, 4577, 4578] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 0]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -85,7 +85,7 @@ theorem ginit_lane1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4581, 4582, 4583, 4584, 4585, 4586, 4587, 4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596, 4597, 4598] (by decide +kernel) ?_
+  refine reach_block hs [4579, 4580, 4581, 4582, 4583, 4584, 4585, 4586, 4587, 4588, 4589, 4590, 4591, 4592, 4593, 4594, 4595, 4596] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 1]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -99,7 +99,7 @@ theorem ginit_lane2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608, 4609, 4610, 4611, 4612, 4613, 4614, 4615, 4616] (by decide +kernel) ?_
+  refine reach_block hs [4597, 4598, 4599, 4600, 4601, 4602, 4603, 4604, 4605, 4606, 4607, 4608, 4609, 4610, 4611, 4612, 4613, 4614] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 2]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -113,7 +113,7 @@ theorem ginit_lane3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629, 4630, 4631, 4632] (by decide +kernel) ?_
+  refine reach_block hs [4615, 4616, 4617, 4618, 4619, 4620, 4621, 4622, 4623, 4624, 4625, 4626, 4627, 4628, 4629, 4630] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 3]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -127,7 +127,7 @@ theorem ginit_lane4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4633, 4634, 4635, 4636, 4637, 4638, 4639, 4640] (by decide +kernel) ?_
+  refine reach_block hs [4631, 4632, 4633, 4634, 4635, 4636, 4637, 4638] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 4]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -141,7 +141,7 @@ theorem ginit_lane5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4641, 4642, 4643, 4644, 4645, 4646, 4647, 4648] (by decide +kernel) ?_
+  refine reach_block hs [4639, 4640, 4641, 4642, 4643, 4644, 4645, 4646] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 5]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -155,7 +155,7 @@ theorem ginit_lane6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4649, 4650, 4651, 4652, 4653, 4654, 4655, 4656] (by decide +kernel) ?_
+  refine reach_block hs [4647, 4648, 4649, 4650, 4651, 4652, 4653, 4654] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 6]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -169,7 +169,7 @@ theorem ginit_lane7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4657, 4658, 4659, 4660, 4661, 4662, 4663, 4664] (by decide +kernel) ?_
+  refine reach_block hs [4655, 4656, 4657, 4658, 4659, 4660, 4661, 4662] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 7]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -183,7 +183,7 @@ theorem ginit_lane8 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4665, 4666, 4667, 4668, 4669, 4670, 4671, 4672] (by decide +kernel) ?_
+  refine reach_block hs [4663, 4664, 4665, 4666, 4667, 4668, 4669, 4670] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 8]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -197,7 +197,7 @@ theorem ginit_lane9 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4673, 4674, 4675, 4676, 4677, 4678, 4679, 4680] (by decide +kernel) ?_
+  refine reach_block hs [4671, 4672, 4673, 4674, 4675, 4676, 4677, 4678] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 9]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -211,7 +211,7 @@ theorem ginit_lane10 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4681, 4682, 4683, 4684, 4685, 4686, 4687, 4688] (by decide +kernel) ?_
+  refine reach_block hs [4679, 4680, 4681, 4682, 4683, 4684, 4685, 4686] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 10]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -225,7 +225,7 @@ theorem ginit_lane11 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4689, 4690, 4691, 4692, 4693, 4694, 4695, 4696] (by decide +kernel) ?_
+  refine reach_block hs [4687, 4688, 4689, 4690, 4691, 4692, 4693, 4694] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 11]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -239,7 +239,7 @@ theorem ginit_lane12 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4697, 4698, 4699, 4700, 4701, 4702, 4703, 4704] (by decide +kernel) ?_
+  refine reach_block hs [4695, 4696, 4697, 4698, 4699, 4700, 4701, 4702] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 12]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -253,7 +253,7 @@ theorem ginit_lane13 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4705, 4706, 4707, 4708, 4709, 4710, 4711, 4712] (by decide +kernel) ?_
+  refine reach_block hs [4703, 4704, 4705, 4706, 4707, 4708, 4709, 4710] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 13]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -267,7 +267,7 @@ theorem ginit_lane14 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4713, 4714, 4715, 4716, 4717, 4718, 4719, 4720] (by decide +kernel) ?_
+  refine reach_block hs [4711, 4712, 4713, 4714, 4715, 4716, 4717, 4718] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 14]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -281,7 +281,7 @@ theorem ginit_lane15 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4721, 4722, 4723, 4724, 4725, 4726, 4727, 4728] (by decide +kernel) ?_
+  refine reach_block hs [4719, 4720, 4721, 4722, 4723, 4724, 4725, 4726] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 15]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -295,7 +295,7 @@ theorem ginit_lane16 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4729, 4730, 4731, 4732, 4733, 4734, 4735, 4736, 4737, 4738] (by decide +kernel) ?_
+  refine reach_block hs [4727, 4728, 4729, 4730, 4731, 4732, 4733, 4734, 4735, 4736] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 16]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -309,7 +309,7 @@ theorem ginit_lane17 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4739, 4740, 4741, 4742, 4743, 4744, 4745, 4746] (by decide +kernel) ?_
+  refine reach_block hs [4737, 4738, 4739, 4740, 4741, 4742, 4743, 4744] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 17]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -323,7 +323,7 @@ theorem ginit_lane18 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4747, 4748, 4749, 4750, 4751, 4752, 4753, 4754] (by decide +kernel) ?_
+  refine reach_block hs [4745, 4746, 4747, 4748, 4749, 4750, 4751, 4752] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 18]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -337,7 +337,7 @@ theorem ginit_lane19 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4755, 4756, 4757, 4758, 4759, 4760, 4761, 4762] (by decide +kernel) ?_
+  refine reach_block hs [4753, 4754, 4755, 4756, 4757, 4758, 4759, 4760] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 19]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -351,7 +351,7 @@ theorem ginit_lane20 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4763, 4764, 4765, 4766, 4767, 4768, 4769, 4770, 4771, 4772, 4773, 4774] (by decide +kernel) ?_
+  refine reach_block hs [4761, 4762, 4763, 4764, 4765, 4766, 4767, 4768, 4769, 4770, 4771, 4772] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 20]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -365,7 +365,7 @@ theorem ginit_lane21 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4775, 4776, 4777, 4778, 4779, 4780, 4781, 4782] (by decide +kernel) ?_
+  refine reach_block hs [4773, 4774, 4775, 4776, 4777, 4778, 4779, 4780] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 21]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -379,7 +379,7 @@ theorem ginit_lane22 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4783, 4784, 4785, 4786, 4787, 4788, 4789, 4790] (by decide +kernel) ?_
+  refine reach_block hs [4781, 4782, 4783, 4784, 4785, 4786, 4787, 4788] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 22]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -393,7 +393,7 @@ theorem ginit_lane23 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.ginit, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
-  refine reach_block hs [4791, 4792, 4793, 4794, 4795, 4796, 4797, 4798] (by decide +kernel) ?_
+  refine reach_block hs [4789, 4790, 4791, 4792, 4793, 4794, 4795, 4796] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 23]
   opt44_block [word_storeWords_out]
   refine wb_congr ?_ (by norm_num); ginit_value
@@ -409,7 +409,7 @@ theorem ginit_lane24 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hsz := hs.sized; simp only [memWords] at hsz
   have hret := hr.small
   have hj := hr.jumpdest
-  refine reach_block hs [4799, 4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810, 4811, 4812] (by decide +kernel) ?_
+  refine reach_block hs [4797, 4798, 4799, 4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810] (by decide +kernel) ?_
   rw [storeWords_succ _ _ _ 24]
   opt44_block [word_storeWords_out, hj]
   refine wb_congr ?_ (by norm_num); ginit_value

@@ -31,7 +31,7 @@ theorem mub0_b0 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
     Reach (callState s 12640 (wd sh :: wd rs :: wd rl :: tail) M)
       (callState s 12425 (wd (word M 64768) :: wd 12653 :: wd sh :: wd rs :: wd rl :: tail) M) 24 := by
   mub_pre
-  opt44_reach [5473, 5474, 5475, 5476, 5477, 5478, 5479]
+  opt44_reach [5471, 5472, 5473, 5474, 5475, 5476, 5477]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b1 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -41,7 +41,7 @@ theorem mub0_b1 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 0 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 0)) 43 := by
   mub_pre
-  opt44_reach [5480, 5481, 5482, 5483, 5484, 5485, 5486, 5487, 5488, 5489, 5490, 5491, 5492, 5493] with [word_mstore_disjoint]
+  opt44_reach [5478, 5479, 5480, 5481, 5482, 5483, 5484, 5485, 5486, 5487, 5488, 5489, 5490, 5491] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b2 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -51,7 +51,7 @@ theorem mub0_b2 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 32 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 32)) 45 := by
   mub_pre
-  opt44_reach [5494, 5495, 5496, 5497, 5498, 5499, 5500, 5501, 5502, 5503, 5504, 5505, 5506, 5507] with [word_mstore_disjoint]
+  opt44_reach [5492, 5493, 5494, 5495, 5496, 5497, 5498, 5499, 5500, 5501, 5502, 5503, 5504, 5505] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b3 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -61,7 +61,7 @@ theorem mub0_b3 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 64 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 64)) 45 := by
   mub_pre
-  opt44_reach [5508, 5509, 5510, 5511, 5512, 5513, 5514, 5515, 5516, 5517, 5518, 5519, 5520, 5521] with [word_mstore_disjoint]
+  opt44_reach [5506, 5507, 5508, 5509, 5510, 5511, 5512, 5513, 5514, 5515, 5516, 5517, 5518, 5519] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b4 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -71,7 +71,7 @@ theorem mub0_b4 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 96 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 96)) 45 := by
   mub_pre
-  opt44_reach [5522, 5523, 5524, 5525, 5526, 5527, 5528, 5529, 5530, 5531, 5532, 5533, 5534, 5535] with [word_mstore_disjoint]
+  opt44_reach [5520, 5521, 5522, 5523, 5524, 5525, 5526, 5527, 5528, 5529, 5530, 5531, 5532, 5533] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b5 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -81,7 +81,7 @@ theorem mub0_b5 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 128 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 128)) 45 := by
   mub_pre
-  opt44_reach [5536, 5537, 5538, 5539, 5540, 5541, 5542, 5543, 5544, 5545, 5546, 5547, 5548, 5549] with [word_mstore_disjoint]
+  opt44_reach [5534, 5535, 5536, 5537, 5538, 5539, 5540, 5541, 5542, 5543, 5544, 5545, 5546, 5547] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b6 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -91,7 +91,7 @@ theorem mub0_b6 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 160 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 160)) 45 := by
   mub_pre
-  opt44_reach [5550, 5551, 5552, 5553, 5554, 5555, 5556, 5557, 5558, 5559, 5560, 5561, 5562, 5563] with [word_mstore_disjoint]
+  opt44_reach [5548, 5549, 5550, 5551, 5552, 5553, 5554, 5555, 5556, 5557, 5558, 5559, 5560, 5561] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b7 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -101,7 +101,7 @@ theorem mub0_b7 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 192 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 192)) 45 := by
   mub_pre
-  opt44_reach [5564, 5565, 5566, 5567, 5568, 5569, 5570, 5571, 5572, 5573, 5574, 5575, 5576, 5577] with [word_mstore_disjoint]
+  opt44_reach [5562, 5563, 5564, 5565, 5566, 5567, 5568, 5569, 5570, 5571, 5572, 5573, 5574, 5575] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b8 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -112,7 +112,7 @@ theorem mub0_b8 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 224 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 224)) 51 := by
   mub_pre
-  opt44_reach [5578, 5579, 5580, 5581, 5582, 5583, 5584, 5585, 5586, 5587, 5588, 5589, 5590, 5591, 5592, 5593] with [word_mstore_disjoint]
+  opt44_reach [5576, 5577, 5578, 5579, 5580, 5581, 5582, 5583, 5584, 5585, 5586, 5587, 5588, 5589, 5590, 5591] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b9 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -124,7 +124,7 @@ theorem mub0_b9 {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
               452312848583266388373324160190187140051835877600158453279131187530910662656) ::
         wd 12890 :: wd sh :: wd rs :: wd rl :: tail) M) 51 := by
   mub_pre
-  opt44_reach [5594, 5595, 5596, 5597, 5598, 5599, 5600, 5601, 5602, 5603, 5604, 5605, 5606, 5607, 5608, 5609]
+  opt44_reach [5592, 5593, 5594, 5595, 5596, 5597, 5598, 5599, 5600, 5601, 5602, 5603, 5604, 5605, 5606, 5607]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b10l {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -137,7 +137,7 @@ theorem mub0_b10l {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
   mub_pre
   have hret := hr.small
   have hj := hr.jumpdest
-  opt44_reach [5610, 5611, 5612, 5613, 5614, 5615, 5616, 5617, 5618, 5619, 5620, 5621, 5622, 5623, 5624, 5625, 5665, 5666, 5667, 5668, 5669] with [word_mstore_disjoint, hj]
+  opt44_reach [5608, 5609, 5610, 5611, 5612, 5613, 5614, 5615, 5616, 5617, 5618, 5619, 5620, 5621, 5622, 5623, 5663, 5664, 5665, 5666, 5667] with [word_mstore_disjoint, hj]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b10s {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
@@ -152,7 +152,7 @@ theorem mub0_b10s {s : State} (hs : Ctx s) {rl : Nat} {tail : List UInt256}
   have hpad : (7 &&& s.executionEnv.calldata.size - 3666) * 8 < 256 := by
     have : (7 &&& s.executionEnv.calldata.size - 3666) ≤ 7 := Nat.and_le_left
     omega
-  opt44_reach [5610, 5611, 5612, 5613, 5614, 5615, 5616, 5617, 5618, 5619, 5620, 5621, 5622, 5623, 5624, 5625, 5626, 5627, 5628, 5629, 5630, 5631, 5632, 5633, 5634, 5635, 5636, 5637] with [word_mstore_disjoint]
+  opt44_reach [5608, 5609, 5610, 5611, 5612, 5613, 5614, 5615, 5616, 5617, 5618, 5619, 5620, 5621, 5622, 5623, 5624, 5625, 5626, 5627, 5628, 5629, 5630, 5631, 5632, 5633, 5634, 5635] with [word_mstore_disjoint]
 
 set_option maxRecDepth 100000 in
 theorem mub0_b11 {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
@@ -171,6 +171,6 @@ theorem mub0_b11 {s : State} (hs : Ctx s) {rl rs : Nat} {tail : List UInt256}
   mub_pre
   have hret := hrs.small
   have hj := hrs.jumpdest
-  opt44_reach [5638, 5639, 5640, 5641, 5642, 5643, 5644, 5645, 5646, 5647, 5648, 5649, 5650, 5651, 5652, 5653, 5654, 5655, 5656, 5657, 5658, 5659, 5660, 5661, 5662, 5663, 5664] with [word_mstore_disjoint, hj]
+  opt44_reach [5636, 5637, 5638, 5639, 5640, 5641, 5642, 5643, 5644, 5645, 5646, 5647, 5648, 5649, 5650, 5651, 5652, 5653, 5654, 5655, 5656, 5657, 5658, 5659, 5660, 5661, 5662] with [word_mstore_disjoint, hj]
 
 end MlDsaOpt44.Proofs.WP4

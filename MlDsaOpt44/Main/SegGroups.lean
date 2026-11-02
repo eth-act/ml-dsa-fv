@@ -28,7 +28,7 @@ theorem aD_lt {cd : ByteArray} {s : Nat} (h : okCol cd s = true) {r : Nat} (hr :
 
 /-- A pure group and the copy of its candidates to `dst`. -/
 theorem group_copy {s : State} (hs : Ctx s) {m : ByteArray} {b : Bool} {col : Nat}
-    {pc ret : Nat} (i : Fin 12125) (cost : Nat) {dst : Nat}
+    {pc ret : Nat} (i : Fin 12150) (cost : Nat) {dst : Nat}
     (hblk : Reach (callState s pc [flag b] m) (callState s 13723 [wd 15, wd col, wd 0, wd ret, flag b] m)
       cost)
     (hj : Decode.isValidJumpDest optBytecode ret = true) (hret : ret < 2 ^ 16)

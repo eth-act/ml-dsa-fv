@@ -135,7 +135,7 @@ theorem pk_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (M : ByteArray) :
     Reach (callState s 15459 (wd 4 :: wd 59904 :: wd 43264 :: wd ret :: tail) M)
       (callState s 15468 (wd 4 :: wd 59904 :: wd 43264 :: wd 51456 :: wd ret :: tail) M) 19 := by
-  opt44_reach [7057, 7058, 7059, 7060, 7061, 7062, 7063]
+  opt44_reach [7055, 7056, 7057, 7058, 7059, 7060, 7061]
 
 set_option maxRecDepth 100000 in
 theorem pk_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -143,7 +143,7 @@ theorem pk_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hret : ret < 2 ^ 16) (M : ByteArray) (a b : Nat) :
     Reach (callState s 16543 (wd 4 :: wd a :: wd b :: wd 51456 :: wd ret :: tail) M)
       (callState s ret tail M) 16 := by
-  opt44_reach [7504, 7505, 7506, 7507, 7508] with [hj]
+  opt44_reach [7502, 7503, 7504, 7505, 7506] with [hj]
 
 theorem pk_loop {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (m : ByteArray) :

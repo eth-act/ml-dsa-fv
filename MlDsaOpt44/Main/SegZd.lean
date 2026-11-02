@@ -39,7 +39,7 @@ theorem zeroOn_mcopy_double {m : ByteArray} {lo k : Nat} (hz : ZeroOn m lo (lo +
   · exact hz _ h1 (by omega)
 
 /-- Three pushes and one doubling `MCOPY` of the zero prefix at `CW`. -/
-theorem zd_double {s : State} (hs : Ctx s) (i : Fin 12125) {pc pc' k : Nat} {rest : List UInt256}
+theorem zd_double {s : State} (hs : Ctx s) (i : Fin 12150) {pc pc' k : Nat} {rest : List UInt256}
     {m : ByteArray}
     (hpush : Reach (callState s pc rest m) (callState s pc' (wd (CW + k) :: wd CW :: wd k :: rest) m) 9)
     (hi : instrAt i.val = .op .MCOPY) (hpc : pcAt i.val = pc') (hk : 2 * k ≤ 8192)

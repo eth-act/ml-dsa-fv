@@ -3102,9 +3102,7 @@ sibfail_87:
   7733  JUMPDEST                           ; sample_in_ball
   7734  POP                                ; sample_in_ball
   7735  POP                                ; sample_in_ball
-  7736  POP                                ; sample_in_ball
-  7737  PUSH0                              ; sample_in_ball
-  7738  SWAP1                              ; sample_in_ball
+  7736  PUSH2         @sibz ; sample_in_ball
   7739  JUMP                               ; sample_in_ball
 dhint:
   7740  JUMPDEST                           ; decode_hint
@@ -12366,3 +12364,33 @@ kf4_loop:
  24047  JUMPI                              ; kf4
  24048  POP                                ; kf4
  24049  JUMP                               ; kf4
+sibz:
+ 24050  JUMPDEST                           ; sib_zero
+ 24051  POP                                ; sib_zero
+ 24052  PUSH2         0x0fc0 ; sib_zero
+ 24055  MLOAD                              ; sib_zero
+ 24056  PUSH1         0x05 ; sib_zero
+ 24058  SHL                                ; sib_zero
+ 24059  PUSH2         0xa000 ; sib_zero
+ 24062  ADD                                ; sib_zero
+sibzl_212:
+ 24063  JUMPDEST                           ; sib_zero
+ 24064  DUP1                               ; sib_zero
+ 24065  PUSH2         0xa4e0 ; sib_zero
+ 24068  GT                                 ; sib_zero
+ 24069  ISZERO                             ; sib_zero
+ 24070  PUSH2         @sibzx_213 ; sib_zero
+ 24073  JUMPI                              ; sib_zero
+ 24074  PUSH0                              ; sib_zero
+ 24075  DUP2                               ; sib_zero
+ 24076  MSTORE                             ; sib_zero
+ 24077  PUSH1         0x20 ; sib_zero
+ 24079  ADD                                ; sib_zero
+ 24080  PUSH2         @sibzl_212 ; sib_zero
+ 24083  JUMP                               ; sib_zero
+sibzx_213:
+ 24084  JUMPDEST                           ; sib_zero
+ 24085  POP                                ; sib_zero
+ 24086  PUSH0                              ; sib_zero
+ 24087  SWAP1                              ; sib_zero
+ 24088  JUMP                               ; sib_zero

@@ -16,7 +16,8 @@
 5. Forced rare paths, debug builds (not shipped): `dbg_force6` with
    OPT_DBG_NO_OVERLAY=1 squeezes the 6th RejNTTPoly block on every fix-up;
    verdicts must stay correct and the last group's 6th-block candidates must
-   equal SHAKE128 bytes 840..1007.
+   equal SHAKE128 bytes 840..1007. `dbg_sib_or` forces SampleInBall's fail
+   exit (v4); every vector must then return 0.
 "quick" skips 4 and 5.
 """
 from __future__ import annotations
@@ -261,6 +262,36 @@ def test_c2(build=None, run=None, label="v4"):
     print(f"c's second block on demand {label}: 44 ok ({n} vectors)")
 
 
+def test_sib_fail(build=None, run=None, label="v4"):
+    """SampleInBall's fail exit (fewer than tau accepted bytes in the stream;
+    no known c-tilde reaches it). Debug build `dbg_sib_or` ORs a mask into
+    every stream lane word: all bytes rejected (cnt = 0 at the exit), or all
+    but byte 0 of each lane (at most 33 accepted, cnt > 0). Every vector that
+    reaches SampleInBall must RETURN 0: csum still reads BASES[0..tau), so
+    the slots past cnt must be valid (44 v4: cleared by `sibz`).
+    build(nn, **dbg) -> (g, code)."""
+    import gen_opt
+    if build is None:
+        def build(nn, **dbg):
+            g = gen_opt.Gen(gen_opt.Layout(nn, "v4"))
+            for k, v in dbg.items():
+                setattr(g, k, v)
+            return g, g.build()
+    for nn in (44, 65, 87):
+        n = 0
+        for mask in ((1 << 64) - 1, (1 << 64) - 256):
+            g, code = build(nn, dbg_sib_or=mask)
+            if not g.wc_sib:
+                continue
+            for cd, _ in rows(nn):
+                if len(cd) < g.L.HDR:
+                    continue
+                r = (run or opt_evm.run)(code, cd)
+                assert r["status"] == "return" and r["ret"] == bytes(32), (label, nn, hex(mask), r["status"])
+                n += 1
+        print(f"SampleInBall fail exit {label}: {nn} ok ({n} runs return 0)")
+
+
 # SHA-256 of the formally verified v2 artifacts (MlDsaOpt44/65/87 Bytecode.lean)
 V2_SHA256 = {
     44: "947bd2821b80e384110fcee27613528400d07ff2a9c2013f9b58498d1b6d4a00",
@@ -279,7 +310,7 @@ V3_SHA256 = {
 
 # SHA-256 of the v4 artifacts (MlDsaOpt/NN/opt.hex, MlDsaOptNN)
 V4_SHA256 = {
-    44: "816e3c2b1d8b0fbca0235be1e37a425713d91fc5c8d56c2e07cc55449e4dbffb",
+    44: "8f90565e079a3bee64c50847ac3a3ad4854c8046b9fdac0fd088fa4c1f8d301e",
     65: "6298f2959da03632fd5b750578e02b72c1a4ebab2d4fe902684fa1eacea0804f",
     87: "da031d6c038f34feafcfa49eda3d2467e47731236757e42b296d8270c3cbc4cd",
 }
@@ -305,6 +336,7 @@ def main():
         test_bytecode("v4")
         test_mu_lengths("v4")
         test_c2()
+        test_sib_fail()
         os.environ["OPT_DBG_NO_OVERLAY"] = "1"
         test_bytecode("v4", force6=True)
     print("all self-tests passed")

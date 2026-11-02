@@ -10,7 +10,8 @@
 3. The 4 + 4 NTT's forward bias bounds (Shoup on layers 1-4); v2 / v3
    (SHA-256 pins) and v4 artifacts are still byte-identical.
 4. Every vector of all three sets on MlDsaOpt/NN/glam/opt.hex, and valid /
-   flipped-message signatures at mu's block boundaries (opt_selftest).
+   flipped-message signatures at mu's block boundaries, SampleInBall's
+   forced fail exit (opt_selftest).
 5. Forced sixth squeeze (debug build, as in opt_selftest.py).
 "quick" skips 4 and 5.
 """
@@ -158,6 +159,7 @@ def main():
         test_bytecode()
         opt_selftest.test_mu_lengths("glam", build=lambda nn: gen_glam.build(nn)[1], run=glam_run)
         opt_selftest.test_c2(build=lambda **d: gen_glam.build(44, **d), run=glam_run, label="glam")
+        opt_selftest.test_sib_fail(build=gen_glam.build, run=glam_run, label="glam")
         os.environ["OPT_DBG_NO_OVERLAY"] = "1"
         test_bytecode(force6=True)
     print("all glam self-tests passed")

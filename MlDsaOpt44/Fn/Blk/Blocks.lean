@@ -27,7 +27,7 @@ theorem ent_blk {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [3705, 3706, 3707]
+  opt44_reach [3703, 3704, 3705]
 
 theorem ent_blkh {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (flp abp ret : Nat) (m : ByteArray) :
@@ -36,7 +36,7 @@ theorem ent_blkh {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.le
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4148, 4149, 4150, 4151, 4152]
+  opt44_reach [4146, 4147, 4148, 4149, 4150]
 
 theorem ent_blkt {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (ret : Nat) (m : ByteArray) :
@@ -45,7 +45,7 @@ theorem ent_blkt {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.le
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4153, 4154, 4155, 4156, 4157, 4158, 4159]
+  opt44_reach [4151, 4152, 4153, 4154, 4155, 4156, 4157]
 
 theorem pro {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (xe xp flp abp ret : Nat) (m : ByteArray) :
@@ -55,7 +55,7 @@ theorem pro {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length 
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [3708, 3709, 3710, 3711, 3712, 3713, 3714, 3715, 3716, 3717, 3718, 3719, 3720, 3721, 3722, 3723, 3724, 3725, 3726, 3727, 3728, 3729, 3730, 3731, 3732, 3733, 3734, 3735, 3736, 3737, 3738, 3739, 3740, 3741, 3742, 3743, 3744] with [flip6, flipW, U0, U1, U2, U3, U4, U5, word_mstore_disjoint]
+  opt44_reach [3706, 3707, 3708, 3709, 3710, 3711, 3712, 3713, 3714, 3715, 3716, 3717, 3718, 3719, 3720, 3721, 3722, 3723, 3724, 3725, 3726, 3727, 3728, 3729, 3730, 3731, 3732, 3733, 3734, 3735, 3736, 3737, 3738, 3739, 3740, 3741, 3742] with [flip6, flipW, U0, U1, U2, U3, U4, U5, word_mstore_disjoint]
 
 theorem bodyB_loop {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xe xp flp abp ret : Nat) (M : ByteArray)
@@ -68,7 +68,7 @@ theorem bodyB_loop {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4085, 4086, 4087, 4088, 4089, 4090, 4091, 4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 4101, 4102, 4103, 4104, 4105, 4106]
+  opt44_reach [4083, 4084, 4085, 4086, 4087, 4088, 4089, 4090, 4091, 4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 4101, 4102, 4103, 4104]
 
 theorem bodyB_exit {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
     (lf w2 w1 w0 u5 u4 u3 u2 u1 u0 xe xp flp abp ret : Nat) (M : ByteArray)
@@ -81,7 +81,7 @@ theorem bodyB_exit {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4085, 4086, 4087, 4088, 4089, 4090, 4091, 4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 4101, 4102, 4103, 4104, 4105, 4106, 4107]
+  opt44_reach [4083, 4084, 4085, 4086, 4087, 4088, 4089, 4090, 4091, 4092, 4093, 4094, 4095, 4096, 4097, 4098, 4099, 4100, 4101, 4102, 4103, 4104, 4105]
 
 set_option maxRecDepth 100000 in
 theorem epi {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 960)
@@ -93,6 +93,6 @@ theorem epi {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length 
   have hsz := hs.sized
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   simp only [memWords] at hsz
-  opt44_reach [4108, 4109, 4110, 4111, 4112, 4113, 4114, 4115, 4116, 4117, 4118, 4119, 4120, 4121, 4122, 4123, 4124, 4125, 4126, 4127, 4128, 4129, 4130, 4131, 4132, 4133, 4134, 4135, 4136, 4137, 4138, 4139, 4140, 4141, 4142, 4143, 4144, 4145, 4146, 4147] with [hj, flip6, flipW, word_mstore_disjoint]
+  opt44_reach [4106, 4107, 4108, 4109, 4110, 4111, 4112, 4113, 4114, 4115, 4116, 4117, 4118, 4119, 4120, 4121, 4122, 4123, 4124, 4125, 4126, 4127, 4128, 4129, 4130, 4131, 4132, 4133, 4134, 4135, 4136, 4137, 4138, 4139, 4140, 4141, 4142, 4143, 4144, 4145] with [hj, flip6, flipW, word_mstore_disjoint]
 
 end MlDsaOpt44.Proofs.Blk

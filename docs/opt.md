@@ -130,7 +130,7 @@ R4-7 trades μ's SIMD blocks for the two kf4 calls: 44 is cheaper for
 R4-5 matters most for real messages: for 44 and 65 every |M| ≥ 70 is
 64k–155k cheaper (subsection R4-5).
 
-Code size v4: 24,050 / 24,049 / 23,798 B (R4-6: 23,488 / 24,049 / 23,798; R4-5: 22,470 / 23,140 / 23,934;
+Code size v4: 24,089 / 24,049 / 23,798 B (R4-7: 24,050 for 44; R4-6: 23,488 / 24,049 / 23,798; R4-5: 22,470 / 23,140 / 23,934;
 R4-4: 22,546 / 23,219 / 23,941).
 Memory: 44 grows by 512 words (2097 → 2609, R4-4); 65 and 87 are
 unchanged; R4-5 and R4-6 add no memory.
@@ -542,6 +542,31 @@ Before R4-5 (`f0cd987`): SHA-256 44 `8dd3fe70…`, 65 `fc11f938…`, 87
 `6540a5eb…`; Lean semantics total 93,585,031; `opt_fuzz.py`
 (`OPT_VERSION=v4`, seeds 544 / 565 / 587) 44: 400, 65: 800, 87: 800 cases,
 0 failures. R4-1 … R4-4 were each validated with 120 fuzz cases per set.
+
+### R4-8: SampleInBall's fail exit clears BASES (44)
+
+Found by the Lean proof of `sib_call` (proof/v4). R4-7's window stages
+B3's flag words in BASES, and nothing cleared them before SampleInBall.
+If SampleInBall fails (fewer than τ accepted bytes in 272; no known c̃
+reaches it), it returns 0 but main still runs `tbuild` and `csum`, and
+`csum` MLOADs at TT − 32u + BASES[i] for i < τ: a stale flag word there
+expands memory out of gas instead of returning 0. 65 and 87 do not stage
+anything in BASES (their BASES is zero at SampleInBall's entry); neither
+does glam 65's 42-call schedule (only `emit_window44` writes BASES).
+
+Fix (44 v4 and glam 44): the fail exit `POP POP @sibz JUMP` (7 bytes,
+like the old exit, so no other pc moves) jumps to `sibz`, placed after
+`kf4`, which zeroes BASES[cnt … τ) (cnt = MLOAD(CNT)) and returns 0.
++39 bytes (24,089 / glam 57,649); the accepting path is unchanged: the 47
+vectors of 44 give identical status, output and gas on the old and new
+bytes, v4 and glam. `opt_selftest.test_sib_fail` forces the fail exit
+(debug build `dbg_sib_or`: every stream byte rejected, or all but byte 0
+of each lane) and requires RETURN 0 on every vector of all three sets,
+v4 and glam; on the unfixed 44 bytes it aborts in `csum`'s memory
+expansion. 44 v4: typical 1,929,359, worst 2,580,497 (`opt_worstcase`;
+the 5-gas drop from 2,580,502 is the measurement harness's JUMPDEST,
+previously counted in the last region `kf4`); glam 44: typical 1,686,116,
+worst 2,293,648.
 
 Still open: `blk` loop overhead (~10k for 44, needs unrolling and code
 space, which 87 lacks), the inverse NTT, `dz`, `pack`, `decode_hint`,

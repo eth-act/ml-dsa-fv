@@ -97,7 +97,7 @@ theorem cs_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized
   simp only [memWords] at hsz
-  opt44_reach [6669, 6693, 6694, 6695, 6696, 6701, 6566]
+  opt44_reach [6667, 6691, 6692, 6693, 6694, 6699, 6564]
 
 set_option maxRecDepth 100000 in
 theorem cs_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -105,7 +105,7 @@ theorem cs_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hret : ret < 2 ^ 16) (M : ByteArray) (a b c : Nat) (g : UInt256) :
     Reach (callState s 15441 (wd a :: wd b :: g :: wd c :: wd 20480 :: wd ret :: tail) M)
       (callState s ret tail M) 18 := by
-  opt44_reach [7039, 7040, 7041, 7042, 7043, 7056] with [hj]
+  opt44_reach [7037, 7038, 7039, 7040, 7041, 7054] with [hj]
 
 theorem cs_run {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (htail : tail.length ≤ 960) (hj : Decode.isValidJumpDest optBytecode ret = true)

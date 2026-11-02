@@ -152,6 +152,10 @@ class Gen:
         self.wc_mu = L.v4 and "mu" in feats        # mu blocks 0..4 in the SIMD mu slot
         self.wc_sib = L.v4 and "sib" in feats      # lane-unrolled SampleInBall loop
         self.deferred = []       # (region, emitter) placed after main's code
+        self.tail = []           # (region, emitter) placed after all other code
+        # v4 44: SampleInBall's fail exit clears BASES[cnt..tau) (the window
+        # stages flag words there; csum reads them on every path)
+        self.sib_zero = self.wc_sib and L.nn == 44
         # v4 (R4-7): ML-DSA-44 at the kf4 packing floor (23 calls); states
         # pause and move between slots, see build_schedule / emit_window44
         self.pack = (L.v4 and L.nn == 44 and os.environ.get("OPT_V4_PACK", "1") == "1") or L.pack65
@@ -826,6 +830,11 @@ class Gen:
             a.push(L.CB)
             a.op("ADD")
         a.op("MLOAD")                    # [ret, signs, i, v, w]
+        if getattr(self, "dbg_sib_or", None) is not None:
+            # debug (opt_selftest.test_sib_fail): force rejections so that
+            # SampleInBall fails
+            a.push(self.dbg_sib_or)
+            a.op("OR")
         for k in range(8):
             skip = self.fresh("sibskip")
             a.op("DUP1")
@@ -932,8 +941,49 @@ class Gen:
             self.call("cext", [L.CB + 17 * 32, csl, 17])
             a.jump(loop2 if dup else loop)
         a.label(fail)
+        if self.sib_zero:
+            # fail with BASES[cnt..tau) not known to be zero (44: the window
+            # stages flag words in BASES): clear them in `sibz`, placed after
+            # all other code so no other pc moves; same 7 bytes as below
+            a.op("POP")
+            a.op("POP")
+            a.jump("sibz")
+            self.tail.append(("sib_zero", self.gen_sib_zero))
+            return
         for _ in range(3):
             a.op("POP")
+        a.op("PUSH0")
+        a.op("SWAP1")
+        a.op("JUMP")
+
+    def gen_sib_zero(self):
+        """SampleInBall's fail exit when BASES may hold stale words: [ret, signs]
+        -> BASES[cnt..tau) = 0 (cnt = MLOAD(CNT) < tau), exit [0]. csum reads
+        BASES[0..tau) as window offsets whatever SampleInBall returned."""
+        a, L = self.a, self.L
+        loop, out = self.fresh("sibzl"), self.fresh("sibzx")
+        a.label("sibz")
+        a.op("POP")
+        a.push(L.MISC + 0x1C0)
+        a.op("MLOAD")
+        a.push(5)
+        a.op("SHL")
+        a.push(L.BASES)
+        a.op("ADD")                      # [ret, a = BASES + 32 cnt]
+        a.label(loop)
+        a.op("DUP1")
+        a.push(L.BASES + 32 * L.p["tau"])
+        a.op("GT")
+        a.op("ISZERO")
+        a.jumpi(out)                     # a >= BASES + 32 tau
+        a.op("PUSH0")
+        a.op("DUP2")
+        a.op("MSTORE")
+        a.push(32)
+        a.op("ADD")
+        a.jump(loop)
+        a.label(out)
+        a.op("POP")
         a.op("PUSH0")
         a.op("SWAP1")
         a.op("JUMP")
@@ -4433,6 +4483,9 @@ class Gen:
         self.gen_ntts()
         gen_keccak_f(a, "kf1", L.KS, L.KB, L.RC1, unroll=2, scale=1, kz_addr=L.KZ if self.v3 else None)
         gen_keccak_f(a, "kf4", L.KS, L.KB, L.RC4, unroll=2, scale=4)
+        for name, emit in self.tail:
+            a.region(name)
+            emit()
         return a.assemble()
 
 

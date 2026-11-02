@@ -116,7 +116,7 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have h1 := fx_sq_pre (ret := ret) hs htail hsz M (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
     29440 rp wp (by decide) (by decide) h6
   set M2 := MachineState.writeBytes M1 (MachineState.readPadded M1 0 800) 65280 with hM2
-  have h2 := Infra.reach_mcopy hs ⟨6124, by decide⟩ (pc := 13656) (d := 65280) (src := 0) (n := 800)
+  have h2 := Infra.reach_mcopy hs ⟨6122, by decide⟩ (pc := 13656) (d := 65280) (src := 0) (n := 800)
     (m := M1) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
   have hf2 : FrameExcept M M2 [(4064, 4096), (65280, 66080)] :=
@@ -140,7 +140,7 @@ theorem squeeze_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have h7 := fx_sq_post (ret := ret) hs htail hsz M4 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)
     29440 rp wp
   set M5 := MachineState.writeBytes M4 (MachineState.readPadded M4 65280 800) 0 with hM5
-  have h8 := Infra.reach_mcopy hs ⟨6138, by decide⟩ (pc := 13686) (d := 0) (src := 65280) (n := 800)
+  have h8 := Infra.reach_mcopy hs ⟨6136, by decide⟩ (pc := 13686) (d := 0) (src := 65280) (n := 800)
     (m := M4) (by simp only [Infra.instrAt_lit]) (by simp only [Infra.pcAt_lit]) (by decide)
     (by decide) (by decide) (by decide) (by omega) (by omega) hlen
   have h9 := fx_cont (ret := ret) hs htail hsz M5 (64 * sl) (lmask sl) (nmask sl) (qsv sl) (fmv sl)

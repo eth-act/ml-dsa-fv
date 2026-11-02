@@ -42,21 +42,21 @@ theorem g_b0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   interval_cases col <;>
-  opt44_reach [6170, 6171, 6172, 6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180, 6181, 6182, 6183,
-    6184, 6185, 6186, 6187, 6188, 6189, 6190, 6191, 6192, 6193, 6194, 6195, 6196, 6197, 6198, 6199,
-    6200, 6201, 6202, 6203, 6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213, 6214, 6215,
-    6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224, 6225, 6226] with [HAVE6, gL4n]
+  opt44_reach [6168, 6169, 6170, 6171, 6172, 6173, 6174, 6175, 6176, 6177, 6178, 6179, 6180, 6181,
+    6182, 6183, 6184, 6185, 6186, 6187, 6188, 6189, 6190, 6191, 6192, 6193, 6194, 6195, 6196, 6197,
+    6198, 6199, 6200, 6201, 6202, 6203, 6204, 6205, 6206, 6207, 6208, 6209, 6210, 6211, 6212, 6213,
+    6214, 6215, 6216, 6217, 6218, 6219, 6220, 6221, 6222, 6223, 6224] with [HAVE6, gL4n]
 
 theorem g_K {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} : ∀ b, b < 5 → ∀ M, Reach (callState s (13826 + 22 * b) (gB col ret tail) M)
       (callState s 22529 (wd (13834 + 22 * b) :: gB col ret tail) M) 15 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6227, 6228, 6229, 6230]
-  · opt44_reach [6237, 6238, 6239, 6240]
-  · opt44_reach [6247, 6248, 6249, 6250]
-  · opt44_reach [6257, 6258, 6259, 6260]
-  · opt44_reach [6267, 6268, 6269, 6270]
+  · opt44_reach [6225, 6226, 6227, 6228]
+  · opt44_reach [6235, 6236, 6237, 6238]
+  · opt44_reach [6245, 6246, 6247, 6248]
+  · opt44_reach [6255, 6256, 6257, 6258]
+  · opt44_reach [6265, 6266, 6267, 6268]
 
 theorem g_L {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} : ∀ b, b < 4 → ∀ M, Reach (callState s (13834 + 22 * b) (gB col ret tail) M)
@@ -64,22 +64,22 @@ theorem g_L {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length 
         gB col ret tail) M) 21 := by
   intro b hb M
   interval_cases b
-  · opt44_reach [6231, 6232, 6233, 6234, 6235, 6236] with [FL, ABUF]
-  · opt44_reach [6241, 6242, 6243, 6244, 6245, 6246] with [FL, ABUF]
-  · opt44_reach [6251, 6252, 6253, 6254, 6255, 6256] with [FL, ABUF]
-  · opt44_reach [6261, 6262, 6263, 6264, 6265, 6266] with [FL, ABUF]
+  · opt44_reach [6229, 6230, 6231, 6232, 6233, 6234] with [FL, ABUF]
+  · opt44_reach [6239, 6240, 6241, 6242, 6243, 6244] with [FL, ABUF]
+  · opt44_reach [6249, 6250, 6251, 6252, 6253, 6254] with [FL, ABUF]
+  · opt44_reach [6259, 6260, 6261, 6262, 6263, 6264] with [FL, ABUF]
 
 theorem g_L4 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (M : ByteArray) : Reach (callState s (13834 + 22 * 4) (gB col ret tail) M)
       (callState s 10203 (wd (FL + 224 * 4) :: wd (ABUF + 1792 * 4) :: wd 13936 ::
         gB col ret tail) M) 21 := by
-  opt44_reach [6271, 6272, 6273, 6274, 6275, 6276] with [FL, ABUF]
+  opt44_reach [6269, 6270, 6271, 6272, 6273, 6274] with [FL, ABUF]
 
 theorem g_G {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.length ≤ 900)
     {col ret : Nat} (M : ByteArray) :
     Reach (callState s 13936 (gB col ret tail) M)
       (callState s 10501 (wd 15 :: wd 13945 :: gB col ret tail) M) 18 := by
-  opt44_reach [6277, 6278, 6279, 6280, 6281]
+  opt44_reach [6275, 6276, 6277, 6278, 6279]
 
 theorem g_E {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.group ret tail) {col : Nat} {ok : UInt256} (M : ByteArray) :
@@ -88,7 +88,7 @@ theorem g_E {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have e : Stack.group = 256 := by decide
   have hret := hr.small
   have hj := hr.jumpdest
-  opt44_reach [6282, 6283, 6284, 6285, 6286, 6287, 6288, 6289, 6290] with [hj]
+  opt44_reach [6280, 6281, 6282, 6283, 6284, 6285, 6286, 6287, 6288] with [hj]
 
 theorem pack4_lane {x : Nat} (hx : x < 2 ^ 256) : pack4 (fun k => lane x k) = x := by
   unfold pack4 lane

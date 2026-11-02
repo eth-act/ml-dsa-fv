@@ -66,7 +66,7 @@ theorem f4_w0 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (f4v M p) 32) (p + 0x7900))) 214 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt44_reach [4165, 4166, 4167, 4168, 4169, 4170, 4171, 4172, 4173, 4174, 4175, 4176, 4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185, 4186, 4187, 4188, 4189, 4190, 4191, 4192, 4193, 4194, 4195, 4196, 4197, 4198, 4199, 4200, 4201, 4202, 4203, 4204, 4205, 4206, 4207, 4208, 4209, 4210, 4211, 4212, 4213, 4214, 4215, 4216, 4217, 4218, 4219, 4220, 4221, 4222, 4223, 4224, 4225, 4226, 4227, 4228, 4229, 4230, 4231, 4232, 4233] with [f4v, M64]
+  opt44_reach [4163, 4164, 4165, 4166, 4167, 4168, 4169, 4170, 4171, 4172, 4173, 4174, 4175, 4176, 4177, 4178, 4179, 4180, 4181, 4182, 4183, 4184, 4185, 4186, 4187, 4188, 4189, 4190, 4191, 4192, 4193, 4194, 4195, 4196, 4197, 4198, 4199, 4200, 4201, 4202, 4203, 4204, 4205, 4206, 4207, 4208, 4209, 4210, 4211, 4212, 4213, 4214, 4215, 4216, 4217, 4218, 4219, 4220, 4221, 4222, 4223, 4224, 4225, 4226, 4227, 4228, 4229, 4230, 4231] with [f4v, M64]
   rw [show 30976 + p = p + 30976 by omega, show 8192 + p = p + 8192 by omega,
     show 20480 + p = p + 20480 by omega, show 63232 + p = p + 63232 by omega,
     show 55040 + p = p + 55040 by omega, show 39168 + p = p + 39168 by omega]
@@ -82,7 +82,7 @@ theorem f4_w1 {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.lengt
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (f4v M (p + 32)) 32) (p + 32 + 0x7900))) 219 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt44_reach [4234, 4235, 4236, 4237, 4238, 4239, 4240, 4241, 4242, 4243, 4244, 4245, 4246, 4247, 4248, 4249, 4250, 4251, 4252, 4253, 4254, 4255, 4256, 4257, 4258, 4259, 4260, 4261, 4262, 4263, 4264, 4265, 4266, 4267, 4268, 4269, 4270, 4271, 4272, 4273, 4274, 4275, 4276, 4277, 4278, 4279, 4280, 4281, 4282, 4283, 4284, 4285, 4286, 4287, 4288, 4289, 4290, 4291, 4292, 4293, 4294, 4295, 4296, 4297, 4298, 4299, 4300, 4301, 4302, 4303] with [f4v, M64]
+  opt44_reach [4232, 4233, 4234, 4235, 4236, 4237, 4238, 4239, 4240, 4241, 4242, 4243, 4244, 4245, 4246, 4247, 4248, 4249, 4250, 4251, 4252, 4253, 4254, 4255, 4256, 4257, 4258, 4259, 4260, 4261, 4262, 4263, 4264, 4265, 4266, 4267, 4268, 4269, 4270, 4271, 4272, 4273, 4274, 4275, 4276, 4277, 4278, 4279, 4280, 4281, 4282, 4283, 4284, 4285, 4286, 4287, 4288, 4289, 4290, 4291, 4292, 4293, 4294, 4295, 4296, 4297, 4298, 4299, 4300, 4301] with [f4v, M64]
   rw [show 31008 + p = p + 32 + 30976 by omega, show 8224 + p = p + 32 + 8192 by omega,
     show 20512 + p = p + 32 + 20480 by omega, show 63264 + p = p + 32 + 63232 by omega,
     show 55072 + p = p + 32 + 55040 by omega, show 39200 + p = p + 32 + 39168 by omega,
@@ -94,7 +94,7 @@ theorem f4_tail {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
     {p ret : Nat} (M : ByteArray) (hp : p + 64 < 0x5000) :
     Reach (callState s 10484 (wd p :: f4K ret tail) M)
       (callState s 10308 (wd (p + 64) :: f4K ret tail) M) 28 := by
-  opt44_reach [4304, 4305, 4306, 4307, 4308, 4309, 4310]
+  opt44_reach [4302, 4303, 4304, 4305, 4306, 4307, 4308]
   simp only [Nat.add_comm, and_self]
 
 theorem f4_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
@@ -103,13 +103,13 @@ theorem f4_exit {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have := hr.depth; simp only [Stack.pass3f4, Stack.leaf] at this
   have hret := hr.small
   have hj := hr.jumpdest
-  opt44_reach [4304, 4305, 4306, 4307, 4308, 4309, 4310, 4311, 4312, 4313, 4314, 4315] with [hj]
+  opt44_reach [4302, 4303, 4304, 4305, 4306, 4307, 4308, 4309, 4310, 4311, 4312, 4313] with [hj]
 
 theorem f4_entry {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f4 ret tail) (M : ByteArray) :
     Reach (callState s 10229 (wd ret :: tail) M) (callState s 10308 (wd 0x3000 :: f4K ret tail) M) 13 := by
   have := hr.depth; simp only [Stack.pass3f4, Stack.leaf] at this
-  opt44_reach [4160, 4161, 4162, 4163, 4164] with [M64]
+  opt44_reach [4158, 4159, 4160, 4161, 4162] with [M64]
 
 /-- `ACC[t]`'s value as a function of `t`. -/
 def f4f (m : ByteArray) (t : Nat) : Nat := f4v m (CW + 32 * t)

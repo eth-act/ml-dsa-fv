@@ -3087,9 +3087,7 @@ def instructions7 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
- YulEvmCompiler.Instr.push 0 0,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
+ YulEvmCompiler.Instr.push 2 24050,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
  YulEvmCompiler.Instr.push 1 1,
@@ -3287,7 +3285,9 @@ def instructions7 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.GT)),
  YulEvmCompiler.Instr.push 2 8017,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI)),
+ YulEvmCompiler.Instr.push 0 0,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 })]
 
 theorem instructions7_length : instructions7.length = 400 := by rfl
 
@@ -3298,9 +3298,7 @@ theorem allWellFormedB_instructions7 :
     instructions7.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions8 : List Instr :=
-[YulEvmCompiler.Instr.push 0 0,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
  YulEvmCompiler.Instr.push 1 5,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
@@ -3697,7 +3695,9 @@ def instructions8 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
+ YulEvmCompiler.Instr.push 4 4294967295,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))]
 
 theorem instructions8_length : instructions8.length = 400 := by rfl
 
@@ -3708,9 +3708,7 @@ theorem allWellFormedB_instructions8 :
     instructions8.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions9 : List Instr :=
-[YulEvmCompiler.Instr.push 4 4294967295,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
- YulEvmCompiler.Instr.push 29 2103718338860712296951814420252711173974543160988018484972446399070286,
+[YulEvmCompiler.Instr.push 29 2103718338860712296951814420252711173974543160988018484972446399070286,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
  YulEvmCompiler.Instr.push 28 474265323124336972468189373290603469171128550588537205346189500425,
@@ -4107,7 +4105,9 @@ def instructions9 : List Instr :=
  YulEvmCompiler.Instr.push 1 48,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.push 26 411369862228566123880278864766078120783549026323861987005628415,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
+ YulEvmCompiler.Instr.push 25 797191920394108457050361117346332819707190453088128059048063]
 
 theorem instructions9_length : instructions9.length = 400 := by rfl
 
@@ -4118,9 +4118,7 @@ theorem allWellFormedB_instructions9 :
     instructions9.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions10 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
- YulEvmCompiler.Instr.push 25 797191920394108457050361117346332819707190453088128059048063,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.push 1 16,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
@@ -4517,7 +4515,9 @@ def instructions10 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.push 2 32096,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
+ YulEvmCompiler.Instr.push 2 32128,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
 
 theorem instructions10_length : instructions10.length = 400 := by rfl
 
@@ -4528,9 +4528,7 @@ theorem allWellFormedB_instructions10 :
     instructions10.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions11 : List Instr :=
-[YulEvmCompiler.Instr.push 2 32128,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.push 2 32160,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
@@ -4927,7 +4925,9 @@ def instructions11 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.push 2 736,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
- YulEvmCompiler.Instr.push 0 0]
+ YulEvmCompiler.Instr.push 0 0,
+ YulEvmCompiler.Instr.push 2 768,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
 
 theorem instructions11_length : instructions11.length = 400 := by rfl
 
@@ -4938,9 +4938,7 @@ theorem allWellFormedB_instructions11 :
     instructions11.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions12 : List Instr :=
-[YulEvmCompiler.Instr.push 2 768,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.push 2 768,
@@ -5337,7 +5335,9 @@ def instructions12 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
  YulEvmCompiler.Instr.push 1 6,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })]
 
 theorem instructions12_length : instructions12.length = 400 := by rfl
 
@@ -5348,9 +5348,7 @@ theorem allWellFormedB_instructions12 :
     instructions12.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions13 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
  YulEvmCompiler.Instr.push 1 6,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
@@ -5747,7 +5745,9 @@ def instructions13 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Env (EvmSemantics.Operation.EnvOps.CALLDATALOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
  YulEvmCompiler.Instr.push 1 248,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
+ YulEvmCompiler.Instr.push 1 232]
 
 theorem instructions13_length : instructions13.length = 400 := by rfl
 
@@ -5758,9 +5758,7 @@ theorem allWellFormedB_instructions13 :
     instructions13.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions14 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
- YulEvmCompiler.Instr.push 1 232,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.push 2 65280,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
@@ -6157,7 +6155,9 @@ def instructions14 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))]
 
 theorem instructions14_length : instructions14.length = 400 := by rfl
 
@@ -6168,9 +6168,7 @@ theorem allWellFormedB_instructions14 :
     instructions14.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions15 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
@@ -6567,7 +6565,9 @@ def instructions15 : List Instr :=
  YulEvmCompiler.Instr.push 1 64,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })]
 
 theorem instructions15_length : instructions15.length = 400 := by rfl
 
@@ -6578,9 +6578,7 @@ theorem allWellFormedB_instructions15 :
     instructions15.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions16 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.push 1 64,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
@@ -6977,7 +6975,9 @@ def instructions16 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+ YulEvmCompiler.Instr.push 2 41536,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
 
 theorem instructions16_length : instructions16.length = 400 := by rfl
 
@@ -6988,9 +6988,7 @@ theorem allWellFormedB_instructions16 :
     instructions16.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions17 : List Instr :=
-[YulEvmCompiler.Instr.push 2 41536,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
@@ -7387,7 +7385,9 @@ def instructions17 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.push 25 6277101735386680764176071790128604879584176795969512275969,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }),
+ YulEvmCompiler.Instr.push 2 2304,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))]
 
 theorem instructions17_length : instructions17.length = 400 := by rfl
 
@@ -7398,9 +7398,7 @@ theorem allWellFormedB_instructions17 :
     instructions17.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions18 : List Instr :=
-[YulEvmCompiler.Instr.push 2 2304,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
  YulEvmCompiler.Instr.push 1 4,
@@ -7797,7 +7795,9 @@ def instructions18 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 5 })]
 
 theorem instructions18_length : instructions18.length = 400 := by rfl
 
@@ -7808,9 +7808,7 @@ theorem allWellFormedB_instructions18 :
     instructions18.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions19 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 5 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
  YulEvmCompiler.Instr.push 4 2464201481,
@@ -8207,7 +8205,9 @@ def instructions19 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 }),
+ YulEvmCompiler.Instr.push 1 64]
 
 theorem instructions19_length : instructions19.length = 400 := by rfl
 
@@ -8218,9 +8218,7 @@ theorem allWellFormedB_instructions19 :
     instructions19.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions20 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 }),
- YulEvmCompiler.Instr.push 1 64,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
@@ -8617,7 +8615,9 @@ def instructions20 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 1 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 }),
+ YulEvmCompiler.Instr.push 1 32]
 
 theorem instructions20_length : instructions20.length = 400 := by rfl
 
@@ -8628,9 +8628,7 @@ theorem allWellFormedB_instructions20 :
     instructions20.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions21 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 }),
- YulEvmCompiler.Instr.push 1 32,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
@@ -9027,7 +9025,9 @@ def instructions21 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 1 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))]
 
 theorem instructions21_length : instructions21.length = 400 := by rfl
 
@@ -9038,9 +9038,7 @@ theorem allWellFormedB_instructions21 :
     instructions21.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions22 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
@@ -9437,7 +9435,9 @@ def instructions22 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.push 4 4236238847,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+ YulEvmCompiler.Instr.push 3 8380417]
 
 theorem instructions22_length : instructions22.length = 400 := by rfl
 
@@ -9448,9 +9448,7 @@ theorem allWellFormedB_instructions22 :
     instructions22.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions23 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
- YulEvmCompiler.Instr.push 3 8380417,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
  YulEvmCompiler.Instr.push 1 32,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
@@ -9847,7 +9845,9 @@ def instructions23 : List Instr :=
  YulEvmCompiler.Instr.push 1 53,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.push 26 3207598986782593870493972684755717093467514342740420773020159,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))]
 
 theorem instructions23_length : instructions23.length = 400 := by rfl
 
@@ -9858,9 +9858,7 @@ theorem allWellFormedB_instructions23 :
     instructions23.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions24 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB)),
- YulEvmCompiler.Instr.push 4 738919105,
+[YulEvmCompiler.Instr.push 4 738919105,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
  YulEvmCompiler.Instr.push 1 46,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
@@ -10257,7 +10255,9 @@ def instructions24 : List Instr :=
  YulEvmCompiler.Instr.push 2 1632,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
  YulEvmCompiler.Instr.push 2 672,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))]
 
 theorem instructions24_length : instructions24.length = 400 := by rfl
 
@@ -10268,9 +10268,7 @@ theorem allWellFormedB_instructions24 :
     instructions24.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions25 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
- YulEvmCompiler.Instr.push 1 2,
+[YulEvmCompiler.Instr.push 1 2,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
  YulEvmCompiler.Instr.push 2 256,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
@@ -10667,7 +10665,9 @@ def instructions25 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.push 3 66848,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))]
 
 theorem instructions25_length : instructions25.length = 400 := by rfl
 
@@ -10678,9 +10678,7 @@ theorem allWellFormedB_instructions25 :
     instructions25.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions26 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT)),
  YulEvmCompiler.Instr.push 3 66880,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
@@ -11077,7 +11075,9 @@ def instructions26 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)),
- YulEvmCompiler.Instr.push 2 384]
+ YulEvmCompiler.Instr.push 2 384,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })]
 
 theorem instructions26_length : instructions26.length = 400 := by rfl
 
@@ -11088,9 +11088,7 @@ theorem allWellFormedB_instructions26 :
     instructions26.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions27 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT)),
@@ -11487,7 +11485,9 @@ def instructions27 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
+ YulEvmCompiler.Instr.push 2 1120]
 
 theorem instructions27_length : instructions27.length = 400 := by rfl
 
@@ -11498,9 +11498,7 @@ theorem allWellFormedB_instructions27 :
     instructions27.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions28 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
- YulEvmCompiler.Instr.push 2 1120,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.push 2 1152,
@@ -11897,7 +11895,9 @@ def instructions28 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.push 2 1728,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
+ YulEvmCompiler.Instr.push 2 1120]
 
 theorem instructions28_length : instructions28.length = 400 := by rfl
 
@@ -11908,9 +11908,7 @@ theorem allWellFormedB_instructions28 :
     instructions28.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions29 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
- YulEvmCompiler.Instr.push 2 1120,
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.push 2 1280,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
@@ -12307,7 +12305,9 @@ def instructions29 : List Instr :=
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.push 2 480,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })]
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))]
 
 theorem instructions29_length : instructions29.length = 400 := by rfl
 
@@ -12318,9 +12318,7 @@ theorem allWellFormedB_instructions29 :
     instructions29.all (MlDsaOptCommon.wellFormedB .Osaka) = true := by rfl
 
 def instructions30 : List Instr :=
-[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)),
- YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }),
+[YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)),
  YulEvmCompiler.Instr.push 2 512,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
@@ -12442,9 +12440,36 @@ def instructions30 : List Instr :=
  YulEvmCompiler.Instr.push 2 22533,
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI)),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
+ YulEvmCompiler.Instr.push 2 4032,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)),
+ YulEvmCompiler.Instr.push 1 5,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)),
+ YulEvmCompiler.Instr.push 2 40960,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }),
+ YulEvmCompiler.Instr.push 2 42208,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.GT)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.ISZERO)),
+ YulEvmCompiler.Instr.push 2 24084,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI)),
+ YulEvmCompiler.Instr.push 0 0,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)),
+ YulEvmCompiler.Instr.push 1 32,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)),
+ YulEvmCompiler.Instr.push 2 24063,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST)),
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)),
+ YulEvmCompiler.Instr.push 0 0,
+ YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }),
  YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))]
 
-theorem instructions30_length : instructions30.length = 125 := by rfl
+theorem instructions30_length : instructions30.length = 150 := by rfl
 
 theorem assembleBytes_instructions30 :
     assembleBytes instructions30 = MlDsaOpt44.optChunk30 := by rfl
@@ -12455,7 +12480,7 @@ theorem allWellFormedB_instructions30 :
 def instructionList : List Instr :=
   instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28 ++ instructions29 ++ instructions30
 
-@[simp] theorem instructionList_length : instructionList.length = 12125 := by
+@[simp] theorem instructionList_length : instructionList.length = 12150 := by
   unfold instructionList
   rewrite [List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append]
   rw [instructions0_length, instructions1_length, instructions2_length, instructions3_length, instructions4_length, instructions5_length, instructions6_length, instructions7_length, instructions8_length, instructions9_length, instructions10_length, instructions11_length, instructions12_length, instructions13_length, instructions14_length, instructions15_length, instructions16_length, instructions17_length, instructions18_length, instructions19_length, instructions20_length, instructions21_length, instructions22_length, instructions23_length, instructions24_length, instructions25_length, instructions26_length, instructions27_length, instructions28_length, instructions29_length, instructions30_length]
@@ -12483,12 +12508,12 @@ theorem allWellFormed : EvmProof.Stepper.AllWellFormed artifact .Osaka :=
   MlDsaOptCommon.allWellFormed_of_all allWellFormedB
 
 /-- Proof-carrying instruction lookup. -/
-def located (index : Fin 12125) : EvmProof.Stepper.Located artifact .Osaka :=
+def located (index : Fin 12150) : EvmProof.Stepper.Located artifact .Osaka :=
   EvmProof.Stepper.Located.ofIndex allWellFormed
     ⟨index.val, by rw [artifact, instructionList_length]; exact index.isLt⟩
 
 /-- A certified path from a list of instruction indices. -/
-def locatedPath (indices : List (Fin 12125)) :
+def locatedPath (indices : List (Fin 12150)) :
     List (EvmProof.Stepper.Located artifact .Osaka) :=
   indices.map located
 

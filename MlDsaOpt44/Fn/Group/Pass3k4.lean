@@ -38,8 +38,8 @@ theorem k4_body {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (k4v M i) 32) (ACC + i))) 100 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt44_reach [4466, 4467, 4468, 4469, 4470, 4471, 4472, 4473, 4474, 4475, 4476, 4477, 4478, 4479, 4480,
-    4481, 4482, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4494, 4495, 4496]
+  opt44_reach [4464, 4465, 4466, 4467, 4468, 4469, 4470, 4471, 4472, 4473, 4474, 4475, 4476, 4477, 4478,
+    4479, 4480, 4481, 4482, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4494]
     with [k4v, ACC, ABUF, ZH, M64]
   simp only [Nat.add_comm, Nat.mul_comm, Nat.and_comm, and_self]
 
@@ -50,8 +50,8 @@ theorem k4_last {s : State} (hs : Ctx s) {tail : List UInt256} (htail : tail.len
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded (k4v M 8160) 32) (ACC + 8160))) 102 := by
   have hsz := hs.sized; simp only [memWords] at hsz
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
-  opt44_reach [4466, 4467, 4468, 4469, 4470, 4471, 4472, 4473, 4474, 4475, 4476, 4477, 4478, 4479, 4480,
-    4481, 4482, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4494, 4495, 4496, 4497]
+  opt44_reach [4464, 4465, 4466, 4467, 4468, 4469, 4470, 4471, 4472, 4473, 4474, 4475, 4476, 4477, 4478,
+    4479, 4480, 4481, 4482, 4483, 4484, 4485, 4486, 4487, 4488, 4489, 4490, 4491, 4492, 4493, 4494, 4495]
     with [k4v, ACC, ABUF, ZH, M64]
   simp only [Nat.add_comm, Nat.mul_comm, Nat.and_comm, and_self]
 
@@ -80,7 +80,7 @@ theorem pass3k4_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   let I : Nat → State := fun j => callState s 10645 (wd (32 * j) :: wd ret :: tail) (Mem j)
   have hentry : Reach (callState s 10643 (wd ret :: tail) m) (I 0) 3 := by
     simp only [I, Mem, Nat.mul_zero, storeWords_zero]
-    opt44_reach [4464, 4465]
+    opt44_reach [4462, 4463]
   have hbody : ∀ j, j < 255 → Reach (I j) (I (j + 1)) 100 := by
     intro j hj
     have h := k4_body hs htail (i := 32 * j) (ret := ret) (Mem j) (by omega)
@@ -91,7 +91,7 @@ theorem pass3k4_reach {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
   have hlast : Reach (I 255) (callState s ret tail (Mem 256)) 110 := by
     have h := k4_last hs htail (ret := ret) (Mem 255)
     rw [show (8160 : Nat) = 32 * 255 by norm_num, k4_step m (by omega)] at h
-    exact h.trans (reach_ret hs 4498 (Mem 256) (by decide +kernel) (by simp only [finVal_lit, instrAt_lit])
+    exact h.trans (reach_ret hs 4496 (Mem 256) (by decide +kernel) (by simp only [finVal_lit, instrAt_lit])
       (by simp only [finVal_lit, pcAt_lit]) (by norm_num) hr.jumpdest hret (by omega))
   have hv : ∀ t, k4f m t < 2 ^ 256 := fun t => Nat.mod_lt _ (by norm_num)
   refine ⟨Mem 256, fun t ht => ?_, ?_, ?_⟩
