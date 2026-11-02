@@ -318,7 +318,7 @@ theorem complete_log (s : State) (n : Fin 5) (offset size : UInt256)
 theorem complete_dupN (s : State) (n : Fin 256) (v : UInt256)
         (h_op      : s.decodedOp = some (.DupN ⟨n⟩))
         (h_gas     : Gas.baseCost s.fork (.DupN ⟨n⟩) ≤ s.gasAvailable)
-        (h_get     : s.stack[n.val]? = some v)
+        (h_get     : s.stack[(⟨n⟩ : Operation.DupNOp).n.val]? = some v)
         (h_cap     : s.stack.length < 1024)
         (h_run : s.halt = .Running)
         (h_np : Precompile.isPrecompileWithConfig s.executionEnv.precompileConfig s.executionEnv.fork
@@ -340,7 +340,8 @@ theorem complete_dupN (s : State) (n : Fin 256) (v : UInt256)
 theorem complete_swapN (s : State) (n : Fin 256) (stk' : List UInt256)
         (h_op      : s.decodedOp = some (.SwapN ⟨n⟩))
         (h_gas     : Gas.baseCost s.fork (.SwapN ⟨n⟩) ≤ s.gasAvailable)
-        (h_swap    : s.stack.exchange 0 (n.val + 1) = some stk')
+        (h_swap    : s.stack.exchange 0 ((⟨n⟩ : Operation.SwapNOp).n.val + 1)
+                       = some stk')
         (h_cap   : s.stack.length + Operation.pushArity (.SwapN ⟨n⟩)
                      ≤ 1024 + Operation.popArity (.SwapN ⟨n⟩))
         (h_run : s.halt = .Running)
@@ -363,8 +364,8 @@ theorem complete_exchange (s : State) (b : Fin 256) (stk' : List UInt256)
         (h_op      : s.decodedOp = some (.Exchange ⟨b⟩))
         (h_gas     : Gas.baseCost s.fork (.Exchange ⟨b⟩) ≤ s.gasAvailable)
         (h_swap    : s.stack.exchange
-                      (b.val >>> 4 + 1)
-                      ((b.val &&& 0xf) + 1) = some stk')
+                      ((⟨b⟩ : Operation.ExchangeOp).n + 1)
+                      ((⟨b⟩ : Operation.ExchangeOp).m + 1) = some stk')
         (h_cap   : s.stack.length + Operation.pushArity (.Exchange ⟨b⟩)
                      ≤ 1024 + Operation.popArity (.Exchange ⟨b⟩))
         (h_run : s.halt = .Running)
@@ -379,7 +380,7 @@ theorem complete_exchange (s : State) (b : Fin 256) (stk' : List UInt256)
   obtain ⟨argOpt, h_dec⟩ := State.decodedOp_some h_op
   refine stepF_eq_ok ?_
   rw [stepFE_dispatch h_run h_np h_dec h_cap h_gas]
-  simp only [stepF.exchange, Operation.ExchangeOp.n, Operation.ExchangeOp.m, h_swap]
+  simp only [stepF.exchange, h_swap]
   rfl
 
 end StepComplete

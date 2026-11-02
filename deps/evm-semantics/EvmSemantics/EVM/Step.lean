@@ -2015,39 +2015,45 @@ inductive StepRunning : State → State → Prop
   -- EIP-8024: DUPN, SWAPN, EXCHANGE.
   ----------------------------------------------------------------------------
 
-  /-- DUPN with immediate `n`: duplicate `stack[n]` to the top. PC += 2. -/
-  | dupN (s : State) (n : Fin 256) (v : UInt256)
-        (h_op      : s.decodedOp = some (.DupN ⟨n⟩))
-        (h_gas     : Gas.baseCost s.fork (.DupN ⟨n⟩) ≤ s.gasAvailable)
-        (h_get     : s.stack[n.val]? = some v)
+  /-- DUPN with immediate byte `x`: duplicate stack item `decodeSingle x`
+      (1-based), i.e. zero-indexed `(⟨x⟩ : DupNOp).n`, to the top.
+      PC += 2. Only valid immediates decode (`availableInFork`). -/
+  | dupN (s : State) (x : Fin 256) (v : UInt256)
+        (h_op      : s.decodedOp = some (.DupN ⟨x⟩))
+        (h_gas     : Gas.baseCost s.fork (.DupN ⟨x⟩) ≤ s.gasAvailable)
+        (h_get     : s.stack[(⟨x⟩ : Operation.DupNOp).n.val]? = some v)
         (h_cap     : s.stack.length < 1024)
       : StepRunning s
           { s with
               stack        := v :: s.stack
               pc           := s.pc + UInt256.ofNat 2
-              gasAvailable := s.gasAvailable - Gas.baseCost s.fork (.DupN ⟨n⟩) }
+              gasAvailable := s.gasAvailable - Gas.baseCost s.fork (.DupN ⟨x⟩) }
 
-  /-- SWAPN with immediate `n`: swap top with `stack[n+1]`. PC += 2. -/
-  | swapN (s : State) (n : Fin 256) (stk' : List UInt256)
-        (h_op      : s.decodedOp = some (.SwapN ⟨n⟩))
-        (h_gas     : Gas.baseCost s.fork (.SwapN ⟨n⟩) ≤ s.gasAvailable)
-        (h_swap    : s.stack.exchange 0 (n.val + 1) = some stk')
-        (h_cap   : s.stack.length + Operation.pushArity (.SwapN ⟨n⟩)
-                     ≤ 1024 + Operation.popArity (.SwapN ⟨n⟩))
+  /-- SWAPN with immediate byte `x`: swap the top with zero-indexed
+      position `(⟨x⟩ : SwapNOp).n + 1 = decodeSingle x` (for the valid
+      immediates, the only ones that decode). PC += 2. -/
+  | swapN (s : State) (x : Fin 256) (stk' : List UInt256)
+        (h_op      : s.decodedOp = some (.SwapN ⟨x⟩))
+        (h_gas     : Gas.baseCost s.fork (.SwapN ⟨x⟩) ≤ s.gasAvailable)
+        (h_swap    : s.stack.exchange 0 ((⟨x⟩ : Operation.SwapNOp).n.val + 1)
+                       = some stk')
+        (h_cap   : s.stack.length + Operation.pushArity (.SwapN ⟨x⟩)
+                     ≤ 1024 + Operation.popArity (.SwapN ⟨x⟩))
       : StepRunning s
           { s with
               stack        := stk'
               pc           := s.pc + UInt256.ofNat 2
-              gasAvailable := s.gasAvailable - Gas.baseCost s.fork (.SwapN ⟨n⟩) }
+              gasAvailable := s.gasAvailable - Gas.baseCost s.fork (.SwapN ⟨x⟩) }
 
-  /-- EXCHANGE with packed immediate `b`: swap `stack[n+1]` and `stack[m+1]`
-      where `n = b >>> 4` and `m = b &&& 0xf`. PC += 2. -/
+  /-- EXCHANGE with immediate byte `b`: swap zero-indexed positions
+      `n + 1` and `m + 1` of `(⟨b⟩ : ExchangeOp)`, i.e. the pair
+      `decodePair b`. PC += 2. -/
   | exchange (s : State) (b : Fin 256) (stk' : List UInt256)
         (h_op      : s.decodedOp = some (.Exchange ⟨b⟩))
         (h_gas     : Gas.baseCost s.fork (.Exchange ⟨b⟩) ≤ s.gasAvailable)
         (h_swap    : s.stack.exchange
-                      (b.val >>> 4 + 1)
-                      ((b.val &&& 0xf) + 1) = some stk')
+                      ((⟨b⟩ : Operation.ExchangeOp).n + 1)
+                      ((⟨b⟩ : Operation.ExchangeOp).m + 1) = some stk')
         (h_cap   : s.stack.length + Operation.pushArity (.Exchange ⟨b⟩)
                      ≤ 1024 + Operation.popArity (.Exchange ⟨b⟩))
       : StepRunning s

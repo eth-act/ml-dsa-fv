@@ -84,35 +84,84 @@ structure SwapOp where
   idx : Fin 16
   deriving DecidableEq, Repr, Inhabited
 
-/-- DUPN (EIP-8024, opcode `0xe6`) — duplicates the `n`-th stack item.
-    The immediate byte `n` (`0 ≤ n ≤ 255`) is read from the bytecode at
-    decode time. Per EIP-8024, immediate bytes `0x5b` and `0x60..0x7f`
-    must be rejected to preserve jump-target analysis. -/
+/-- EIP-8024 `decode_single` (execution-specs, Amsterdam): the stack item
+    number `n` (1-based from the top) named by a DUPN / SWAPN immediate byte
+    `x`, `(x + 145) mod 256`. For the valid immediates (`validSingle`) it
+    ranges over `[17, 235]`. -/
+def decodeSingle (x : Nat) : Nat := (x + 145) % 256
+
+/-- EIP-8024: the DUPN / SWAPN immediates that decode. Bytes `91..127`
+    halt exceptionally (they cover `0x5b` and the PUSH opcodes, so JUMPDEST
+    analysis is unaffected). -/
+def validSingle (x : Nat) : Bool := x ≤ 90 || 128 ≤ x
+
+/-- EIP-8024 `decode_pair` (execution-specs, Amsterdam): the two stack item
+    numbers `(n, m)` (1-based from the top, *below* the top item) named by
+    an EXCHANGE immediate byte `x`. With `k = x xor 143`, `q = k / 16`,
+    `r = k mod 16`: `(q + 1, r + 1)` if `q < r`, else `(r + 1, 29 - q)`.
+    For every byte, `1 ≤ n` and `1 ≤ m ≤ 29`. -/
+def decodePair (x : Nat) : Nat × Nat :=
+  let k := x ^^^ 143
+  let q := k / 16
+  let r := k % 16
+  if q < r then (q + 1, r + 1) else (r + 1, 29 - q)
+
+/-- EIP-8024: the EXCHANGE immediates that decode. Bytes `82..127` halt
+    exceptionally. -/
+def validPair (x : Nat) : Bool := x ≤ 81 || 128 ≤ x
+
+/-- DUPN (EIP-8024, opcode `0xe6`) — duplicates a stack item named by the
+    immediate byte that follows the opcode in the code (read at decode
+    time). The item is `decodeSingle imm` (1-based), i.e. the zero-indexed
+    stack position `DupNOp.n`. An immediate outside `validSingle` makes the
+    instruction invalid (`Operation.availableInFork`). -/
 structure DupNOp where
-  /-- Immediate byte: zero-indexed stack position to duplicate. -/
-  n : Fin 256
+  /-- Raw immediate byte (the encoded operand). -/
+  imm : Fin 256
   deriving DecidableEq, Repr, Inhabited
 
-/-- SWAPN (EIP-8024, opcode `0xe7`) — swaps the top with the `(n+1)`-th
-    stack item. Immediate byte `n` (`0 ≤ n ≤ 255`). -/
+/-- SWAPN (EIP-8024, opcode `0xe7`) — swaps the top with the stack item
+    named by the immediate byte: item `decodeSingle imm + 1` (1-based), i.e.
+    the zero-indexed position `SwapNOp.n + 1`. An immediate outside
+    `validSingle` makes the instruction invalid
+    (`Operation.availableInFork`). -/
 structure SwapNOp where
-  /-- Immediate byte: swap top with `stack[n+1]`. -/
-  n : Fin 256
+  /-- Raw immediate byte (the encoded operand). -/
+  imm : Fin 256
   deriving DecidableEq, Repr, Inhabited
 
-/-- EXCHANGE (EIP-8024, opcode `0xe8`) — swaps the `(n+1)`-th and
-    `(m+1)`-th stack items. The single immediate byte packs `n` in the
-    high nibble and `m` in the low nibble, so both range over `[0, 15]`. -/
+/-- EXCHANGE (EIP-8024, opcode `0xe8`) — swaps two stack items below the
+    top, named by the immediate byte through `decodePair`: zero-indexed
+    positions `ExchangeOp.n + 1` and `ExchangeOp.m + 1`. An immediate
+    outside `validPair` makes the instruction invalid
+    (`Operation.availableInFork`). -/
 structure ExchangeOp where
-  /-- Packed immediate byte: high nibble = `n`, low nibble = `m`. -/
+  /-- Packed immediate byte (the encoded operand pair). -/
   packed : Fin 256
   deriving DecidableEq, Repr, Inhabited
 
+namespace DupNOp
+/-- Zero-indexed stack position that DUPN duplicates:
+    `decodeSingle imm - 1` (EELS: `stack[-decode_single(imm)]`). -/
+def n (op : DupNOp) : Fin 256 :=
+  ⟨decodeSingle op.imm.val - 1, by unfold decodeSingle; omega⟩
+end DupNOp
+
+namespace SwapNOp
+/-- SWAPN swaps the top with zero-indexed position `n + 1`, where
+    `n = decodeSingle imm - 1`. For a valid immediate `decodeSingle imm ≥ 17`,
+    so `n + 1 = decodeSingle imm` (EELS: `stack[-(decode_single(imm) + 1)]`). -/
+def n (op : SwapNOp) : Fin 256 :=
+  ⟨decodeSingle op.imm.val - 1, by unfold decodeSingle; omega⟩
+end SwapNOp
+
 namespace ExchangeOp
-/-- Decode the high-nibble operand `n`. -/
-def n (op : ExchangeOp) : Nat := op.packed.val >>> 4
-/-- Decode the low-nibble operand `m`. -/
-def m (op : ExchangeOp) : Nat := op.packed.val &&& 0xf
+/-- EXCHANGE's first operand minus one: it swaps zero-indexed positions
+    `n + 1` and `m + 1`, and `n + 1 = (decodePair packed).1` (always `≥ 1`). -/
+def n (op : ExchangeOp) : Nat := (decodePair op.packed.val).1 - 1
+/-- EXCHANGE's second operand minus one: `m + 1 = (decodePair packed).2`
+    (always `≥ 1`). -/
+def m (op : ExchangeOp) : Nat := (decodePair op.packed.val).2 - 1
 end ExchangeOp
 
 /-- LOG0–LOG4. `topics : Fin 5` is the number of topics. -/
@@ -295,12 +344,11 @@ namespace Operation
 /-- Opcode `MCOPY`. -/
 @[match_pattern] abbrev MCOPY    : Operation := .StackMemFlow .MCOPY
 
-/-- EIP-8024 `DUPN` with immediate operand `n`. -/
+/-- EIP-8024 `DUPN` with raw immediate byte `n`. -/
 @[match_pattern] abbrev DUPN (n : Fin 256) : Operation := .DupN ⟨n⟩
-/-- EIP-8024 `SWAPN` with immediate operand `n`. -/
+/-- EIP-8024 `SWAPN` with raw immediate byte `n`. -/
 @[match_pattern] abbrev SWAPN (n : Fin 256) : Operation := .SwapN ⟨n⟩
-/-- EIP-8024 `EXCHANGE` with packed immediate `b` (high nibble = `n`,
-    low nibble = `m`). -/
+/-- EIP-8024 `EXCHANGE` with raw (pair-encoded) immediate byte `b`. -/
 @[match_pattern] abbrev EXCHANGE (b : Fin 256) : Operation := .Exchange ⟨b⟩
 
 /-- Opcode `CREATE`. -/
@@ -341,11 +389,17 @@ end Operation
     * Cancun (EIP-1153 / -4844 / -5656 / -7516): `TLOAD`, `TSTORE`,
       `MCOPY`, `BLOBHASH`, `BLOBBASEFEE`.
 
-    EIP-8024 (`DUPN` / `SWAPN` / `EXCHANGE`, bytes `0xe6..0xe8`) is *not*
-    active on any currently modelled fork — the opcode constructors
-    exist in the AST for forward compatibility but `availableInFork`
-    returns `false` for every value in `Fork`, so decoded bytes
-    `0xe6..0xe8` raise `InvalidInstruction` on Frontier through Osaka.
+    * Amsterdam (EIP-8024): `DUPN`, `SWAPN`, `EXCHANGE` (bytes
+      `0xe6..0xe8`), each only with an immediate that decodes
+      (`validSingle` / `validPair`). Before Amsterdam they are unavailable
+      with every immediate, so bytes `0xe6..0xe8` raise
+      `InvalidInstruction` on Frontier through Osaka.
+
+    EIP-8024's exceptional halt on a forbidden immediate (EELS raises
+    `InvalidParameter` after charging the base gas) is modelled here, as
+    an unavailable instruction: `State.decoded` is `none` and the step
+    halts with `InvalidInstruction`. Both are exceptional halts that
+    consume all remaining gas, so only the exception's name differs.
 
     Decoders gate on this to reject opcodes that haven't been activated
     yet — an unactivated byte must trigger `InvalidInstruction` per the
@@ -371,13 +425,11 @@ def Operation.availableInFork : Operation → Fork → Bool
   | .System .STATICCALL,      f => f ≥ .Byzantium
   | .System .CREATE2,         f => f ≥ .Constantinople
   | .Push p,                  f => if p.width.val = 0 then f ≥ .Shanghai else true
-  -- EIP-8024 (`DUPN` / `SWAPN` / `EXCHANGE`): not active on any
-  -- currently modelled fork. The decoder will hand these to us if a
-  -- bytecode contains 0xe6..0xe8, and they will halt with
-  -- `InvalidInstruction`.
-  | .DupN _,                  _ => false
-  | .SwapN _,                 _ => false
-  | .Exchange _,              _ => false
+  -- EIP-8024 (`DUPN` / `SWAPN` / `EXCHANGE`): Amsterdam, and only with a
+  -- valid immediate; anything else halts with `InvalidInstruction`.
+  | .DupN d,                  f => f ≥ .Amsterdam && validSingle d.imm.val
+  | .SwapN d,                 f => f ≥ .Amsterdam && validSingle d.imm.val
+  | .Exchange e,              f => f ≥ .Amsterdam && validPair e.packed.val
   | _,                        _ => true
 
 /-- # of immediate-argument bytes following the opcode in the bytecode.

@@ -606,11 +606,12 @@ def execute (preMap : AccountMap) (header : BlockHeader)
                                 (dataFloorGas fork tx.data) then
     { finalAccounts := preMap, outcome := .exceptional }
   -- EIP-3860 (Shanghai+): a contract-creating tx whose init code
-  -- exceeds `MAX_INITCODE_SIZE = 49152` bytes is invalid before the
+  -- exceeds `MAX_INITCODE_SIZE` (49152 bytes; 131072 from Amsterdam,
+  -- EIP-7954) is invalid before the
   -- intrinsic-gas charge has been applied. Fixture:
   -- INITCODE_SIZE_EXCEEDED.
   else if tx.isCreate ∧ fork ≥ .Shanghai ∧
-          tx.data.size > Gas.maxInitCodeSize then
+          tx.data.size > Gas.maxInitCodeSize fork then
     { finalAccounts := preMap, outcome := .exceptional }
   -- EIP-7825 (Osaka+): a transaction may not request more than
   -- `2^24 = 16_777_216` gas. Fixture: TX_GASLIMIT_ABOVE_CAP.
@@ -718,7 +719,7 @@ def execute (preMap : AccountMap) (header : BlockHeader)
           let hReturn := sf.hReturn
           let depositCost := State.codeDepositPerByte * hReturn.size
           let oversized   := fork ≥ .SpuriousDragon
-                              && decide (hReturn.size > State.maxCodeSize)
+                              && decide (hReturn.size > State.maxCodeSize fork)
           let badPrefix   := State.isReservedCodePrefix fork hReturn
           if depositCost ≤ sf.gasAvailable ∧ ¬ oversized ∧ ¬ badPrefix then
             -- Deploy commits: install `hReturn` as the new account's

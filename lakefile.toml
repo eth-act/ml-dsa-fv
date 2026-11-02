@@ -17,11 +17,13 @@ git = "https://github.com/powdr-labs/yul-semantics"
 rev = "c9914c13df47efe026376723acd632bc33bc16e3"
 
 # The EVM semantics the correctness theorem is stated against. Part of the
-# trust boundary, so pinned explicitly.
+# trust boundary, so pinned explicitly. Temporarily vendored: it is
+# powdr-labs/evm-semantics 2f8714d plus the Glamsterdam patch (a partial
+# `Amsterdam` fork: EIP-8024 and EIP-7954), see deps/README.md. The yul
+# packages below require the same package name and build against it too.
 [[require]]
 name = "evm_semantics"
-git = "https://github.com/powdr-labs/evm-semantics"
-rev = "2f8714d6ba960a3de67720019b54513f5bc1a2e3"
+path = "deps/evm-semantics"
 
 [[require]]
 name = "mathlib"

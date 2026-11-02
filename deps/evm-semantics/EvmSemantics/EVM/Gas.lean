@@ -334,13 +334,15 @@ def Gas.initCodeWordCost (fork : Fork) (initCodeLen : Nat) : Nat :=
 
 /-- EIP-3860 (Cancun) init-code size cap: CREATE / CREATE2 reject init
     code larger than `2 · maxCodeSize = 49152` bytes. The cap is *not*
-    enforced on `Constantinople`. -/
-@[inline] def Gas.maxInitCodeSize : Nat := 49152
+    enforced on `Constantinople`. EIP-7954 (Amsterdam) raises it to
+    `2 · 65536 = 131072` bytes. -/
+@[inline] def Gas.maxInitCodeSize (fork : Fork) : Nat :=
+  if fork ≥ .Amsterdam then 131072 else 49152
 
 /-- Whether `initCodeLen` exceeds the EIP-3860 cap on the active fork.
     Returns `false` on `Constantinople` (the EIP is Cancun-only). -/
 def Gas.initCodeTooLarge (fork : Fork) (initCodeLen : Nat) : Bool :=
-  fork ≥ .Shanghai && initCodeLen > Gas.maxInitCodeSize
+  fork ≥ .Shanghai && initCodeLen > Gas.maxInitCodeSize fork
 
 /-- The SELFDESTRUCT refund (`R_selfdestruct = 24000`) added to
     `Substate.refundBalance` on the *first* time an account self-destructs
