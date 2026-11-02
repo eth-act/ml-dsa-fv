@@ -130,20 +130,21 @@ def run_vectors(nn, code, check6=None):
     return bad, ext
 
 
-def test_bytecode(force6=False):
+def test_bytecode(version, force6=False):
     import gen_opt
+    sub = {"v3": (), "v4": ("v4",)}[version]
     for nn in (44, 65, 87):
-        L = gen_opt.Layout(nn)
+        L = gen_opt.Layout(nn, version)
         g = gen_opt.Gen(L)
         if force6:
             g.dbg_force6 = True
         code = g.build()
         if not force6:
-            with open(os.path.join(ROOT, "MlDsaOpt", str(nn), "opt.hex")) as f:
-                assert f.read().strip() == code.hex(), "MlDsaOpt artifact is stale: run gen_opt.py"
+            with open(os.path.join(ROOT, "MlDsaOpt", str(nn), *sub, "opt.hex")) as f:
+                assert f.read().strip() == code.hex(), f"MlDsaOpt {version} artifact is stale: run gen_opt.py"
         bad, ext = run_vectors(nn, code, g if force6 else None)
         assert bad == 0, (nn, bad)
-        print(f"bytecode{' (forced 6th squeeze)' if force6 else ''}: {nn} ok"
+        print(f"bytecode {version}{' (forced 6th squeeze)' if force6 else ''}: {nn} ok"
               + (f", {ext} vectors with 6th-block checks" if force6 else ""))
 
 
@@ -155,24 +156,34 @@ V2_SHA256 = {
 }
 
 
-def test_v2_reproducible():
+# SHA-256 of the formally verified v3 artifacts (MlDsaOpt/NN/opt.hex, MlDsaOptNN)
+V3_SHA256 = {
+    44: "3e0bfe02d9632c98805892e535c319f3c029e59871f8170f3dd40dde901d2c14",
+    65: "00d80d9705f83e6ba7bb7ad457d27013163b75a57b7cde99f3f23c949cb53a3b",
+    87: "68a97ffa338855ff3ca90a4e12407ddd4b2c0dab35dbb633d8042822ee22ac8a",
+}
+
+
+def test_proved_reproducible():
     import gen_opt
-    for nn, h in V2_SHA256.items():
-        code = gen_opt.Gen(gen_opt.Layout(nn, "v2")).build()
-        assert hashlib.sha256((code.hex() + "\n").encode()).hexdigest() == h, f"v2 {nn} not reproduced"
-    print("v2: proved artifacts reproduced byte for byte")
+    for version, pins in (("v2", V2_SHA256), ("v3", V3_SHA256)):
+        for nn, h in pins.items():
+            code = gen_opt.Gen(gen_opt.Layout(nn, version)).build()
+            assert hashlib.sha256((code.hex() + "\n").encode()).hexdigest() == h, f"{version} {nn} not reproduced"
+        print(f"{version}: proved artifacts reproduced byte for byte")
 
 
 def main():
     quick = sys.argv[1:] == ["quick"]
-    test_v2_reproducible()
+    test_proved_reproducible()
     test_model()
     test_keccak()
     test_constants()
     if not quick:
-        test_bytecode()
+        test_bytecode("v3")
+        test_bytecode("v4")
         os.environ["OPT_DBG_NO_OVERLAY"] = "1"
-        test_bytecode(force6=True)
+        test_bytecode("v4", force6=True)
     print("all self-tests passed")
 
 

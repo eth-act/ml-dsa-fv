@@ -6,6 +6,7 @@ divergence: it accepts a repeated hint index inside a row; only a strict
 mismatch outside that case is an error).
 
 Usage: python3 scripts/opt_fuzz.py NN COUNT SEED [OUT.tsv]
+OPT_VERSION=v4 fuzzes MlDsaOpt/NN/v4/opt.hex instead.
 Each case: fresh or reused key, random message length, then one mutation
 (none, bit flip in pk / c-tilde / z / hint / message, hint byte set, z
 coefficient at the norm boundary, truncation, extension).
@@ -57,7 +58,8 @@ def main():
     rng = random.Random(seed)
     lib = LIBS[nn]
     p = opt_ref.derived(nn)
-    code = bytes.fromhex(open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), "opt.hex")).read().strip())
+    sub = ("v4",) if os.environ.get("OPT_VERSION") == "v4" else ()
+    code = bytes.fromhex(open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), *sub, "opt.hex")).read().strip())
     keys = []
     bad = 0
     acc = 0

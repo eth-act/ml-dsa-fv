@@ -22,7 +22,7 @@ memory) with patterns that take the most expensive path:
     an existing nonzero position (the "moved" branch);
   * hints: all omega indices in one row, strictly decreasing (every index
     takes the failing order check).
-Usage: python3 scripts/opt_worstcase.py [NN ...]
+Usage: python3 scripts/opt_worstcase.py [--version v3|v4] [NN ...]
 """
 from __future__ import annotations
 
@@ -45,11 +45,12 @@ def regions(g, code, prof):
     return {n: sum(prof[a:b]) for (a, n), (b, _) in zip(rp, rp[1:])}
 
 
-def analyse(nn):
-    L = gen_opt.Layout(nn)
+def analyse(nn, version="v3"):
+    L = gen_opt.Layout(nn, version)
     g = gen_opt.Gen(L)
     code = g.build()
-    with open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), "opt.hex")) as f:
+    sub = ("v4",) if version == "v4" else ()
+    with open(os.path.join(HERE, "..", "MlDsaOpt", str(nn), *sub, "opt.hex")) as f:
         assert f.read().strip() == code.hex(), "stale artifact"
     lab = g.a.labels
     hcode = code + b"\x5b\x00"            # harness return target: JUMPDEST STOP
@@ -181,8 +182,11 @@ def analyse(nn):
 
 
 def main(argv):
+    version = "v3"
+    if argv[:1] == ["--version"]:
+        version, argv = argv[1], argv[2:]
     for nn in [int(x) for x in argv] or [44, 65, 87]:
-        r = analyse(nn)
+        r = analyse(nn, version)
         print(f"ML-DSA-{nn}: typical {r['typical']:,}  worst {r['worst']:,}  (|M| = 0)")
         print(f"  fix-ups: typical {r['fix_typ']:,}  worst {r['fix_worst']:,} "
               f"({r['instances']} instances x {r['per_instance']:,} + {r['groups']} groups x 6th squeeze {r['ext']:,})")

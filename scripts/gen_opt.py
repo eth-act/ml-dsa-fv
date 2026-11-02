@@ -54,7 +54,7 @@ M16 = bytepattern(0x0000FFFF, 4)
 M32 = bytepattern(0x00000000FFFFFFFF, 8)
 
 
-VERSIONS = ("v2", "v3")
+VERSIONS = ("v2", "v3", "v4")
 DEFAULT_VERSION = "v3"
 
 
@@ -64,7 +64,8 @@ class Layout:
         p = derived(nn)
         self.nn = nn
         self.version = version
-        self.v3 = version == "v3"
+        self.v3 = version in ("v3", "v4")    # v4 extends v3
+        self.v4 = version == "v4"
         self.p = p
         self.k, self.l = p["k"], p["l"]
         self.PK, self.SIG = p["pklen"], p["siglen"]
@@ -124,6 +125,7 @@ class Gen:
     def __init__(self, L: Layout):
         self.L = L
         self.v3 = L.v3
+        self.v4 = L.v4
         self.a = Asm()
         self.n = 0
         self.nttk = NttKernel(self.a, L.TBL)
@@ -2770,10 +2772,11 @@ def layout_text(g, code):
 
 
 def main(argv):
-    """gen_opt.py [--version v2|v3] [--out DIR] [44|65|87 ...]
+    """gen_opt.py [--version v2|v3|v4] [--out DIR] [44|65|87 ...]
 
     v2 = the formally verified artifacts (MlDsaOptNN/Bytecode.lean), written to
-    MlDsaOpt/NN/v2/ by default; v3 = the current design, written to MlDsaOpt/NN/.
+    MlDsaOpt/NN/v2/ by default; v3 = the current proved design, written to
+    MlDsaOpt/NN/; v4 = round 4 (not yet proved), written to MlDsaOpt/NN/v4/.
     --out DIR writes DIR/NN/ instead."""
     version, out, sets = DEFAULT_VERSION, None, []
     it = iter(argv)
@@ -2793,8 +2796,8 @@ def main(argv):
         assert len(code) <= 24576, f"{nn}: {len(code)} bytes exceeds EIP-170"
         if out is not None:
             d = os.path.join(out, str(nn))
-        elif version == "v2":
-            d = os.path.join(root, str(nn), "v2")
+        elif version in ("v2", "v4"):
+            d = os.path.join(root, str(nn), version)
         else:
             d = os.path.join(root, str(nn))
         os.makedirs(d, exist_ok=True)
