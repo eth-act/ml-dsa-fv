@@ -1,5 +1,6 @@
 import MlDsaOpt44.Layout
 import MlDsaOpt44.Budget
+import MlDsaOpt44.Fn.Ntt.V4.Top
 /-!
 # Four-lane NTT and inverse NTT (WP7)
 
@@ -15,6 +16,9 @@ The inverse NTT Montgomery-reduces its inputs at load (`premont`), uses GS
 butterflies without swap (`b' = mont(((C − a) + b) ζ)`), folds `256⁻¹` and the
 Montgomery factor into its last layer, and applies UseHint to each output
 word before storing it (`gen_opt.py` `uh_word`).
+
+Proofs: `Fn/Ntt/V4/` (generated blocks and loop bodies: `V4/gen_ntt4.py`;
+the numeric bounds of `opt_selftest.py`: `Math/NttV4.lean`).
 -/
 
 namespace MlDsaOpt44.Proofs
@@ -34,7 +38,7 @@ theorem ntt_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
             (Fips204.q : Int) = 0) ∧
       FrameExcept m m' [(ZH, ZH + 8192)] ∧
       Call s Entry.ntt [wd ZH] ret tail m [] m' Gas.ntt :=
-  sorry
+  Ntt4.ntt_v4 hs hr m htbl
 
 /-- **intt**: `[ACC, ret]`, in place on the four lane polynomials of `ACC`,
 with UseHint fused into the last pass: lane `r` of `ACC[t]` becomes
@@ -49,6 +53,6 @@ theorem intt_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
             ((Fips204.nttInv (lanesPoly m ACC r))[t]! + lane (word m (SP + 32 * t)) r - spOff)).toNat) ∧
       FrameExcept m m' [(ACC, ACC + 8192)] ∧
       Call s Entry.intt [wd ACC] ret tail m [] m' Gas.intt :=
-  sorry
+  Ntt4.intt_v4 hs hr m htbl
 
 end MlDsaOpt44.Proofs
