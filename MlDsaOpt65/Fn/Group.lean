@@ -4,6 +4,8 @@ import MlDsaOpt65.Fn.Fix
 import MlDsaOpt65.Fn.Keccak
 import MlDsaOpt65.Fn.Blk
 import MlDsaOpt65.Fn.GroupV4.Main
+import MlDsaOpt65.Fn.Pass3f.P4
+import MlDsaOpt65.Fn.Pass3f.P8
 /-!
 # ExpandA groups and the fused accumulation (ML-DSA-65, v4)
 
@@ -77,11 +79,11 @@ def p3f8Word (m : ByteArray) (t : Nat) : Nat :=
 theorem pass3f4_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f4 ret tail m ACC Gas.pass3f4 p3f4Word :=
-  sorry
+  MlDsaOpt65.Proofs.pass3f4_call_aux hs hr m
 
 theorem pass3f8_call {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.pass3f ret tail) (m : ByteArray) :
     FusedPass s Entry.pass3f8 ret tail m (ACC + 8192) Gas.pass3f8 p3f8Word :=
-  sorry
+  MlDsaOpt65.Proofs.pass3f8_call_aux hs hr m
 
 end MlDsaOpt65.Proofs
