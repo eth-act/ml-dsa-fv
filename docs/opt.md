@@ -9,15 +9,17 @@ parametric generator, `scripts/gen_opt.py`.
 
 There are three generator versions:
 
-* **v4** (round 4, not yet proved) is written to `MlDsaOpt/NN/v4/`; see
-  section "Round 4 (v4)". It saves 69,742 / 149,809 / 175,219 gas (44 / 65 /
-  87) over v3 outside the Keccak kernels for an empty message,
-  129k–222k (44) and 216k–309k (65) for messages of 70 bytes or more, and
-  222k / 420k / 671k in the worst case.
-* **v3** is the proved version (round 3), written to `MlDsaOpt/NN/`. It is
-  formally verified: `MlDsaOpt44/`, `MlDsaOpt65/` and `MlDsaOpt87/` prove
-  these bytes (all four final theorems, standard axioms only). Section
-  "Round 3 (v3)" lists the subroutines that differ from v2.
+* **v4** (round 4) is the current version, written to `MlDsaOpt/NN/`, and
+  is formally verified: `MlDsaOpt44/`, `MlDsaOpt65/` and `MlDsaOpt87/` prove
+  these bytes (all four final theorems, standard axioms only; status in
+  section "Status (v4)" of each `PLAN.md`). 44 includes R4-8 (SampleInBall's
+  fail exit clears BASES): 24,089 B, SHA-256 `8f90565e…`; all three hashes are
+  pinned in `scripts/opt_selftest.py` (`V4_SHA256`). See section "Round 4
+  (v4)". It saves 175,738 / 192,493 / 196,825 gas (44 / 65 / 87) over v3 for
+  an empty message and 283,804 / 463,097 / 692,501 in the worst case.
+* **v3** (round 3) was proved before v4. `python3 scripts/gen_opt.py
+  --version v3` writes those bytes to `MlDsaOpt/NN/v3/` (SHA-256 pinned).
+  Section "Round 3 (v3)" lists the subroutines that differ from v2.
 * **v2** was verified first (git tag `opt-v2-proved`). `python3
   scripts/gen_opt.py --version v2` still writes those bytes to
   `MlDsaOpt/NN/v2/`; `scripts/opt_selftest.py` checks they are byte-identical
@@ -29,17 +31,19 @@ Measured gas for the valid empty-message vector (line 1 of each
 `calldata.txt`). This is frame gas, the quantity `mldsa44tool run-file` and
 `foundry/src/GasProbe.sol` measure:
 
-| set | reference | v2 (proved) | **v3 (current)** | factor (v3) | 16.6M budget | worst case v3 (\|M\| = 0) | code size v3 |
-|---|---:|---:|---:|---:|---|---:|---:|
-| ML-DSA-44 | 12,953,021 | 2,136,608 | **2,105,097** | 6.15x | 13% | 2,864,301 | 23,091 B |
-| ML-DSA-65 | 21,334,964 | 3,930,640 | **3,701,979** | 5.76x | 22% | 5,073,355 | 23,422 B |
-| ML-DSA-87 | 35,708,719 | 5,478,088 | **5,424,737** | 6.58x | 33% | 7,954,105 | 23,982 B |
+| set | reference | v2 (proved) | v3 (proved) | **v4 (current, proved)** | factor (v4) | 16.6M budget | worst case v4 (\|M\| = 0) | code size v4 |
+|---|---:|---:|---:|---:|---:|---|---:|---:|
+| ML-DSA-44 | 12,953,021 | 2,136,608 | 2,105,097 | **1,929,359** | 6.71x | 12% | 2,580,497 | 24,089 B |
+| ML-DSA-65 | 21,334,964 | 3,930,640 | 3,701,979 | **3,509,486** | 6.08x | 21% | 4,610,258 | 24,049 B |
+| ML-DSA-87 | 35,708,719 | 5,478,088 | 5,424,737 | **5,227,912** | 6.83x | 31% | 7,261,604 | 23,798 B |
 
-Three optimisation rounds produced these numbers (steps 1–16, 17–20 and
-R3-1 to R3-3 in the log). The worst case is the maximum over adversarial
-inputs at that length (section "Worst-case gas"). Unless stated otherwise,
-the profiles and sections below describe v2, and "Round 3 (v3)" gives the
-v3 differences.
+Four optimisation rounds produced these numbers (steps 1–16, 17–20,
+R3-1 to R3-3 in the log, and R4-1 to R4-8 in "Round 4 (v4)"). The worst
+case is the maximum over adversarial inputs at that length (section
+"Worst-case gas"; v4: `opt_worstcase.py`, R4-7 / R4-8). Unless stated
+otherwise, the profiles and sections below describe v2, "Round 3 (v3)" gives
+the v3 differences and "Round 4 (v4)" the v4 ones; the message-length table
+below is v2.
 
 * All three sizes are under the EIP-170 limit of 24,576 B. 65 and 87 now fit
   comfortably in one transaction; the reference versions did not.
@@ -81,9 +85,9 @@ for accepted signatures.
 
 ```sh
 export TMPDIR=$PWD/.lake/tmp
-python3 scripts/gen_opt.py                     # v3: MlDsaOpt/{44,65,87}/{opt.hex,opt.asm,layout.txt}
-python3 scripts/gen_opt.py --version v2        # v2 (proved bytes): MlDsaOpt/{44,65,87}/v2/
-python3 scripts/gen_opt.py --version v4        # v4 (round 4): MlDsaOpt/{44,65,87}/v4/
+python3 scripts/gen_opt.py                     # v4 (proved): MlDsaOpt/{44,65,87}/{opt.hex,opt.asm,layout.txt}
+python3 scripts/gen_opt.py --version v3        # v3 (proved earlier): MlDsaOpt/{44,65,87}/v3/
+python3 scripts/gen_opt.py --version v2        # v2 (proved first): MlDsaOpt/{44,65,87}/v2/
 python3 scripts/opt_diff.py                    # subroutines changed v2 -> v3 (modulo relocation)
 python3 scripts/opt_diff.py --from v3 --to v4  # re-proof scope of v4
 python3 scripts/opt_worstcase.py --version v4  # (opt_fuzz.py: OPT_VERSION=v4)
@@ -108,8 +112,9 @@ into per-subroutine gas.
 
 Round 4 implements the non-Keccak candidates of "Evaluated and not done"
 that pay off, gated on `Layout.v4` (v4 = v3 plus these changes;
-`--version v3` still produces the proved bytes, SHA-256 pinned in
-`opt_selftest.py`). Interface, FIPS semantics and the opcode set are
+`--version v3` still produces the v3 bytes, proved before v4, SHA-256
+pinned in `opt_selftest.py`). The v4 bytes (with R4-8) are the ones
+`MlDsaOpt44/65/87` prove. Interface, FIPS semantics and the opcode set are
 unchanged; kf4 and kf1 are untouched.
 
 | step | gas 44 / 65 / 87 | worst case 44 / 65 / 87 | changed subroutines |
@@ -526,11 +531,18 @@ so `Layout.PACK65` enables it for glam only.
 
 ### Validation (v4)
 
-Validation of the R4-5 artifacts (branch `gas/final`):
+Validation of the R4-5 artifacts (branch `gas/final`; v4 was then written
+to `MlDsaOpt/NN/v4/`, since `e60adfe` it is `MlDsaOpt/NN/` and v3 is in
+`MlDsaOpt/NN/v3/`). The final v4 bytes (R4-6, R4-7, R4-8) are pinned in
+`opt_selftest.py` (`V4_SHA256`): 44
+`8f90565e079a3bee64c50847ac3a3ad4854c8046b9fdac0fd088fa4c1f8d301e`, 65
+`6298f2959da03632fd5b750578e02b72c1a4ebab2d4fe902684fa1eacea0804f`, 87
+`da031d6c038f34feafcfa49eda3d2467e47731236757e42b296d8270c3cbc4cd`; these
+are the bytes `MlDsaOpt44/65/87` prove.
 
 | check | result |
 |---|---|
-| SHA-256 `MlDsaOpt/NN/v4/opt.hex` | 44 `d16d86bce905a9f24a72ce27c674969f5966e8e009fb3de0e8bb38d136b2fa8d`, 65 `063bfc9072dd80689e8cebb97e65edc159bbf8f8a703c0c819e31390eaa222fe`, 87 `08a547f438a6a8f46978a6320dfc2bacf4d30ffb91d257cc62c2bf108abf22cb` |
+| SHA-256 `MlDsaOpt/NN/v4/opt.hex` (R4-5) | 44 `d16d86bce905a9f24a72ce27c674969f5966e8e009fb3de0e8bb38d136b2fa8d`, 65 `063bfc9072dd80689e8cebb97e65edc159bbf8f8a703c0c819e31390eaa222fe`, 87 `08a547f438a6a8f46978a6320dfc2bacf4d30ffb91d257cc62c2bf108abf22cb` |
 | `opt_selftest.py` | passes: v2 and v3 reproduced byte for byte (SHA-256 pinned), v4 constants, all vectors on v3 and v4, μ block boundaries on v4 (13 lengths per set, valid and flipped message), forced sixth squeeze on v4 (19 / 21 / 36 vectors with sixth-block checks) |
 | `opt_corpus.py` (Python EVM) | 44: 3,639 cases, 65 / 87: 57 each, 0 mismatches |
 | Lean semantics (`mldsa44tool run-file`), 44 | 46 rows: exact gas and output, total 91,541,319 in both |
@@ -944,7 +956,7 @@ MULMOD rotation (14 instead of 21 gas) were considered and rejected:
 
 ### v3 (round 3)
 
-SHA-256 of `MlDsaOpt/NN/opt.hex` (v3):
+SHA-256 of `MlDsaOpt/NN/v3/opt.hex` (v3; `MlDsaOpt/NN/opt.hex` until `e60adfe`):
 
 | set | SHA-256 |
 |---|---|
