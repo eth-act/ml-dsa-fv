@@ -24,11 +24,11 @@ open MlDsaOptCommon
 open MlDsaOptGlam44.Proofs.Artifact
 
 /-- Static (memory-free) cost of a path, from the lookup trees. -/
-noncomputable def blockCost (path : List (Fin 34532)) : Nat :=
+noncomputable def blockCost (path : List (Fin 34557)) : Nat :=
   (path.map fun i => EvmProof.Meter.xinstrStaticCost .Amsterdam (instrAt i.val)).sum
 
 /-- Kernel-checkable side condition of `reach_block` (`by decide +kernel`). -/
-noncomputable def blockOK (path : List (Fin 34532)) (cost : Nat) : Bool :=
+noncomputable def blockOK (path : List (Fin 34557)) (cost : Nat) : Bool :=
   path.all (fun i => EvmProof.Meter.XCopyFree (instrAt i.val)) && blockCost path == cost
 
 /-- `#eval`-able twin of `blockCost`, for finding the literal to state. -/
@@ -36,7 +36,7 @@ def blockCostEval (path : List Nat) : Nat :=
   (path.map fun i => EvmProof.Meter.xinstrStaticCost .Amsterdam
     (instructionList.getD i (.base (.op .INVALID)))).sum
 
-theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 34532)) {cost : Nat}
+theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 34557)) {cost : Nat}
     {pc pc' : Nat} {stk stk' : List UInt256} {m m' : ByteArray}
     (hok : blockOK path cost = true)
     (hrun : runXLocatedBlock (locatedPath path) (callState s pc stk m) =
@@ -71,7 +71,7 @@ theorem reach_block {s : State} (hs : Ctx s) (path : List (Fin 34532)) {cost : N
     intro i _
     simp only [Function.comp, located_instruction_eq]
 
-theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 34532)) {cost : Nat}
+theorem reach_block_pot {s t : State} (h0 : Ctx0 s) (path : List (Fin 34557)) {cost : Nat}
     (hok : blockOK path cost = true)
     (hrun : runXLocatedBlock (locatedPath path) s = some t) :
     Reach s t (cost + MachineState.memCost t.activeWords.toNat -

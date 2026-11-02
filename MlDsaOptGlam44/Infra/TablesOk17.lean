@@ -12,16 +12,16 @@ open EvmSemantics.EVM
 open YulEvmCompiler
 open MlDsaOptGlam44.Proofs.Artifact
 
-theorem tables_ok85 : checkAll instrTree pcTree 34000 56910 instructions85 = true := by
+theorem tables_ok85 : checkAll instrTree pcTree 34000 56912 instructions85 = true := by
   decide +kernel
 
-theorem size_instructions85 : (instructions85.map isz).sum = 541 := by
+theorem size_instructions85 : (instructions85.map isz).sum = 542 := by
   decide +kernel
 
-theorem tables_ok86 : checkAll instrTree pcTree 34400 57451 instructions86 = true := by
+theorem tables_ok86 : checkAll instrTree pcTree 34400 57454 instructions86 = true := by
   decide +kernel
 
-theorem size_instructions86 : (instructions86.map isz).sum = 159 := by
+theorem size_instructions86 : (instructions86.map isz).sum = 195 := by
   decide +kernel
 
 end MlDsaOptGlam44.Proofs.Infra

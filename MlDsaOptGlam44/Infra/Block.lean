@@ -96,7 +96,7 @@ theorem guardHalt_running (o : Option State) : guardHalt .Running o = o := rfl
 
 /-- The step lemma used by `glam44_block`: one fold step at instruction `i`,
 with instruction and offset read from the lookup trees. -/
-theorem stepL_located (i : Fin 34532) (st : State) :
+theorem stepL_located (i : Fin 34557) (st : State) :
     stepL (some st) (located i) =
       guardHalt st.halt
         (if st.pc.toNat = pcAt i.val then runXInstr (instrAt i.val) st else none) := by

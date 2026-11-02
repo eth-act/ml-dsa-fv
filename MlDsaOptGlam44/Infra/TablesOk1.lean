@@ -33,13 +33,13 @@ theorem size_instructions7 : (instructions7.map isz).sum = 573 := by
 theorem tables_ok8 : checkAll instrTree pcTree 3200 7950 instructions8 = true := by
   decide +kernel
 
-theorem size_instructions8 : (instructions8.map isz).sum = 618 := by
+theorem size_instructions8 : (instructions8.map isz).sum = 621 := by
   decide +kernel
 
-theorem tables_ok9 : checkAll instrTree pcTree 3600 8568 instructions9 = true := by
+theorem tables_ok9 : checkAll instrTree pcTree 3600 8571 instructions9 = true := by
   decide +kernel
 
-theorem size_instructions9 : (instructions9.map isz).sum = 764 := by
+theorem size_instructions9 : (instructions9.map isz).sum = 763 := by
   decide +kernel
 
 end MlDsaOptGlam44.Proofs.Infra

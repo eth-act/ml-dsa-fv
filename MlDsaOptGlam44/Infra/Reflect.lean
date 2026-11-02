@@ -5,22 +5,22 @@ set_option linter.unusedSimpArgs false
 namespace MlDsaOptGlam44.Proofs.Infra
 open EvmSemantics EvmSemantics.EVM EvmProof.Stepper MlDsaOptCommon
 open MlDsaOptGlam44.Proofs.Artifact
-theorem reflect_sound (os : List Reflect.XOp) (path : List (Fin 34532))
+theorem reflect_sound (os : List Reflect.XOp) (path : List (Fin 34557))
     (c : Reflect.Config) (r : Reflect.Result) (env : Reflect.Env) (M : ByteArray)
     (tail : List UInt256) (s : State) (pc : Nat)
     (h : Reflect.xrun os c = some r) (hrunning : s.halt = .Running)
     (hlen : r.peak + tail.length < 1024)
     (hm : ∀ a ∈ r.reads, (a.eval env M).toNat + 32 ≤ 32 * s.activeWords.toNat)
     (hj : ∀ a ∈ r.guards, a.Holds env M s.executionEnv.code)
-    (ha : Reflect.XAligned (fun i : Fin 34532 => pcAt i.val)
-      (fun i : Fin 34532 => instrAt i.val) path os pc)
+    (ha : Reflect.XAligned (fun i : Fin 34557 => pcAt i.val)
+      (fun i : Fin 34557 => instrAt i.val) path os pc)
     (hdata : env.calldata = s.executionEnv.calldata) :
     runXLocatedBlock (locatedPath path) (Reflect.denote env M tail s pc c) =
       some (Reflect.denote env M tail s (Reflect.xendPC os pc) r.config) := by
   rw [runXLocatedBlock_eq_foldl _ _ (show (Reflect.denote env M tail s pc c).halt = .Running from hrunning)]
   simp only [locatedPath, List.foldl_map]
-  apply Reflect.xlocated_sound (fun i : Fin 34532 => pcAt i.val)
-    (fun i : Fin 34532 => instrAt i.val) (fun acc i => stepL acc (located i))
+  apply Reflect.xlocated_sound (fun i : Fin 34557 => pcAt i.val)
+    (fun i : Fin 34557 => instrAt i.val) (fun acc i => stepL acc (located i))
     (fun i st hh hp => by rw [stepL_located, hh, guardHalt_running, hp, if_pos rfl])
     os path c r env M tail s pc hdata hrunning h hlen hm hj ha
 end MlDsaOptGlam44.Proofs.Infra

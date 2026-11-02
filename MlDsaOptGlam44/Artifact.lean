@@ -3494,9 +3494,7 @@ def instructions8 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 0 0),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 57610),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
@@ -3697,7 +3695,9 @@ def instructions8 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 0 0),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 5)]
 
 theorem instructions8_length : instructions8.length = 400 := by rfl
 
@@ -3708,9 +3708,7 @@ theorem allWellFormedB_instructions8 :
     instructions8.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions9 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 5),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 51456),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
@@ -4107,7 +4105,9 @@ def instructions9 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 18),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions9_length : instructions9.length = 400 := by rfl
 
@@ -4118,9 +4118,7 @@ theorem allWellFormedB_instructions9 :
     instructions9.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions10 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4294967295),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4294967295),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 29 2103718338860712296951814420252711173974543160988018484972446399070286),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
@@ -4517,7 +4515,9 @@ def instructions10 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 126),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions10_length : instructions10.length = 400 := by rfl
 
@@ -4528,9 +4528,7 @@ theorem allWellFormedB_instructions10 :
     instructions10.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions11 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 30),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -4927,7 +4925,9 @@ def instructions11 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions11_length : instructions11.length = 400 := by rfl
 
@@ -4938,9 +4938,7 @@ theorem allWellFormedB_instructions11 :
     instructions11.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions12 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 3),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 3),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -5337,7 +5335,9 @@ def instructions12 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 63),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions12_length : instructions12.length = 400 := by rfl
 
@@ -5348,9 +5348,7 @@ theorem allWellFormedB_instructions12 :
     instructions12.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions13 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 15),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 15),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -5747,7 +5745,9 @@ def instructions13 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 6)]
 
 theorem instructions13_length : instructions13.length = 400 := by rfl
 
@@ -5758,9 +5758,7 @@ theorem allWellFormedB_instructions13 :
     instructions13.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions14 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 6),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 0 0),
@@ -6157,7 +6155,9 @@ def instructions14 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 27 52656139557176857965132745051175345793113982559907422464779485183)]
 
 theorem instructions14_length : instructions14.length = 400 := by rfl
 
@@ -6168,9 +6168,7 @@ theorem allWellFormedB_instructions14 :
     instructions14.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions15 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 27 52656139557176857965132745051175345793113982559907422464779485183),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 14 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 1120),
@@ -6567,7 +6565,9 @@ def instructions15 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 26 51415740314552302139366204032943402568673992135786275052462079),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
 
 theorem instructions15_length : instructions15.length = 400 := by rfl
 
@@ -6578,9 +6578,7 @@ theorem allWellFormedB_instructions15 :
     instructions15.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions16 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 40),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 40),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 27 52656139557176857965132745051175345793113982559907422464779485183),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
@@ -6977,6 +6975,8 @@ def instructions16 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 20480),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
 
 theorem instructions16_length : instructions16.length = 400 := by rfl
@@ -6988,9 +6988,7 @@ theorem allWellFormedB_instructions16 :
     instructions16.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions17 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
@@ -7387,7 +7385,9 @@ def instructions17 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 32224),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 27 52656145834278593351813509227247135921718862144084218434291761152)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 27 52656145834278593351813509227247135921718862144084218434291761152),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1)]
 
 theorem instructions17_length : instructions17.length = 400 := by rfl
 
@@ -7398,9 +7398,7 @@ theorem allWellFormedB_instructions17 :
     instructions17.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions18 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.ISZERO))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 17995),
@@ -7797,7 +7795,9 @@ def instructions18 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 640)]
 
 theorem instructions18_length : instructions18.length = 400 := by rfl
 
@@ -7809,8 +7809,6 @@ theorem allWellFormedB_instructions18 :
 
 def instructions19 : List XInstr :=
 [EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 640),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -8207,7 +8205,9 @@ def instructions19 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 34),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)))]
 
 theorem instructions19_length : instructions19.length = 400 := by rfl
 
@@ -8218,9 +8218,7 @@ theorem allWellFormedB_instructions19 :
     instructions19.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions20 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 34),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -8617,7 +8615,9 @@ def instructions20 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 256),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)))]
 
 theorem instructions20_length : instructions20.length = 400 := by rfl
 
@@ -8628,9 +8628,7 @@ theorem allWellFormedB_instructions20 :
     instructions20.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions21 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 256),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 256),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 3666),
@@ -9027,7 +9025,9 @@ def instructions21 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 96)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 96),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)))]
 
 theorem instructions21_length : instructions21.length = 400 := by rfl
 
@@ -9038,9 +9038,7 @@ theorem allWellFormedB_instructions21 :
     instructions21.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions22 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
@@ -9437,7 +9435,9 @@ def instructions22 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 128),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 640)]
 
 theorem instructions22_length : instructions22.length = 400 := by rfl
 
@@ -9448,9 +9448,7 @@ theorem allWellFormedB_instructions22 :
     instructions22.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions23 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 640),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Env (EvmSemantics.Operation.EnvOps.CALLDATALOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
@@ -9847,7 +9845,9 @@ def instructions23 : List XInstr :=
  EvmProof.XInstr.dupN 145,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.dupN 144]
 
 theorem instructions23_length : instructions23.length = 400 := by rfl
 
@@ -9858,9 +9858,7 @@ theorem allWellFormedB_instructions23 :
     instructions23.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions24 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.dupN 144,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
@@ -10257,7 +10255,9 @@ def instructions24 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.GT))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.ISZERO))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 22877)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 22877),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions24_length : instructions24.length = 400 := by rfl
 
@@ -10268,9 +10268,7 @@ theorem allWellFormedB_instructions24 :
     instructions24.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions25 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 64),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 64),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 8 18446744073709551615),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
@@ -10667,7 +10665,9 @@ def instructions25 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 5120),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 }))]
 
 theorem instructions25_length : instructions25.length = 400 := by rfl
 
@@ -10678,9 +10678,7 @@ theorem allWellFormedB_instructions25 :
     instructions25.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions26 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 5632),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 5632),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
@@ -11077,7 +11075,9 @@ def instructions26 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 3 }))]
 
 theorem instructions26_length : instructions26.length = 400 := by rfl
 
@@ -11088,9 +11088,7 @@ theorem allWellFormedB_instructions26 :
     instructions26.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions27 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 3 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 2682805975),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
@@ -11487,7 +11485,9 @@ def instructions27 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 256),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
- EvmProof.XInstr.dupN 138]
+ EvmProof.XInstr.dupN 138,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 288),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)))]
 
 theorem instructions27_length : instructions27.length = 400 := by rfl
 
@@ -11498,9 +11498,7 @@ theorem allWellFormedB_instructions27 :
     instructions27.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions28 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 288),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
  EvmProof.XInstr.dupN 139,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 320),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
@@ -11897,7 +11895,9 @@ def instructions28 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.dupN 137,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.swapN 137]
 
 theorem instructions28_length : instructions28.length = 400 := by rfl
 
@@ -11908,9 +11908,7 @@ theorem allWellFormedB_instructions28 :
     instructions28.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions29 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.swapN 137,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
  EvmProof.XInstr.swapN 128,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
@@ -12307,7 +12305,9 @@ def instructions29 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4236238847)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4236238847),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }))]
 
 theorem instructions29_length : instructions29.length = 400 := by rfl
 
@@ -12318,9 +12318,7 @@ theorem allWellFormedB_instructions29 :
     instructions29.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions30 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
@@ -12717,7 +12715,9 @@ def instructions30 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4236238847),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
- EvmProof.XInstr.dupN 147]
+ EvmProof.XInstr.dupN 147,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417)]
 
 theorem instructions30_length : instructions30.length = 400 := by rfl
 
@@ -12728,9 +12728,7 @@ theorem allWellFormedB_instructions30 :
     instructions30.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions31 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
@@ -13127,7 +13125,9 @@ def instructions31 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)))]
 
 theorem instructions31_length : instructions31.length = 400 := by rfl
 
@@ -13138,9 +13138,7 @@ theorem allWellFormedB_instructions31 :
     instructions31.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions32 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.swapN 133,
+[EvmProof.XInstr.swapN 133,
  EvmProof.XInstr.dupN 142,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
@@ -13537,7 +13535,9 @@ def instructions32 : List XInstr :=
  EvmProof.XInstr.dupN 136,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 4 4236238847),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.dupN 136,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)))]
 
 theorem instructions32_length : instructions32.length = 400 := by rfl
 
@@ -13548,9 +13548,7 @@ theorem allWellFormedB_instructions32 :
     instructions32.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions33 : List XInstr :=
-[EvmProof.XInstr.dupN 136,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
@@ -13947,7 +13945,9 @@ def instructions33 : List XInstr :=
  EvmProof.XInstr.dupN 136,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 3 8380417),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32)]
 
 theorem instructions33_length : instructions33.length = 400 := by rfl
 
@@ -13958,9 +13958,7 @@ theorem allWellFormedB_instructions33 :
     instructions33.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions34 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 13 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -14357,7 +14355,9 @@ def instructions34 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 17),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.dupN 131]
+ EvmProof.XInstr.dupN 131,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 44)]
 
 theorem instructions34_length : instructions34.length = 400 := by rfl
 
@@ -14368,9 +14368,7 @@ theorem allWellFormedB_instructions34 :
     instructions34.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions35 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 44),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
  EvmProof.XInstr.dupN 128,
@@ -14767,7 +14765,9 @@ def instructions35 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 14 }))]
 
 theorem instructions35_length : instructions35.length = 400 := by rfl
 
@@ -14778,9 +14778,7 @@ theorem allWellFormedB_instructions35 :
     instructions35.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions36 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 14 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.SUB))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
@@ -15177,6 +15175,8 @@ def instructions36 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP)))]
 
 theorem instructions36_length : instructions36.length = 400 := by rfl
@@ -15189,8 +15189,6 @@ theorem allWellFormedB_instructions36 :
 
 def instructions37 : List XInstr :=
 [EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 25 6277101735386680764176071790128604879584176795969512275969),
@@ -15587,7 +15585,9 @@ def instructions37 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions37_length : instructions37.length = 400 := by rfl
 
@@ -15598,9 +15598,7 @@ theorem allWellFormedB_instructions37 :
     instructions37.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions38 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -15997,7 +15995,9 @@ def instructions38 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.dupN 146]
+ EvmProof.XInstr.dupN 146,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.swapN 139]
 
 theorem instructions38_length : instructions38.length = 400 := by rfl
 
@@ -16008,9 +16008,7 @@ theorem allWellFormedB_instructions38 :
     instructions38.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions39 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
- EvmProof.XInstr.swapN 139,
- EvmProof.XInstr.dupN 133,
+[EvmProof.XInstr.dupN 133,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
@@ -16407,7 +16405,9 @@ def instructions39 : List XInstr :=
  EvmProof.XInstr.dupN 128,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 7 }))]
 
 theorem instructions39_length : instructions39.length = 400 := by rfl
 
@@ -16418,9 +16418,7 @@ theorem allWellFormedB_instructions39 :
     instructions39.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions40 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -16817,7 +16815,9 @@ def instructions40 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 25),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }))]
 
 theorem instructions40_length : instructions40.length = 400 := by rfl
 
@@ -16828,9 +16828,7 @@ theorem allWellFormedB_instructions40 :
     instructions40.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions41 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 15 })),
@@ -17227,7 +17225,9 @@ def instructions41 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.dupN 150]
+ EvmProof.XInstr.dupN 150,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 }))]
 
 theorem instructions41_length : instructions41.length = 400 := by rfl
 
@@ -17238,9 +17238,7 @@ theorem allWellFormedB_instructions41 :
     instructions41.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions42 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.dupN 131,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
@@ -17637,7 +17635,9 @@ def instructions42 : List XInstr :=
  EvmProof.XInstr.dupN 134,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 142,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 27)]
 
 theorem instructions42_length : instructions42.length = 400 := by rfl
 
@@ -17648,9 +17648,7 @@ theorem allWellFormedB_instructions42 :
     instructions42.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions43 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 27),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
@@ -18047,6 +18045,8 @@ def instructions43 : List XInstr :=
  EvmProof.XInstr.dupN 137,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 142,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions43_length : instructions43.length = 400 := by rfl
@@ -18058,9 +18058,7 @@ theorem allWellFormedB_instructions43 :
     instructions43.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions44 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 15 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 135,
@@ -18457,7 +18455,9 @@ def instructions44 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.dupN 146,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+ EvmProof.XInstr.dupN 142]
 
 theorem instructions44_length : instructions44.length = 400 := by rfl
 
@@ -18468,9 +18468,7 @@ theorem allWellFormedB_instructions44 :
     instructions44.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions45 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
- EvmProof.XInstr.dupN 142,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 6 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 130,
@@ -18867,7 +18865,9 @@ def instructions45 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 43),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 5 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 21)]
 
 theorem instructions45_length : instructions45.length = 400 := by rfl
 
@@ -18878,9 +18878,7 @@ theorem allWellFormedB_instructions45 :
     instructions45.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions46 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 21),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.swapN 133,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -19277,7 +19275,9 @@ def instructions46 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 150,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+ EvmProof.XInstr.dupN 154]
 
 theorem instructions46_length : instructions46.length = 400 := by rfl
 
@@ -19288,9 +19288,7 @@ theorem allWellFormedB_instructions46 :
     instructions46.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions47 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.dupN 154,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.swapN 135,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -19687,7 +19685,9 @@ def instructions47 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 28),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
 
 theorem instructions47_length : instructions47.length = 400 := by rfl
 
@@ -19698,9 +19698,7 @@ theorem allWellFormedB_instructions47 :
     instructions47.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions48 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 142,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 141,
@@ -20097,7 +20095,9 @@ def instructions48 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 15),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions48_length : instructions48.length = 400 := by rfl
 
@@ -20108,9 +20108,7 @@ theorem allWellFormedB_instructions48 :
     instructions48.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions49 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 56),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 56),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
@@ -20507,7 +20505,9 @@ def instructions49 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192)]
 
 theorem instructions49_length : instructions49.length = 400 := by rfl
 
@@ -20518,9 +20518,7 @@ theorem allWellFormedB_instructions49 :
     instructions49.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions50 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.dupN 158,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 6 })),
@@ -20917,7 +20915,9 @@ def instructions50 : List XInstr :=
  EvmProof.XInstr.dupN 139,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 138,
- EvmProof.XInstr.dupN 146]
+ EvmProof.XInstr.dupN 146,
+ EvmProof.XInstr.dupN 141,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND)))]
 
 theorem instructions50_length : instructions50.length = 400 := by rfl
 
@@ -20928,9 +20928,7 @@ theorem allWellFormedB_instructions50 :
     instructions50.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions51 : List XInstr :=
-[EvmProof.XInstr.dupN 141,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 140,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
@@ -21327,7 +21325,9 @@ def instructions51 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.exchange 172]
+ EvmProof.XInstr.exchange 172,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 10 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 }))]
 
 theorem instructions51_length : instructions51.length = 400 := by rfl
 
@@ -21338,9 +21338,7 @@ theorem allWellFormedB_instructions51 :
     instructions51.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions52 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 10 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 44),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.swapN 156,
@@ -21737,7 +21735,9 @@ def instructions52 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 3 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 3 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1)]
 
 theorem instructions52_length : instructions52.length = 400 := by rfl
 
@@ -21748,9 +21748,7 @@ theorem allWellFormedB_instructions52 :
     instructions52.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions53 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 1),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
@@ -22147,7 +22145,9 @@ def instructions53 : List XInstr :=
  EvmProof.XInstr.swapN 150,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 61)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 61),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.dupN 151]
 
 theorem instructions53_length : instructions53.length = 400 := by rfl
 
@@ -22158,9 +22158,7 @@ theorem allWellFormedB_instructions53 :
     instructions53.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions54 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.dupN 151,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 153,
@@ -22557,7 +22555,9 @@ def instructions54 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 8 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.swapN 156]
 
 theorem instructions54_length : instructions54.length = 400 := by rfl
 
@@ -22568,9 +22568,7 @@ theorem allWellFormedB_instructions54 :
     instructions54.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions55 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.swapN 156,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 18),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
@@ -22967,7 +22965,9 @@ def instructions55 : List XInstr :=
  EvmProof.XInstr.dupN 155,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
- EvmProof.XInstr.swapN 154]
+ EvmProof.XInstr.swapN 154,
+ EvmProof.XInstr.dupN 160,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 }))]
 
 theorem instructions55_length : instructions55.length = 400 := by rfl
 
@@ -22978,9 +22978,7 @@ theorem allWellFormedB_instructions55 :
     instructions55.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions56 : List XInstr :=
-[EvmProof.XInstr.dupN 160,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 })),
@@ -23377,7 +23375,9 @@ def instructions56 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 138,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
+ EvmProof.XInstr.swapN 138,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 }))]
 
 theorem instructions56_length : instructions56.length = 400 := by rfl
 
@@ -23388,9 +23388,7 @@ theorem allWellFormedB_instructions56 :
     instructions56.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions57 : List XInstr :=
-[EvmProof.XInstr.swapN 138,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 2),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -23787,7 +23785,9 @@ def instructions57 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 192),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.dupN 162,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.MUL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 576),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE)))]
 
 theorem instructions57_length : instructions57.length = 400 := by rfl
 
@@ -23798,9 +23798,7 @@ theorem allWellFormedB_instructions57 :
     instructions57.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions58 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 576),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
- EvmProof.XInstr.swapN 138,
+[EvmProof.XInstr.swapN 138,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 2),
@@ -24197,7 +24195,9 @@ def instructions58 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 112),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 144)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 144),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)))]
 
 theorem instructions58_length : instructions58.length = 400 := by rfl
 
@@ -24208,9 +24208,7 @@ theorem allWellFormedB_instructions58 :
     instructions58.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions59 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
@@ -24607,7 +24605,9 @@ def instructions59 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 8 17293822573129236720),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 9 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)))]
 
 theorem instructions59_length : instructions59.length = 400 := by rfl
 
@@ -24618,9 +24618,7 @@ theorem allWellFormedB_instructions59 :
     instructions59.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions60 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.dupN 143,
+[EvmProof.XInstr.dupN 143,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 142,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
@@ -25017,7 +25015,9 @@ def instructions60 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.exchange 172,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions60_length : instructions60.length = 400 := by rfl
 
@@ -25028,9 +25028,7 @@ theorem allWellFormedB_instructions60 :
     instructions60.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions61 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 176),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
@@ -25427,7 +25425,9 @@ def instructions61 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 140]
+ EvmProof.XInstr.dupN 140,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions61_length : instructions61.length = 400 := by rfl
 
@@ -25438,9 +25438,7 @@ theorem allWellFormedB_instructions61 :
     instructions61.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions62 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 133,
+[EvmProof.XInstr.dupN 133,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 14 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -25837,7 +25835,9 @@ def instructions62 : List XInstr :=
  EvmProof.XInstr.dupN 139,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }))]
 
 theorem instructions62_length : instructions62.length = 400 := by rfl
 
@@ -25848,9 +25848,7 @@ theorem allWellFormedB_instructions62 :
     instructions62.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions63 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 248),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 248),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
@@ -26247,7 +26245,9 @@ def instructions63 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 6 }))]
 
 theorem instructions63_length : instructions63.length = 400 := by rfl
 
@@ -26258,9 +26258,7 @@ theorem allWellFormedB_instructions63 :
     instructions63.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions64 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 6 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 13 })),
  EvmProof.XInstr.dupN 145,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
@@ -26657,7 +26655,9 @@ def instructions64 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 130,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.swapN 137,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 }))]
 
 theorem instructions64_length : instructions64.length = 400 := by rfl
 
@@ -26668,9 +26668,7 @@ theorem allWellFormedB_instructions64 :
     instructions64.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions65 : List XInstr :=
-[EvmProof.XInstr.swapN 137,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 4 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 144),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
@@ -27067,7 +27065,9 @@ def instructions65 : List XInstr :=
  EvmProof.XInstr.swapN 142,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 100),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
 
 theorem instructions65_length : instructions65.length = 400 := by rfl
 
@@ -27078,9 +27078,7 @@ theorem allWellFormedB_instructions65 :
     instructions65.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions66 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 100),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 156),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
@@ -27477,7 +27475,9 @@ def instructions66 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 180),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 76),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)))]
 
 theorem instructions66_length : instructions66.length = 400 := by rfl
 
@@ -27488,9 +27488,7 @@ theorem allWellFormedB_instructions66 :
     instructions66.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions67 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 76),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 11 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -27887,7 +27885,9 @@ def instructions67 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 56)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 56),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }))]
 
 theorem instructions67_length : instructions67.length = 400 := by rfl
 
@@ -27898,9 +27898,7 @@ theorem allWellFormedB_instructions67 :
     instructions67.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions68 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 200),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 200),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 15 })),
@@ -28297,7 +28295,9 @@ def instructions68 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 252),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)))]
 
 theorem instructions68_length : instructions68.length = 400 := by rfl
 
@@ -28308,9 +28308,7 @@ theorem allWellFormedB_instructions68 :
     instructions68.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions69 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 252),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
@@ -28707,7 +28705,9 @@ def instructions69 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 133,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 146]
+ EvmProof.XInstr.dupN 146,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions69_length : instructions69.length = 400 := by rfl
 
@@ -28718,9 +28718,7 @@ theorem allWellFormedB_instructions69 :
     instructions69.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions70 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 8 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 145,
+[EvmProof.XInstr.dupN 145,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 141,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -29117,7 +29115,9 @@ def instructions70 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.swapN 144,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 156)]
 
 theorem instructions70_length : instructions70.length = 400 := by rfl
 
@@ -29128,9 +29128,7 @@ theorem allWellFormedB_instructions70 :
     instructions70.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions71 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 156),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 100),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
@@ -29527,7 +29525,9 @@ def instructions71 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 4 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 224),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
 
 theorem instructions71_length : instructions71.length = 400 := by rfl
 
@@ -29538,9 +29538,7 @@ theorem allWellFormedB_instructions71 :
     instructions71.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions72 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 224),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
@@ -29937,7 +29935,9 @@ def instructions72 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 10 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 152,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions72_length : instructions72.length = 400 := by rfl
 
@@ -29948,9 +29948,7 @@ theorem allWellFormedB_instructions72 :
     instructions72.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions73 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 252),
@@ -30347,7 +30345,9 @@ def instructions73 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 136,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.swapN 135,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 }))]
 
 theorem instructions73_length : instructions73.length = 400 := by rfl
 
@@ -30358,9 +30358,7 @@ theorem allWellFormedB_instructions73 :
     instructions73.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions74 : List XInstr :=
-[EvmProof.XInstr.swapN 135,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 12 })),
- EvmProof.XInstr.dupN 143,
+[EvmProof.XInstr.dupN 143,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -30757,7 +30755,9 @@ def instructions74 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 144,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.swapN 150,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 }))]
 
 theorem instructions74_length : instructions74.length = 400 := by rfl
 
@@ -30768,9 +30768,7 @@ theorem allWellFormedB_instructions74 :
     instructions74.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions75 : List XInstr :=
-[EvmProof.XInstr.swapN 150,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 80),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
@@ -31167,7 +31165,9 @@ def instructions75 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 176),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 80)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 80),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)))]
 
 theorem instructions75_length : instructions75.length = 400 := by rfl
 
@@ -31178,9 +31178,7 @@ theorem allWellFormedB_instructions75 :
     instructions75.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions76 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.swapN 154,
+[EvmProof.XInstr.swapN 154,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
@@ -31577,7 +31575,9 @@ def instructions76 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 9 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 143]
+ EvmProof.XInstr.dupN 143,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
 
 theorem instructions76_length : instructions76.length = 400 := by rfl
 
@@ -31588,9 +31588,7 @@ theorem allWellFormedB_instructions76 :
     instructions76.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions77 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
@@ -31987,7 +31985,9 @@ def instructions77 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.dupN 138]
 
 theorem instructions77_length : instructions77.length = 400 := by rfl
 
@@ -31998,9 +31998,7 @@ theorem allWellFormedB_instructions77 :
     instructions77.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions78 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.dupN 138,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 137,
  EvmProof.XInstr.dupN 133,
  EvmProof.XInstr.dupN 151,
@@ -32397,7 +32395,9 @@ def instructions78 : List XInstr :=
  EvmProof.XInstr.dupN 152,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.swapN 151,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR)))]
 
 theorem instructions78_length : instructions78.length = 400 := by rfl
 
@@ -32408,9 +32408,7 @@ theorem allWellFormedB_instructions78 :
     instructions78.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions79 : List XInstr :=
-[EvmProof.XInstr.swapN 151,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.dupN 140,
+[EvmProof.XInstr.dupN 140,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.swapN 139,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
@@ -32807,7 +32805,9 @@ def instructions79 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 144),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 112),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR)))]
 
 theorem instructions79_length : instructions79.length = 400 := by rfl
 
@@ -32818,9 +32818,7 @@ theorem allWellFormedB_instructions79 :
     instructions79.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions80 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 112),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.swapN 150,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 11 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -33217,7 +33215,9 @@ def instructions80 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 156),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 8 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 8 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR)))]
 
 theorem instructions80_length : instructions80.length = 400 := by rfl
 
@@ -33228,9 +33228,7 @@ theorem allWellFormedB_instructions80 :
     instructions80.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions81 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 3 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
@@ -33627,7 +33625,9 @@ def instructions81 : List XInstr :=
  EvmProof.XInstr.swapN 153,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 244),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
 
 theorem instructions81_length : instructions81.length = 400 := by rfl
 
@@ -33638,9 +33638,7 @@ theorem allWellFormedB_instructions81 :
     instructions81.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions82 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 244),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 12),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
@@ -34037,7 +34035,9 @@ def instructions82 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
  EvmProof.XInstr.dupN 142,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 }))]
 
 theorem instructions82_length : instructions82.length = 400 := by rfl
 
@@ -34048,9 +34048,7 @@ theorem allWellFormedB_instructions82 :
     instructions82.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions83 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 7 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 7 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -34447,7 +34445,9 @@ def instructions83 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 1 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 }))]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL)))]
 
 theorem instructions83_length : instructions83.length = 400 := by rfl
 
@@ -34458,9 +34458,7 @@ theorem allWellFormedB_instructions83 :
     instructions83.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions84 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 4),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 252),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.OR))),
@@ -34857,7 +34855,9 @@ def instructions84 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 157,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.dupN 140]
+ EvmProof.XInstr.dupN 140,
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 }))]
 
 theorem instructions84_length : instructions84.length = 400 := by rfl
 
@@ -34868,9 +34868,7 @@ theorem allWellFormedB_instructions84 :
     instructions84.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions85 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 5 })),
- EvmProof.XInstr.dupN 142,
+[EvmProof.XInstr.dupN 142,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.dupN 161,
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
@@ -35267,7 +35265,9 @@ def instructions85 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.AND))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.NOT))),
- EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 576)]
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 576),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
+ EvmProof.XInstr.swapN 138]
 
 theorem instructions85_length : instructions85.length = 400 := by rfl
 
@@ -35278,9 +35278,7 @@ theorem allWellFormedB_instructions85 :
     instructions85.all (EvmProof.Stepper.xwellFormedB .Amsterdam) = true := by rfl
 
 def instructions86 : List XInstr :=
-[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
- EvmProof.XInstr.swapN 138,
- EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
+[EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 2 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.XOR))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 8),
@@ -35409,9 +35407,36 @@ def instructions86 : List XInstr :=
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 4032),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MLOAD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 5),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.SHL))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 40960),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 0 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 42208),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.GT))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.CompBit (EvmSemantics.Operation.CompareBitwiseOps.ISZERO))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 57644),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPI))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 0 0),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Dup { idx := 1 })),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.MSTORE))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 1 32),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StopArith (EvmSemantics.Operation.StopArithOps.ADD))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 2 57623),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMPDEST))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.POP))),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.push 0 0),
+ EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.Swap { idx := 0 })),
  EvmProof.XInstr.base (YulEvmCompiler.Instr.op (EvmSemantics.Operation.StackMemFlow (EvmSemantics.Operation.StackMemFlowOps.JUMP)))]
 
-theorem instructions86_length : instructions86.length = 132 := by rfl
+theorem instructions86_length : instructions86.length = 157 := by rfl
 
 theorem assembleBytes_instructions86 :
     xassembleBytes instructions86 = MlDsaOptGlam44.optChunk86 := by rfl
@@ -35422,7 +35447,7 @@ theorem allWellFormedB_instructions86 :
 def instructionList : List XInstr :=
   instructions0 ++ instructions1 ++ instructions2 ++ instructions3 ++ instructions4 ++ instructions5 ++ instructions6 ++ instructions7 ++ instructions8 ++ instructions9 ++ instructions10 ++ instructions11 ++ instructions12 ++ instructions13 ++ instructions14 ++ instructions15 ++ instructions16 ++ instructions17 ++ instructions18 ++ instructions19 ++ instructions20 ++ instructions21 ++ instructions22 ++ instructions23 ++ instructions24 ++ instructions25 ++ instructions26 ++ instructions27 ++ instructions28 ++ instructions29 ++ instructions30 ++ instructions31 ++ instructions32 ++ instructions33 ++ instructions34 ++ instructions35 ++ instructions36 ++ instructions37 ++ instructions38 ++ instructions39 ++ instructions40 ++ instructions41 ++ instructions42 ++ instructions43 ++ instructions44 ++ instructions45 ++ instructions46 ++ instructions47 ++ instructions48 ++ instructions49 ++ instructions50 ++ instructions51 ++ instructions52 ++ instructions53 ++ instructions54 ++ instructions55 ++ instructions56 ++ instructions57 ++ instructions58 ++ instructions59 ++ instructions60 ++ instructions61 ++ instructions62 ++ instructions63 ++ instructions64 ++ instructions65 ++ instructions66 ++ instructions67 ++ instructions68 ++ instructions69 ++ instructions70 ++ instructions71 ++ instructions72 ++ instructions73 ++ instructions74 ++ instructions75 ++ instructions76 ++ instructions77 ++ instructions78 ++ instructions79 ++ instructions80 ++ instructions81 ++ instructions82 ++ instructions83 ++ instructions84 ++ instructions85 ++ instructions86
 
-@[simp] theorem instructionList_length : instructionList.length = 34532 := by
+@[simp] theorem instructionList_length : instructionList.length = 34557 := by
   unfold instructionList
   rewrite [List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append, List.length_append]
   rw [instructions0_length, instructions1_length, instructions2_length, instructions3_length, instructions4_length, instructions5_length, instructions6_length, instructions7_length, instructions8_length, instructions9_length, instructions10_length, instructions11_length, instructions12_length, instructions13_length, instructions14_length, instructions15_length, instructions16_length, instructions17_length, instructions18_length, instructions19_length, instructions20_length, instructions21_length, instructions22_length, instructions23_length, instructions24_length, instructions25_length, instructions26_length, instructions27_length, instructions28_length, instructions29_length, instructions30_length, instructions31_length, instructions32_length, instructions33_length, instructions34_length, instructions35_length, instructions36_length, instructions37_length, instructions38_length, instructions39_length, instructions40_length, instructions41_length, instructions42_length, instructions43_length, instructions44_length, instructions45_length, instructions46_length, instructions47_length, instructions48_length, instructions49_length, instructions50_length, instructions51_length, instructions52_length, instructions53_length, instructions54_length, instructions55_length, instructions56_length, instructions57_length, instructions58_length, instructions59_length, instructions60_length, instructions61_length, instructions62_length, instructions63_length, instructions64_length, instructions65_length, instructions66_length, instructions67_length, instructions68_length, instructions69_length, instructions70_length, instructions71_length, instructions72_length, instructions73_length, instructions74_length, instructions75_length, instructions76_length, instructions77_length, instructions78_length, instructions79_length, instructions80_length, instructions81_length, instructions82_length, instructions83_length, instructions84_length, instructions85_length, instructions86_length]
@@ -35450,12 +35475,12 @@ theorem allWellFormed : EvmProof.Stepper.XAllWellFormed artifact .Amsterdam :=
   EvmProof.Stepper.xallWellFormed_of_all allWellFormedB
 
 /-- Proof-carrying instruction lookup. -/
-def located (index : Fin 34532) : EvmProof.Stepper.XLocated artifact .Amsterdam :=
+def located (index : Fin 34557) : EvmProof.Stepper.XLocated artifact .Amsterdam :=
   EvmProof.Stepper.XLocated.ofIndex allWellFormed
     ⟨index.val, by rw [artifact, instructionList_length]; exact index.isLt⟩
 
 /-- A certified path from a list of instruction indices. -/
-def locatedPath (indices : List (Fin 34532)) :
+def locatedPath (indices : List (Fin 34557)) :
     List (EvmProof.Stepper.XLocated artifact .Amsterdam) :=
   indices.map located
 
