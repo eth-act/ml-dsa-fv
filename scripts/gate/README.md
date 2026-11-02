@@ -139,6 +139,7 @@ that mentions them and their axioms are audited like everything else.
 | `proofgen_artifact_glam.py MlDsaOpt/NN/glam/opt.hex MlDsaOptGlamNN MlDsaOptGlamNN glamNN M` (M = 2616, 3384, 2897) | `MlDsaOptGlamNN/{Bytecode,Artifact,Infra,Infra/*}.lean`, `listing.tsv` |
 | `MlDsaOptGlam44/Fn/Kf4/gen_kf4.py NN`, `MlDsaOptGlam44/Fn/Kf1/gen_kf1.py NN` (44, 65, 87) | `MlDsaOptGlamNN/Fn/{Kf4,Kf1}/*.lean` (`Model`, `Algebra` for 44 only) |
 | `MlDsaOptGlam44/port.py` (`proofgen_port.py --glam 44` and its recorded adjustments) | the ported files of `MlDsaOptGlam44/` |
+| `MlDsaOptGlam44/Fn/Blk/gen.py` | `MlDsaOptGlam44/Fn/Blk/{Iters,Proof}.lean` |
 | `proofgen_port.py` with the `--sub`/`--path` arguments in each file's `Ported from` header | 76 of the 105 ported files of `MlDsaOpt65/87` |
 
 Not reproducible: the other 29 ported files (28 carry hand adjustments

@@ -23,7 +23,8 @@ reproduced by the gate.
 
 ## Status: retargeted, with open items
 
-Proved: the kernels (`kf4_spec`, `kf1_spec`), every ported routine (`fix`,
+Proved: the kernels (`kf4_spec`, `kf1_spec`), the unrolled `blk` / `blkh` / `blkt`
+(`Fn/Blk/`, package 1; `Fn/Blk/gen.py`), every ported routine (`fix`,
 `gfix`, `group`, `pass3f4`, `ginit`, `trabs`, `cext`, `absorb17`, `mub0`,
 `kmove`, `lmerge`, `spr`, `tbuild`, `pack`, `dhint`), the main flow up to the
 long-message switch and the packed schedule's segments (`|M| < 342`), the
@@ -31,11 +32,10 @@ shared tail (`tbuild` / `csum`, `intt` / `pack`, the final hash), μ on the
 packed schedule (v4's proof with the four blocks that read `FLAG`), the short
 path, and the composition into the final theorems.
 
-Open (`#open_items`, 9 declarations):
+Open (`#open_items`):
 
 | item | code | notes |
 |---|---|---|
-| `blk_call`, `blkh_call`, `blkt_call` | `blk` | fully unrolled, immediate lane addresses, un-complemented on load; v4's bit lemmas (`Fn/Blk/Bits`) apply |
 | `ntt_call`, `intt_call` | `ntt`, `intt` | 4 + 4 passes, 16 words on the stack, table `TblAt` (`nttRecG`); v4's per-layer bounds and butterflies apply |
 | `dz_call` | `dz` | gather loop unrolled per chunk |
 | `csum_call` | `csum` | all τ bases on the stack (DUPN) |
