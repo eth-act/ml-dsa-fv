@@ -24,8 +24,8 @@ set_option maxRecDepth 100000 in
 theorem mu0_b0 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {sh : Nat} (hsh : sh < 4)
     (hcd : 5261 ≤ s.executionEnv.calldata.size) (hml : s.executionEnv.calldata.size - 5261 ≤ 69) :
-    Reach (callState s 13565 (wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89344) :: wd 13592 :: wd (s.executionEnv.calldata.size - 5261) ::
+    Reach (callState s 13365 (wd sh :: wd ret :: tail) M)
+      (callState s 13150 (wd (word M 89344) :: wd 13592 :: wd (s.executionEnv.calldata.size - 5261) ::
         wd sh :: wd ret :: tail) M) 54 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
@@ -37,7 +37,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_skip {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {sh : Nat} (hsh : sh < 4)
     (hcd : 5261 ≤ s.executionEnv.calldata.size) (hml : 69 < s.executionEnv.calldata.size - 5261) :
-    Reach (callState s 13565 (wd sh :: wd ret :: tail) M) (callState s ret tail M) 44 := by
+    Reach (callState s 13365 (wd sh :: wd ret :: tail) M) (callState s ret tail M) 44 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
   have haw : s.activeWords.toNat ≤ 18446744073709551616 := hs.small
   have hsz := hs.sized; simp only [memWords] at hsz
@@ -50,7 +50,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b1 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13592 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89376) :: wd 13613 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89376) :: wd 13613 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 0 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 0)) 43 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -62,7 +62,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b2 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13613 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89408) :: wd 13636 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89408) :: wd 13636 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 32 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 32)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -74,7 +74,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b3 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13636 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89440) :: wd 13659 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89440) :: wd 13659 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 64 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 64)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -86,7 +86,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b4 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13659 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89472) :: wd 13682 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89472) :: wd 13682 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 96 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 96)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -98,7 +98,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b5 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13682 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89504) :: wd 13705 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89504) :: wd 13705 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 128 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 128)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -110,7 +110,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b6 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13705 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89536) :: wd 13728 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89536) :: wd 13728 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 160 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 160)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -122,7 +122,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b7 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13728 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (word M 89568) :: wd 13751 :: wd mlen :: wd sh :: wd ret :: tail)
+      (callState s 13150 (wd (word M 89568) :: wd 13751 :: wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 192 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 192)) 45 := by
   have := hr.depth; simp only [Stack.mu0, Stack.trabs, Stack.spr, Stack.leaf] at this
@@ -134,7 +134,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b8 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13751 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 12455 (wd 256 :: wd 115792089237316195417293883273301227089434195242432897623355228563449095127040 :: wd 3 :: wd sh :: wd 5259 :: wd 13810 :: wd mlen ::
+      (callState s 12427 (wd 256 :: wd 115792089237316195417293883273301227089434195242432897623355228563449095127040 :: wd 3 :: wd sh :: wd 5259 :: wd 13810 :: wd mlen ::
         wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 224 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 224)) 51 := by
@@ -147,7 +147,7 @@ set_option maxRecDepth 100000 in
 theorem mu0_b9 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {mlen sh : Nat} (hsh : sh < 4) :
     Reach (callState s 13810 (wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (65280 &&& word s.executionEnv.calldata 5259 /
+      (callState s 13150 (wd (65280 &&& word s.executionEnv.calldata 5259 /
               6901746346790563787434755862277025452451108972170386555162524223799296 |||
             word s.executionEnv.calldata 5259 /
               452312848583266388373324160190187140051835877600158453279131187530910662656) ::
@@ -162,7 +162,7 @@ theorem mu0_b10 {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
     (hr : RetOK Stack.mu0 ret tail) (M : ByteArray) {r mlen sh : Nat} (hsh : sh < 4)
     (hml : mlen ≤ 69) :
     Reach (callState s 13836 (wd r :: wd mlen :: wd sh :: wd ret :: tail) M)
-      (callState s 13350 (wd (31 * 2 ^ ((7 &&& 66 + mlen) * 8)) :: wd 13871 :: wd (66 + mlen) ::
+      (callState s 13150 (wd (31 * 2 ^ ((7 &&& 66 + mlen) * 8)) :: wd 13871 :: wd (66 + mlen) ::
         wd mlen :: wd sh :: wd ret :: tail)
         (MachineState.writeBytes M (Data.Bytes.natToBytesPadded
           ((word M 256 ^^^ r * 2 ^ sh) % 115792089237316195423570985008687907853269984665640564039457584007913129639936) 32) 256)) 72 := by

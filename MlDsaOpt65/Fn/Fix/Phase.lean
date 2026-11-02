@@ -80,7 +80,7 @@ theorem phase {s : State} (hs : Ctx s) {ret : Nat} {tail : List UInt256}
           (AccAt M' sl c (8 * lim) (accL c (8 * lim)).length ∧ (accL c (8 * lim)).length < 256 ∧
             Reach (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 13995 (31232 + 32 * lim)
                 (20480 + 256 * g) (20480 + 32 * w) (31232 + 32 * g) M)
-              (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14531 (31232 + 32 * lim)
+              (gst s ret tail (64 * sl) (lmask sl) (nmask sl) 14190 (31232 + 32 * lim)
                 (20480 + 256 * lim) (20480 + 32 * (accL c (8 * lim)).length) (31232 + 32 * lim) M')
               (d * 784 + 23)))
   | 0, g, w, M, hgd, hacc, hw, _, _ => by

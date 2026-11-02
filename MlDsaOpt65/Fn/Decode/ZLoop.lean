@@ -78,11 +78,11 @@ theorem z_gstep (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
     (hA : ZInvA s.executionEnv.calldata G acc (max T (4 * u + 3 * g))) :
     ∃ M' acc', ZInvM s.executionEnv.calldata G m₀ M' (max T (4 * u + 3 * g + 3)) ∧
       ZInvA s.executionEnv.calldata G acc' (max T (4 * u + 3 * g + 3)) ∧
-      Reach (callState s 9360 (wd gp :: wd gs :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
+      Reach (callState s 9436 (wd gp :: wd gs :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
           wd (leNat s.executionEnv.calldata (1280 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata off 32) ::
           wd dp :: wd off :: wd acc :: wd MBL :: wd e :: wd ret :: tail) M)
-        (callState s 9748 (wd (96 + gp) :: wd (60 + gs) :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
+        (callState s 9752 (wd (96 + gp) :: wd (60 + gs) :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
           wd (leNat s.executionEnv.calldata (1280 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata off 32) ::
           wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 307 := by
@@ -194,8 +194,8 @@ theorem z_chunk (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
     (hM : ZInvM s.executionEnv.calldata G m₀ M T) (hA : ZInvA s.executionEnv.calldata G acc T) :
     ∃ M' acc', ZInvM s.executionEnv.calldata G m₀ M' (max T (4 * u + 12)) ∧
       ZInvA s.executionEnv.calldata G acc' (max T (4 * u + 12)) ∧
-      Reach (callState s 8968 (wd dp :: wd off :: wd acc :: wd MBL :: wd e :: wd ret :: tail) M)
-        (callState s 9748 (wd (dp + 384) :: wd 240 :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
+      Reach (callState s 9044 (wd dp :: wd off :: wd acc :: wd MBL :: wd e :: wd ret :: tail) M)
+        (callState s 9752 (wd (dp + 384) :: wd 240 :: wd (leNat s.executionEnv.calldata (1920 + off) 32) ::
           wd (leNat s.executionEnv.calldata (1280 + off) 32) ::
           wd (leNat s.executionEnv.calldata (640 + off) 32) :: wd (leNat s.executionEnv.calldata off 32) ::
           wd dp :: wd off :: wd acc' :: wd MBL :: wd e :: wd ret :: tail) M') 1986 := by
@@ -246,9 +246,9 @@ theorem z_chunk (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
 theorem z_chunks (hs : Ctx s) (htl : tail.length ≤ 960) {G : Nat} (hG : G < 2)
     (m : ByteArray) : ∀ j, j ≤ 20 → ∃ M acc, ZInvM s.executionEnv.calldata G m M (12 * j) ∧
       ZInvA s.executionEnv.calldata G acc (12 * j) ∧
-      Reach (callState s 8968 (wd (ZH + 0x2000 * G) :: wd (Z0 + 2560 * G) :: wd 0 :: wd MBL ::
+      Reach (callState s 9044 (wd (ZH + 0x2000 * G) :: wd (Z0 + 2560 * G) :: wd 0 :: wd MBL ::
           wd (7808 + (ZH + 0x2000 * G)) :: wd ret :: tail) m)
-        (callState s 8968 (wd (ZH + 0x2000 * G + 384 * j) :: wd (Z0 + 2560 * G + 30 * j) :: wd acc ::
+        (callState s 9044 (wd (ZH + 0x2000 * G + 384 * j) :: wd (Z0 + 2560 * G + 30 * j) :: wd acc ::
           wd MBL :: wd (7808 + (ZH + 0x2000 * G)) :: wd ret :: tail) M) (2097 * j)
   | 0, _ => ⟨m, 0, ⟨FrameExcept.refl _ _, fun t ht => absurd ht (by omega)⟩,
       ⟨by norm_num, fun j _ => by simp⟩, (Reach.refl _).of_eq rfl (by simp)⟩

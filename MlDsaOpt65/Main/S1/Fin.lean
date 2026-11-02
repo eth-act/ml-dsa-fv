@@ -35,7 +35,7 @@ theorem fin_frame_word {m M : ByteArray} (h : FrameExcept m M [(KS, KS + 800), (
 
 theorem fin_start {s : State} (hs : Ctx s) (b : Bool) {m : ByteArray} (hrc : RC1Table m) :
     ∃ M, FinInv m M 0 ∧
-      Reach (callState s 6642 [flag b] m) (callState s 6768 [wd 84224, flag b] M) 220 := by
+      Reach (callState s 6293 [flag b] m) (callState s 6419 [wd 84224, flag b] M) 220 := by
   obtain ⟨M, f, fr, r⟩ := fin_init hs b m
   refine ⟨M, ⟨RC1Table.frame hrc fr (by s1_avoids65), fr.mono ?_, fun X _ _ x hx => ?_⟩, r⟩
   · intro r hr
@@ -48,10 +48,10 @@ theorem fin_start {s : State} (hs : Ctx s) (b : Bool) {m : ByteArray} (hrc : RC1
 theorem fin_iter {s : State} (hs : Ctx s) (b : Bool) {m M : ByteArray} (j : Nat) (hj : j < 6)
     (hI : FinInv m M j) :
     ∃ M', FinInv m M' (j + 1) ∧
-      Reach (callState s 6768 [wd (84224 + 544 * j), flag b] M)
-        (callState s 7002 [wd (84224 + 544 * j), flag b] M') (466 + Gas.kf1) := by
+      Reach (callState s 6419 [wd (84224 + 544 * j), flag b] M)
+        (callState s 6653 [wd (84224 + 544 * j), flag b] M') (466 + Gas.kf1) := by
   obtain ⟨M1, f1, fr1, r1⟩ := fin_abs hs b M (p := 84224 + 544 * j) (by omega) (by omega)
-  obtain ⟨M2, hk2, hf2, hc2⟩ := kf1_call hs (ret := 7002) (tail := [wd (84224 + 544 * j), flag b])
+  obtain ⟨M2, hk2, hf2, hc2⟩ := kf1_call hs (ret := 6653) (tail := [wd (84224 + 544 * j), flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M1
     (RC1Table.frame hI.rc1 fr1 (by s1_avoids65))
   rw [call_iff] at hc2
@@ -80,8 +80,8 @@ theorem fin_iter {s : State} (hs : Ctx s) (b : Bool) {m M : ByteArray} (j : Nat)
 
 theorem fin_loop {s : State} (hs : Ctx s) (b : Bool) {m M0 : ByteArray} (hI0 : FinInv m M0 0) :
     ∀ j, j ≤ 5 → ∃ M, FinInv m M j ∧
-      Reach (callState s 6768 [wd 84224, flag b] M0)
-        (callState s 6768 [wd (84224 + 544 * j), flag b] M) (j * (495 + Gas.kf1))
+      Reach (callState s 6419 [wd 84224, flag b] M0)
+        (callState s 6419 [wd (84224 + 544 * j), flag b] M) (j * (495 + Gas.kf1))
   | 0, _ => ⟨M0, hI0, by simpa using Reach.refl _⟩
   | j + 1, hj => by
     obtain ⟨M, hI, hR⟩ := fin_loop hs b hI0 j (by omega)
@@ -132,9 +132,9 @@ theorem fin_last_block {s : State} (hs : Ctx s) (b : Bool) {m M : ByteArray} (hI
     ∃ M', RC1Table M' ∧
       (∀ X : ByteArray, X.size = 832 → FinAt m X →
         KS1 M' (MlDsa44.Fips202.absorb 136 (MlDsa44.Fips202.pad 136 0x1F X))) ∧
-      Reach (callState s 7017 [wd 87488, flag b] M) (callState s 7122 [flag b] M') (92 + Gas.kf1) := by
+      Reach (callState s 6668 [wd 87488, flag b] M) (callState s 6773 [flag b] M') (92 + Gas.kf1) := by
   obtain ⟨M3, f3, fr3, r3⟩ := fin_pad hs b M 87488
-  obtain ⟨M4, hk4, hf4, hc4⟩ := kf1_call hs (ret := 7122) (tail := [flag b])
+  obtain ⟨M4, hk4, hf4, hc4⟩ := kf1_call hs (ret := 6773) (tail := [flag b])
     (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) M3
     (RC1Table.frame hI.rc1 fr3 (by s1_avoids65))
   rw [call_iff] at hc4
@@ -257,7 +257,7 @@ theorem seg_fin_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.cal
     ∃ E : Bool, ∃ pc stk m',
       (∀ X : ByteArray, X.size = 832 → FinAt m X →
         E = (ctOf s.executionEnv.calldata == Fips204.H X 48)) ∧
-      Reach (callState s 6642 [flag b] m)
+      Reach (callState s 6293 [flag b] m)
         (finalState s pc stk m' (if (b && E) = true then 1 else 0)) Gas.pFin := by
   obtain ⟨M0, hI0, r0⟩ := fin_start hs b hrc
   obtain ⟨M5, hI5, r1⟩ := fin_loop hs b hI0 5 le_rfl
@@ -273,7 +273,7 @@ theorem seg_fin_proof {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.cal
     (bswapNet_lt (word s.executionEnv.calldata 1984)) M7
   refine ⟨decide (finW M7 % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = bswapNet (word s.executionEnv.calldata CTOFF)) &&
       decide (finW2 M7 % 115792089237316195423570985008687907853269984665640564039457584007913129639936 = bswapNet (word s.executionEnv.calldata (CTOFF + 32)) / 340282366920938463463374607431768211456),
-    7406, [], M7, fun X hX hF => ?_, ?_⟩
+    7057, [], M7, fun X hX hF => ?_, ?_⟩
   · exact Bool.eq_iff_iff.mpr ((s1_flags (hK7 X hX hF) _).trans (s1_cmp _ X hcd).symm)
   · rw [← Bool.and_assoc]
     exact ((((((((r0.trans r1).trans r2).trans r3).trans r4).trans r5).trans r6).trans r7).trans r8).mono

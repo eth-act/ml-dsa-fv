@@ -1,14 +1,11 @@
 import MlDsaOpt65.Main.Short
 import MlDsaOpt65.Main.SegInit
-import MlDsaOpt65.Main.SegZh
+import MlDsaOpt65.Main.SegZ
 import MlDsaOpt65.Main.SegTbl
 import MlDsaOpt65.Main.SegNtt
 import MlDsaOpt65.Main.SegRho
-import MlDsaOpt65.Main.SegGroups
-import MlDsaOpt65.Main.SegG5
-import MlDsaOpt65.Main.SegG6
-import MlDsaOpt65.Main.SegG7
-import MlDsaOpt65.Main.SegG8
+import MlDsaOpt65.Main.SegExp
+import MlDsaOpt65.Main.SegZd
 import MlDsaOpt65.Main.SegMu
 import MlDsaOpt65.Main.SegSib
 import MlDsaOpt65.Main.SegCt
@@ -40,12 +37,12 @@ def gCol (cd : ByteArray) (n : Nat) : Bool :=
 
 /-- The flag on the stack after `n` ExpandA groups. -/
 def gFlags (cd : ByteArray) : Nat → Bool
-  | 0 => ok1 cd
+  | 0 => okZ cd
   | n + 1 => gFlags cd n && gCol cd n
 
 /-- The flags of the nine ExpandA groups, accumulated in code order, are `okA`. -/
-theorem flags_eq (cd : ByteArray) : gFlags cd 9 = ok2 cd := by
-  simp only [gFlags, gCol, ok2, okA, okCol0, okI,
+theorem flags_eq (cd : ByteArray) : gFlags cd 9 = (okZ cd && okA cd) := by
+  simp only [gFlags, gCol, okA, okCol0, okI,
     show List.range 6 = [0, 1, 2, 3, 4, 5] from rfl, show List.range 5 = [0, 1, 2, 3, 4] from rfl,
     List.all_cons, List.all_nil, Bool.and_true, Nat.reduceLT, Nat.reduceSub, Nat.reduceMul,
     Nat.reduceAdd, Nat.reduceMod, Nat.reduceDiv, if_true, if_false]
@@ -58,19 +55,19 @@ theorem result_bit (cd : ByteArray) (E : Bool) (m : ByteArray) (hI : Inv9 cd m)
   cases h3 : ok3 cd with
   | false =>
     unfold optAccepts
-    simp only [ok3, ok2, ok1] at h3
-    simp [h3]
+    simp only [ok3, ok2] at h3
+    revert h3
+    cases okZ cd <;> cases okH cd <;> cases okA cd <;> cases okC cd <;> simp
   | true =>
     rw [hE _ (finBytes_size cd) (hI.fin h3)]
     unfold optAccepts
-    simp only [ok3, ok2, ok1] at h3
+    simp only [ok3, ok2, Bool.and_eq_true] at h3
     simp [h3]
 
 /-- The total cost of the valid path is the schedule. -/
 theorem valid_cost (size : Nat) (h : 5261 ≤ size) :
-    Gas.pInit + MachineState.memCost memWords + Gas.pZh + Gas.pTbl + Gas.pNtt + Gas.pRho +
-        Gas.pG0 + Gas.pG1 + Gas.pG2 + Gas.pG3 + Gas.pG4 + Gas.pG5 + Gas.pG6 + Gas.pG7 + Gas.pG8 +
-        Gas.pMu (size - 5261) + Gas.pSib + Gas.pCt + Gas.pW + Gas.pFin ≤
+    Gas.pInit + MachineState.memCost memWords + Gas.pZ + Gas.pTbl + Gas.pNtt + Gas.pRho +
+        Gas.pExp + Gas.pZd + Gas.pMu (size - 5261) + Gas.pSib + Gas.pCt + Gas.pW + Gas.pFin ≤
       Gas.schedule size := by
   unfold Gas.schedule
   rw [if_neg (by omega)]
@@ -87,34 +84,25 @@ theorem valid_trace {s₀ : State} (h0 : Ctx0 s₀) (haw : s₀.activeWords.toNa
   have hcd : (sized s₀).executionEnv.calldata = s₀.executionEnv.calldata := rfl
   generalize hs1 : sized s₀ = s₁ at hs hR0' hcd
   have hlen1 : HDR ≤ s₁.executionEnv.calldata.size := by rw [hcd]; exact hlen
-  obtain ⟨m1, hI1, hR1⟩ := seg_zh hs hlen1 hI0
-  obtain ⟨m2, hI2, hR2⟩ := seg_tbl hs hI1 (ok1 s₁.executionEnv.calldata)
-  obtain ⟨m3, hI3, hR3⟩ := seg_ntt hs hI2 (ok1 s₁.executionEnv.calldata) hlen1
-  obtain ⟨m4, hI4, hR4⟩ := seg_rho hs hI3 (ok1 s₁.executionEnv.calldata)
-  obtain ⟨m5, hI5, hR5⟩ := seg_g0 hs hlen1 hI4 (gFlags s₁.executionEnv.calldata 0)
-  obtain ⟨m6, hI6, hR6⟩ := seg_g1 hs hlen1 hI5 (gFlags s₁.executionEnv.calldata 1)
-  obtain ⟨m7, hI7, hR7⟩ := seg_g2 hs hlen1 hI6 (gFlags s₁.executionEnv.calldata 2)
-  obtain ⟨m8, hI8, hR8⟩ := seg_g3 hs hlen1 hI7 (gFlags s₁.executionEnv.calldata 3)
-  obtain ⟨m9, hI9, hR9⟩ := seg_g4 hs hlen1 hI8 (gFlags s₁.executionEnv.calldata 4)
-  obtain ⟨m10, hI10, hR10⟩ := seg_g5 hs hlen1 hI9 (gFlags s₁.executionEnv.calldata 5)
-  obtain ⟨m11, hI11, hR11⟩ := seg_g6 hs hlen1 hI10 (gFlags s₁.executionEnv.calldata 6)
-  obtain ⟨m12, hI12, hR12⟩ := seg_g7 hs hlen1 hI11 (gFlags s₁.executionEnv.calldata 7)
-  obtain ⟨m13, hI13, hR13⟩ := seg_g8 hs hlen1 hI12 (gFlags s₁.executionEnv.calldata 8)
-  have hR13' : Reach (callState s₁ 4972 [flag (gFlags s₁.executionEnv.calldata 8)] m12)
-      (callState s₁ 5190 [flag (ok2 s₁.executionEnv.calldata)] m13) Gas.pG8 := by
-    rw [← flags_eq]; exact hR13
-  obtain ⟨m15, hI15, hR15⟩ := seg_mu hs hlen1 hI13 (ok2 s₁.executionEnv.calldata)
-  obtain ⟨m16, hI16, hR16⟩ := seg_sib hs hI15 (ok2 s₁.executionEnv.calldata)
-  obtain ⟨m17, hI17, hR17⟩ := seg_ct hs hlen1 hI16 (ok2 s₁.executionEnv.calldata && okC
+  obtain ⟨m1, hI1, hR1⟩ := seg_z hs hlen1 hI0
+  obtain ⟨m2, hI2, hR2⟩ := seg_tbl hs hI1 (okZ s₁.executionEnv.calldata)
+  obtain ⟨m3, hI3, hR3⟩ := seg_ntt hs hI2 (okZ s₁.executionEnv.calldata) hlen1
+  obtain ⟨m4, hI4, hR4⟩ := seg_rho hs hI3 (okZ s₁.executionEnv.calldata)
+  obtain ⟨m5, hI5, hR5⟩ := seg_exp hs hlen1 hI4
+  obtain ⟨m6, hI6, hR6⟩ := seg_zd hs hlen1 hI5
+    (okZ s₁.executionEnv.calldata && okA s₁.executionEnv.calldata)
+  obtain ⟨m7, hI7, hR7⟩ := seg_mu hs hlen1 hI6 (ok2 s₁.executionEnv.calldata)
+  obtain ⟨m8, hI8, hR8⟩ := seg_sib hs hI7 (ok2 s₁.executionEnv.calldata)
+  obtain ⟨m9, hI9, hR9⟩ := seg_ct hs hlen1 hI8 (ok2 s₁.executionEnv.calldata && okC
     s₁.executionEnv.calldata)
-  obtain ⟨m18, hI18, hR18⟩ := seg_w hs hlen1 hI17 (ok2 s₁.executionEnv.calldata && okC
+  obtain ⟨m10, hI10, hR10⟩ := seg_w hs hlen1 hI9 (ok2 s₁.executionEnv.calldata && okC
     s₁.executionEnv.calldata)
-  obtain ⟨E, pc, stk, m19, hE, hR19⟩ := seg_fin hs hlen1 hI18.rc1 (ok2 s₁.executionEnv.calldata &&
+  obtain ⟨E, pc, stk, m11, hE, hR11⟩ := seg_fin hs hlen1 hI10.rc1 (ok2 s₁.executionEnv.calldata &&
     okC s₁.executionEnv.calldata)
   have hbit : ((ok2 s₁.executionEnv.calldata && okC s₁.executionEnv.calldata) && E) = optAccepts
-    s₁.executionEnv.calldata := result_bit _ E m18 hI18 hE
-  have h := (((((((((((((((((hR0'.trans hR1).trans hR2).trans hR3).trans hR4).trans hR5).trans
-    hR6).trans hR7).trans hR8).trans hR9).trans hR10).trans hR11).trans hR12).trans hR13').trans hR15).trans hR16).trans hR17).trans hR18).trans hR19
+    s₁.executionEnv.calldata := result_bit _ E m10 hI10 hE
+  have h := hR0'.trans hR1 |>.trans hR2 |>.trans hR3 |>.trans hR4 |>.trans hR5 |>.trans hR6
+    |>.trans hR7 |>.trans hR8 |>.trans hR9 |>.trans hR10 |>.trans hR11
   obtain ⟨g, hg⟩ := h
   refine ⟨_, g, ?_, rfl, ?_, ?_⟩
   · refine hg.trans ?_

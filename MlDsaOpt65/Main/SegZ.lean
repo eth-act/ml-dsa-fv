@@ -2,11 +2,11 @@ import MlDsaOpt65.Main.Base
 import MlDsaOpt65.Fn.Decode
 import MlDsaOpt65.Math
 set_option warningAsError true
-/-! # Segment `992 … 1110`: `dz` twice (`ZH`, `ZH2`), the norm-flag check, `dhint`.
+/-! # Segment `992 … 1101`: `dz` twice (`ZH`, `ZH2`), the norm-flag check (v4: no `dhint`).
 
 `dz [ZH, Z0]` (`g = 0`), `OR` into the flag accumulator, `dz [ZH2, Z0 + 2560]` (`g = 1`),
 its flag word masked to lane 0 (`z_4`), `OR`; `zBits` test (`ISZERO`): `okZ` by
-`okZ_iff_zNormOk` (`ℓ = 5`); `dhint` (`HP` zeroed by `Inv0`); `AND`. -/
+`okZ_iff_zNormOk` (`ℓ = 5`). -/
 
 namespace MlDsaOpt65.Proofs
 
@@ -18,11 +18,11 @@ open MlDsaOpt65.Proofs.Infra
 
 /-- The flag test of segment zh: `zBits` against `f₀ ||| (f₁ &&& M64)`. -/
 theorem S2.zflag_iff (f0 f1 : Nat) :
-    (28269553247078732611979628960006622020669709813772218331962303620927455232 &&&
+    (28269553878952482623322749181768732747635340874398564060972924832428589056 &&&
         (18446744073709551615 &&& f1 ||| f0)) %
       115792089237316195423570985008687907853269984665640564039457584007913129639936 = 0 ↔
     (∀ j, j < 4 → f0 &&& zFlagBit j = 0) ∧ f1 &&& zFlagBit 0 = 0 := by
-  have hz : (28269553247078732611979628960006622020669709813772218331962303620927455232 : Nat) =
+  have hz : (28269553878952482623322749181768732747635340874398564060972924832428589056 : Nat) =
       zFlagBit 0 ||| zFlagBit 1 ||| zFlagBit 2 ||| zFlagBit 3 := by unfold zFlagBit; decide
   have h0 : zFlagBit 0 &&& 18446744073709551615 = zFlagBit 0 := by unfold zFlagBit; decide
   have h1 : zFlagBit 1 &&& 18446744073709551615 = 0 := by unfold zFlagBit; decide
@@ -55,20 +55,15 @@ theorem S2.zh_b2 {s : State} (hs : Ctx s) {m : ByteArray} {f : Nat} (hf : f < 2 
 
 theorem S2.zh_b3 {s : State} (hs : Ctx s) {m : ByteArray} {f0 f1 : Nat} {b : Bool}
     (hb : (∀ j, j < 4 → f0 &&& zFlagBit j = 0) ∧ f1 &&& zFlagBit 0 = 0 ↔ b = true) :
-    Reach (callState s 1055 [wd f1, wd f0] m)
-      (callState s Entry.dhint [wd 1108, flag b] m) 33 := by
-  opt65_reach [217, 218, 219, 220, 221, 222, 223, 224, 225, 226] with [Entry.dhint, flag]
+    Reach (callState s 1055 [wd f1, wd f0] m) (callState s 1101 [flag b] m) 19 := by
+  opt65_reach [217, 218, 219, 220, 221, 222, 223] with [flag]
   simp only [S2.zflag_iff, hb]
 
-theorem S2.zh_b4 {s : State} (hs : Ctx s) {m : ByteArray} (a b : Bool) :
-    Reach (callState s 1108 [flag a, flag b] m) (callState s 1110 [flag (b && a)] m) 4 := by
-  opt65_reach [227, 228] with [flag, MlDsaOpt44.Proofs.ite01_land]
-
-theorem seg_zh {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
+theorem seg_z {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.size)
     {m : ByteArray} (hI : Inv0 m) :
     ∃ m', Inv1 s.executionEnv.calldata m' ∧
-      Reach (callState s 992 [] m) (callState s 1110 [flag (ok1 s.executionEnv.calldata)] m')
-        Gas.pZh := by
+      Reach (callState s 992 [] m) (callState s 1101 [flag (okZ s.executionEnv.calldata)] m')
+        Gas.pZ := by
   have hb1 : Reach (callState s 992 [] m)
       (callState s Entry.dz [wd (ZH + 0x2000 * 0), wd (Z0 + 2560 * 0), wd 1006, wd 0] m) 22 := by
     opt65_reach [202, 203, 204, 205, 206, 207] with [ZH, Z0, Entry.dz]
@@ -92,35 +87,22 @@ theorem seg_zh {s : State} (hs : Ctx s) (hcd : HDR ≤ s.executionEnv.calldata.s
     · intro h
       exact ⟨fun j hj => (hfz0 j hj).mpr (h _ (by omega)), (hfz1 0 (by norm_num)).mpr (h _ (by omega))⟩
   have hb3 := S2.zh_b3 hs (m := m2) hok
-  have hzero : ZeroOn m2 HP (HP + 0x4000) :=
-    ZeroOn.frame (ZeroOn.frame (ZeroOn.mono hI.zero (by unfold MISC HP; omega) (by unfold HP TOP; omega))
-      hfr1 (by avoids_tac)) hfr2 (by avoids_tac)
-  obtain ⟨m3, hhb, hhp, hfr3, hc3⟩ := dhint_call hs (ret := 1108)
-    (tail := [flag (okZ s.executionEnv.calldata)])
-    (retOK_main (by decide) (by simp) (by simp only [isValidJumpDest_lit]) (by norm_num)) m2 hcd
-    hzero
-  have hb4 := S2.zh_b4 hs (m := m3) (okH s.executionEnv.calldata) (okZ s.executionEnv.calldata)
-  have hzat : ZAt m3 s.executionEnv.calldata := by
+  have hzat : ZAt m2 s.executionEnv.calldata := by
     intro t ht
     have e0 := hz0 t ht
     have e1 := hz1 t ht
     simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add, Nat.mul_one] at e0 e1
     constructor
-    · rw [word_frame hfr3 (lo := ZH) (hi := ZH + 8192) (by avoids_tac) (by omega) (by omega),
-        word_frame hfr2 (lo := ZH) (hi := ZH + 8192) (by avoids_tac) (by omega) (by omega), e0]
-    · rw [word_frame hfr3 (lo := ZH2) (hi := ZH2 + 8192) (by avoids_tac) (by omega) (by omega),
-        show ZH2 + 32 * t = ZH + 8192 + 32 * t by unfold ZH2 ZH; omega, e1]
-  refine ⟨m3, ⟨RC4Table.frame (RC4Table.frame (RC4Table.frame hI.rc4 hfr1 (by avoids_tac)) hfr2
-      (by avoids_tac)) hfr3 (by avoids_tac),
-    RC1Table.frame (RC1Table.frame (RC1Table.frame hI.rc1 hfr1 (by avoids_tac)) hfr2
-      (by avoids_tac)) hfr3 (by avoids_tac),
-    hzat, ⟨hhb, fun h hh r hr t ht => hhp h hh r (by omega) t ht⟩,
-    ZeroOn.frame (ZeroOn.frame (ZeroOn.frame (ZeroOn.mono hI.zero (le_refl _) (by unfold ZH TOP; omega))
-      hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3 (by avoids_tac),
-    ZeroOn.frame (ZeroOn.frame (ZeroOn.frame
-      (ZeroOn.mono hI.zero (by unfold MISC BASES; omega) (by unfold HP TOP; omega))
-      hfr1 (by avoids_tac)) hfr2 (by avoids_tac)) hfr3 (by avoids_tac)⟩, ?_⟩
-  have := ((((((hb1.trans hc1).trans hb2).trans hc2).trans hb3).trans hc3).trans hb4)
-  exact this.mono (by unfold Gas.pZh; omega)
-
+    · rw [word_frame hfr2 (lo := ZH) (hi := ZH + 8192) (by avoids_tac) (by omega) (by omega), e0]
+    · rw [show ZH2 + 32 * t = ZH + 8192 + 32 * t by unfold ZH2 ZH; omega, e1]
+  refine ⟨m2, ⟨RC4Table.frame (RC4Table.frame hI.rc4 hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
+    RC1Table.frame (RC1Table.frame hI.rc1 hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
+    hzat,
+    ZeroOn.frame (ZeroOn.frame (ZeroOn.mono hI.zero (le_refl _) (by unfold ZH TOP; omega))
+      hfr1 (by avoids_tac)) hfr2 (by avoids_tac),
+    ZeroOn.frame (ZeroOn.frame
+      (ZeroOn.mono hI.zero (by unfold MISC BASES; omega) (by unfold FIN TOP; omega))
+      hfr1 (by avoids_tac)) hfr2 (by avoids_tac)⟩, ?_⟩
+  have := (((hb1.trans hc1).trans hb2).trans hc2).trans hb3
+  exact this.mono (by unfold Gas.pZ; omega)
 end MlDsaOpt65.Proofs

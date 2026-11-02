@@ -78,32 +78,31 @@ def H0 : Nat := 5200
 /-! ## Subroutine entry points (`MlDsaOpt/65/layout.txt`) -/
 
 namespace Entry
-def absorb17 : Nat := 7415
-def sib : Nat := 8011
-def dhint : Nat := 8242
-def dz : Nat := 8929
-def blk : Nat := 9811
-def pass3 : Nat := 10986
-def pass3x5 : Nat := 11268
-def pass3x6 : Nat := 11390
-def pass3x7 : Nat := 11510
-def pass3x8 : Nat := 11622
-def gfix : Nat := 11685
-def ginit : Nat := 12015
-def trabs : Nat := 12455
-def cext : Nat := 13076
-def spr : Nat := 13350
-def mu0 : Nat := 13565
-def fix : Nat := 13938
-def group : Nat := 14627
-def tbuild : Nat := 14892
-def csum : Nat := 15700
-def usehint : Nat := 16505
-def pack : Nat := 16776
-def ntt : Nat := 17159
-def intt : Nat := 18426
-def kf1 : Nat := 19907
-def kf4 : Nat := 21901
+def absorb17 : Nat := 7282
+def sib : Nat := 7878
+def dhint : Nat := 8318
+def dz : Nat := 9005
+def blk : Nat := 9815
+def blkh : Nat := 10993
+def blkt : Nat := 11002
+def pass3f4 : Nat := 11019
+def pass3f8 : Nat := 11211
+def gfix : Nat := 11577
+def ginit : Nat := 11987
+def trabs : Nat := 12427
+def cext : Nat := 12876
+def spr : Nat := 13150
+def mub0 : Nat := 13365
+def mub : Nat := 13737
+def fix : Nat := 13941
+def group : Nat := 14460
+def tbuild : Nat := 14691
+def csum : Nat := 15499
+def pack : Nat := 16276
+def ntt : Nat := 16659
+def intt : Nat := 17833
+def kf1 : Nat := 20534
+def kf4 : Nat := 22528
 end Entry
 
 /-! ## Stack budgets (as for ML-DSA-44) -/
@@ -115,11 +114,8 @@ def kf1 : Nat := leaf
 def blk : Nat := leaf
 def ntt : Nat := leaf
 def intt : Nat := leaf
-def pass3 : Nat := leaf
-def pass3x : Nat := leaf
 def tbuild : Nat := leaf
 def csum : Nat := leaf
-def usehint : Nat := leaf
 def pack : Nat := leaf
 def dz : Nat := leaf
 def dhint : Nat := leaf
@@ -129,10 +125,12 @@ def ginit : Nat := leaf
 def absorb17 : Nat := leaf
 def trabs : Nat := leaf
 def cext : Nat := leaf
-def mu0 : Nat := max trabs spr + 64
 def fix : Nat := max kf4 blk + 64
-def gfix : Nat := fix + 64
-def group : Nat := max ginit (max kf4 (max blk (max gfix pass3))) + 64
+def pass3f : Nat := leaf
+def mub0 : Nat := max trabs spr + 64
+def mub : Nat := max trabs (max spr cext) + 64
+def gfix : Nat := max blk fix + 64
+def group : Nat := max ginit (max kf4 (max blk gfix)) + 64
 end Stack
 
 /-! ## Spec-level data of a calldata string -/
@@ -148,8 +146,17 @@ def mlenOf (cd : ByteArray) : Nat := cd.size - HDR
 def rawZ (cd : ByteArray) (k t : Nat) : Nat :=
   Fips204.bitsToInteger (cd.extract (Z0 + 640 * k) (Z0 + 640 * (k + 1))) (20 * t) 20
 
-/-- The lane `dz` stores for `z_k[t]`: `γ1 + q − raw ≡ z_k[t] (mod q)`. -/
-def zLane (cd : ByteArray) (k t : Nat) : Nat := 2 ^ 19 + Fips204.q - rawZ cd k t
+/-- The lane `dz` stores for `z_k[t]`: `γ1 + 9q − raw ≡ z_k[t] (mod q)` (v4: the
+forward NTT's bias `8q` is added by the decoder). -/
+def zLane (cd : ByteArray) (k t : Nat) : Nat := 2 ^ 19 + 9 * Fips204.q - rawZ cd k t
+
+/-- Bounds of the forward NTT's input lanes (`raw < 2^20`). -/
+def zLo : Nat := 2 ^ 19 + 9 * Fips204.q - (2 ^ 20 - 1)
+def zHi : Nat := 2 ^ 19 + 9 * Fips204.q
+
+/-- `SP`'s constant offset (`csum` stores `spOff − (2^13 S' + n_neg)`, with
+UseHint's rounding term `γ2 − 1`, `γ2 = 261888`). -/
+def spOff : Nat := 128 * Fips204.q + 261888 - 1
 
 /-- The 10-bit field `i` of `t1_r`. -/
 def t1v (cd : ByteArray) (r i : Nat) : Nat :=

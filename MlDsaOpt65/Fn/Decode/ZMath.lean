@@ -121,25 +121,7 @@ theorem zf_pack {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) :
   unfold zf
   rw [ea, eb, pack4_or (fun k hk => by have := h k hk; omega) (fun k hk => by have := h k hk; omega)]
 
-theorem zFlagBit_pack {j : Nat} (hj : j < 4) :
-    zFlagBit j = pack4 (fun k => if k = j then 2 ^ 52 + 2 ^ 25 else 0) := by
-  unfold zFlagBit pack4; interval_cases j <;> simp
-
-/-- Lane `j` of the flag word: no `zFlagBit j` bit iff the lane-`j` raw value passes. -/
-theorem zf_lane {r : Nat → Nat} (h : ∀ k, k < 4 → r k < 2 ^ 20) {j : Nat} (hj : j < 4) :
-    zf (pack4 r) &&& zFlagBit j = 0 ↔ 196 < r j ∧ r j < 1048380 := by
-  have hl : ∀ k, k < 4 → (24649923 + (8904705 - r k)) ||| (196 + r k) * 4294967296 < 2 ^ 64 :=
-    fun k hk => Nat.or_lt_two_pow (by have := h k hk; omega) (by have := h k hk; omega)
-  rw [zf_pack h, zFlagBit_pack hj, pack4_and hl (fun k _ => by split <;> norm_num), pack4_eq_zero]
-  constructor
-  · intro hh
-    have := hh j hj
-    rw [if_pos rfl] at this
-    exact (lane_flag (h j hj)).1 this
-  · intro hh k _
-    by_cases hk : k = j
-    · subst hk; rw [if_pos rfl]; exact (lane_flag (h k (by omega))).2 hh
-    · rw [if_neg hk, Nat.and_zero]
+-- v4: `zFlagBit_pack`, `zf_lane` (v3 flag constants) removed with the v3 `dz` proof.
 
 theorem zf_lt {R : Nat} (hR : R ≤ 6582011952183088782295924477334101861609978183833731334774194175) :
     zf R < 2 ^ 256 := by
