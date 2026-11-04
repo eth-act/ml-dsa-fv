@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One night, half the build — ML-DSA formal verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#fff; --ink:#111; --muted:#8f8f8c; --rule:#e8e8e6; --soft:#c9c9c6; --red:#e5392b;
+    --f:"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; }
+  html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--ink); font-family:var(--f); font-weight:300;
+         font-size:1rem; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  ::selection { background:var(--ink); color:var(--bg); }
+  a { color:inherit; }
+
+  .bar { display:flex; justify-content:space-between; align-items:center; padding:3.6rem 5.4% 1.3rem; }
+  .bar .wm { font-weight:600; font-size:1.2rem; letter-spacing:-0.01em; text-decoration:none; }
+  .bar nav { display:flex; gap:1.25rem; }
+  .bar nav a { text-transform:uppercase; letter-spacing:.1em; font-size:.9rem; text-decoration:none; }
+  .bar nav a:hover { text-decoration:underline; text-underline-offset:3px; }
+
+  .wrap { max-width:72rem; margin:0 auto; padding:0 5.4%; }
+  .narrow { max-width:46rem; }
+
+  .cap { text-transform:uppercase; letter-spacing:.12em; font-size:.82rem; color:var(--ink); font-weight:300; }
+  .cap.muted { color:var(--muted); }
+  .red { color:var(--red); }
+
+  /* hero */
+  .hero { position:relative; padding:4rem 0 2rem; }
+  .hero h1 { font-weight:700; font-size:clamp(2.6rem,6.2vw,5.2rem); line-height:1.02; letter-spacing:-0.02em; max-width:11.5ch; }
+  .hero .sub { margin-top:1.4rem; max-width:40rem; font-size:1.15rem; }
+  .hero svg.geo { position:absolute; right:-1%; top:1rem; width:min(26vw,360px); height:auto; pointer-events:none; }
+  @media (max-width:1100px){ .hero svg.geo{display:none} }
+
+  .stats { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--ink); margin-top:3.5rem; }
+  .stat { padding:1.4rem 1.2rem 1.6rem 0; }
+  .stat + .stat { padding-left:1.2rem; border-left:1px solid var(--rule); }
+  .stat .n { font-weight:700; font-size:clamp(2rem,4vw,3.2rem); line-height:1; letter-spacing:-0.02em; }
+  .stat .n small { font-size:.45em; font-weight:400; letter-spacing:0; margin-left:.15em; }
+  .stat .l { margin-top:.7rem; }
+  .stat .d { color:var(--muted); font-size:.9rem; margin-top:.2rem; }
+  @media (max-width:760px){ .stats{grid-template-columns:1fr 1fr} .stat:nth-child(3){border-left:none;padding-left:0} .hero svg.geo{display:none} }
+
+  section { padding:6rem 0 0; }
+  section > .wrap > .head { display:grid; grid-template-columns:5rem 1fr; gap:1rem; align-items:baseline; border-top:1px solid var(--rule); padding-top:1.4rem; }
+  .num { font-weight:300; color:var(--muted); letter-spacing:.1em; font-size:.9rem; }
+  h2 { font-weight:700; font-size:clamp(1.7rem,3vw,2.4rem); line-height:1.1; letter-spacing:-0.01em; }
+  .lede { margin:1rem 0 0 6rem; max-width:40rem; font-size:1.08rem; }
+  @media (max-width:760px){ section > .wrap > .head{grid-template-columns:1fr} .lede{margin-left:0} }
+
+  figure { margin:2.6rem 0 0; }
+  figure svg { width:100%; height:auto; display:block; overflow:visible; }
+  @media (max-width:760px){
+    figure.wide { overflow-x:auto; -webkit-overflow-scrolling:touch; margin-right:-5.4vw; padding-right:5.4vw; }
+    figure.wide svg { min-width:820px; }
+    figure.wide::after { content:"scroll →"; display:block; text-transform:uppercase; letter-spacing:.12em; font-size:.7rem; color:var(--muted); margin-top:.4rem; }
+    .bar .wm { white-space:nowrap; }
+    .bar nav { display:none; }
+  }
+  figcaption { margin-top:.9rem; color:var(--muted); font-size:.86rem; max-width:46rem; }
+
+  svg text { font-family:var(--f); fill:var(--ink); font-weight:300; }
+  svg .t-cap { text-transform:uppercase; letter-spacing:.12em; font-size:11px; }
+  svg .t-muted { fill:var(--muted); }
+  svg .t-red { fill:var(--red); }
+  svg .t-bold { font-weight:600; }
+  svg .t-big { font-weight:700; letter-spacing:-0.02em; }
+  .ln { fill:none; stroke:var(--ink); stroke-width:.8; }
+  .ln-soft { fill:none; stroke:var(--soft); stroke-width:.8; }
+  .ln-red { fill:none; stroke:var(--red); stroke-width:1.4; }
+
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:3rem; }
+  @media (max-width:860px){ .two{grid-template-columns:1fr} }
+
+
+  .worked { display:grid; grid-template-columns:1fr 1fr; gap:0 3.2rem; margin-top:2.6rem; }
+  .w { border-top:1px solid var(--rule); padding:1.5rem 0 1.8rem; display:grid; grid-template-columns:3.2rem 1fr; gap:0 1rem; }
+  .w > svg { width:2.6rem; height:2.6rem; margin-top:.25rem; }
+  .w .k { text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; color:var(--muted); }
+  .w h3 { font-weight:600; font-size:1.14rem; line-height:1.3; margin:.25rem 0 .55rem; letter-spacing:-0.005em; }
+  .w p { font-size:.95rem; line-height:1.6; }
+  .w code { font-size:.88em; background:#f4f4f2; padding:0 .25em; }
+  .w .e { margin-top:.6rem; color:var(--red); font-weight:400; font-size:.92rem; }
+  .legend { display:flex; flex-wrap:wrap; gap:.4rem 1.6rem; margin:1.6rem 0 0 6rem; }
+  .legend span { text-transform:uppercase; letter-spacing:.12em; font-size:.72rem; display:inline-flex; align-items:center; gap:.45rem; }
+  .legend svg { width:1rem; height:1rem; }
+  @media (max-width:860px){ .worked{grid-template-columns:1fr} .legend{margin-left:0} }
+  .note { color:var(--muted); font-size:.86rem; }
+  footer { margin:8rem 0 0; border-top:1px solid var(--rule); padding:2rem 5.4% 3rem; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+  footer .cap { color:var(--muted); }
+
+  /* reveal */
+  .rv { opacity:0; transform:translateY(14px); transition:opacity .8s ease, transform .8s ease; }
+  .rv.in { opacity:1; transform:none; }
+  .draw path.dr, .draw line.dr, .draw circle.dr, .draw polyline.dr { stroke-dasharray:var(--len); stroke-dashoffset:var(--len); transition:stroke-dashoffset 1.6s ease; }
+  .draw.in path.dr, .draw.in line.dr, .draw.in circle.dr, .draw.in polyline.dr { stroke-dashoffset:0; }
+  .grow rect.g { transform-box:fill-box; transform-origin:left center; transform:scaleX(0); transition:transform 1.2s cubic-bezier(.2,.7,.2,1); }
+  .grow.in rect.g { transform:scaleX(1); }
+  @media (prefers-reduced-motion:reduce){ .rv,.draw *,.grow rect.g{transition:none!important;opacity:1;transform:none;stroke-dashoffset:0!important} }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <a class="wm" href="https://github.com/eth-act/ml-dsa-fv">ml-dsa-fv</a>
+  <nav>
+    <a href="#why">Why</a><a href="#how">How</a><a href="#numbers">Numbers</a><a href="#worked">Contact</a><a href="#proof">Proof</a><a href="#gas">Gas</a>
+  </nav>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <svg class="geo draw" viewBox="0 0 560 420" aria-hidden="true">
+      <polyline class="ln dr" points="20 120 540 120 540 20"/>
+      <circle class="ln dr" cx="150" cy="290" r="110"/>
+      <path class="ln dr" d="M210 120 C 290 230, 420 250, 500 120"/>
+      <polyline class="ln-red dr" points="330 160 420 360 500 200"/>
+    </svg>
+    <div class="cap muted rv">ML-DSA formal verification · one night</div>
+    <h1 class="rv">The build, <span id="h-factor">2×</span> faster.</h1>
+    <p class="sub rv">A Lean 4 proof that EVM bytecode correctly verifies post-quantum ML-DSA signatures. The maintainer bet we couldn't find a single speedup. Here's what twelve hours of parallel agents found, and what happened when the bet turned out to be about gas.</p>
+
+    <div class="stats rv">
+      <div class="stat"><div class="n" id="s-build">−39<small>%</small></div><div class="l cap">Clean full build</div><div class="d" id="s-build-d">813 s → 494 s, same orb</div></div>
+      <div class="stat"><div class="n">−50<small>%</small></div><div class="l cap">Build CPU</div><div class="d">8,104 → 4,051 CPU&#8209;s, same clean build</div></div>
+      <div class="stat"><div class="n">9<small>×</small></div><div class="l cap">Fresh orb → checked</div><div class="d">22.9 min → 2 min 30 s</div></div>
+      <div class="stat"><div class="n red">0</div><div class="l cap">Statements changed</div><div class="d">9,339 constants compared, end to end</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GLANCE -->
+<section id="glance">
+  <div class="wrap">
+    <div class="head rv"><span class="num">01</span><h2>Before and after</h2></div>
+    <p class="lede rv">Everything that got faster, on one log scale. Grey lines are files nobody touched: they stayed put, which is how you know the rest is real.</p>
+    <figure class="rv wide"><svg id="fig-slope" viewBox="0 0 1000 640"></svg>
+      <figcaption>Clean builds: back-to-back on one 16-core orb. Files: CPU, each built alone with the profiler, same orb and method at 959ed80 and 21ea039.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 01 WHY -->
+<section id="why">
+  <div class="wrap">
+    <div class="head rv"><span class="num">02</span><h2>Where the time went</h2></div>
+    <p class="lede rv">Every proof walks an EVM state through hundreds of bytecode instructions. Lean's kernel then re-checks the result. Three quarters of the CPU sat in those symbolic-execution proofs, and the kernel's cost grew faster than the block length.</p>
+    <div class="two">
+      <figure class="rv"><svg id="fig-curve" viewBox="0 0 520 340"></svg>
+        <figcaption>Kernel time for one straight-line block, by instructions per simp call. Same proof, one module alone.</figcaption></figure>
+      <figure class="rv"><svg id="fig-cat" viewBox="0 0 520 340"></svg>
+        <figcaption>Whole-tree CPU by category, every module profiled on the same orb. Before: 959ed80. After: master 21ea039. Import grew slightly because the critical-path split added 25 small modules.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- 02 HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="head rv"><span class="num">03</span><h2>How: measure, profile, fix the shared tactic, gate</h2></div>
+    <p class="lede rv">Nobody edited proofs one at a time to chase seconds. Each round timed every module alone, profiled the slowest, named the cause, and fixed it once in shared tactics or proof generators. All three parameter sets inherited each fix.</p>
+    <figure class="rv wide"><svg id="fig-loop" viewBox="0 0 1000 220"></svg></figure>
+
+    <figure class="rv wide" style="margin-top:4.5rem"><svg id="fig-lanes" viewBox="0 0 1000 470"></svg>
+      <figcaption>Three ways to prove the same 340-instruction block correct. Times are one module (<i>BodyA</i>) built alone.</figcaption></figure>
+  </div>
+</section>
+
+
+<!-- 04 MODULES -->
+<section id="modules">
+  <div class="wrap">
+    <div class="head rv"><span class="num">04</span><h2>The slowest proofs, before and after</h2></div>
+    <p class="lede rv">The ten heaviest modules at the start, each built alone. Most went down 4–18×.</p>
+    <figure class="rv wide"><svg id="fig-modules" viewBox="0 0 1000 520"></svg>
+      <figcaption>Wall seconds, each module built alone on a 16-core orb. Before: first measurement at 959ed80. After: latest measurement on master.</figcaption></figure>
+    <figure class="rv wide" style="margin-top:5rem"><svg id="fig-map" viewBox="0 0 1000 720"></svg>
+      <figcaption><span class="cap" style="color:var(--ink)">Speedup map</span> — every module is a black dot on the diagonal (its CPU before) joined to a red dot (its CPU after), so the longer the drop, the bigger the speedup. A ring means a fix went after that module directly; the rest got faster through the shared block tactic. Modules split by the critical-path change are folded back into their parent.</figcaption></figure>
+  </div>
+</section>
+
+
+<!-- 06 NUMBERS -->
+<section id="numbers">
+  <div class="wrap">
+    <div class="head rv"><span class="num">05</span><h2>What you feel day to day</h2></div>
+    <figure class="rv wide"><svg id="fig-freq" viewBox="0 0 1000 470"></svg>
+      <figcaption>Each black circle is the old time; the red circle inside it is the new time, by area. Ordered by how often you hit it.</figcaption></figure>
+    <figure class="rv wide" style="margin-top:4.5rem"><svg id="fig-progress" viewBox="0 0 1000 380"></svg>
+      <figcaption>Clean full build on one 16-core orb, as a fraction of the original (959ed80) built right before it. Each dot is one pair; the orb's speed drifted through the night, so only adjacent pairs are compared.</figcaption></figure>
+  </div>
+</section>
+
+<!-- WORKED -->
+<section id="worked">
+  <div class="wrap">
+    <div class="head rv"><span class="num">06</span><h2>Talk to Pari</h2></div>
+    <p class="lede rv">How these gains were made isn't published here. If you want the details, talk to Pari.</p>
+  </div>
+</section>
+
+<!-- 07 DIDN'T -->
+<section id="nope">
+  <div class="wrap">
+    <div class="head rv"><span class="num">07</span><h2>What didn't work</h2></div>
+    <figure class="rv wide"><svg id="fig-nope" viewBox="0 0 1000 380"></svg></figure>
+  </div>
+</section>
+<!-- 05 PROOF -->
+<section id="proof">
+  <div class="wrap">
+    <div class="head rv"><span class="num">08</span><h2>Proof that nothing changed</h2></div>
+    <p class="lede rv">A faster proof is worthless if it proves something weaker. Every merge passed a gate that compares every constant's statement and axioms, replays every module in Lean's kernel, and regenerates every artifact. A final run compared the starting commit with master from scratch.</p>
+    <figure class="rv wide"><svg id="fig-gate" viewBox="0 0 1000 470"></svg>
+      <figcaption>End-to-end gate, 959ed80 → 5c698bb, rebuilt from scratch with nothing cached (47 min). Every later merge was gated against the master before it. The gate itself was reviewed seven times and caught every deliberately broken change we planted.</figcaption></figure>
+  </div>
+</section>
+
+<!-- 09 GAS -->
+<section id="gas">
+  <div class="wrap">
+    <div class="head rv"><span class="num">09</span><h2>Then the bet changed: gas</h2></div>
+    <p class="lede rv">The maintainer meant the verifier, not the build: 2&times; less gas to check a signature on-chain. We kept every rule fixed: the EIP-8355 interface, compressed public keys, real SHAKE, no helper contracts, and the same verdict on every test vector. Then we went after the gas.</p>
+    <div class="stats rv" style="margin-top:2.6rem">
+      <div class="stat"><div class="n red">1.25<small>&times;</small></div><div class="l cap">ML-DSA-44, Glamsterdam</div><div class="d">2,105,097 &rarr; 1,686,116 gas</div></div>
+      <div class="stat"><div class="n">1.26<small>&times;</small></div><div class="l cap">ML-DSA-65, Glamsterdam</div><div class="d">3,701,979 &rarr; 2,943,671 gas</div></div>
+      <div class="stat"><div class="n">1.09<small>&times;</small></div><div class="l cap">ML-DSA-44, today's EVM</div><div class="d">fits the 24,576-byte limit</div></div>
+      <div class="stat"><div class="n">0</div><div class="l cap">Verdict mismatches</div><div class="d">every vector, fuzz and corpus run</div></div>
+    </div>
+    <figure class="rv wide grow"><svg id="fig-gas" viewBox="0 0 1000 560"></svg>
+      <figcaption>Frame gas for the valid empty-message test vector. Bar length is relative to v3, the previously proved verifier. The Glamsterdam build needs the Glamsterdam fork (EIP-8024, EIP-7954). Worst case over adversarial inputs, v3 &rarr; Glamsterdam: 2.86M &rarr; 2.29M (44), 5.07M &rarr; 3.98M (65), 7.95M &rarr; 6.43M (87).</figcaption></figure>
+    <figure class="rv wide draw" style="margin-top:4.5rem"><svg id="fig-road" viewBox="0 0 1000 360"></svg>
+      <figcaption>ML-DSA-44 on a log scale. The shaded band is our estimate of the floor for any verifier that computes Keccak from ordinary opcodes. Under the bet's rules about 58% of the gas is Keccak, so going much further needs a change to the EVM, not better code.</figcaption></figure>
+    <p class="lede rv note" style="margin-top:2.4rem">Status: v4 is formally proved in Lean for all three parameter sets and is now the verifier on master. The Glamsterdam build is proved too, over an Amsterdam fork of the EVM semantics, and is also on master; it can be deployed once Glamsterdam activates. Along the way the proof caught a bug no test had reached, on a reject path in one v4 build; it was fixed before merge.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span class="cap">eth-act/ml-dsa-fv · Lean 4.33 · headline measured at 21ea039 · gated master <span id="f-sha">bcd9054</span> · data: <a href="https://github.com/eth-act/ml-dsa-fv/tree/master/docs/build/final">docs/build/final</a> · gas: <a href="https://github.com/eth-act/ml-dsa-fv/pull/1">#1</a>, <a href="https://github.com/eth-act/ml-dsa-fv/pull/2">#2</a></span>
+  <span class="cap">Built overnight with Amp</span>
+</footer>
+
+<script>
+/* ======================= DATA ======================= */
+const D = {
+  final: { before: 716, after: 303, beforeSha: '959ed80', afterSha: '21ea039' },
+  progress: [ // clean build wall, ratio to the adjacent 959ed80 run on the same orb
+    ['4f25d96','state-field reads',[0.73,0.78]],['e3d6f39','reflection, big blocks',[0.79]],
+    ['6c266c7','omega → cheap checker',[0.72,0.63]],['5c698bb','reflection everywhere, NTT',[0.61,0.65]],
+    ['21ea039','critical path, tables, bits, packing',[0.42]]],
+  curve: [[85,1.65],[170,7.75],[340,78]],
+  chunk: [[20,5.9],[40,6.05],[60,6.7],[120,9.6]],
+  cat: [ // CPU-s, sum over modules profiled alone
+    ['Kernel',2480,918],['Tactics',2267,672],['Simp',1063,516],['Import',858,883],
+    ['Typeclass',389,297],['Interpreter',325,386],['Other',908,529]],
+  catTot: [8290,4201],
+  modules: [ // wall s alone: before, after
+    ['Sponge.Trabs',125,21],['Blk.BodyA',93,14.5],['Decode.HintBlocks 87',82.5,33.6],
+    ['Main.Tbl.Blocks',83,15.7],['S1.Tbl 87',80,15.1],['Fix.Blocks',63.6,14.6],
+    ['Keccak.Blocks2',61.9,19.9],['Sponge.Bits',58.5,3.2],['Sponge.Ginit',55.2,13.2],['Hint.PackCode',41,9.7]],
+  _timeline: [
+    ['b52662d','Chunk long blocks into 32-instruction pieces','BodyA 93 → 22 s'],
+    ['4f25d96','Prove state-field reads explicitly','Fix 64 → 33 s'],
+    ['e3d6f39','Reflection for the largest blocks','Trabs 32 → 21 s'],
+    ['3b6af1b','Reflection for Keccak rounds','−124 CPU-s'],
+    ['6c266c7','Cheap side-goal checker replaces omega','HintBlocks 92 → 63 s'],
+    ['1db7dba','Reflection by default for every block','full build −11.8% CPU'],
+    ['5c698bb','NTT aliasing without omega','−92 CPU-s'],
+    ['1ad9368','Shorter critical path','full build −17% wall'],
+    ['89d7a9a','Expand stored tables before checking','−128 CPU-s'],
+    ['2eaf2a2','Bit-level reflection, failed-unification sweep','−180 CPU-s'],
+    ['85d342d','Bit packing by kernel evaluation','PackCode 100 → 11 CPU-s'],
+    ['21ea039','Hashes, TBuild, Pass3 closers','−52 CPU-s'],
+    ['bcd9054','NTT A/C bodies without omega','−49 CPU-s'],
+  ],
+  fresh: [22.9, 2.5],
+  pts: [[1.2,1.2,0],[3.3,3.5,0],[2.9,3.1,0],[2.7,3.2,0],[2.3,2.2,0],[1.4,1.3,0],[2.0,2.0,0],[1.6,1.8,0],[3.2,3.0,0],[2.1,2.1,0],[18.6,18.0,0],[9.7,9.3,0],[1.8,1.7,0],[0.4,0.5,0],[1.1,1.1,0],[1.3,1.2,0],[1.8,1.8,0],[5.4,5.3,0],[0.8,0.8,0],[17.5,16.1,0],[2.3,2.4,0],[12.0,11.0,0],[2.4,2.2,0],[3.5,3.3,0],[6.6,6.3,0],[2.6,2.7,0],[2.4,2.2,0],[1.6,1.7,0],[11.8,11.4,0],[19.3,13.8,0],[1.9,2.0,0],[2.0,2.1,0],[63.7,19.5,1],[69.1,20.6,1],[1.7,1.8,0],[2.3,2.4,0],[8.7,9.3,0],[6.1,5.8,0],[3.4,3.4,0],[13.7,13.3,1],[21.6,13.6,1],[1.0,0.8,1],[10.3,10.2,0],[4.1,4.3,0],[7.1,6.4,0],[2.2,2.1,0],[3.5,3.3,0],[5.3,5.6,0],[13.4,9.7,0],[17.0,13.0,0],[6.9,3.8,0],[2.1,2.0,0],[13.6,9.5,0],[2.1,1.7,0],[3.3,2.7,0],[14.8,10.3,0],[2.8,2.3,0],[3.8,3.4,0],[2.2,2.0,0],[4.1,3.4,0],[6.4,5.3,0],[2.3,2.1,0],[28.6,18.8,0],[3.4,2.7,0],[6.7,5.9,0],[15.0,10.5,0],[2.6,2.4,0],[3.9,3.1,0],[3.9,3.5,0],[20.1,12.6,0],[23.5,3.1,1],[9.5,8.2,0],[15.9,14.7,0],[3.1,2.7,0],[11.5,8.4,0],[16.4,15.2,0],[20.5,16.6,0],[11.3,10.2,0],[3.5,3.2,0],[2.5,2.5,0],[0.9,1.0,0],[2.6,2.5,0],[3.3,2.9,0],[18.8,10.5,0],[2.0,1.7,0],[10.3,9.7,0],[18.7,13.4,0],[3.0,3.0,0],[21.0,5.3,1],[6.6,6.9,0],[4.4,4.6,0],[4.1,3.7,0],[3.0,3.0,0],[3.6,3.5,0],[2.0,2.0,0],[1.7,1.6,0],[0.4,0.4,0],[1.3,1.1,0],[1.4,1.1,0],[3.3,3.7,0],[1.3,1.0,0],[1.4,1.2,0],[1.2,1.1,0],[1.2,1.2,0],[1.2,1.1,0],[1.8,1.8,0],[2.0,1.9,0],[2.4,2.2,0],[3.4,3.3,0],[1.8,1.7,0],[2.2,1.9,0],[1.7,1.7,0],[19.3,15.2,0],[54.6,45.2,0],[2.2,1.8,0],[44.5,44.7,0],[2.9,2.7,0],[10.3,2.4,0],[1.7,1.7,0],[3.0,3.5,0],[0.4,0.4,0],[77.4,18.3,0],[4.4,3.6,0],[9.6,8.2,0],[4.2,4.2,0],[3.7,3.4,0],[2.8,2.7,0],[37.5,9.8,1],[55.7,11.0,1],[5.6,5.8,0],[3.9,3.5,0],[5.0,5.1,0],[26.0,29.2,0],[9.5,10.9,0],[3.5,3.4,0],[2.1,2.0,0],[2.1,1.9,0],[21.4,9.5,1],[21.2,11.1,1],[21.7,9.1,1],[22.1,11.1,1],[25.3,9.9,1],[26.3,11.7,1],[8.5,8.4,0],[18.4,3.0,1],[7.3,7.3,0],[10.5,10.2,1],[6.7,6.3,0],[3.3,3.1,0],[1.9,1.9,0],[5.1,5.5,0],[8.5,8.9,0],[28.9,15.0,1],[25.3,5.2,0],[94.9,14.8,1],[1.7,1.8,0],[10.1,10.3,0],[1.8,1.8,0],[4.6,4.8,0],[54.3,12.4,0],[22.2,8.7,1],[2.3,1.8,0],[12.9,12.5,0],[60.8,5.9,1],[1.9,2.0,0],[61.2,16.7,1],[39.3,11.4,1],[1.9,1.9,0],[3.4,3.0,1],[42.6,9.4,0],[48.6,9.1,0],[6.2,6.2,0],[2.9,3.1,0],[6.5,6.3,0],[17.9,3.0,0],[131.2,25.2,1],[3.6,3.7,0],[1.9,1.8,0],[2.0,1.9,0],[14.3,9.9,1],[15.2,10.3,1],[6.8,5.7,1],[13.4,13.7,0],[5.5,6.2,0],[16.3,3.1,1],[3.5,3.4,0],[18.3,9.2,0],[2.0,2.1,0],[2.2,2.3,0],[5.8,6.0,0],[4.8,4.9,0],[31.2,16.4,1],[44.7,17.5,1],[12.5,8.3,1],[16.6,9.3,1],[48.2,19.1,1],[37.3,16.5,1],[43.5,9.1,0],[5.8,5.4,0],[5.3,5.1,0],[3.2,2.8,0],[2.1,2.0,0],[7.0,7.0,0],[2.0,1.9,1],[24.3,10.6,0],[7.6,8.2,0],[5.6,6.2,0],[47.7,20.0,0],[4.4,4.3,0],[3.3,3.2,0],[2.0,1.9,0],[2.2,1.8,0],[54.3,12.3,0],[30.9,33.6,1],[2.1,1.9,0],[2.0,1.9,0],[42.7,10.2,1],[25.8,25.2,1],[3.9,3.8,1],[36.7,11.7,1],[19.4,4.0,1],[2.5,3.0,0],[4.3,5.1,1],[2.8,3.1,1],[14.6,15.4,1],[3.4,3.9,1],[7.1,7.8,1],[2.0,2.1,0],[10.9,12.2,0],[25.3,5.7,0],[30.6,11.0,0],[2.2,2.4,0],[94.8,11.4,1],[23.0,8.7,0],[1.8,2.3,0],[2.4,3.0,0],[3.0,3.2,0],[3.7,3.8,0],[3.0,2.9,0],[6.9,6.7,0],[2.8,2.5,0],[4.2,4.1,0],[3.4,3.6,0],[8.5,3.8,1],[12.5,12.2,0],[3.6,3.3,0],[2.8,2.1,0],[2.3,2.1,0],[2.1,2.0,0],[3.2,3.3,0],[19.5,6.9,1],[1.9,2.1,0],[3.1,3.5,0],[93.7,18.3,1],[1.9,2.0,0],[2.4,2.4,0],[12.7,10.5,0],[2.4,2.0,0],[4.3,4.9,0],[5.0,5.4,0],[4.6,4.5,0],[9.1,8.5,0],[12.9,10.6,0],[18.7,15.8,0],[4.1,4.3,0],[2.0,2.0,0],[4.4,4.3,0],[45.9,26.6,0],[2.6,2.7,0],[9.2,10.4,0],[2.2,2.3,0],[3.2,2.6,0],[3.3,3.5,0],[4.6,3.9,0],[42.0,16.3,0],[2.6,2.4,0],[5.7,6.5,0],[2.1,2.0,0],[2.4,2.5,0],[2.6,2.4,0],[2.2,2.0,0],[18.3,16.5,0],[54.1,47.9,0],[2.2,2.0,0],[42.5,47.4,0],[3.4,2.7,0],[10.3,2.6,0],[1.7,1.8,0],[2.7,2.7,0],[2.1,2.0,0],[0.4,0.6,0],[1.8,1.7,0],[1.8,1.9,1],[1.8,1.8,1],[2.5,2.5,0],[3.4,3.4,0],[2.0,2.1,0],[1.7,1.8,0],[2.7,2.8,0],[2.8,3.0,0],[7.7,3.6,1],[2.1,2.1,0],[3.0,3.1,0],[2.0,2.0,0],[19.6,6.1,1],[2.3,2.0,0],[1.9,1.8,0],[2.1,2.1,1],[25.0,11.0,0],[6.2,6.1,0],[6.4,6.7,0],[3.1,3.1,0],[74.0,30.2,0],[3.3,3.4,0],[4.6,4.8,0],[4.0,4.2,0],[2.1,1.8,0],[4.0,3.8,1],[6.9,2.3,1],[2.5,2.4,0],[2.8,2.5,0],[2.5,2.4,0],[4.2,5.0,0],[88.2,19.6,1],[1.9,1.9,0],[30.9,17.9,1],[44.7,19.3,1],[12.9,9.5,1],[16.0,10.1,1],[46.2,20.2,1],[35.9,17.4,1],[43.4,9.6,0],[5.2,5.5,0],[3.0,3.2,0],[29.2,16.5,1],[42.2,17.5,1],[11.6,8.5,1],[15.6,9.1,1],[45.9,19.1,1],[36.1,16.8,1],[44.5,9.5,0],[5.4,5.4,0],[3.0,2.9,0],[2.2,2.1,0],[4.1,4.0,0],[18.5,3.3,0],[132.1,25.2,1],[39.4,12.2,1],[43.7,10.3,0],[2.1,2.0,0],[18.3,14.1,0],[2.1,2.0,0],[63.8,18.4,1],[1.9,1.9,1],[2.1,2.2,0],[14.7,10.0,1],[8.7,9.0,0],[34.3,10.0,1],[52.0,11.3,1],[3.2,3.2,0],[20.3,9.3,1],[20.0,10.6,1],[20.4,9.0,1],[20.1,10.6,1],[23.0,9.7,1],[24.1,11.3,1],[8.7,8.4,0],[18.9,3.0,1],[3.4,3.5,0],[2.0,2.0,0],[25.6,5.3,0],[95.8,14.9,1],[9.9,10.4,0],[1.9,2.0,0],[3.4,3.6,0],[4.8,2.8,0],[19.1,7.9,0],[71.0,19.0,0],[4.2,3.8,0],[3.6,3.3,0],[5.4,5.1,0],[55.1,12.9,0],[23.0,9.0,1],[4.3,4.4,0],[2.0,2.1,0],[4.2,4.4,0],[7.0,7.4,0],[1.9,1.9,0],[50.5,9.6,0],[6.3,6.1,0],[3.1,3.1,0],[6.8,6.8,0],[3.6,3.6,0],[1.8,1.8,0],[4.7,4.7,0],[8.9,8.9,0],[2.7,2.7,1],[29.3,22.2,1],[3.1,3.6,1],[8.8,7.3,0],[8.8,7.4,0],[12.3,10.0,0],[17.1,13.4,0],[46.6,25.1,0],[3.3,2.7,0],[9.0,8.6,0],[2.0,1.9,0],[55.6,11.5,0],[3.0,2.8,0],[34.1,31.6,1],[1.9,1.9,0],[2.7,2.9,0],[41.1,11.2,1],[9.6,8.7,1],[4.4,4.3,1],[1.8,2.0,1],[56.9,12.8,1],[3.2,3.1,1],[2.5,2.6,1],[6.7,6.7,1],[1.9,1.9,1],[5.7,5.7,0],[11.9,11.5,0],[24.8,5.1,0],[39.3,7.9,0],[3.8,3.6,0],[2.0,1.9,0],[9.7,10.0,0],[40.0,17.2,0],[5.2,5.1,0],[2.0,1.9,0],[2.7,2.6,0],[2.3,2.3,0],[2.0,1.9,0],[15.8,15.9,0],[46.0,45.4,0],[1.7,1.8,0],[41.3,48.0,0],[2.6,2.8,0],[10.3,2.7,0],[1.7,1.8,0],[2.5,2.5,0],[1.9,1.8,0],[0.4,0.4,0],[1.9,1.9,0],[1.8,2.0,1],[1.9,1.9,1],[2.6,2.3,0],[3.5,3.5,0],[2.2,2.1,0],[1.9,2.1,0],[10.0,3.4,1],[2.1,2.0,0],[3.4,3.0,0],[1.9,1.8,0],[19.1,5.8,1],[2.0,1.8,0],[1.7,1.8,0],[1.9,2.0,1],[24.8,11.2,0],[6.2,6.3,0],[6.5,6.6,0],[3.0,3.0,0],[96.5,38.1,0],[3.4,3.3,0],[4.6,4.9,0],[6.4,6.6,0],[2.0,1.9,0],[7.2,2.4,1],[2.6,2.6,0],[4.7,5.1,0],[55.6,18.0,0],[41.3,21.5,0],[2.8,2.9,0],[32.8,10.8,1],[51.7,11.7,1],[3.2,3.2,0],[20.3,9.6,1],[20.4,11.1,1],[21.1,9.4,1],[20.6,10.9,1],[23.3,9.9,1],[24.2,11.5,1],[8.3,8.3,0],[19.4,3.0,1],[3.1,3.1,0],[1.8,1.9,0],[69.1,37.9,1],[2.2,2.1,0],[2.7,2.8,0],[87.5,17.3,1],[2.1,1.8,0],[30.8,15.4,1],[43.0,16.5,1],[12.1,7.7,1],[15.4,8.7,1],[46.0,19.5,1],[36.1,16.8,1],[47.1,9.6,0],[5.3,5.5,0],[2.9,3.1,0],[30.0,16.4,1],[43.2,17.9,1],[11.9,8.2,1],[15.5,9.2,1],[45.6,19.6,1],[36.1,17.0,1],[45.2,9.8,0],[5.2,5.4,0],[3.0,3.0,0],[1.9,2.1,0],[3.7,3.9,0],[18.9,3.2,0],[127.4,25.3,1],[37.7,12.0,1],[42.5,10.3,0],[2.0,2.0,0],[7.1,5.8,0],[2.0,1.9,0],[58.5,16.9,1],[1.7,1.9,1],[2.0,2.1,0],[14.3,10.1,1],[15.3,10.4,1],[8.6,9.1,0],[26.1,5.7,0],[94.5,15.2,1],[10.5,10.9,0],[1.7,2.0,0],[3.4,3.6,0],[4.9,2.9,0],[17.7,8.2,0],[71.5,18.9,0],[4.0,4.1,0],[3.4,3.7,0],[4.8,5.2,0],[53.4,12.7,0],[21.7,8.3,1],[4.3,3.9,0],[2.1,2.0,0],[3.0,3.5,0],[8.2,10.3,0],[5.0,5.3,0],[6.7,6.7,0],[9.0,8.6,0],[8.6,8.9,0],[8.9,8.8,0],[14.5,11.8,0],[2.2,2.4,0],[6.9,6.3,0],[8.9,7.0,1],[2.1,2.0,1],[8.6,8.8,0],[2.1,2.5,0],[38.0,23.9,0],[2.8,2.7,0],[8.2,8.4,0],[2.1,2.2,0],[41.4,11.8,1],[9.0,10.5,1],[4.7,4.9,1],[1.7,2.1,1],[63.1,14.5,1],[3.0,3.3,1],[2.4,2.7,1],[7.0,7.4,1],[2.0,2.0,1],[5.9,6.4,0],[25.9,5.6,0],[39.4,8.6,0],[3.6,3.9,0],[2.1,2.0,0],[9.6,11.3,0],[38.7,18.5,0],[4.9,5.0,0],[1.9,2.0,0],[3.6,3.9,0],[2.2,2.8,0],[2.0,2.3,0]],
+  olean: [4.49, 1.52],
+};
+
+/* ======================= HELPERS ======================= */
+const NS='http://www.w3.org/2000/svg';
+function el(tag, attrs={}, parent, text){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!==undefined) e.textContent=text; if(parent) parent.appendChild(e); return e; }
+const T=(p,x,y,s,cls='',a={})=>el('text',Object.assign({x,y,class:cls},a),p,s);
+const fmt=n=>n.toLocaleString('en-US');
+
+/* ======================= HERO ======================= */
+(function(){
+  const f=D.final, pct=Math.round((1-f.after/f.before)*100), x=(f.before/f.after);
+  document.getElementById('s-build').innerHTML='−'+pct+'<small>%</small>';
+  document.getElementById('s-build-d').textContent=f.before+' s → '+f.after+' s, '+f.beforeSha+' vs '+f.afterSha+', same orb';
+  document.getElementById('h-factor').textContent=(x>=1.95?Math.round(x*10)/10:x.toFixed(1))+'×';
+})();
+
+/* ======================= FIG: kernel curve ======================= */
+(function(){
+  const s=document.getElementById('fig-curve'); s.classList.add('draw');
+  const L=60,R=500,TOP=30,B=290, xm=360, ym=80;
+  const X=v=>L+(v/xm)*(R-L), Y=v=>B-(v/ym)*(B-TOP);
+  el('line',{x1:L,y1:B,x2:R,y2:B,class:'ln'},s); el('line',{x1:L,y1:TOP,x2:L,y2:B,class:'ln'},s);
+  [0,20,40,60,80].forEach(v=>{ T(s,L-10,Y(v)+4,v,'t-muted',{'text-anchor':'end','font-size':11}); if(v) el('line',{x1:L,y1:Y(v),x2:R,y2:Y(v),class:'ln-soft','stroke-dasharray':'2 4'},s);});
+  [0,85,170,255,340].forEach(v=>T(s,X(v),B+18,v,'t-muted',{'text-anchor':'middle','font-size':11}));
+  T(s,L,TOP-12,'Kernel seconds','t-cap');
+  T(s,R,B+38,'Instructions per simp call','t-cap',{'text-anchor':'end'});
+  // superlinear curve through points (fit c*n^k)
+  const k=Math.log(78/1.65)/Math.log(340/85), c=1.65/Math.pow(85,k);
+  let d=''; for(let n=10;n<=345;n+=5){ const y=c*Math.pow(n,k); if(y>ym) break; d+=(d?'L':'M')+X(n)+' '+Y(y); }
+  const p=el('path',{d,class:'ln dr'},s); p.style.setProperty('--len',p.getTotalLength());
+  D.curve.forEach(([n,t],i)=>{ el('circle',{cx:X(n),cy:Y(t),r:4,fill:'#fff',stroke:'#111','stroke-width':1},s);
+    const last=i===D.curve.length-1; T(s,X(n)+(last?-10:8),Y(t)+(last?4:-8),t+' s','t-bold',{'text-anchor':last?'end':'start','font-size':13}); });
+  // chunked
+  D.chunk.forEach(([n,t])=>el('circle',{cx:X(n),cy:Y(t),r:3.5,fill:'#e5392b'},s));
+  el('line',{x1:X(32),y1:Y(6)-8,x2:X(32),y2:Y(30),class:'ln-red'},s);
+  T(s,X(32)+8,Y(30)+4,'32 per call: ~6 s','t-red',{'font-size':13});
+})();
+
+/* ======================= FIG: categories ======================= */
+(function(){
+  const s=document.getElementById('fig-cat'); s.classList.add('grow');
+  const L=110,R=500, top=40, rowH=40, max=2600, W=v=>(v/max)*(R-L);
+  T(s,L,22,'Before','t-cap'); el('rect',{x:L+62,y:14,width:16,height:8,fill:'#111'},s);
+  T(s,L+100,22,'After','t-cap t-red'); el('rect',{x:L+150,y:14,width:16,height:8,fill:'#e5392b'},s);
+  D.cat.forEach(([n,a,b],i)=>{
+    const y=top+i*rowH;
+    T(s,L-12,y+14,n,'',{'text-anchor':'end','font-size':13});
+    el('rect',{x:L,y:y,width:W(a),height:9,fill:'#111',class:'g'},s);
+    el('rect',{x:L,y:y+12,width:W(b),height:9,fill:'#e5392b',class:'g'},s);
+    T(s,L+W(a)+6,y+8,fmt(a),'t-muted',{'font-size':11});
+    T(s,L+W(b)+6,y+21,fmt(b),'t-red',{'font-size':11});
+  });
+  const y=top+D.cat.length*rowH+18;
+  el('line',{x1:L,y1:y-12,x2:R,y2:y-12,class:'ln-soft'},s);
+  T(s,L-12,y+6,'Total','t-bold',{'text-anchor':'end','font-size':13});
+  T(s,L,y+6,fmt(D.catTot[0])+' → ','',{'font-size':15});
+  T(s,L+92,y+6,fmt(D.catTot[1])+' CPU-s','t-red t-bold',{'font-size':15});
+})();
+
+/* ======================= FIG: loop ======================= */
+(function(){
+  const s=document.getElementById('fig-loop'); s.classList.add('draw');
+  const steps=[['Measure','every module alone, same machine'],['Profile','kernel · simp · tactic · omega'],['Fix once','shared tactic or generator'],['Gate','statements · axioms · kernel · bytes']];
+  const cx=i=>110+i*260, cy=95, r=62;
+  steps.forEach(([a,b],i)=>{
+    const c=el('circle',{cx:cx(i),cy,r,class:i===3?'ln-red dr':'ln dr'},s); c.style.setProperty('--len',2*Math.PI*r);
+    T(s,cx(i),cy-2,a,'t-bold',{'text-anchor':'middle','font-size':18});
+    T(s,cx(i),cy+20,String(i+1).padStart(2,'0'),'t-muted',{'text-anchor':'middle','font-size':11,'letter-spacing':'2'});
+    T(s,cx(i),cy+r+30,b,'t-muted',{'text-anchor':'middle','font-size':13});
+    if(i<3){ const l=el('line',{x1:cx(i)+r+8,y1:cy,x2:cx(i+1)-r-8,y2:cy,class:'ln dr'},s); l.style.setProperty('--len',200);
+      el('path',{d:`M${cx(i+1)-r-16} ${cy-5} L${cx(i+1)-r-8} ${cy} L${cx(i+1)-r-16} ${cy+5}`,class:'ln'},s); }
+  });
+  const back=el('path',{d:`M${cx(3)} ${cy-r-6} C ${cx(3)} 0, ${cx(0)} 0, ${cx(0)} ${cy-r-6}`,class:'ln-soft dr','stroke-dasharray':'3 5'},s);
+  T(s,(cx(0)+cx(3))/2,18,'repeat until the next slice is small','t-cap t-muted',{'text-anchor':'middle'});
+})();
+
+/* ======================= FIG: three lanes ======================= */
+(function(){
+  const s=document.getElementById('fig-lanes'); s.classList.add('draw');
+  const L=40, W=600, n=68, step=W/n;
+  const lanes=[
+    {y:60,  title:'Before', sub:'one simp over the whole block', t:'93 s', note:'kernel re-compares huge equal terms: 79 s of 91 s', groups:[n]},
+    {y:210, title:'Chunked', sub:'same simp, 32 instructions at a time', t:'22 s', note:'kernel cost stays linear', groups:Array(Math.ceil(n/6.4)).fill(0).map((_,i)=>Math.min(6.4,n-i*6.4))},
+    {y:360, title:'Reflection', sub:'evaluator proved sound once; one kernel computation per block', t:'7–15 s', note:'kernel checks a certificate, not a term', groups:null},
+  ];
+  lanes.forEach((ln,li)=>{
+    T(s,L,ln.y-26,ln.title,'t-bold',{'font-size':17}); T(s,L+(li===2?110:li===1?92:72),ln.y-26,ln.sub,'t-muted',{'font-size':13});
+    for(let i=0;i<n;i++) el('rect',{x:L+i*step,y:ln.y,width:step-2,height:14,fill:li===2?'#111':'none',stroke:'#111','stroke-width':.6},s);
+    if(li===0){ const p=el('path',{d:`M${L} ${ln.y+30} Q ${L+W/2} ${ln.y+95} ${L+W} ${ln.y+30}`,class:'ln dr'},s); p.style.setProperty('--len',700); }
+    if(li===1){ let x=L; ln.groups.forEach(g=>{ const w=g*step; const p=el('path',{d:`M${x} ${ln.y+28} Q ${x+w/2} ${ln.y+48} ${x+w-2} ${ln.y+28}`,class:'ln-red dr'},s); p.style.setProperty('--len',120); x+=w; }); }
+    if(li===2){ const r=24, cx=L+W/2, cy=ln.y+64; el('line',{x1:L,y1:ln.y+22,x2:cx-r,y2:cy,class:'ln'},s); el('line',{x1:L+W,y1:ln.y+22,x2:cx+r,y2:cy,class:'ln'},s);
+      const c=el('circle',{cx,cy,r,class:'ln-red dr'},s); c.style.setProperty('--len',160); T(s,cx,cy+4,'✓','t-red',{'text-anchor':'middle','font-size':16}); }
+    // time on the right
+    T(s,700,ln.y+12,ln.t,'t-big'+(li?' t-red':''),{'font-size':40});
+    T(s,700,ln.y+40,ln.note,'t-muted',{'font-size':13});
+  });
+})();
+
+
+/* ======================= FIG: modules dumbbell ======================= */
+(function(){
+  const s=document.getElementById('fig-modules'); s.classList.add('draw');
+  const L=240,R=900, top=40, rowH=46, max=130, X=v=>L+(v/max)*(R-L);
+  [0,25,50,75,100,125].forEach(v=>{ el('line',{x1:X(v),y1:top-14,x2:X(v),y2:top+rowH*D.modules.length-20,class:'ln-soft','stroke-dasharray':v?'2 4':''},s); T(s,X(v),top-22,v+(v===125?' s':''),'t-muted',{'text-anchor':'middle','font-size':11}); });
+  D.modules.forEach(([n,a,b],i)=>{
+    const y=top+i*rowH;
+    T(s,L-16,y+4,n,'',{'text-anchor':'end','font-size':14});
+    const ln=el('line',{x1:X(a),y1:y,x2:X(b),y2:y,class:'ln dr'},s); ln.style.setProperty('--len',X(a)-X(b)+1);
+    el('circle',{cx:X(a),cy:y,r:5,fill:'#fff',stroke:'#111','stroke-width':1},s);
+    el('circle',{cx:X(b),cy:y,r:5,fill:'#e5392b'},s);
+    T(s,X(a)+12,y+4,a+' s','t-muted',{'font-size':12});
+    if(X(b)-L>48) T(s,X(b)-10,y+4,b+' s','t-red',{'text-anchor':'end','font-size':12});
+    else T(s,X(b),y-10,b+' s','t-red',{'text-anchor':'middle','font-size':12});
+    T(s,980,y+5,(a/b).toFixed(a/b>=10?0:1)+'×','t-bold',{'text-anchor':'end','font-size':15});
+  });
+})();
+
+/* ======================= FIG: gate ======================= */
+(function(){
+  const s=document.getElementById('fig-gate'); s.classList.add('draw');
+  // left: big zero
+  T(s,0,120,'0','t-big t-red',{'font-size':150});
+  T(s,4,160,'statements removed or changed','t-cap');
+  T(s,4,182,'out of 9,339 compared constants','t-muted',{'font-size':13});
+  T(s,4,240,'399','t-big',{'font-size':54});
+  T(s,4,262,'new helper constants, all axiom-audited','t-muted',{'font-size':13});
+  T(s,4,330,'4 / 4','t-big',{'font-size':54});
+  T(s,4,352,'planted breakages caught','t-muted',{'font-size':13});
+  T(s,4,370,'weakened statement · extra axiom · edited bytecode · moved lemma','t-muted',{'font-size':12});
+  // right: five check circles
+  const checks=[['Statements','every constant\'s type and dependencies'],['Axioms','only propext · choice · Quot.sound'],['Kernel replay','590 + 581 modules, nothing cached'],['Bytecode','35 artifacts, 4 hex literals identical'],['Generators','100 regenerate byte-for-byte']];
+  const cx=[520,700,880,610,790], cy=[90,90,90,300,300], r=70;
+  checks.forEach(([a,b],i)=>{
+    const c=el('circle',{cx:cx[i],cy:cy[i],r,class:'ln dr'},s); c.style.setProperty('--len',2*Math.PI*r);
+    T(s,cx[i],cy[i]-4,a,'t-bold',{'text-anchor':'middle','font-size':15});
+    T(s,cx[i],cy[i]+18,'pass','t-cap t-red',{'text-anchor':'middle'});
+    const words=b.split(' '); let line='',lines=[]; words.forEach(w=>{ if((line+' '+w).length>26){lines.push(line);line=w;} else line=line?line+' '+w:w; }); lines.push(line);
+    lines.forEach((t,j)=>T(s,cx[i],cy[i]+r+20+j*16,t,'t-muted',{'text-anchor':'middle','font-size':12}));
+  });
+})();
+
+
+/* ======================= FIG: progress ======================= */
+(function(){
+  const s=document.getElementById('fig-progress'); s.classList.add('draw');
+  const L=70,R=960,TOP=30,B=300, n=D.progress.length+1;
+  const X=i=>L+i*(R-L)/(n-1), Y=v=>TOP+(1-v)*(B-TOP)/0.7;
+  [1,0.8,0.6,0.4].forEach(v=>{ el('line',{x1:L,y1:Y(v),x2:R,y2:Y(v),class:'ln-soft','stroke-dasharray':v===1?'':'2 4'},s); T(s,L-12,Y(v)+4,Math.round(v*100)+'%','t-muted',{'text-anchor':'end','font-size':11}); });
+  const pts=[[0,1]].concat(D.progress.map((p,i)=>[i+1,p[2].reduce((a,b)=>a+b)/p[2].length]));
+  const path=el('polyline',{points:pts.map(([i,v])=>X(i)+' '+Y(v)).join(' '),class:'ln dr'},s); path.style.setProperty('--len',1400);
+  el('circle',{cx:X(0),cy:Y(1),r:5,fill:'#fff',stroke:'#111','stroke-width':1},s);
+  T(s,X(0),Y(1)-14,'959ed80','t-muted',{'text-anchor':'middle','font-size':11,'letter-spacing':'1'});
+  T(s,X(0),B+26,'start','t-cap',{'text-anchor':'middle'});
+  D.progress.forEach(([sha,what,vals],k)=>{
+    const i=k+1, last=k===D.progress.length-1;
+    vals.forEach(v=>el('circle',{cx:X(i),cy:Y(v),r:4,fill:last?'#e5392b':'#111'},s));
+    const m=vals.reduce((a,b)=>a+b)/vals.length;
+    T(s,X(i),Y(Math.min(...vals))+ (last?40:24),Math.round(m*100)+'%',last?'t-big t-red':'t-bold',{'text-anchor':'middle','font-size':last?30:14});
+    T(s,X(i),B+26,sha,'t-muted',{'text-anchor':'middle','font-size':11,'letter-spacing':'1'});
+    T(s,X(i),B+44,what,'t-muted',{'text-anchor':'middle','font-size':12});
+  });
+})();
+
+
+
+
+/* ======================= FIG: slope ======================= */
+(function(){
+  const s=document.getElementById('fig-slope'); s.classList.add('draw');
+  const XL=430, XR=740, TOP=40, BOT=570, lo=Math.log(0.8), hi=Math.log(3*3600);
+  const Y=v=>TOP+(hi-Math.log(v))/(hi-lo)*(BOT-TOP);
+  const fmt=v=> v>=3600? (v/3600).toFixed(1)+' h' : v>=60? (v/60).toFixed(1).replace(/\.0$/,'')+' min' : (v<10? v.toFixed(1): Math.round(v))+' s';
+  [[3600,'1 h'],[600,'10 min'],[60,'1 min'],[10,'10 s'],[1,'1 s']].forEach(([v,l])=>{
+    el('line',{x1:XL,y1:Y(v),x2:XR,y2:Y(v),class:'ln-soft'},s);
+    T(s,(XL+XR)/2,Y(v)-7,l,'t-cap t-muted',{'text-anchor':'middle'}); });
+  el('line',{x1:XL,y1:TOP-10,x2:XL,y2:BOT+10,class:'ln'},s); el('line',{x1:XR,y1:TOP-10,x2:XR,y2:BOT+10,class:'ln'},s);
+  T(s,XL,BOT+42,'Before','t-cap',{'text-anchor':'middle'}); T(s,XR,BOT+42,'After','t-cap t-red',{'text-anchor':'middle'});
+  const rows=[
+    ['Clean full build, CPU',8104,4051],
+    ['Fresh orb → checked tree',1374,150],
+    ['Clean full build, wall clock',716,303],
+    ['Heaviest file (Sponge.Trabs)',131.2,25.2],
+    ['Typical block-proof file (Fix.Blocks)',77.4,18.3],
+    ['Unchanged code (EvmProof, 12 files)',52.8,52.4,1],
+    ['Spec file (MlDsa44.Spec)',1.3,1.2,1],
+  ];
+  const place=(arr,key)=>{ let last=-99; arr.slice().sort((p,q)=>p[key]-q[key]).forEach(r=>{ r[key+'L']=Math.max(r[key]+5,last+26); last=r[key+'L']; }); };
+  const R=rows.map(([name,a,b,ctl])=>({name,a,b,ctl,ya:Y(a),yb:Y(b)}));
+  place(R,'ya'); place(R,'yb');
+  R.forEach(({name,a,b,ctl,ya,yb,yaL,ybL})=>{
+    const col=ctl?'#b5b5b2':'#111';
+    const l=el('line',{x1:XL,y1:ya,x2:XR,y2:yb,stroke:col,'stroke-width':ctl?1:1.4},s); l.classList.add('dr'); l.style.setProperty('--len',400);
+    el('circle',{cx:XL,cy:ya,r:4,fill:col},s); el('circle',{cx:XR,cy:yb,r:4,fill:ctl?'#b5b5b2':'#e5392b'},s);
+    if(yaL-ya>8) el('line',{x1:XL-6,y1:ya,x2:XL-14,y2:yaL-5,class:'ln-soft'},s);
+    const t=T(s,XL-18,yaL,'',ctl?'t-muted':'',{'text-anchor':'end','font-size':15});
+    el('tspan',{},t,name+' '); el('tspan',{'font-weight':600},t,fmt(a));
+    if(ybL-yb>8) el('line',{x1:XR+6,y1:yb,x2:XR+14,y2:ybL-5,class:'ln-soft'},s);
+    const r=T(s,XR+18,ybL,'',ctl?'t-muted':'',{'font-size':15});
+    el('tspan',{'font-weight':600,class:ctl?'t-muted':'t-red'},r,fmt(b));
+    el('tspan',{class:'t-muted'},r, ctl?' unchanged':'  −'+Math.round((1-b/a)*100)+'%');
+  });
+})();
+
+/* ======================= FIG: frequency circles ======================= */
+(function(){
+  const s=document.getElementById('fig-freq'); s.classList.add('draw');
+  const items=[
+    ['Dozens of times a change','Check a block-proof file','77 s','18 s',77.4,18.3,'Fix.Blocks, CPU','spec files: 1.3 s, unchanged'],
+    ['A few times a change','Check the heaviest file','131 s','25 s',131.2,25.2,'Sponge.Trabs, CPU','heaviest at the start'],
+    ['Once a commit','Build the whole tree','12 min','5 min',716,303,'clean, wall clock','16-core orb'],
+    ['Once a task','Start a fresh machine','23 min','2.5 min',1374,150,'to a checked tree','CI publishes the cache'],
+    ['When a cache is made','Store the build','4.5 GB','1.5 GB',4485,1523,'compiled .olean files','fewer generated proof terms'],
+  ];
+  const X=i=>100+i*200, R=74, CY=255;
+  el('line',{x1:40,y1:62,x2:965,y2:62,class:'ln'},s); el('path',{d:'M957 56 L966 62 L957 68',class:'ln'},s);
+  T(s,40,40,'More often','t-cap'); T(s,965,40,'Less often','t-cap',{'text-anchor':'end'});
+  items.forEach(([freq,what,a,b,va,vb,sub1,sub2],i)=>{
+    const x=X(i);
+    el('line',{x1:x,y1:62,x2:x,y2:74,class:'ln'},s);
+    T(s,x,96,freq,'t-cap t-muted',{'text-anchor':'middle','font-size':10});
+    T(s,x,138,what,'t-cap t-bold',{'text-anchor':'middle','font-size':11});
+    const c=el('circle',{cx:x,cy:CY,r:R,class:'ln dr'},s); c.style.setProperty('--len',2*Math.PI*R);
+    const r=R*Math.sqrt(vb/va);
+    el('circle',{cx:x,cy:CY+R-r,r:r,fill:'#e5392b'},s);
+    const t=T(s,x,CY+R+46,'','',{'text-anchor':'middle','font-size':22});
+    el('tspan',{'font-weight':600},t,a+' → '); el('tspan',{'font-weight':600,class:'t-red'},t,b);
+    T(s,x,CY+R+72,'−'+Math.round((1-vb/va)*100)+'%','t-red t-bold',{'text-anchor':'middle','font-size':16});
+    T(s,x,CY+R+98,sub1,'',{'text-anchor':'middle','font-size':13});
+    T(s,x,CY+R+118,sub2,'t-muted',{'text-anchor':'middle','font-size':12});
+  });
+})();
+
+/* ======================= FIG: speedup map ======================= */
+(function(){
+  const s=document.getElementById('fig-map'); s.classList.add('draw');
+  const L=90,B=640,W=560, lo=Math.log10(0.5), hi=Math.log10(200);
+  const P=v=>(Math.log10(Math.max(v,0.5))-lo)/(hi-lo)*W, X=v=>L+P(v), Y=v=>B-P(v);
+  // frame + grid
+  el('rect',{x:L,y:B-W,width:W,height:W,fill:'none',stroke:'#e8e8e6'},s);
+  [1,10,100].forEach(v=>{ el('line',{x1:X(v),y1:B,x2:X(v),y2:B-W,class:'ln-soft'},s); el('line',{x1:L,y1:Y(v),x2:L+W,y2:Y(v),class:'ln-soft'},s);
+    T(s,X(v),B+22,v+' s','t-muted',{'text-anchor':'middle','font-size':11,'letter-spacing':'1'}); T(s,L-10,Y(v)+4,v+' s','t-muted',{'text-anchor':'end','font-size':11,'letter-spacing':'1'}); });
+  T(s,L+W/2,B+52,'CPU before','t-cap',{'text-anchor':'middle'});
+  T(s,L-58,B-W/2,'CPU after','t-cap',{'text-anchor':'middle',transform:`rotate(-90 ${L-58} ${B-W/2})`});
+  // diagonals
+  el('line',{x1:X(0.5),y1:Y(0.5),x2:X(200),y2:Y(200),class:'ln'},s);
+  [[2,'2× faster'],[5,'5×'],[10,'10×']].forEach(([k,l])=>{ el('line',{x1:X(0.5*k),y1:Y(0.5),x2:X(200),y2:Y(200/k),class:'ln-soft','stroke-dasharray':'3 5'},s);
+    T(s,X(200)-4,Y(200/k)-6,l,'t-cap t-muted',{'text-anchor':'end','font-size':10}); });
+  T(s,X(200)-6,Y(200)+18,'no change','t-cap',{'text-anchor':'end','font-size':10});
+  // legend
+  el('circle',{cx:L+18,cy:B-W+22,r:3.5,fill:'#111'},s); T(s,L+30,B-W+26,'Before','t-cap');
+  el('circle',{cx:L+108,cy:B-W+22,r:3.5,fill:'#e5392b'},s); T(s,L+120,B-W+26,'After','t-cap');
+  el('circle',{cx:L+198,cy:B-W+22,r:3.5,fill:'#e5392b'},s); el('circle',{cx:L+198,cy:B-W+22,r:8,fill:'none',stroke:'#e5392b','stroke-width':1.2},s); T(s,L+214,B-W+26,'Fixed directly','t-cap');
+  // points: unchanged-ish modules just dots on diagonal
+  const pts=D.pts.slice().sort((p,q)=>p[0]-q[0]);
+  pts.forEach(([a,b,t])=>{
+    const big=a>=2 && a/b>=1.4;
+    if(big){ el('line',{x1:X(a),y1:Y(a),x2:X(a),y2:Y(b),stroke:'#111','stroke-width':.6,'stroke-dasharray':'1.5 2.5'},s); }
+  });
+  pts.forEach(([a,b,t])=>{
+    const big=a>=2 && a/b>=1.4;
+    el('circle',{cx:X(a),cy:Y(a),r:big?2.8:1.8,fill:big?'#111':'#c9c9c6'},s);
+    if(big){ el('circle',{cx:X(a),cy:Y(b),r:3,fill:'#e5392b'},s);
+      if(t) el('circle',{cx:X(a),cy:Y(b),r:7,fill:'none',stroke:'#e5392b','stroke-width':1},s); }
+  });
+  const nSame=pts.filter(([a,b])=>!(a>=2&&a/b>=1.4)).length, nBig=pts.length-nSame;
+  T(s,X(1.2),Y(1.2)-14,'≈'+nSame+' modules · within 1.4×','t-cap t-muted',{transform:`rotate(-45 ${X(1.2)} ${Y(1.2)-14})`,'font-size':10});
+  // labels
+  const lab=[
+    ['Sponge.Bits',60.8,5.9,1],['Hint.PackCode',94.8,11.4,1],['Blk.BodyA ×3',95,15,1],['Sponge.Trabs ×3',131,25.2,1],
+    ['Main.Tbl.Blocks',93.7,18.3,1],['Kf4.Blocks2',55.7,11.0,1],['Fix.Blocks',77.4,18.3,0],['Csum.Blocks 87',63.1,14.5,1],
+    ['Ball.Blocks 65',55.6,11.5,0],['Keccak.Blocks2',69.1,20.6,1],['Row.Math',23.5,3.1,1],['Decode.HintBlocks 87',96.5,38.1,0],
+  ].sort((p,q)=>Y(p[2])-Y(q[2]));
+  const LX=L+W+40, startY=B-W+70, step=40;
+  lab.forEach(([n,a,b,t],i)=>{
+    const ly=startY+i*step;
+    el('path',{d:`M${X(a)+8} ${Y(b)} L${L+W+10} ${Y(b)} L${LX-8} ${ly-4}`,class:'ln-soft'},s);
+    const tx=T(s,LX,ly,'','',{'font-size':14});
+    el('tspan',{'font-weight':t?600:400},tx,n+' ');
+    el('tspan',{class:'t-muted'},tx,Math.round(a)+' → '+(b<10?b.toFixed(1):Math.round(b))+' s ');
+    el('tspan',{'font-weight':600,class:t?'t-red':''},tx,(a/b).toFixed(a/b>=10?0:1)+'×');
+  });
+  T(s,LX,startY+lab.length*step+14,nBig+' modules got ≥1.4× faster; '+pts.filter(([a,b])=>a/b>=2&&a>=2).length+' at least 2×.','t-muted',{'font-size':13});
+  T(s,LX,startY+lab.length*step+34,'CPU-s, each module alone with the profiler, 959ed80 → 21ea039.','t-muted',{'font-size':13});
+})();
+
+/* ======================= FIG: didn't work ======================= */
+(function(){
+  const s=document.getElementById('fig-nope');
+  const items=[
+    ['Newer Lean (4.34 / 4.35)','kernel regression: one proof 19 s → >12 min'],
+    ['Sharing terms before the kernel','6.15 s → 6.38 s'],
+    ['Compiled simproc plugin','within noise of plain lemmas'],
+    ['Pre-proved table lookups','creating a lemma costs as much as using it'],
+    ['Prebuilt simp sets','13 ms per call, not the cost'],
+    ['Reflection on every short block (first try)','slower until the setup was shared'],
+    ['Central arithmetic closer for leftovers','183 → 174 fallbacks, but 122.7 → 122.0 CPU-s'],
+  ];
+  items.forEach(([a,b],i)=>{
+    const col=i%2, row=Math.floor(i/2), x=col*510, y=30+row*90;
+    el('line',{x1:x,y1:y-14,x2:x+470,y2:y-14,class:'ln-soft'},s);
+    el('line',{x1:x,y1:y+6,x2:x+14,y2:y-8,class:'ln'},s); el('line',{x1:x,y1:y-8,x2:x+14,y2:y+6,class:'ln'},s);
+    T(s,x+28,y+4,a,'',{'font-size':16});
+    T(s,x+28,y+28,b,'t-muted',{'font-size':13});
+  });
+})();
+
+
+/* ======================= FIG: gas bars ======================= */
+(function(){
+  const s=document.getElementById('fig-gas');
+  const sets=[['ML-DSA-44',2105097,1929359,1686116],['ML-DSA-65',3701979,3509486,2943671],['ML-DSA-87',5424737,5227912,4523186]];
+  const rows=[['v3','#c9c9c6',''],['v4 · proved, master','#111',''],['Glamsterdam · proved','#e5392b','t-red']];
+  const L=230, W=520, H=24, G=12, BH=3*(H+G)+64;
+  T(s,L,22,'Gas, relative to v3','t-cap t-muted');
+  sets.forEach(([name,a,b,c],i)=>{
+    const y0=56+i*BH, vals=[a,b,c];
+    el('line',{x1:0,y1:y0-14,x2:1000,y2:y0-14,class:'ln-soft'},s);
+    T(s,0,y0+20,name,'t-bold',{'font-size':20});
+    el('line',{x1:L+W,y1:y0-4,x2:L+W,y2:y0+3*(H+G)-4,class:'ln','stroke-dasharray':'2 3'},s);
+    vals.forEach((v,j)=>{
+      const y=y0+j*(H+G), w=W*v/a;
+      el('rect',{x:L,y,width:w,height:H,fill:rows[j][1],class:'g'},s);
+      T(s,L-12,y+H/2+5,rows[j][0],'t-cap'+(j==2?' t-red':' t-muted'),{'text-anchor':'end','font-size':10});
+      const t=T(s,L+w+12,y+H/2+6,'','',{'font-size':15,stroke:'#fff','stroke-width':5,'stroke-linejoin':'round','paint-order':'stroke'});
+      el('tspan',{'font-weight':600},t,fmt(v)+' ');
+      if(j) el('tspan',{'font-weight':600,class:rows[j][2]},t,(a/v).toFixed(2)+'\u00d7');
+    });
+  });
+})();
+
+/* ======================= FIG: road to the floor ======================= */
+(function(){
+  const s=document.getElementById('fig-road');
+  const L=40, R=960, lo=Math.log10(4000), hi=Math.log10(2e7);
+  const X=v=>L+(Math.log10(v)-lo)/(hi-lo)*(R-L), Y=190;
+  const f0=X(1.15e6), f1=X(1.23e6);
+  el('rect',{x:f0,y:Y-40,width:f1-f0,height:80,fill:'#efefed'},s);
+  el('line',{x1:f0,y1:Y-40,x2:f0,y2:Y-62,class:'ln-soft'},s);
+  T(s,f0-4,Y-80,'Est. opcode floor','t-cap t-muted',{'text-anchor':'end','font-size':10});
+  T(s,f0-4,Y-62,'\u2248 1.2M','t-muted t-bold',{'text-anchor':'end','font-size':14});
+  T(s,f0-24,24,'\u2190 Needs an EVM change','t-cap t-muted',{'text-anchor':'end','font-size':10});
+  T(s,f1+24,24,'Rules fixed \u2192','t-cap',{'font-size':10});
+  el('line',{x1:L,y1:Y,x2:R,y2:Y,class:'ln'},s);
+  [1e4,1e5,1e6,1e7].forEach(v=>{ el('line',{x1:X(v),y1:Y-5,x2:X(v),y2:Y+5,class:'ln'},s);
+    T(s,X(v),Y+22,v>=1e6?(v/1e6)+'M':(v/1e3)+'k','t-muted',{'text-anchor':'middle','font-size':11}); });
+  T(s,R,Y+22,'gas','t-cap t-muted',{'text-anchor':'end','font-size':10});
+  // [value, name, value label, kind (0 measured, 1 headline, 2 hypothetical), row y offset, anchor]
+  const pts=[
+    [12953021,'Reference bytecode','12.95M',0,-62,'end'],
+    [2105097,'v3, proved','2.11M',0,-112,'start'],
+    [1929359,'v4, proved, on master','1.93M',0,142,'start'],
+    [1686116,'Glamsterdam','1.69M',1,92,'end'],
+    [6.0e5,'With a Keccak-f opcode','\u2248 0.6M, estimate',2,92,'end'],
+    [6500,'EIP-8355 as a native precompile','6,500',2,-62,'start'],
+  ];
+  pts.forEach(([v,name,val,kind,dy,anchor])=>{
+    const x=X(v), up=dy<0, ly=Y+dy;
+    el('line',{x1:x,y1:Y+(up?-8:8),x2:x,y2:up?ly+10:ly-30,class:kind==1?'ln-red':'ln-soft'},s);
+    el('circle',{cx:x,cy:Y,r:kind==1?7:5,fill:kind==2?'#fff':kind==1?'#e5392b':'#111',stroke:kind==1?'#e5392b':'#111','stroke-width':1.2},s);
+    const ax=anchor=='end'?x+4:x-4;
+    T(s,ax,up?ly-18:ly-14,name,'t-cap'+(kind==1?' t-red':kind==2?' t-muted':''),{'text-anchor':anchor,'font-size':10});
+    T(s,ax,up?ly:ly+6,val,(kind==1?'t-red ':'')+'t-bold',{'text-anchor':anchor,'font-size':kind==1?20:15});
+  });
+})();
+
+/* ======================= reveal ======================= */
+const io=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); e.target.querySelectorAll('.draw,.grow').forEach(x=>x.classList.add('in')); io.unobserve(e.target);} }),{threshold:.18});
+document.querySelectorAll('.rv,.draw,.grow').forEach(x=>io.observe(x));
+document.querySelectorAll('.draw .dr').forEach(p=>{ if(!p.style.getPropertyValue('--len')){ try{ p.style.setProperty('--len',p.getTotalLength()); }catch(e){} } });
+</script>
+</body>
+</html>
